@@ -19,8 +19,8 @@ Features
   tables, and boxed notes.
 - Logical Reconstruction: Reorders content from columns into a correct,
   single-flow reading order.
-- Dynamic Chunk Sizing: Automatically adjusts processing chunk size based on the
-  detected context window of the selected Ollama model.
+- Prompt Engineering Tools: Allows for A/B testing of different system
+  prompts using the --prompt-preset and --batch-presets flags.
 - LLM-Powered Formatting: Uses an LLM to correct OCR/hyphenation errors and
   apply intelligent stylistic formatting (bold, italics).
 - Real-time Audio Streaming: When using --speak, the LLM's response is
@@ -168,83 +168,144 @@ except ImportError:
 
 # --- PROMPT TEXT CONSTANTS ---
 
-PROMPT_SYSTEM = """\
+# This preset uses the two-role system (Editor, then Expert) and has been
+# enhanced with examples and stronger final checks.
+PROMPT_MULTIROLES = """\
 == PRIMARY DIRECTIVES ==
 
--- Content & Persona Rules --
-1. CONTENT & PERSONA:
-   You are a data-processing engine. Your ONLY function is to reformat
-   the text provided. Your response MUST be 100% derived from the
-   source text, preserving all original phrasing and detail. You MUST
-   NOT rephrase, rewrite, summarize, add, invent, interpret, or
-   explain the content.
-2. LANGUAGE:
+1. LANGUAGE:
    You MUST respond in the original language of the text found in the
    DOCUMENT block.
-
--- Formatting & Structure Rules --
-3. FINAL OUTPUT FORMAT:
+2. ORIGINALITY:
+   Your response MUST be 100% derived from the source text in the DOCUMENT
+   block. Do NOT add, invent, summarize, or include any commentary.
+3. OUTPUT FORMAT:
    Your final generated response MUST end with a single empty line. This
-   is a critical technical requirement for downstream processing.
-4. OUTPUT CONTENT:
-   You MUST NOT include any XML tags like `<thinking>` or `<markdown>`
-   in the output. Provide ONLY the final, clean Markdown content.
+   is crucial for the proper concatenation of the final document.
+
+== EXAMPLES ==
+
+Input:
+# TÍTULO DE LA SECCIÓN
+Un párrafo con una palabra que nece-
+sita ser unida. Contiene un término clave como Señor del Caos.
+*Un bloque de texto descriptivo que debe ir en cursiva.*
+
+Output:
+# TÍTULO DE LA SECCIÓN
+Un párrafo con una palabra que necesita ser unida. Contiene un término clave como **Señor del Caos**.
+*Un bloque de texto descriptivo que debe ir en cursiva.*
 
 == SEQUENTIAL WORKFLOW & RULES ==
 
 You are a silent, non-sentient data formatting engine. Your task is to
 take the text provided in the "--- BEGIN DOCUMENT ---" block and reformat
-it by performing the following two roles in sequence. The roles are
-distinct and must not overlap their duties.
+it by performing the following two roles in sequence.
 
 1. First, you will act as the "Document Editor".
-   Your goal is to produce a structurally perfect version of the text
-   with all paragraphs, lists, and tables correctly formatted. The
-   output of this stage should be stylistically plain, with the
-   exception of the specific rules below.
+   Your goal is to produce a structurally perfect version of the text.
 
-   Editor's Rulebook:
-    - No Self-Reflection: Do not add notes or explanations about the
-      edits you have made. Your output must only be the final document.
-    - Headings: Preserve the structural integrity and level (e.g., '#', '##')
-      of all heading lines. You may correct obvious, single-character
-      typographical errors in the heading's text, but you MUST NOT
-      rephrase it or apply any stylistic formatting like bold or italics.
-    - Paragraphs: Merge broken text lines to form natural, flowing
-      paragraphs.
-    - Lists: Preserve bulleted lists using standard Markdown ("*" or "-").
-    - Corrections: Correct obvious typographical errors, unnatural
-      hyphenation, and misplaced commas. Ensure correct final punctuation.
-    - Stat Blocks: Format RPG stat blocks as a single, dense paragraph.
-    - Introductory Phrases: If a paragraph begins with a descriptive label
-      that ends in a colon, format that entire label (including the
-      colon) in bold.
-    - Tables: Preserve the exact structure of any Markdown tables.
+   Adhere to following editing rules:
+   - No Self-Reflection: Do not add notes or explanations about your edits.
+   - Headings: Preserve heading lines (like '# Title') exactly as they appear.
+   - Paragraphs: Merge broken text lines to form natural, flowing paragraphs.
+   - Corrections: Correct obvious typographical errors and unnatural hyphenation.
+   - Tables & Lists: Preserve the exact structure of any Markdown tables or lists.
 
 2. Second, you will now act as the "RPG Expert".
-   Your goal is to take the clean, structurally-correct text from the
-   Editor and apply a final layer of TTRPG-specific stylistic
-   formatting according to the "Expert's Style Guide" below.
+   Your goal is to apply stylistic formatting to produced text by "Document Editor".
 
-   Expert's Style Guide:
-    - Forbidden Application: Do NOT apply bold formatting to text that is
-      a heading (e.g., lines starting with '#').
-    - Italics: Format entire paragraphs of descriptive, atmospheric text
-      in italics. This applies to scene-setting descriptions and blocks
-      of in-world text like poems or inscriptions.
-    - Bold: Apply "**bold**" formatting to genre-specific terms, including:
+   Adhere to following styling rules:
+   - Apply `*italic*` formatting to entire paragraphs of descriptive,
+     atmospheric text, such as scene-setting descriptions or in-world
+     poems and inscriptions.
+   - Apply `**bold**` formatting to specific, pre-defined TTRPG terms:
         - Creature, NPC, and character names.
         - Specific named places, areas, and zones.
         - Named items, potions, artifacts, weapons, and armor.
         - Spell names.
-        - Dice notation (e.g., "**d20**", "**3d6**").
-        - Specific game actions, checks, and saves (e.g., "**attack roll**").
+        - Dice notation (e.g., `**d20**`, `**3d6**`).
+        - Specific game actions, checks, and saves.
+   - For paragraphs beginning with a label ending in a colon (e.g.,
+     "Warning:"), format the entire label, including the colon,
+     in bold.
 
 == FINAL CHECK ==
 
 Before providing the final output, ensure it is the complete, reformatted
-document and that you have followed all PRIMARY DIRECTIVES.
+document. Your response MUST NOT contain any notes, apologies,
+or self-reflection about the work you have done.
 """
+
+# This preset abandons the two-role system for a single, unified set of rules.
+# It includes examples to guide the model's styling choices.
+PROMPT_SIMPLE = """\
+== PRIMARY DIRECTIVES ==
+
+1. CORE FUNCTION:
+   You are a data-processing engine. Your function is to reformat the
+   provided text into clean Markdown. You must not add, invent,
+   summarize, or explain the content. Preserve all original phrasing
+   and detail.
+2. LANGUAGE:
+   You MUST respond in the original language of the text found in the
+   DOCUMENT block.
+3. OUTPUT FORMAT:
+   The final output must be only the clean, corrected Markdown. It
+   must not contain any XML tags and must end with a single empty line.
+
+== EXAMPLES ==
+
+Input:
+# TÍTULO DE LA SECCIÓN
+Un párrafo con una palabra que nece-
+sita ser unida. Contiene un término clave como Señor del Caos.
+*Un bloque de texto descriptivo que debe ir en cursiva.*
+
+Output:
+# TÍTULO DE LA SECCIÓN
+Un párrafo con una palabra que necesita ser unida. Contiene un término clave como **Señor del Caos**.
+*Un bloque de texto descriptivo que debe ir en cursiva.*
+
+== FORMATTING & STYLING RULES ==
+
+You will apply the following rules in order to the entire document.
+
+1.  **Structural Correction:**
+    - Merge broken text lines to form natural, flowing paragraphs.
+    - Preserve heading lines (e.g., lines starting with '#') and their
+      levels exactly. You may fix single-character typos in headings,
+      but do not rephrase them.
+    - Preserve the exact structure of lists and tables.
+
+2.  **Stylistic Formatting:**
+    - Apply `*italic*` formatting to entire paragraphs of descriptive,
+      atmospheric text, such as scene-setting descriptions or in-world
+      poems and inscriptions.
+    - Apply `**bold**` formatting to specific, pre-defined TTRPG terms:
+        - Creature, NPC, and character names.
+        - Specific named places, areas, and zones.
+        - Named items, potions, artifacts, weapons, and armor.
+        - Spell names.
+        - Dice notation (e.g., `**d20**`, `**3d6**`).
+        - Specific game actions, checks, and saves.
+    - For paragraphs beginning with a label ending in a colon (e.g.,
+      "Warning:"), format the entire label, including the colon,
+      in bold.
+
+== FINAL CHECK ==
+
+Before providing the output, review all rules to ensure the document is
+perfectly formatted. Your response MUST NOT contain any notes, apologies,
+or self-reflection about the work you have done.
+"""
+
+
+# Preset Registry
+PROMPT_PRESETS = {
+    "multiroles": PROMPT_MULTIROLES,
+    "simple": PROMPT_SIMPLE,
+}
 
 
 # --- CUSTOM LOGGING FORMATTER ---
@@ -326,7 +387,6 @@ class TTSManager:
         # Safely get audio parameters with sensible fallbacks.
         sample_rate = getattr(self.voice.config, 'sample_rate', 22050)
         num_channels = getattr(self.voice.config, 'num_channels', 1)
-        # The original error is on sample_width. We default to 2 for 16-bit audio.
         sample_width = getattr(self.voice.config, 'sample_width', 2)
 
         log_tts.debug(
@@ -1321,7 +1381,6 @@ class PDFTextExtractor:
             for i in range(len(anchor_lines))
         ]
 
-        # --- REWRITTEN CELL POPULATION LOGIC ---
         cell_grid = [[[] for _ in range(num_cols)] for _ in range(len(row_y_boundaries))]
 
         # For each conceptual row in the grid...
@@ -1343,7 +1402,6 @@ class PDFTextExtractor:
                     if line_text:
                         cell_lines.append(line_text)
                 cell_grid[r_idx][c_idx] = cell_lines
-        # --- END REWRITTEN LOGIC ---
 
         parsed_rows = [
             TableRow([TableCell(text_lines) for text_lines in row_data])
@@ -2257,9 +2315,15 @@ class Application:
         self._configure_logging()
 
         try:
-            system_prompt = self._build_system_prompt()
-            self._log_run_conditions(system_prompt)
+            original_output_file = self.args.output_file
+            original_extracted_file = self.args.extracted_file
 
+            if self.args.batch_presets:
+                presets_to_run = list(PROMPT_PRESETS.keys())
+            else:
+                presets_to_run = [self.args.prompt_preset]
+
+            # Only query model details once at the very beginning
             context_size = self._get_model_details()
             if context_size and self.args.chunk_size == self.DEFAULT_CHUNK_SIZE:
                 self.args.chunk_size = int(context_size * 0.8)
@@ -2267,7 +2331,6 @@ class Application:
                     "Auto-adjusting chunk size to %d.", self.args.chunk_size
                 )
 
-            self._resolve_output_filenames()
             pages = self._parse_page_selection()
             if pages is None and self.args.pages.lower() != 'all':
                 sys.exit(1)
@@ -2280,27 +2343,52 @@ class Application:
 
             if not self.extractor.page_models:
                 logging.getLogger("ppdf").error("No content could be extracted. Exiting.")
+                self._display_performance_epilogue(self.stats, self.args.prompt_preset)
                 return
 
-            self._save_extracted_text(sections)
+            for preset_name in presets_to_run:
+                run_stats = {'start_time': time.monotonic()}
 
-            if self.args.dry_run:
-                self._display_dry_run_summary(sections)
-            else:
-                # Initialize TTS manager just before it's needed.
-                if self.args.speak:
-                    self._initialize_tts()
+                if self.args.batch_presets:
+                    logging.getLogger("ppdf").info("\n--- Running Batch Mode: Processing with preset '%s' ---", preset_name)
+                    if original_output_file:
+                        base, ext = os.path.splitext(original_output_file)
+                        self.args.output_file = f"{base}_{preset_name}{ext}"
+                    if original_extracted_file:
+                        base, ext = os.path.splitext(original_extracted_file)
+                        self.args.extracted_file = f"{base}_{preset_name}{ext}"
 
-                llm_wall_start = time.monotonic()
-                final_markdown = self._generate_output_with_llm(sections, system_prompt)
-                self.stats['llm_wall_duration'] = time.monotonic() - llm_wall_start
+                try:
+                    self._resolve_output_filenames()
+                    base_prompt_text = PROMPT_PRESETS[preset_name]
+                    system_prompt = self._build_system_prompt(base_prompt_text)
+                    self._log_run_conditions(system_prompt, preset_name)
 
-                self._save_llm_output(final_markdown)
+                    self._save_extracted_text(sections)
 
-        finally:
-            if self.tts_manager:
-                self.tts_manager.cleanup()
-            self._display_performance_epilogue()
+                    if self.args.dry_run:
+                        self._display_dry_run_summary(sections)
+                    else:
+                        if self.args.speak: self._initialize_tts()
+
+                        llm_wall_start = time.monotonic()
+                        final_markdown = self._generate_output_with_llm(sections, system_prompt, run_stats)
+                        run_stats['llm_wall_duration'] = time.monotonic() - llm_wall_start
+
+                        self._save_llm_output(final_markdown)
+                finally:
+                    if self.tts_manager:
+                        self.tts_manager.cleanup()
+                        self.tts_manager = None
+                    self._display_performance_epilogue(run_stats, preset_name)
+
+                    self.args.output_file = original_output_file
+                    self.args.extracted_file = original_extracted_file
+
+        except Exception as e:
+            logging.getLogger("ppdf").critical("\nAn unexpected error occurred: %s", e, exc_info=True)
+            if self.tts_manager: self.tts_manager.cleanup()
+            sys.exit(1)
 
     def _initialize_tts(self):
         """Initializes the TTSManager if the --speak flag is used."""
@@ -2378,56 +2466,54 @@ class Application:
             logging.error("Could not connect to Ollama: %s", e)
             sys.exit(1)
 
-    def _display_performance_epilogue(self):
+    def _display_performance_epilogue(self, run_stats, preset_name):
         """Displays a summary of performance statistics at the end of a run."""
         app_log = logging.getLogger("ppdf")
-        total_duration = time.monotonic() - self.stats.get('start_time',
-                                                           time.monotonic())
+        total_duration = time.monotonic() - run_stats.get('start_time', time.monotonic())
+
+        # Merge run-specific stats into the main stats for reporting
+        self.stats.update(run_stats)
+
         eval_duration_s = self.stats.get('llm_eval_duration', 0) / 1e9
         eval_count = self.stats.get('llm_eval_count', 0)
         tokens_per_sec = (eval_count / eval_duration_s) if eval_duration_s > 0 else 0
+
         report = [
             "\n--- Performance Epilogue ---",
-            "[ Overall ]",
+            f"[ Run: {preset_name} ]",
             f"  - Total Execution Time: {total_duration:.1f} seconds\n",
             "[ PDF Analysis ]",
             f"  - Pages Processed: {self.stats.get('pages_processed_count', 0)}",
-            f"  - Sections Reconstructed: "
-            f"{self.stats.get('sections_reconstructed_count', 0)}",
-            f"  - Analysis Duration: "
-            f"{self.stats.get('pdf_analysis_duration', 0):.1f} seconds\n"
+            f"  - Sections Reconstructed: {self.stats.get('sections_reconstructed_count', 0)}",
+            f"  - Analysis Duration: {self.stats.get('pdf_analysis_duration', 0):.1f} seconds\n"
         ]
         if not self.args.dry_run:
             report.extend([
                 "[ LLM Processing ]",
-                f"  - Total LLM Duration (Wall Clock): "
-                f"{self.stats.get('llm_wall_duration', 0):.1f} seconds",
-                f"  - Text Sent to LLM: "
-                f"{self.stats.get('llm_chars_sent', 0):,} chars",
-                f"  - Text Received from LLM: "
-                f"{self.stats.get('llm_chars_received', 0):,} chars\n",
+                f"  - Total LLM Duration (Wall Clock): {self.stats.get('llm_wall_duration', 0):.1f} seconds",
+                f"  - Text Sent to LLM: {self.stats.get('llm_chars_sent', 0):,} chars",
+                f"  - Text Received from LLM: {self.stats.get('llm_chars_received', 0):,} chars\n",
                 "  -- LLM Performance (from API) --",
-                f"  - Prompt Tokens Processed: "
-                f"{self.stats.get('llm_prompt_eval_count', 0):,}",
+                f"  - Prompt Tokens Processed: {self.stats.get('llm_prompt_eval_count', 0):,}",
                 f"  - Generated Tokens: {self.stats.get('llm_eval_count', 0):,}",
                 f"  - Generation Speed: {tokens_per_sec:.1f} tokens/sec"
             ])
         report.append("--------------------------")
         app_log.info("\n".join(report))
 
-    def _log_run_conditions(self, system_prompt):
+    def _log_run_conditions(self, system_prompt, preset_name):
         """If debugging is enabled, logs script arguments and the system prompt."""
         if self.args.debug_topics:
-            args_dict = vars(self.args)
+            args_dict_copy = vars(self.args).copy()
+            args_dict_copy['prompt_preset'] = preset_name # Show the correct preset for this run
             output_lines = [
                 "--- Script Running Conditions ---",
-                *[f"  - {arg:<14} : {value}" for arg, value in args_dict.items()],
+                *[f"  - {arg:<16} : {value}" for arg, value in args_dict_copy.items()],
                 "---------------------------------"
             ]
             log_llm.debug("\n".join(output_lines))
-        logging.getLogger("ppdf").info(
-            "---\nLLM System Prompt Configuration:\n%s\n---", system_prompt
-        )
+        logging.getLogger("ppdf").info("---\nLLM System Prompt Configuration (Preset: '%s'):\n%s\n---",
+                                       preset_name, system_prompt)
 
     def _configure_logging(self):
         """Configures logging levels and format based on command-line arguments."""
@@ -2444,18 +2530,10 @@ class Application:
             logging.getLogger("ppdf").setLevel(logging.INFO)
             full_topics = {'layout', 'structure', 'reconstruct', 'llm', 'tts'}
             user_topics = [t.strip() for t in self.args.debug_topics.split(',')]
-            if 'all' in user_topics:
-                topics_to_set = full_topics
+            if 'all' in user_topics: topics_to_set = full_topics
             else:
-                topics_to_set = {
-                    full for user in user_topics for full in full_topics
-                    if full.startswith(user)
-                }
-            invalid = [
-                user for user in user_topics if user != 'all' and not any(
-                    full.startswith(user) for full in full_topics
-                )
-            ]
+                topics_to_set = {full for user in user_topics for full in full_topics if full.startswith(user)}
+            invalid = [user for user in user_topics if user != 'all' and not any(full.startswith(user) for full in full_topics)]
             if invalid:
                 logging.warning("Ignoring invalid debug topics: %s", ", ".join(invalid))
             for topic in topics_to_set:
@@ -2466,12 +2544,8 @@ class Application:
     def _resolve_output_filenames(self):
         """Sets default output filenames based on the input PDF name if needed."""
         S = self.DEFAULT_FILENAME_SENTINEL
-        if self.args.output_file == S or self.args.extracted_file == S:
-            base = os.path.splitext(os.path.basename(self.args.pdf_file))[0]
-            if self.args.output_file == S:
-                self.args.output_file = f"{base}.md"
-            if self.args.extracted_file == S:
-                self.args.extracted_file = f"{base}.extracted"
+        if self.args.output_file == S: self.args.output_file = f"{os.path.splitext(os.path.basename(self.args.pdf_file))[0]}.md"
+        if self.args.extracted_file == S: self.args.extracted_file = f"{os.path.splitext(os.path.basename(self.args.pdf_file))[0]}.extracted"
 
     def _parse_page_selection(self):
         """
@@ -2558,89 +2632,59 @@ class Application:
         except IOError as e:
             logging.getLogger("ppdf").error("Error saving LLM output: %s", e)
 
-    def _generate_output_with_llm(self, sections, system_prompt):
+    def _generate_output_with_llm(self, sections, system_prompt, run_stats):
         """
         Orchestrates the chunking and processing of sections with the LLM.
-
-        Args:
-            sections (list[Section]): The reconstructed sections of the document.
-            system_prompt (str): The system prompt for the LLM.
-
-        Returns:
-            str: The final, combined response from all chunks.
         """
         all_markdown = []
         agg_stats = {'prompt_eval_count': 0, 'eval_count': 0, 'eval_duration': 0}
+        chars_sent = 0
+        chars_received = 0
+
         chunks = Application._chunk_sections(sections, self.args.chunk_size)
         for i, chunk_sections in enumerate(chunks):
             s_page = chunk_sections[0].page_start
             e_page = chunk_sections[-1].page_end
-            logging.getLogger("ppdf").info(
-                "\nProcessing chunk %d/%d (Sections: %d, Pages: %s-%s)",
-                i + 1, len(chunks), len(chunk_sections), s_page, e_page
-            )
-            user_content = "\n\n".join([
-                f"# {s.title or 'Untitled'}\n\n{s.get_llm_text()}"
-                for s in chunk_sections
-            ])
-            guarded_content = (
-                f"\n\n--- BEGIN DOCUMENT ---\n\n{user_content}\n\n--- END DOCUMENT ---"
-            )
-            log_llm.debug(
-                "\nGuarded user content for chunk %d:\n%s", i + 1, guarded_content
-            )
-            full_response, chunk_stats = self._query_llm_api(
-                system_prompt, guarded_content, self.tts_manager
-            )
+            logging.getLogger("ppdf").info("\nProcessing chunk %d/%d (Sections: %d, Pages: %s-%s)", i + 1, len(chunks), len(chunk_sections), s_page, e_page)
+            user_content = "\n\n".join([f"# {s.title or 'Untitled'}\n\n{s.get_llm_text()}" for s in chunk_sections])
+            guarded_content = (f"\n\n--- BEGIN DOCUMENT ---\n\n{user_content}\n\n--- END DOCUMENT ---")
+            log_llm.debug("\nGuarded user content for chunk %d:\n%s", i + 1, guarded_content)
+            full_response, chunk_stats = self._query_llm_api(system_prompt, guarded_content, self.tts_manager)
             if full_response:
                 all_markdown.append(full_response)
                 for key in agg_stats:
                     agg_stats[key] += chunk_stats.get(key, 0)
-                sent = len(system_prompt) + len(guarded_content)
-                self.stats['llm_chars_sent'] = self.stats.get('llm_chars_sent', 0) + sent
-                self.stats['llm_chars_received'] = self.stats.get('llm_chars_received', 0) + len(full_response)
+                chars_sent += len(system_prompt) + len(guarded_content)
+                chars_received += len(full_response)
             else:
                 all_markdown.append(f"\n[ERROR: Could not process chunk {i+1}]")
 
+        run_stats.update({f'llm_{k}': v for k, v in agg_stats.items()})
+        run_stats['llm_chars_sent'] = chars_sent
+        run_stats['llm_chars_received'] = chars_received
 
-        self.stats.update({f'llm_{k}': v for k, v in agg_stats.items()})
         final_markdown_text = "\n\n".join(all_markdown)
 
         if not final_markdown_text.strip():
-            logging.getLogger("ppdf").error(
-                "Failed to get any usable content from the LLM."
-            )
+            logging.getLogger("ppdf").error("Failed to get any usable content from the LLM.")
             return ""
 
         return final_markdown_text
 
-    def _build_system_prompt(self):
+    def _build_system_prompt(self, base_prompt_text):
         """
-        Prepares the system prompt. Now static except for translation.
-
-        Returns:
-            str: The fully constructed system prompt.
+        Prepares the final system prompt by appending any conditional mandates.
         """
-        system_prompt = PROMPT_SYSTEM
-
-        # Append the translation mandate if requested.
+        system_prompt = base_prompt_text
         if self.args.translate:
             lang = self.args.translate.capitalize()
-            system_prompt += (
-                f"\n\n**Translation Mandate:** After all formatting, you MUST "
-                f"translate the entire Markdown output into {lang}."
-            )
-
+            system_prompt += (f"\n\n**Translation Mandate:** After all formatting, you MUST translate the entire Markdown output into {lang}.")
         return system_prompt
 
     def _parse_llm_response(self, response_text):
         """
-        Parses the LLM's full response. In a simplified script, this just strips
-        whitespace, but is kept for TTS compatibility to ensure only markdown
-        is spoken.
+        Parses the LLM's full response. Now just strips whitespace.
         """
-        # No longer expecting <thinking> or <markdown> tags in final output.
-        # This function now primarily serves to ensure only clean text is passed to TTS.
         return "", response_text.strip()
 
     @staticmethod
@@ -2768,8 +2812,8 @@ class Application:
   Basic usage:
     python ppdf.py document.pdf -o "output.md"
 
-  Render output live and see performance stats:
-    python ppdf.py document.pdf --rich-stream -v
+  Test all prompt presets and save to separate files:
+    python ppdf.py document.pdf -o "output.md" --batch-presets
 
   Stream the output as speech in real-time (English):
     python ppdf.py document.pdf -S en
@@ -2782,80 +2826,33 @@ class Application:
 
         g_opts = p.add_argument_group('Main Options')
         g_opts.add_argument("pdf_file", help="Path to the input PDF file.")
-        g_opts.add_argument(
-            "-h", "--help", action="help", help="Show this help message and exit."
-        )
+        g_opts.add_argument("-h", "--help", action="help", help="Show this help message and exit.")
 
         g_proc = p.add_argument_group('Processing Control')
-        g_proc.add_argument(
-            "-p", "--pages", default="all", metavar="PAGES",
-            help="Pages to process, e.g., '1,3,5-7'."
-        )
-        g_proc.add_argument(
-            "-C", "--columns", default="auto", metavar="COUNT",
-            help="Force column count (1-6, or 'auto')."
-        )
-        g_proc.add_argument(
-            "--no-remove-footers", action="store_false", dest="remove_footers",
-            help="Disable footer removal."
-        )
-        g_proc.add_argument(
-            "-K", "--keep-style", action="store_true",
-            help="Preserve bold/italic formatting from source."
-        )
+        g_proc.add_argument("-p", "--pages", default="all", metavar="PAGES", help="Pages to process, e.g., '1,3,5-7'.")
+        g_proc.add_argument("-C", "--columns", default="auto", metavar="COUNT", help="Force column count (1-6, or 'auto').")
+        g_proc.add_argument("--no-remove-footers", action="store_false", dest="remove_footers", help="Disable footer removal.")
+        g_proc.add_argument("-K", "--keep-style", action="store_true", help="Preserve bold/italic formatting from source.")
 
         g_llm = p.add_argument_group('LLM Configuration')
-        g_llm.add_argument(
-            "-M", "--model", default="llama3.1:latest", metavar="MODEL",
-            help="Ollama model to use."
-        )
-        g_llm.add_argument(
-            "-U", "--url", default="http://localhost:11434", metavar="URL",
-            help="Ollama API URL."
-        )
-        g_llm.add_argument(
-            "-z", "--chunk-size", type=int, default=Application.DEFAULT_CHUNK_SIZE,
-            metavar="SIZE", help="Max characters per chunk sent to LLM."
-        )
-        g_llm.add_argument(
-            "-t", "--translate", default=None, metavar="LANG",
-            help="Translate final output to language code."
-        )
+        g_llm.add_argument("-M", "--model", default="llama3.1:latest", metavar="MODEL", help="Ollama model to use.")
+        g_llm.add_argument("-U", "--url", default="http://localhost:11434", metavar="URL", help="Ollama API URL.")
+        g_llm.add_argument("-z", "--chunk-size", type=int, default=Application.DEFAULT_CHUNK_SIZE, metavar="SIZE", help="Max characters per chunk sent to LLM.")
+        g_llm.add_argument("-t", "--translate", default=None, metavar="LANG", help="Translate final output to language code.")
+
+        preset_group = g_llm.add_mutually_exclusive_group()
+        preset_group.add_argument("--prompt-preset", default='simple', choices=PROMPT_PRESETS.keys(), help="Select the system prompt version to use for the run.")
+        preset_group.add_argument("--batch-presets", action="store_true", help="Run processing for all available prompt presets sequentially.")
 
         g_out = p.add_argument_group('Script Output & Actions')
-        g_out.add_argument(
-            "-o", "--output-file", nargs='?', const=S, default=None, metavar="FILE",
-            help="Save final output. Defaults to PDF name."
-        )
-        g_out.add_argument(
-            "-e", "--extracted-file", nargs='?', const=S, default=None, metavar="FILE",
-            help="Save raw text. Defaults to PDF name."
-        )
-        g_out.add_argument(
-            "--rich-stream", action="store_true",
-            help="Render LLM output as Markdown in the terminal."
-        )
-        g_out.add_argument(
-            "--color-logs", action="store_true", help="Enable colored logging output."
-        )
-        g_out.add_argument(
-            "-S", "--speak", nargs='?', const='en', default=None,
-            choices=['en', 'es', 'ca'],
-            help="Stream final output to speech. Specify language."
-        )
-        g_out.add_argument(
-            "-D", "--dry-run", action="store_true",
-            help="Analyze structure without LLM processing."
-        )
-        g_out.add_argument(
-            "-v", "--verbose", action="store_true",
-            help="Enable INFO logging for detailed progress."
-        )
-        g_out.add_argument(
-            "-d", "--debug", nargs='?', const="all", default=None,
-            dest="debug_topics", metavar="TOPICS",
-            help="Enable DEBUG logging for topics (all,layout,structure,reconstruct,llm,tts)."
-        )
+        g_out.add_argument("-o", "--output-file", nargs='?', const=S, default=None, metavar="FILE", help="Save final output. Defaults to PDF name.")
+        g_out.add_argument("-e", "--extracted-file", nargs='?', const=S, default=None, metavar="FILE", help="Save raw text. Defaults to PDF name.")
+        g_out.add_argument("--rich-stream", action="store_true", help="Render LLM output as Markdown in the terminal.")
+        g_out.add_argument("--color-logs", action="store_true", help="Enable colored logging output.")
+        g_out.add_argument("-S", "--speak", nargs='?', const='en', default=None, choices=['en', 'es', 'ca'], help="Stream final output to speech. Specify language (en, es, ca).")
+        g_out.add_argument("-D", "--dry-run", action="store_true", help="Analyze structure without LLM processing.")
+        g_out.add_argument("-v", "--verbose", action="store_true", help="Enable INFO logging for detailed progress.")
+        g_out.add_argument("-d", "--debug", nargs='?', const="all", default=None, dest="debug_topics", metavar="TOPICS", help="Enable DEBUG logging for topics (all,layout,structure,reconstruct,llm,tts).")
 
         return p.parse_args()
 
