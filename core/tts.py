@@ -43,6 +43,11 @@ class TTSManager:
 
     def __init__(self, lang: str):
         self.app_log = logging.getLogger("ppdf")
+        if not PIPER_AVAILABLE:
+            raise RuntimeError(
+                "TTS dependencies (piper-tts, pyaudio) are not installed."
+            )
+
         self.voice = self._get_piper_engine(lang)
         if not self.voice:
             raise RuntimeError("Failed to initialize Piper TTS engine.")
@@ -86,9 +91,21 @@ class TTSManager:
             PiperVoice | None: The loaded voice engine, or None on failure.
         """
         MODELS_CONFIG = {
-            "en": {"model": "en_US-lessac-medium.onnx", "url_base": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/"},
-            "es": {"model": "es_ES-sharvard-medium.onnx", "url_base": "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_ES/sharvard/medium/"},
-            "ca": {"model": "ca_ES-upc_ona-medium.onnx", "url_base": "https://huggingface.co/rhasspy/piper-voices/resolve/main/ca/ca_ES/upc_ona/medium/"}
+            "en": {
+                "model": "en_US-lessac-medium.onnx",
+                "url_base": ("https://huggingface.co/rhasspy/piper-voices"
+                             "/resolve/main/en/en_US/lessac/medium/")
+            },
+            "es": {
+                "model": "es_ES-sharvard-medium.onnx",
+                "url_base": ("https://huggingface.co/rhasspy/piper-voices"
+                             "/resolve/main/es/es_ES/sharvard/medium/")
+            },
+            "ca": {
+                "model": "ca_ES-upc_ona-medium.onnx",
+                "url_base": ("https://huggingface.co/rhasspy/piper-voices"
+                             "/resolve/main/ca/ca_ES/upc_ona/medium/")
+            }
         }
         config = MODELS_CONFIG.get(lang)
         if not config:
@@ -104,8 +121,9 @@ class TTSManager:
             path = os.path.join(cache_dir, path_suffix)
             if not os.path.exists(path):
                 filename = os.path.basename(path)
-                self.app_log.info("Performing one-time download for '%s'...",
-                                  filename)
+                self.app_log.info(
+                    "Performing one-time download for '%s'...", filename
+                )
                 try:
                     url = config["url_base"] + path_suffix
                     with requests.get(url, stream=True) as r:
@@ -176,8 +194,9 @@ class TTSManager:
         fragments of speech are played.
         """
         if self.text_buffer.strip():
-            log_tts.debug("Queueing final buffer: '%s'",
-                          self.text_buffer.strip())
+            log_tts.debug(
+                "Queueing final buffer: '%s'", self.text_buffer.strip()
+            )
             self.text_queue.put(self.text_buffer)
             self.text_buffer = ""
 

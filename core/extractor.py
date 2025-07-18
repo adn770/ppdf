@@ -87,10 +87,24 @@ class TableBlock(ContentBlock):
 
 class BoxedNoteBlock(ContentBlock):
     """A block of content identified as being enclosed in a graphical box."""
-    def __init__(self, text, all_lines, title_lines):
+    def __init__(self, title_lines, internal_blocks, all_lines):
         super().__init__(all_lines)
-        self.text = text
         self.title_lines = title_lines
+        self.internal_blocks = internal_blocks
+        self._title_text = None  # Cache for formatted title
+
+    @property
+    def title(self):
+        """Returns the formatted title text of the boxed note."""
+        if self._title_text is None:
+            # Requires access to the extractor's formatting method
+            # This will be set after instantiation by the extractor
+            self._title_text = "Note"  # Default
+        return self._title_text
+
+    @title.setter
+    def title(self, value):
+        self._title_text = value
 
 
 class Title(BoundedElement):
@@ -205,7 +219,7 @@ class PDFTextExtractor:
         pdf_path (str): The file path to the PDF.
         num_cols (str): The number of columns to assume ('auto' or a number).
         rm_footers (bool): Whether to attempt footer removal.
-        style (bool): Whether to preserve bold/italic styling.
+        style (bool): Whether to preserve bold/italic formatting.
     """
     def __init__(self, pdf_path, num_cols="auto", rm_footers=True, style=False):
         self.pdf_path = pdf_path
@@ -233,14 +247,19 @@ class PDFTextExtractor:
             return re.sub(r'\s+', ' ', line.get_text()).strip()
         parts, style, buf = [], {'bold': False, 'italic': False}, []
         for char in line:
-            if not isinstance(char, LTChar) or not char.get_text().strip():
+            if not isinstance(char, LTChar):
+                continue
+            ctext = char.get_text()
+            if not ctext.strip() and not ctext.isspace():
                 continue
             is_b = "bold" in char.fontname.lower()
             is_i = "italic" in char.fontname.lower()
             if is_b != style['bold'] or is_i != style['italic']:
                 if buf:
                     text = "".join(buf)
-                    if style['bold']:
+                    if style['bold'] and style['italic']:
+                        parts.append(f"***{text}***")
+                    elif style['bold']:
                         parts.append(f"**{text}**")
                     elif style['italic']:
                         parts.append(f"*{text}*")
@@ -248,10 +267,12 @@ class PDFTextExtractor:
                         parts.append(text)
                     buf = []
             style['bold'], style['italic'] = is_b, is_i
-            buf.append(char.get_text())
+            buf.append(ctext)
         if buf:
             text = "".join(buf)
-            if style['bold']:
+            if style['bold'] and style['italic']:
+                parts.append(f"***{text}***")
+            elif style['bold']:
                 parts.append(f"**{text}**")
             elif style['italic']:
                 parts.append(f"*{text}*")
@@ -318,8 +339,9 @@ class PDFTextExtractor:
             "--- Stage 2: Structuring Content from Page Models ---"
         )
         for page_model in content_pages_to_structure:
-            log_structure.info("Structuring content for Page %d",
-                               page_model.page_num)
+            log_structure.info(
+                "Structuring content for Page %d", page_model.page_num
+            )
             for z_idx, zone in enumerate(page_model.zones):
                 for c_idx, col in enumerate(zone.columns):
                     log_structure.debug(
@@ -335,8 +357,9 @@ class PDFTextExtractor:
         """Classifies a page as 'cover', 'credits', 'art', or 'content'."""
         log_layout.debug("--- Page Classification ---")
         num_lines, num_images = len(lines), len(images)
-        log_layout.debug("  - Total lines: %d, Total images: %d",
-                         num_lines, num_images)
+        log_layout.debug(
+            "  - Total lines: %d, Total images: %d", num_lines, num_images
+        )
         if num_images > 0:
             page_area = layout.width * layout.height
             image_area = sum(img.width * img.height for img in images)
@@ -350,25 +373,46 @@ class PDFTextExtractor:
             log_layout.debug("  - Decision: No lines found. -> 'art'")
             return 'art'
         if num_lines < 5:
-            log_layout.debug("  - Decision: Very few lines (%d). -> 'cover'",
-                             num_lines)
+            log_layout.debug(
+                "  - Decision: Very few lines (%d). -> 'cover'", num_lines
+            )
             return 'cover'
         full_text = " ".join(l.get_text() for l in lines).lower()
         credit_kw = ['créditos', 'copyright', 'editor', 'traducción',
                      'maquetación', 'cartógrafos', 'ilustración', 'isbn',
                      'depósito legal']
         found_kw = [kw for kw in credit_kw if kw in full_text]
+        log_layout.debug("  - Keyword check: Found %d hits.", len(found_kw))
         if len(found_kw) >= 3:
-            log_layout.debug("  - Decision: Found %d keywords. -> 'credits'",
-                             len(found_kw))
+            log_layout.debug(
+                "  - Decision: Found %d keywords. -> 'credits'", len(found_kw)
+            )
             return 'credits'
+
+        body_font_size = self._get_page_body_font_size(
+            lines, default_on_fail=False
+        )
+        if body_font_size:
+            title_like = sum(
+                1 for l in lines if self._get_font_size(l) > body_font_size * 1.2
+            )
+            title_ratio = title_like / num_lines if num_lines > 0 else 0
+            log_layout.debug("  - Title-like line ratio: %.2f", title_ratio)
+            if title_ratio > 0.5:
+                log_layout.debug(
+                    "  - Decision: High ratio of titles. -> 'cover'"
+                )
+                return 'cover'
+
+        log_layout.debug("  - Decision: No special type detected. -> 'content'")
         return 'content'
 
     def _analyze_single_page_layout(self, layout):
         """Analyzes a single page's layout to produce a PageModel."""
         page = PageModel(layout)
-        logging.getLogger("ppdf").info("Analyzing Page Layout %d...",
-                                       page.page_num)
+        logging.getLogger("ppdf").info(
+            "Analyzing Page Layout %d...", page.page_num
+        )
         all_lines = sorted(
             self._find_elements_by_type(layout, LTTextLine),
             key=lambda x: (-x.y1, x.x0)
@@ -380,8 +424,9 @@ class PDFTextExtractor:
             if r.linewidth > 0 and r.width > 10 and r.height > 10
         ]
         page.page_type = self._classify_page_type(layout, all_lines, images)
-        logging.getLogger("ppdf").info("Page %d classified as: %s",
-                                       page.page_num, page.page_type)
+        logging.getLogger("ppdf").info(
+            "Page %d classified as: %s", page.page_num, page.page_type
+        )
         if page.page_type != 'content' or not all_lines:
             return page
 
@@ -398,7 +443,6 @@ class PDFTextExtractor:
         )
         content_lines = [l for l in content_lines if l not in title_lines]
 
-        # Split page into vertical zones based on full-width rectangles
         rect_breaks = {r.y0 for r in page.rects if r.width > layout.width * 0.7}
         rect_breaks.update(
             r.y1 for r in page.rects if r.width > layout.width * 0.7
@@ -448,10 +492,12 @@ class PDFTextExtractor:
         if not lines:
             return []
         line_to_box_map = {}
-        for r in sorted(rects, key=lambda r: (-r.y1, r.x0)):
+        sorted_rects = sorted(rects, key=lambda r: (-r.y1, r.x0))
+        for r in sorted_rects:
             box_lines = [
                 l for l in lines if l not in line_to_box_map and
-                (r.x0-1<l.x0 and r.y0-1<l.y0 and r.x1+1>l.x1 and r.y1+1>l.y1)
+                (r.x0-1 < l.x0 and r.y0-1 < l.y0 and
+                 r.x1+1 > l.x1 and r.y1+1 > l.y1)
             ]
             if box_lines:
                 for l in box_lines:
@@ -467,13 +513,23 @@ class PDFTextExtractor:
                 rect = line_to_box_map[line]
                 b_lines = [l for l in lines if line_to_box_map.get(l) == rect]
                 title_text, title_lines = self._find_title_in_box(b_lines)
-                blocks.append(BoxedNoteBlock(title_text, b_lines, title_lines))
+
+                body_lines_in_box = [l for l in b_lines if l not in title_lines]
+
+                internal_blocks = self._segment_prose_and_tables(
+                    body_lines_in_box, font_size, col_bbox
+                )
+
+                boxed_block = BoxedNoteBlock(title_lines, internal_blocks, b_lines)
+                boxed_block.title = title_text
+                blocks.append(boxed_block)
+
                 processed_lines.update(b_lines)
                 last_idx = max(lines.index(l) for l in b_lines) if b_lines else -1
                 current_pos = last_idx + 1
             else:
                 block_lines, end_pos = [], current_pos
-                while end_pos<len(lines) and lines[end_pos] not in line_to_box_map:
+                while end_pos < len(lines) and lines[end_pos] not in line_to_box_map:
                     block_lines.append(lines[end_pos])
                     end_pos += 1
                 if block_lines:
@@ -527,40 +583,83 @@ class PDFTextExtractor:
     def _is_likely_table_header(self, line, font_size):
         """Heuristically determines if a line is a table header."""
         phrases = self.get_column_phrases_from_line(line, font_size)
-        if len(phrases) < 2:
+        num_cols = len(phrases)
+        if num_cols < 2:
             return False
         text = line.get_text().strip()
         has_dice = bool(re.search(r'\b\d+d\d+\b', text, re.I))
+
+        # Check for a high ratio of capitalized words
+        cap_words = sum(1 for p, _, _ in phrases if p and p[0].isupper())
+        cap_ratio = cap_words / num_cols if num_cols > 0 else 0
+        has_cap = cap_ratio > 0.6 and num_cols < 5
+
+        # Check for consistent bold styling
         fonts = self._get_line_fonts(line)
-        is_bold = "bold" in list(fonts)[0].lower() if len(fonts) == 1 else False
-        return has_dice or is_bold
+        is_font_consistent = len(fonts) == 1
+        is_bold = "bold" in list(fonts)[0].lower() if is_font_consistent else False
+
+        return has_dice or has_cap or is_bold
 
     def _refine_table_lines_by_header(self, lines, font_size):
-        """Refines table extent based on dice notation in the header."""
+        """Refines table extent based on header and line density heuristics."""
         if not lines:
             return []
         header_text = lines[0].get_text().strip()
         dice_match = re.search(r'(?i)(\d*)d(\d+)', header_text)
-        if not dice_match:
-            return lines
         try:
-            expected_rows = int(dice_match.group(2))
+            expected_rows = int(dice_match.group(2)) if dice_match else -1
         except (ValueError, IndexError):
-            return lines
+            expected_rows = -1
+
         phrases = self.get_column_phrases_from_line(lines[0], font_size)
         if not phrases:
             return lines
         col_x_start = phrases[0][1]
+        header_density = self._get_line_density(lines[0])
+        log_structure.debug(f"Header line density: {header_density:.2f}")
+
         table_lines = [lines[0]]
-        row_count, i = 0, 1
+        row_count = 0
+        i = 1
         while i < len(lines):
-            words = self._get_words_from_line(lines[i])
-            if words and abs(words[0][1] - col_x_start) < font_size:
-                row_count += 1
-                if row_count >= expected_rows:
-                    table_lines.append(lines[i])
+            line = lines[i]
+            words = self._get_words_from_line(line)
+
+            if not words:  # Handle empty lines
+                if expected_rows != -1 and row_count >= expected_rows:
+                    log_structure.debug("Empty line after expected rows. End table.")
                     break
-            table_lines.append(lines[i])
+                table_lines.append(line)
+                i += 1
+                continue
+
+            is_aligned = abs(words[0][1] - col_x_start) < font_size
+
+            # Termination logic for tables with expected row counts
+            if expected_rows != -1 and row_count >= expected_rows:
+                current_density = self._get_line_density(line)
+                line_phrases = self.get_column_phrases_from_line(line, font_size)
+                is_single_phrase = len(line_phrases) <= 1
+                is_dense_prose = current_density > (header_density * 1.3)
+
+                log_structure.debug(
+                    f"Checking line {i+1} for termination. "
+                    f"Density: {current_density:.2f}"
+                )
+                if is_aligned and (is_single_phrase or is_dense_prose):
+                    log_structure.debug(
+                        f"Line '{line.get_text().strip()[:50]}...' looks like "
+                        f"prose. Terminating table parsing."
+                    )
+                    break
+
+            if is_aligned:
+                row_count += 1
+                table_lines.append(line)
+            else:
+                # If not aligned, could be a multi-line cell. Append it.
+                table_lines.append(line)
             i += 1
         return table_lines
 
@@ -580,8 +679,8 @@ class PDFTextExtractor:
 
         col_boundaries, left_bound = [], table_bbox[0]
         for i in range(num_cols - 1):
-            midpoint = header_phrases[i][2] + \
-                (header_phrases[i+1][1] - header_phrases[i][2]) / 2
+            midpoint = (header_phrases[i][2] +
+                        (header_phrases[i+1][1] - header_phrases[i][2]) / 2)
             col_boundaries.append((left_bound, midpoint))
             left_bound = midpoint
         col_boundaries.append((left_bound, table_bbox[2]))
@@ -590,9 +689,10 @@ class PDFTextExtractor:
         first_col_x = header_phrases[0][1]
         for l in table_lines[1:]:
             words = self._get_words_from_line(l)
-            if words and abs(words[0][1] - first_col_x) < font_size:
-                if not any(abs(l.y1 - prev.y0)<font_size*0.5 for prev in anchor_lines):
-                    anchor_lines.append(l)
+            is_new_row = words and abs(words[0][1] - first_col_x) < font_size
+            is_close = any(abs(l.y1 - prev.y0) < font_size*0.5 for prev in anchor_lines)
+            if is_new_row and not is_close:
+                anchor_lines.append(l)
 
         row_y_boundaries = [
             (((anchor_lines[i+1].y1 - 1) if i + 1 < len(anchor_lines)
@@ -602,9 +702,10 @@ class PDFTextExtractor:
 
         grid = [[[] for _ in range(num_cols)] for _ in range(len(row_y_boundaries))]
         for r, (y_bot, y_top) in enumerate(row_y_boundaries):
-            lines_in_row = sorted([
-                l for l in table_lines if y_bot <= (l.y0 + l.y1) / 2 < y_top
-            ], key=lambda l: -l.y1)
+            lines_in_row = sorted(
+                [l for l in table_lines if y_bot <= (l.y0 + l.y1) / 2 < y_top],
+                key=lambda l: -l.y1
+            )
             for c, (x_left, x_right) in enumerate(col_boundaries):
                 cell_lines = []
                 for line in lines_in_row:
@@ -629,15 +730,15 @@ class PDFTextExtractor:
         for row in table_block.rows:
             for i, cell in enumerate(row.cells):
                 if i < table_block.num_cols:
-                    max_line = max((len(line) for line in cell.text_lines),
-                                   default=0)
-                    widths[i] = max(widths[i], max_line)
+                    max_line_len = max((len(line) for line in cell.text_lines),
+                                       default=0)
+                    widths[i] = max(widths[i], max_line_len)
         output_lines = []
         for row in table_block.rows:
-            max_lines = max((len(c.text_lines) for c in row.cells), default=0)
-            if not any(c.text_lines for c in row.cells) or max_lines == 0:
+            max_lines_in_row = max(len(c.text_lines) for c in row.cells)
+            if not any(c.text_lines for c in row.cells) or max_lines_in_row == 0:
                 continue
-            for line_idx in range(max_lines):
+            for line_idx in range(max_lines_in_row):
                 parts = []
                 for i, cell in enumerate(row.cells):
                     if i < table_block.num_cols:
@@ -659,7 +760,9 @@ class PDFTextExtractor:
             cell_texts = [cell.pre_processed_text for cell in row.cells]
             while len(cell_texts) < table_block.num_cols:
                 cell_texts.append('')
-            data_lines.append(f"| {' | '.join(cell_texts[:table_block.num_cols])} |")
+            data_lines.append(
+                f"| {' | '.join(cell_texts[:table_block.num_cols])} |"
+            )
         return [h_line, sep_line] + data_lines
 
     def _merge_multiline_titles(self, blocks):
@@ -670,13 +773,20 @@ class PDFTextExtractor:
         while i < len(blocks):
             if isinstance(blocks[i], Title):
                 title_lines = blocks[i].lines
-                while (i+1) < len(blocks) and isinstance(blocks[i+1], Title):
-                    i += 1
-                    title_lines.extend(blocks[i].lines)
-                merged_blocks.append(Title(
-                    " ".join(self.format_line_with_style(l) for l in title_lines),
-                    title_lines
-                ))
+                # Check for subsequent Title blocks that are close vertically
+                while (i + 1) < len(blocks) and isinstance(blocks[i+1], Title):
+                    prev_line = title_lines[-1]
+                    next_line = blocks[i+1].lines[0]
+                    v_dist = prev_line.y0 - next_line.y1
+                    if v_dist < self._get_font_size(prev_line) * 1.5:
+                        i += 1
+                        title_lines.extend(blocks[i].lines)
+                    else:
+                        break
+                merged_text = " ".join(
+                    self.format_line_with_style(l) for l in title_lines
+                )
+                merged_blocks.append(Title(merged_text, title_lines))
             else:
                 merged_blocks.append(blocks[i])
             i += 1
@@ -698,8 +808,9 @@ class PDFTextExtractor:
                 sections.append(sec)
 
         for page in self.page_models:
-            log_reconstruct.debug("Reconstructing from Page %d (%s)",
-                                  page.page_num, page.page_type)
+            log_reconstruct.debug(
+                "Reconstructing from Page %d (%s)", page.page_num, page.page_type
+            )
             if page.page_type != 'content':
                 finalize_section(current_section)
                 current_section = None
@@ -726,49 +837,80 @@ class PDFTextExtractor:
                                 cont += 1
                             current_section = Section(title, page.page_num)
 
-                        if isinstance(block, Title):
-                            finalize_section(current_section)
-                            log_reconstruct.debug(
-                                "Column Title: '%s'. Creating new section.",
-                                block.text
-                            )
-                            current_section = Section(block.text, page.page_num)
-                            last_title, cont = block.text, 2
-                        elif isinstance(block, BoxedNoteBlock):
-                            dangling = current_section.paragraphs.pop() if (
-                                current_section and current_section.last_paragraph
-                            ) else None
-                            finalize_section(current_section)
-                            body = [l for l in block.lines if l not in block.title_lines]
-                            note_sec = Section(block.text, page.page_num)
-                            if any(l.get_text().strip() for l in body):
-                                note_sec.add_paragraph(Paragraph(
-                                    [self.format_line_with_style(l) for l in body],
-                                    page.page_num
-                                ))
-                            sections.append(note_sec)
-                            if dangling:
-                                title = (f"{last_title} ({self._to_roman(cont)})"
-                                         if last_title else "Untitled Section")
-                                if last_title:
-                                    cont += 1
-                                current_section = Section(title, page.page_num)
-                                current_section.add_paragraph(dangling)
-                            else:
-                                current_section = None
-                        elif isinstance(block, TableBlock):
-                            current_section.add_paragraph(Paragraph(
-                                lines=self._format_table_for_display(block),
-                                page=page.page_num, is_table=True,
-                                llm_lines=self._format_table_as_markdown(block)
-                            ))
-                        elif isinstance(block, ProseBlock):
-                            self._process_prose_block(
-                                block, current_section, page.page_num,
-                                page.body_font_size
-                            )
+                        self._process_block_for_reconstruction(
+                            block, page, sections, current_section, last_title, cont
+                        )
+
         finalize_section(current_section)
         return sections
+
+    def _process_block_for_reconstruction(
+        self, block, page, sections, current_section, last_title, cont
+    ):
+        """Helper to process a single block during section building."""
+        if isinstance(block, Title):
+            # Finalize previous section and start a new one with this title
+            if current_section and current_section.paragraphs:
+                sections.append(current_section)
+            log_reconstruct.debug(
+                "Column Title found: '%s'. Creating new section.", block.text
+            )
+            current_section = Section(block.text, page.page_num)
+            last_title, cont = block.text, 2
+        elif isinstance(block, BoxedNoteBlock):
+            self._handle_boxed_note_block(
+                block, page, sections, current_section, last_title, cont
+            )
+            current_section = None # Reset current section after note
+        elif isinstance(block, TableBlock):
+            current_section.add_paragraph(Paragraph(
+                lines=self._format_table_for_display(block),
+                page=page.page_num, is_table=True,
+                llm_lines=self._format_table_as_markdown(block)
+            ))
+        elif isinstance(block, ProseBlock):
+            self._process_prose_block(
+                block, current_section, page.page_num, page.body_font_size
+            )
+
+    def _handle_boxed_note_block(
+        self, block, page, sections, current_section, last_title, cont
+    ):
+        """Creates a dedicated section for a BoxedNoteBlock."""
+        dangling_para = None
+        if current_section and current_section.last_paragraph:
+            dangling_para = current_section.paragraphs.pop()
+
+        if current_section and current_section.paragraphs:
+            sections.append(current_section)
+
+        # Create a new section specifically for the boxed note
+        note_sec = Section(block.title, page.page_num)
+
+        # Process internal blocks of the BoxedNoteBlock
+        for internal_block in block.internal_blocks:
+            if isinstance(internal_block, TableBlock):
+                note_sec.add_paragraph(Paragraph(
+                    lines=self._format_table_for_display(internal_block),
+                    page=page.page_num, is_table=True,
+                    llm_lines=self._format_table_as_markdown(internal_block)
+                ))
+            elif isinstance(internal_block, ProseBlock):
+                self._process_prose_block(
+                    internal_block, note_sec, page.page_num, page.body_font_size
+                )
+        sections.append(note_sec)
+
+        # Handle paragraph that was interrupted by the note
+        if dangling_para:
+            title = (f"{last_title} ({self._to_roman(cont)})"
+                     if last_title else "Untitled Section")
+            if last_title:
+                cont += 1
+            current_section = Section(title, page.page_num)
+            current_section.add_paragraph(dangling_para)
+        else:
+            current_section = None
 
     def _process_prose_block(self, block, section, page, font_size):
         """Splits a ProseBlock into Paragraphs and adds them to a Section."""
@@ -797,6 +939,25 @@ class PDFTextExtractor:
             words.append(("".join(word_chars), start_x, last_x))
         return words
 
+    def _get_line_density(self, line):
+        """
+        Calculates a density score for a given text line.
+        Density is roughly (sum of char widths) / (width of text bbox).
+        """
+        text_chars = [c for c in line if isinstance(c, LTChar) and c.get_text().strip()]
+        if not text_chars:
+            return 0.0
+
+        min_x = min(c.x0 for c in text_chars)
+        max_x = max(c.x1 for c in text_chars)
+        actual_text_width = max_x - min_x
+
+        if actual_text_width <= 0:
+            return 0.0
+
+        total_char_width = sum(c.width for c in text_chars)
+        return total_char_width / actual_text_width
+
     def _is_line_a_title(self, line, font_size, col_bbox):
         """Heuristically determines if a line is a title."""
         size, text = self._get_font_size(line), line.get_text().strip()
@@ -824,7 +985,8 @@ class PDFTextExtractor:
         """Heuristically finds a title within a boxed note."""
         if not lines_in_box or not "".join(l.get_text() for l in lines_in_box).strip():
             return "Note", []
-        sizes = [self._get_font_size(l) for l in lines_in_box if l.get_text().strip()]
+        sizes = [s for l in lines_in_box if l.get_text().strip()
+                 if (s := self._get_font_size(l))]
         if not sizes:
             return "Note", []
         box_font_size = Counter(sizes).most_common(1)[0][0]
@@ -839,8 +1001,10 @@ class PDFTextExtractor:
             is_bold = any("bold" in f.lower() for f in fonts)
             is_caps = text.isupper() and len(text.split()) < 7
             line_mid_x = (line.x0 + line.x1) / 2
-            is_centered = abs(line_mid_x-box_center_x) < ((box_bbox[2]-box_bbox[0])*0.25)
-            if size > box_font_size * 1.1 or is_bold or (is_caps and is_centered):
+            box_width = box_bbox[2] - box_bbox[0]
+            is_centered = abs(line_mid_x - box_center_x) < (box_width * 0.25)
+            is_larger_font = size > box_font_size * 1.1
+            if sum([is_larger_font, is_bold, is_caps, is_centered]) >= 2:
                 title_lines.append(line)
             elif title_lines:
                 break
@@ -860,7 +1024,7 @@ class PDFTextExtractor:
         """Gets the set of font names used in a given line."""
         if not hasattr(line, '_objs') or not line._objs:
             return set()
-        return set(c.fontname for c in line if isinstance(c, LTChar))
+        return {c.fontname for c in line if isinstance(c, LTChar)}
 
     def _get_page_body_font_size(self, lines, default_on_fail=True):
         """Determines the primary body font size for a list of lines."""
@@ -868,8 +1032,11 @@ class PDFTextExtractor:
             return 12 if default_on_fail else None
         sizes = [s for l in lines if (s := self._get_font_size(l)) and 6 <= s <= 30]
         if not sizes:
+            log_layout.debug("Could not determine body font size, using default.")
             return 12 if default_on_fail else None
-        return Counter(sizes).most_common(1)[0][0]
+        most_common = Counter(sizes).most_common(1)[0][0]
+        log_layout.debug("Determined page body font size: %.2f", most_common)
+        return most_common
 
     def _get_footer_threshold_dynamic(self, lines, layout, font_size):
         """Dynamically calculates the Y-coordinate for the footer."""
@@ -877,23 +1044,50 @@ class PDFTextExtractor:
         p = re.compile(r"^((page|pág\.?)\s+)?\s*-?\s*\d+\s*-?\s*$", re.I)
         cands = [
             l for l in lines if l.y0 <= limit and l.get_text().strip() and
-            (p.match(l.get_text().strip()) or self._get_font_size(l)<(font_size*0.85))
+            (p.match(l.get_text().strip()) or self._get_font_size(l) < (font_size*0.85))
         ]
         if not cands:
             return 0
-        return max(l.y1 for l in cands) + 1
+        footer_y = max(l.y1 for l in cands) + 1
+        log_layout.debug("Footer threshold set to y=%.2f", footer_y)
+        return footer_y
 
     def _detect_column_count(self, lines, layout):
         """Detects if a set of lines is in one or two columns."""
         if len(lines) < 5:
             return 1
         mid_x, leeway = layout.x0 + layout.width / 2, layout.width * 0.05
-        left = [l for l in lines if l.x1 < mid_x + leeway]
-        right = [l for l in lines if l.x0 > mid_x - leeway]
-        if not left or not right:
+        left_lines = [l for l in lines if l.x1 < mid_x + leeway]
+        right_lines = [l for l in lines if l.x0 > mid_x - leeway]
+        if not left_lines or not right_lines:
             return 1
-        if max((l.x1 for l in left), default=0) < min((l.x0 for l in right), default=9e9):
+
+        # 1. Gutter Check
+        max_left = max((l.x1 for l in left_lines), default=layout.x0)
+        min_right = min((l.x0 for l in right_lines), default=layout.x1)
+        if max_left < min_right:
+            log_layout.debug("Column check: Gutter detected. Decision: 2 columns.")
             return 2
+
+        # 2. Fallback Width Check
+        left_chars = [
+            c for l in left_lines for c in l
+            if isinstance(c, LTChar) and c.get_text().strip()
+        ]
+        right_chars = [
+            c for l in right_lines for c in l
+            if isinstance(c, LTChar) and c.get_text().strip()
+        ]
+        if not left_chars or not right_chars:
+            return 1
+        left_w = max(c.x1 for c in left_chars) - min(c.x0 for c in left_chars)
+        right_w = max(c.x1 for c in right_chars) - min(c.x0 for c in right_chars)
+
+        half_layout_w = layout.width / 2 * 1.1
+        if left_w < half_layout_w and right_w < half_layout_w:
+            log_layout.debug("Column check: Fallback width suggests 2 columns.")
+            return 2
+
         return 1
 
     def _group_lines_into_columns(self, lines, layout, num):
@@ -902,7 +1096,8 @@ class PDFTextExtractor:
             return [lines]
         cols, width = [[] for _ in range(num)], layout.width / num
         for l in lines:
-            idx = max(0, min(num - 1, int((l.x0 - layout.x0) / width)))
+            line_mid_x = (l.x0 + l.x1) / 2
+            idx = max(0, min(num - 1, int((line_mid_x - layout.x0) / width)))
             cols[idx].append(l)
         return cols
 
@@ -910,22 +1105,33 @@ class PDFTextExtractor:
         """Detects a main title at the top of a page."""
         if not lines:
             return None, []
+        sorted_lines = sorted(lines, key=lambda x: (-x.y1, x.x0))
         top_y_thresh = layout.y0 + layout.height * 0.85
-        cands = [
-            l for l in lines
+        top_candidates = [
+            l for l in sorted_lines
             if l.y0 >= top_y_thresh and self._get_font_size(l) > (font_size*1.4)
         ]
-        if not cands:
+        if not top_candidates:
             return None, []
-        title_lines = [cands[0]]
-        for i in range(1, len(cands)):
-            l, prev = cands[i], cands[i-1]
-            v_dist = (prev.y0 - l.y1)
-            h_align = abs(l.x0 - prev.x0)
-            if v_dist < (self._get_font_size(prev) * 1.5) and h_align < (layout.width*0.1):
-                title_lines.append(l)
+
+        first_title_line = top_candidates[0]
+        title_lines = [first_title_line]
+        try:
+            current_idx = sorted_lines.index(first_title_line)
+        except ValueError:
+            return None, []
+
+        # Look for subsequent lines that continue the title
+        for i in range(current_idx + 1, len(sorted_lines)):
+            line, prev = sorted_lines[i], title_lines[-1]
+            v_dist = prev.y0 - line.y1
+            h_align_ok = abs(line.x0 - prev.x0) < (layout.width * 0.2)
+            font_size_ok = self._get_font_size(line) <= self._get_font_size(prev)
+            if v_dist < (self._get_font_size(prev) * 1.5) and h_align_ok and font_size_ok:
+                title_lines.append(line)
             else:
-                break
+                break  # Stop if the chain of title-like lines is broken
+
         if title_lines:
             text = " ".join(self.format_line_with_style(l) for l in title_lines)
             return Title(text, title_lines), title_lines
