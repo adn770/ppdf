@@ -37,7 +37,8 @@ from ppdf_lib.constants import (PROMPT_PRESETS, PROMPT_ANALYZE_PROMPT,
                             PROMPT_DESCRIBE_TABLE_PURPOSE)
 from ppdf_lib.extractor import PDFTextExtractor
 from core.tts import TTSManager, PIPER_AVAILABLE
-from core.log_utils import ASCIIRenderer, RichLogFormatter, ContextFilter
+from ppdf_lib.renderer import ASCIIRenderer
+from core.log_utils import RichLogFormatter, ContextFilter, setup_logging
 
 
 # --- LOGGING SETUP ---
@@ -72,7 +73,11 @@ class Application:
     def run(self):
         """Main entry point for the application logic."""
         self.stats['start_time'] = time.monotonic()
-        self._configure_logging()
+        setup_logging(
+            level=logging.INFO if self.args.verbose else logging.WARNING,
+            color_logs=self.args.color_logs,
+            debug_topics=self.args.debug_topics
+        )
 
         try:
             self._smart_preset_override()
@@ -401,32 +406,7 @@ class Application:
             preset_name, system_prompt
         )
 
-    def _configure_logging(self):
-        """Configures logging levels and format based on arguments."""
-        level = logging.INFO if self.args.verbose else logging.WARNING
-        root_logger = logging.getLogger()
-        root_logger.setLevel(level)
-        if root_logger.hasHandlers():
-            root_logger.handlers.clear()
-        handler = logging.StreamHandler()
-        handler.setFormatter(RichLogFormatter(use_color=self.args.color_logs))
-        root_logger.addHandler(handler)
-        app_logger = logging.getLogger("ppdf")
-        app_logger.setLevel(level)
 
-        if self.args.debug_topics:
-            app_logger.setLevel(logging.INFO)
-            topics = {'layout', 'structure', 'reconstruct', 'llm', 'tts', 'tables'}
-            user_topics = [t.strip() for t in self.args.debug_topics.split(',')]
-            if 'all' in user_topics:
-                topics_to_set = topics
-            else:
-                topics_to_set = {
-                    full for u in user_topics for full in topics if full.startswith(u)
-                }
-            for topic in topics_to_set:
-                logging.getLogger(f"ppdf.{topic}").setLevel(logging.DEBUG)
-        logging.getLogger('pdfminer').setLevel(logging.WARNING)
 
     def _resolve_output_filenames(self, is_batch_run):
         """Sets default output filenames based on the input PDF name."""
