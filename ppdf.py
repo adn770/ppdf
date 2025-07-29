@@ -33,14 +33,11 @@ except ImportError as e:
     sys.exit(1)
 
 # --- Local Application Imports ---
-# Ensure the 'core' directory is in the Python path
-sys.path.append(os.path.join(os.path.dirname(__file__)))
-
-from core.constants import (PROMPT_PRESETS, PROMPT_ANALYZE_PROMPT,
+from ppdf_lib.constants import (PROMPT_PRESETS, PROMPT_ANALYZE_PROMPT,
                             PROMPT_DESCRIBE_TABLE_PURPOSE)
-from core.extractor import PDFTextExtractor
+from ppdf_lib.extractor import PDFTextExtractor
 from core.tts import TTSManager, PIPER_AVAILABLE
-from core.utils import ASCIIRenderer, RichLogFormatter, ContextFilter
+from core.log_utils import ASCIIRenderer, RichLogFormatter, ContextFilter
 
 
 # --- LOGGING SETUP ---
