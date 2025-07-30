@@ -40,8 +40,7 @@ class ASCIIRenderer:
             start_col = (self.width - len(text)) // 2
             for i, char in enumerate(text):
                 in_bounds = (
-                    0 <= self.height // 2 < self.height
-                    and 0 <= start_col + i < self.width
+                    0 <= self.height // 2 < self.height and 0 <= start_col + i < self.width
                 )
                 if in_bounds:
                     canvas[self.height // 2][start_col + i] = char
@@ -56,7 +55,11 @@ class ASCIIRenderer:
         # --- Page Title and Separator Pass ---
         if page_model.title:
             self._draw_text(
-                canvas, layout, page_model.title.lines, layout.bbox, centered=True
+                canvas,
+                layout,
+                page_model.title.lines,
+                layout.bbox,
+                centered=True,
             )
 
         # Draw structural lines (columns, table separators) over the blocks
@@ -73,9 +76,7 @@ class ASCIIRenderer:
 
         if b_class == "BoxedNoteBlock":
             self._draw_fill(canvas, layout, block.bbox, "•", clip_box)
-            self._draw_text(
-                canvas, layout, block.title_lines, block.bbox, centered=True
-            )
+            self._draw_text(canvas, layout, block.title_lines, block.bbox, centered=True)
             for internal_block in block.internal_blocks:
                 self._render_block(canvas, layout, internal_block, block.bbox)
         elif b_class == "ProseBlock":
@@ -85,9 +86,7 @@ class ASCIIRenderer:
             if block.lines:
                 h_bbox = self.extractor.compute_bbox([block.lines[0]])
                 bbox = (block.bbox[0], h_bbox[1], block.bbox[2], h_bbox[3])
-                self._draw_fill(
-                    canvas, layout, bbox, "h", clip_box, force_single_line=True
-                )
+                self._draw_fill(canvas, layout, bbox, "h", clip_box, force_single_line=True)
         elif b_class == "Title":
             self._draw_text(canvas, layout, block.lines, clip_box)
 
@@ -121,8 +120,7 @@ class ASCIIRenderer:
             parent_box = col.bbox
             for b in col.blocks:
                 is_parent = (
-                    b.__class__.__name__ == "BoxedNoteBlock"
-                    and block in b.internal_blocks
+                    b.__class__.__name__ == "BoxedNoteBlock" and block in b.internal_blocks
                 )
                 if is_parent:
                     parent_box = b.bbox
@@ -145,7 +143,10 @@ class ASCIIRenderer:
             for i in range(len(phrases) - 1):
                 midpoint = phrase_starts[i + 1] - 1
                 for r in range(max(0, b_sr), min(self.height, b_er + 1)):
-                    if b_sc <= midpoint < b_ec and canvas[r][midpoint] in ("=", "h"):
+                    if b_sc <= midpoint < b_ec and canvas[r][midpoint] in (
+                        "=",
+                        "h",
+                    ):
                         canvas[r][midpoint] = ":"
 
     def _to_grid_coords(self, page_layout, bbox, clip_box=None):
@@ -166,7 +167,13 @@ class ASCIIRenderer:
         return (sc, sr, ec, er)
 
     def _draw_fill(
-        self, canvas, page_layout, bbox, char, clip_box=None, force_single_line=False
+        self,
+        canvas,
+        page_layout,
+        bbox,
+        char,
+        clip_box=None,
+        force_single_line=False,
     ):
         """Fills a region of the canvas with a character."""
         coords = self._to_grid_coords(page_layout, bbox, clip_box)
@@ -201,7 +208,12 @@ class ASCIIRenderer:
                 start_sr = v_center - (len(lines) // 2)
                 for i, line in enumerate(lines):
                     self._draw_single_line(
-                        canvas, page_layout, line, start_sr + i, clip_box, centered
+                        canvas,
+                        page_layout,
+                        line,
+                        start_sr + i,
+                        clip_box,
+                        centered,
                     )
                 return
 
@@ -210,7 +222,12 @@ class ASCIIRenderer:
             line_coords = self._to_grid_coords(page_layout, line.bbox)
             if line_coords:
                 self._draw_single_line(
-                    canvas, page_layout, line, line_coords[1], clip_box, centered
+                    canvas,
+                    page_layout,
+                    line,
+                    line_coords[1],
+                    clip_box,
+                    centered,
                 )
 
     def _draw_single_line(self, canvas, page_layout, line, row, clip_box, centered):

@@ -53,12 +53,8 @@ def process_pdf_images(pdf_path: str, output_dir: str):
         for element in page_layout:
             if isinstance(element, LTImage):
                 image_count += 1
-                image_filename = os.path.join(
-                    output_dir, f"image_{image_count:03d}.png"
-                )
-                json_filename = os.path.join(
-                    output_dir, f"image_{image_count:03d}.json"
-                )
+                image_filename = os.path.join(output_dir, f"image_{image_count:03d}.png")
+                json_filename = os.path.join(output_dir, f"image_{image_count:03d}.json")
 
                 try:
                     image_data = element.stream.get_data()

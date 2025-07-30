@@ -3,7 +3,7 @@
 
 import argparse
 import logging
-import sys
+
 
 from core.log_utils import setup_logging
 
@@ -11,12 +11,8 @@ from core.log_utils import setup_logging
 def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description="DMme Game Driver.")
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable INFO logging."
-    )
-    parser.add_argument(
-        "--color-logs", action="store_true", help="Enable colored logging."
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable INFO logging.")
+    parser.add_argument("--color-logs", action="store_true", help="Enable colored logging.")
     parser.add_argument(
         "-d",
         "--debug",

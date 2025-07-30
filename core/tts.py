@@ -46,9 +46,7 @@ class TTSManager:
     def __init__(self, lang: str):
         self.app_log = logging.getLogger("ppdf")
         if not PIPER_AVAILABLE:
-            raise RuntimeError(
-                "TTS dependencies (piper-tts, pyaudio) are not installed."
-            )
+            raise RuntimeError("TTS dependencies (piper-tts, pyaudio) are not installed.")
 
         self.voice = self._get_piper_engine(lang)
         if not self.voice:
@@ -76,9 +74,7 @@ class TTSManager:
         )
 
         self.text_queue = queue.Queue()
-        self.processing_thread = threading.Thread(
-            target=self._process_queue, daemon=True
-        )
+        self.processing_thread = threading.Thread(target=self._process_queue, daemon=True)
         self.processing_thread.start()
         self.text_buffer = ""
 
@@ -119,9 +115,7 @@ class TTSManager:
         }
         config = MODELS_CONFIG.get(lang)
         if not config:
-            self.app_log.error(
-                "Language '%s' is not supported for speech synthesis.", lang
-            )
+            self.app_log.error("Language '%s' is not supported for speech synthesis.", lang)
             return None
 
         cache_dir = os.path.expanduser("~/.cache/ppdf/models")
@@ -141,9 +135,7 @@ class TTSManager:
                                 f.write(chunk)
                     self.app_log.info("Successfully downloaded %s", filename)
                 except requests.exceptions.RequestException as e:
-                    self.app_log.error(
-                        "Failed to download voice model component: %s", e
-                    )
+                    self.app_log.error("Failed to download voice model component: %s", e)
                     if os.path.exists(path):
                         os.remove(path)
                     return None
@@ -187,9 +179,7 @@ class TTSManager:
                     self.stream.write(audio_chunk.audio_int16_bytes)
                 self.text_queue.task_done()
             except Exception as e:
-                log_tts.error(
-                    "Fatal error in TTS processing thread, stopping TTS: %s", e
-                )
+                log_tts.error("Fatal error in TTS processing thread, stopping TTS: %s", e)
                 break
 
     def finalize(self):

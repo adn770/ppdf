@@ -39,9 +39,10 @@ from ppdf_lib.constants import (
 )
 from ppdf_lib.api import process_pdf_text
 from ppdf_lib.extractor import PDFTextExtractor
+
 from core.tts import TTSManager, PIPER_AVAILABLE
 from ppdf_lib.renderer import ASCIIRenderer
-from core.log_utils import RichLogFormatter, ContextFilter, setup_logging
+from core.log_utils import ContextFilter, setup_logging
 
 
 # --- LOGGING SETUP ---
@@ -107,9 +108,7 @@ class Application:
                 "rm_footers": self.args.remove_footers,
                 "style": self.args.keep_style,
             }
-            sections, page_models = process_pdf_text(
-                self.args.pdf_file, extraction_options
-            )
+            sections, page_models = process_pdf_text(self.args.pdf_file, extraction_options)
             self.stats["pdf_analysis_duration"] = time.monotonic() - pdf_start
             self.stats["pages_processed"] = len(page_models)
             self.stats["sections_reconstructed"] = len(sections)
@@ -140,9 +139,7 @@ class Application:
             app_log.info("--speak flag detected. Auto-selecting 'tts' preset.")
         elif self.args.rich_stream:
             self.args.prompt_preset = "creative"
-            app_log.info(
-                "--rich-stream flag detected. Auto-selecting 'creative' preset."
-            )
+            app_log.info("--rich-stream flag detected. Auto-selecting 'creative' preset.")
         else:
             self.args.prompt_preset = "strict"  # Default fallback
 
@@ -157,9 +154,7 @@ class Application:
         prefix = self.args.batch_presets
         presets_to_run = [p for p in PROMPT_PRESETS.keys() if p.startswith(prefix)]
         if not presets_to_run:
-            logging.getLogger("ppdf").error(
-                "No presets found with prefix: '%s'", prefix
-            )
+            logging.getLogger("ppdf").error("No presets found with prefix: '%s'", prefix)
             sys.exit(1)
         return presets_to_run
 
@@ -177,7 +172,9 @@ class Application:
             user_content = preset_data["prompt"]
 
             analysis_response, _ = self._query_llm_api(
-                system=PROMPT_ANALYZE_PROMPT, user=user_content, is_analysis=True
+                system=PROMPT_ANALYZE_PROMPT,
+                user=user_content,
+                is_analysis=True,
             )
 
             if analysis_response:
@@ -262,7 +259,8 @@ class Application:
 
         if is_batch_run:
             logging.getLogger("ppdf").info(
-                "\n--- Running Batch Mode: Processing with preset '%s' ---", preset_name
+                "\n--- Running Batch Mode: Processing with preset '%s' ---",
+                preset_name,
             )
             pdf_base = os.path.splitext(os.path.basename(self.args.pdf_file))[0]
             if original_output:
@@ -289,7 +287,10 @@ class Application:
 
                 llm_start = time.monotonic()
                 final_md = self._generate_output_with_llm(
-                    processed_sections, system_prompt, run_stats, produces_markdown
+                    processed_sections,
+                    system_prompt,
+                    run_stats,
+                    produces_markdown,
                 )
                 run_stats["llm_wall_duration"] = time.monotonic() - llm_start
 
@@ -307,12 +308,8 @@ class Application:
     def _initialize_tts(self):
         """Initializes the TTSManager if the --speak flag is used."""
         if not PIPER_AVAILABLE:
-            logging.warning(
-                "TTS dependencies not installed. --speak flag will be ignored."
-            )
-            logging.warning(
-                'To enable speech, run: pip install "piper-tts==1.3.0" pyaudio'
-            )
+            logging.warning("TTS dependencies not installed. --speak flag will be ignored.")
+            logging.warning('To enable speech, run: pip install "piper-tts==1.3.0" pyaudio')
             self.args.speak = None
             return
         try:
@@ -341,12 +338,9 @@ class Application:
                 if tags_resp.status_code == 200:
                     models = tags_resp.json().get("models", [])
                     names = "\n".join(
-                        f"  - {m['name']}"
-                        for m in sorted(models, key=lambda x: x["name"])
+                        f"  - {m['name']}" for m in sorted(models, key=lambda x: x["name"])
                     )
-                    app_log.error(
-                        f"Available models:\n{names if names else '  (None)'}"
-                    )
+                    app_log.error(f"Available models:\n{names if names else '  (None)'}")
                 sys.exit(1)
             response.raise_for_status()
             model_info = response.json()
@@ -434,7 +428,8 @@ class Application:
                 self.args.extracted_file = f"{pdf_base}.extracted"
         elif self.args.output_file:
             logging.getLogger("ppdf").info(
-                "Output for this run will be saved to '%s'", self.args.output_file
+                "Output for this run will be saved to '%s'",
+                self.args.output_file,
             )
 
     def _parse_page_selection(self):
@@ -452,9 +447,7 @@ class Application:
                     pages.add(int(part))
             return pages
         except ValueError:
-            logging.getLogger("ppdf").error(
-                "Invalid --pages format: %s.", self.args.pages
-            )
+            logging.getLogger("ppdf").error("Invalid --pages format: %s.", self.args.pages)
             return None
 
     def _display_dry_run_summary(self, sections):
@@ -471,7 +464,7 @@ class Application:
             for i, s in enumerate(sections):
                 title = s.title or "Untitled"
                 print(
-                    f"\nSection {i+1}:\n  Title: {title}\n"
+                    f"\nSection {i + 1}:\n  Title: {title}\n"
                     f"  Pages: {s.page_start}-{s.page_end}"
                 )
                 num_tables = sum(1 for p in s.paragraphs if p.is_table)
@@ -501,7 +494,8 @@ class Application:
                 with open(self.args.extracted_file, "w", encoding="utf-8") as f:
                     f.write("\n\n\n".join(content))
                 logging.getLogger("ppdf").info(
-                    "Raw extracted text saved to: '%s'", self.args.extracted_file
+                    "Raw extracted text saved to: '%s'",
+                    self.args.extracted_file,
                 )
             except IOError as e:
                 logging.getLogger("ppdf").error("Error saving raw text: %s", e)
@@ -541,9 +535,7 @@ class Application:
         if current_chunk_parts:
             yield "\n\n".join(current_chunk_parts)
 
-    def _generate_output_with_llm(
-        self, sections, system_prompt, run_stats, produces_markdown
-    ):
+    def _generate_output_with_llm(self, sections, system_prompt, run_stats, produces_markdown):
         """Orchestrates section-by-section, chunk-aware processing with the LLM."""
         all_markdown, agg_stats = [], {"eval_count": 0, "eval_duration": 0}
         chars_sent, chars_received = 0, 0
@@ -560,9 +552,7 @@ class Application:
             )
             section_markdown_parts = []
             section_text = section.get_llm_text()
-            chunks = list(
-                self._chunk_text_by_paragraphs(section_text, self.args.chunk_size)
-            )
+            chunks = list(self._chunk_text_by_paragraphs(section_text, self.args.chunk_size))
 
             for j, chunk_text in enumerate(chunks):
                 self.stats["chunk_sizes"].append(len(chunk_text))
@@ -609,9 +599,7 @@ class Application:
                         and j > 0
                         and response.strip().startswith(f"# {title}")
                     ):
-                        response = re.sub(
-                            rf"^# {re.escape(title)}\s*", "", response.strip()
-                        )
+                        response = re.sub(rf"^# {re.escape(title)}\s*", "", response.strip())
 
                     section_markdown_parts.append(response)
                     for key in agg_stats:
@@ -619,9 +607,7 @@ class Application:
                     chars_sent += len(system_prompt) + len(user_content)
                     chars_received += len(full_response)
                 else:
-                    err_msg = (
-                        f"\n[ERROR: Could not process chunk {j+1} " f"of section {i+1}]"
-                    )
+                    err_msg = f"\n[ERROR: Could not process chunk {j + 1} of section {i + 1}]"
                     section_markdown_parts.append(err_msg)
 
             all_markdown.append("\n\n".join(section_markdown_parts))
@@ -632,7 +618,12 @@ class Application:
         return "\n\n".join(all_markdown)
 
     def _query_llm_api(
-        self, system, user, tts_manager=None, is_analysis=False, stop_sequences=None
+        self,
+        system,
+        user,
+        tts_manager=None,
+        is_analysis=False,
+        stop_sequences=None,
     ):
         """Queries the Ollama /api/generate endpoint and streams response."""
         options = {"temperature": self.args.temperature}
@@ -650,19 +641,13 @@ class Application:
         full_content, stats = "", {}
         thought_content, is_thinking = "", False
 
-        if (
-            not is_analysis
-            and self.args.debug_topics
-            and "llm" in self.args.debug_topics
-        ):
+        if not is_analysis and self.args.debug_topics and "llm" in self.args.debug_topics:
             log_llm.debug("User content for chunk:\n%s", payload["prompt"])
             if "options" in payload:
                 log_llm.debug("API options: %s", payload["options"])
 
         try:
-            r = requests.post(
-                f"{self.args.url}/api/generate", json=payload, stream=True
-            )
+            r = requests.post(f"{self.args.url}/api/generate", json=payload, stream=True)
             r.raise_for_status()
 
             if is_analysis:
@@ -795,7 +780,10 @@ class Application:
         g_opts = parser.add_argument_group("Main Options")
         g_opts.add_argument("pdf_file", help="Path to the input PDF file.")
         g_opts.add_argument(
-            "-h", "--help", action="help", help="Show this help message and exit."
+            "-h",
+            "--help",
+            action="help",
+            help="Show this help message and exit.",
         )
 
         g_proc = parser.add_argument_group("Processing Control")
@@ -865,7 +853,7 @@ class Application:
             "--prompt-preset",
             default="auto",
             choices=preset_choices,
-            help="System prompt preset to use. (default: %(default)s)",
+            help=("System prompt preset to use. " "(default: %(default)s)"),
         )
         preset_group.add_argument(
             "--batch-presets",
@@ -922,7 +910,8 @@ class Application:
         g_out.add_argument(
             "--analyze-prompts",
             action="store_true",
-            help="Enable Stage 0 to have the LLM analyze the selected presets. (default: %(default)s)",
+            help="Enable Stage 0 to have the LLM analyze the selected presets."
+            " (default: %(default)s)",
         )
         g_out.add_argument(
             "-v",
@@ -943,14 +932,13 @@ class Application:
         return parser.parse_args(args)
 
 
-
 def main():
     """Main entry point for the script."""
     core_dir = os.path.join(os.path.dirname(__file__), "core")
     os.makedirs(core_dir, exist_ok=True)
     init_path = os.path.join(core_dir, "__init__.py")
     if not os.path.exists(init_path):
-        with open(init_path, "w") as f:
+        with open(init_path, "w") as _:  # noqa: E701
             pass
 
     # Basic logging config for early errors before full setup

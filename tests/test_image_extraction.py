@@ -1,7 +1,7 @@
 import os
 import shutil
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 from PIL import Image
 from io import BytesIO
 import pytest
@@ -60,9 +60,7 @@ def test_process_pdf_images(setup_test_environment, mocker):
 
     # Mock Image.open() and its returned instance's save method
     mock_image_instance = MagicMock()
-    mock_image_open = mocker.patch(
-        "ppdf_lib.api.Image.open", return_value=mock_image_instance
-    )
+    mock_image_open = mocker.patch("ppdf_lib.api.Image.open", return_value=mock_image_instance)
 
     process_pdf_images(pdf_path, test_dir)
 
