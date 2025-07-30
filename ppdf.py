@@ -35,6 +35,7 @@ except ImportError as e:
 # --- Local Application Imports ---
 from ppdf_lib.constants import (PROMPT_PRESETS, PROMPT_ANALYZE_PROMPT,
                             PROMPT_DESCRIBE_TABLE_PURPOSE)
+from ppdf_lib.api import process_pdf_text
 from ppdf_lib.extractor import PDFTextExtractor
 from core.tts import TTSManager, PIPER_AVAILABLE
 from ppdf_lib.renderer import ASCIIRenderer
@@ -98,9 +99,14 @@ class Application:
                 sys.exit(1)
 
             pdf_start = time.monotonic()
-            sections = self.extractor.extract_sections(pages)
+            extraction_options = {
+                'num_cols': self.args.columns,
+                'rm_footers': self.args.remove_footers,
+                'style': self.args.keep_style
+            }
+            sections, page_models = process_pdf_text(self.args.pdf_file, extraction_options)
             self.stats['pdf_analysis_duration'] = time.monotonic() - pdf_start
-            self.stats['pages_processed'] = len(self.extractor.page_models)
+            self.stats['pages_processed'] = len(page_models)
             self.stats['sections_reconstructed'] = len(sections)
 
             if not sections:
@@ -446,6 +452,7 @@ class Application:
     def _display_dry_run_summary(self, sections):
         """Prints a detailed summary of the extracted document structure."""
         print("\n--- Document Structure Summary (Dry Run) ---")
+
         print("\n--- Page Layout Analysis ---")
         renderer = ASCIIRenderer(self.extractor)
         for page in self.extractor.page_models:
@@ -727,7 +734,7 @@ class Application:
             return None, None
 
     @staticmethod
-    def parse_arguments():
+    def parse_arguments(args=None):
         """Parses command-line arguments for the script."""
         examples = [
             "\nExamples:",
@@ -839,7 +846,8 @@ class Application:
             metavar="TOPICS", help="Enable DEBUG logging (all,layout,struct,llm,tts,tables)."
         )
 
-        return parser.parse_args()
+        return parser.parse_args(args)
+
 
 def main():
     """Main entry point for the script."""
@@ -854,7 +862,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
     try:
-        args = Application.parse_arguments()
+        args = Application.parse_arguments(sys.argv[1:])
         app = Application(args)
         app.run()
     except FileNotFoundError as e:
