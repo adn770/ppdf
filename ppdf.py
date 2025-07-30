@@ -1,3 +1,4 @@
+# --- ppdf.py ---
 #!/usr/bin/env python3
 """
 ppdf: An advanced PDF text and structure extraction tool.
@@ -37,7 +38,7 @@ from ppdf_lib.constants import (
     PROMPT_ANALYZE_PROMPT,
     PROMPT_DESCRIBE_TABLE_PURPOSE,
 )
-from ppdf_lib.api import process_pdf_text
+from ppdf_lib.api import process_pdf_text, process_pdf_images
 from ppdf_lib.extractor import PDFTextExtractor
 
 from core.tts import TTSManager, PIPER_AVAILABLE
@@ -85,6 +86,19 @@ class Application:
         )
 
         try:
+            # Handle image extraction mode first, as it's an exclusive action
+            if self.args.extract_images:
+                logging.getLogger("ppdf").info(
+                    "--- Running in Image Extraction Mode ---"
+                )
+                process_pdf_images(
+                    self.args.pdf_file,
+                    self.args.extract_images,
+                    self.args.url,
+                    self.args.model,
+                )
+                return
+
             self._smart_preset_override()
             presets_to_run = self._get_presets_to_run()
 
@@ -108,7 +122,9 @@ class Application:
                 "rm_footers": self.args.remove_footers,
                 "style": self.args.keep_style,
             }
-            sections, page_models = process_pdf_text(self.args.pdf_file, extraction_options)
+            sections, page_models = process_pdf_text(
+                self.args.pdf_file, extraction_options
+            )
             self.stats["pdf_analysis_duration"] = time.monotonic() - pdf_start
             self.stats["pages_processed"] = len(page_models)
             self.stats["sections_reconstructed"] = len(sections)
@@ -139,7 +155,9 @@ class Application:
             app_log.info("--speak flag detected. Auto-selecting 'tts' preset.")
         elif self.args.rich_stream:
             self.args.prompt_preset = "creative"
-            app_log.info("--rich-stream flag detected. Auto-selecting 'creative' preset.")
+            app_log.info(
+                "--rich-stream flag detected. Auto-selecting 'creative' preset."
+            )
         else:
             self.args.prompt_preset = "strict"  # Default fallback
 
@@ -154,7 +172,9 @@ class Application:
         prefix = self.args.batch_presets
         presets_to_run = [p for p in PROMPT_PRESETS.keys() if p.startswith(prefix)]
         if not presets_to_run:
-            logging.getLogger("ppdf").error("No presets found with prefix: '%s'", prefix)
+            logging.getLogger("ppdf").error(
+                "No presets found with prefix: '%s'", prefix
+            )
             sys.exit(1)
         return presets_to_run
 
@@ -276,7 +296,9 @@ class Application:
             produces_markdown = preset_data.get("markdown_output", False)
 
             self._log_run_conditions(system_prompt, preset_name)
-            processed_sections = self._preprocess_table_summaries(sections, preset_name)
+            processed_sections = self._preprocess_table_summaries(
+                sections, preset_name
+            )
             self._save_extracted_text(processed_sections)
 
             if self.args.dry_run:
@@ -308,8 +330,12 @@ class Application:
     def _initialize_tts(self):
         """Initializes the TTSManager if the --speak flag is used."""
         if not PIPER_AVAILABLE:
-            logging.warning("TTS dependencies not installed. --speak flag will be ignored.")
-            logging.warning('To enable speech, run: pip install "piper-tts==1.3.0" pyaudio')
+            logging.warning(
+                "TTS dependencies not installed. --speak flag will be ignored."
+            )
+            logging.warning(
+                'To enable speech, run: pip install "piper-tts==1.3.0" pyaudio'
+            )
             self.args.speak = None
             return
         try:
@@ -338,9 +364,12 @@ class Application:
                 if tags_resp.status_code == 200:
                     models = tags_resp.json().get("models", [])
                     names = "\n".join(
-                        f"  - {m['name']}" for m in sorted(models, key=lambda x: x["name"])
+                        f"  - {m['name']}"
+                        for m in sorted(models, key=lambda x: x["name"])
                     )
-                    app_log.error(f"Available models:\n{names if names else '  (None)'}")
+                    app_log.error(
+                        f"Available models:\n{names if names else '  (None)'}"
+                    )
                 sys.exit(1)
             response.raise_for_status()
             model_info = response.json()
@@ -380,7 +409,7 @@ class Application:
             f"Total Execution Time: {total_dur:.1f} seconds",
             f"PDF Analysis: {pdf_analysis_dur:.1f}s ({pages} pages, {sections} sections)",
         ]
-        if not self.args.dry_run:
+        if not self.args.dry_run and not self.args.extract_images:
             llm_wall_dur = self.stats.get("llm_wall_duration", 0)
             llm_eval_count = self.stats.get("llm_eval_count", 0)
             report.extend(
@@ -447,7 +476,9 @@ class Application:
                     pages.add(int(part))
             return pages
         except ValueError:
-            logging.getLogger("ppdf").error("Invalid --pages format: %s.", self.args.pages)
+            logging.getLogger("ppdf").error(
+                "Invalid --pages format: %s.", self.args.pages
+            )
             return None
 
     def _display_dry_run_summary(self, sections):
@@ -535,7 +566,9 @@ class Application:
         if current_chunk_parts:
             yield "\n\n".join(current_chunk_parts)
 
-    def _generate_output_with_llm(self, sections, system_prompt, run_stats, produces_markdown):
+    def _generate_output_with_llm(
+        self, sections, system_prompt, run_stats, produces_markdown
+    ):
         """Orchestrates section-by-section, chunk-aware processing with the LLM."""
         all_markdown, agg_stats = [], {"eval_count": 0, "eval_duration": 0}
         chars_sent, chars_received = 0, 0
@@ -552,7 +585,9 @@ class Application:
             )
             section_markdown_parts = []
             section_text = section.get_llm_text()
-            chunks = list(self._chunk_text_by_paragraphs(section_text, self.args.chunk_size))
+            chunks = list(
+                self._chunk_text_by_paragraphs(section_text, self.args.chunk_size)
+            )
 
             for j, chunk_text in enumerate(chunks):
                 self.stats["chunk_sizes"].append(len(chunk_text))
@@ -599,7 +634,9 @@ class Application:
                         and j > 0
                         and response.strip().startswith(f"# {title}")
                     ):
-                        response = re.sub(rf"^# {re.escape(title)}\s*", "", response.strip())
+                        response = re.sub(
+                            rf"^# {re.escape(title)}\s*", "", response.strip()
+                        )
 
                     section_markdown_parts.append(response)
                     for key in agg_stats:
@@ -607,7 +644,9 @@ class Application:
                     chars_sent += len(system_prompt) + len(user_content)
                     chars_received += len(full_response)
                 else:
-                    err_msg = f"\n[ERROR: Could not process chunk {j + 1} of section {i + 1}]"
+                    err_msg = (
+                        f"\n[ERROR: Could not process chunk {j + 1} of section {i + 1}]"
+                    )
                     section_markdown_parts.append(err_msg)
 
             all_markdown.append("\n\n".join(section_markdown_parts))
@@ -641,13 +680,19 @@ class Application:
         full_content, stats = "", {}
         thought_content, is_thinking = "", False
 
-        if not is_analysis and self.args.debug_topics and "llm" in self.args.debug_topics:
+        if (
+            not is_analysis
+            and self.args.debug_topics
+            and "llm" in self.args.debug_topics
+        ):
             log_llm.debug("User content for chunk:\n%s", payload["prompt"])
             if "options" in payload:
                 log_llm.debug("API options: %s", payload["options"])
 
         try:
-            r = requests.post(f"{self.args.url}/api/generate", json=payload, stream=True)
+            r = requests.post(
+                f"{self.args.url}/api/generate", json=payload, stream=True
+            )
             r.raise_for_status()
 
             if is_analysis:
@@ -762,6 +807,7 @@ class Application:
         examples = [
             "\nExamples:",
             '  python ppdf.py document.pdf -o "output.md"',
+            '  python ppdf.py document.pdf --extract-images "assets/images/my_module"',
             "  python ppdf.py document.pdf -S en",
             "  python ppdf.py document.pdf -d llm,struct --color-logs",
         ]
@@ -884,6 +930,12 @@ class Application:
             help="Save raw extracted text. Defaults to PDF name.",
         )
         g_out.add_argument(
+            "--extract-images",
+            metavar="DIR",
+            default=None,
+            help="Extract images to a directory and exit.",
+        )
+        g_out.add_argument(
             "--rich-stream",
             action="store_true",
             help="Render live LLM output as Markdown in terminal. (default: %(default)s)",
@@ -926,7 +978,7 @@ class Application:
             const="all",
             dest="debug_topics",
             metavar="TOPICS",
-            help="Enable DEBUG logging (all,layout,struct,llm,tts,tables).",
+            help="Enable DEBUG logging (all,layout,struct,llm,tts,tables,api).",
         )
 
         return parser.parse_args(args)
