@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMme - AI Dungeon Master Engine</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>DMme</h1>
+            <div class="global-controls">
+                <button id="import-knowledge-btn">Import Knowledge Base</button>
+            </div>
+        </header>
+        <main class="main-content">
+            <div class="welcome-message">
+                <h2>Welcome to DMme</h2>
+                <p>Click "Import Knowledge Base" to get started.</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-overlay" class="modal-overlay"></div>
+
+    <div id="import-wizard-modal" class="modal modal-lg">
+        <div class="modal-header">
+            <h2>Import Knowledge Wizard</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="wizard-content">
+                <div class="wizard-pane active" data-pane="upload">
+                    <h3>Step 1: Upload & Classify</h3>
+                    <div class="form-group form-group-stretch">
+                        <label>Upload a PDF or Markdown file.</label>
+                        <div id="wizard-upload-area" class="upload-area">
+                            <p>Click to browse or drag & drop a file here.</p>
+                            <span id="wizard-upload-filename"></span>
+                        </div>
+                        <input type="file" id="wizard-upload-input" accept=".pdf,.md,.txt">
+                    </div>
+                    <div class="form-group">
+                        <label>Select Knowledge Source Type</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="kb-type" value="rules" checked> Rules</label>
+                            <label><input type="radio" name="kb-type" value="setting"> Setting</label>
+                            <label><input type="radio" name="kb-type" value="module"> Module</label>
+                            <label><input type="radio" name="kb-type" value="adapter"> Adapter</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wizard-pane" data-pane="metadata">
+                    <h3>Step 2: Enter Metadata</h3>
+                    <div class="form-group">
+                        <label for="kb-name">Knowledge Base Name</label>
+                        <input type="text" id="kb-name" placeholder="e.g., D&D 5e Core Rules">
+                    </div>
+                    <div class="form-group form-group-stretch">
+                        <label for="kb-desc">Description (Optional)</label>
+                        <textarea id="kb-desc" rows="4" placeholder="A brief summary of this knowledge base."></textarea>
+                    </div>
+                </div>
+
+                <div class="wizard-pane" data-pane="review">
+                    <h3>Step 3: Review Extracted Images</h3>
+                    <div class="placeholder-pane">
+                        <p>If your PDF contains images, a tool to review, describe, and classify them will appear here.</p>
+                        <p>This feature will be implemented in a future milestone.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="wizard-back-btn" disabled>Back</button>
+            <div class="modal-footer-spacer"></div>
+            <button id="wizard-next-btn">Next</button>
+            <button id="wizard-finish-btn" style="display: none;" class="accent-btn">Finish</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

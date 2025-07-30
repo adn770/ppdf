@@ -2,7 +2,7 @@
 import os
 import logging
 
-from flask import Flask
+from flask import Flask, send_from_directory
 from .services.storage_service import StorageService
 
 
@@ -11,24 +11,26 @@ def create_app(test_config=None):
     Creates and configures an instance of the Flask application.
     This follows the Application Factory pattern.
     """
-    app = Flask(__name__, instance_relative_config=True)
+    # Adjust the static folder to point to our new frontend directory
+    app = Flask(
+        __name__,
+        instance_relative_config=True,
+        static_folder="frontend",
+        static_url_path="",
+    )
     log = logging.getLogger("dmme.app")
 
     # --- Configuration ---
-    # Set default configuration
     app.config.from_mapping(
         SECRET_KEY="dev",  # Change for production
         DATABASE=os.path.join(app.instance_path, "dmme.db"),
     )
 
     if test_config is None:
-        # Load the instance config, if it exists, when not testing
         app.config.from_pyfile("dmme.cfg", silent=True)
     else:
-        # Load the test config if passed in
         app.config.from_mapping(test_config)
 
-    # Ensure the instance folder exists
     try:
         os.makedirs(app.instance_path, exist_ok=True)
     except OSError:
@@ -53,6 +55,11 @@ def create_app(test_config=None):
     app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
     app.register_blueprint(parties.bp, url_prefix="/api/parties")
     log.info("Registered blueprints: /api/campaigns, /api/parties")
+
+    # --- Frontend Serving ---
+    @app.route("/")
+    def serve_index():
+        return send_from_directory(app.static_folder, "index.html")
 
     @app.route("/health")
     def health_check():

@@ -1,0 +1,268 @@
+/* dmme_lib/frontend/css/style.css */
+:root {
+    --bg-color: #1a1a1a;
+    --panel-bg: #2a2a2e;
+    --border-color: #444;
+    --text-color: #e0e0e0;
+    --accent-color: #007acc;
+    --accent-hover: #0099ff;
+    --danger-color: #e53935;
+    --danger-hover: #c62828;
+    --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-family-mono: "Courier New", Courier, monospace;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-family-sans);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 16px;
+    overflow: hidden;
+}
+
+/* --- Core Layout --- */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--panel-bg);
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 24px;
+}
+
+.welcome-message {
+    text-align: center;
+    color: #888;
+}
+
+/* --- Generic Components --- */
+button {
+    background-color: #3e3e42;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+button:hover {
+    background-color: #555;
+    border-color: #666;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+button.accent-btn {
+    background-color: var(--accent-color);
+    font-weight: bold;
+}
+
+button.accent-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+/* --- Modal Styles (Inspired by Tracia) --- */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1001;
+}
+
+.modal {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    z-index: 1002;
+    width: 90%;
+}
+
+.modal-lg {
+    max-width: 800px;
+    height: 600px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0 8px;
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.modal-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.modal-footer-spacer {
+    flex-grow: 1;
+}
+
+/* --- Wizard Styles --- */
+.wizard-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.wizard-pane {
+    display: none;
+    flex-direction: column;
+    gap: 24px;
+    height: 100%;
+}
+
+.wizard-pane.active {
+    display: flex;
+}
+
+.placeholder-pane {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #888;
+    height: 100%;
+    border: 2px dashed var(--border-color);
+    border-radius: 4px;
+}
+
+/* --- Form Styles --- */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.form-group.form-group-stretch {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    background-color: #333;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.form-group textarea {
+    resize: none;
+    flex-grow: 1;
+}
+
+.radio-group {
+    display: flex;
+    gap: 24px;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 4px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    background-color: var(--bg-color);
+    transition: border-color 0.2s, background-color 0.2s;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-area:hover, .upload-area.drag-over {
+    border-color: var(--accent-color);
+}
+
+.upload-area.drag-over {
+    background-color: #333;
+}
+
+#wizard-upload-filename {
+    color: var(--accent-color);
+    margin-top: 16px;
+    font-weight: bold;
+}
+
+#wizard-upload-input {
+    display: none;
+}
