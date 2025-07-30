@@ -26,7 +26,7 @@
 
     <div id="import-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
-            <h2>Import Knowledge Wizard</h2>
+            <h2 id="wizard-title">Import Knowledge Wizard</h2>
             <button class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
@@ -66,9 +66,36 @@
 
                 <div class="wizard-pane" data-pane="review">
                     <h3>Step 3: Review Extracted Images</h3>
-                    <div class="placeholder-pane">
-                        <p>If your PDF contains images, a tool to review, describe, and classify them will appear here.</p>
-                        <p>This feature will be implemented in a future milestone.</p>
+                    <div id="image-review-ui" class="image-review-container" style="display: none;">
+                        <div class="image-viewer">
+                            <div class="image-display-area">
+                                <span id="image-review-counter"></span>
+                                <img id="review-image" src="" alt="Review Image">
+                            </div>
+                            <div class="image-nav">
+                                <button id="image-prev-btn">&lt; Prev</button>
+                                <button id="image-next-btn">Next &gt;</button>
+                            </div>
+                        </div>
+                        <div class="image-editor">
+                            <div class="form-group form-group-stretch">
+                                <label for="image-description">Description</label>
+                                <textarea id="image-description" rows="8"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Classification</label>
+                                <select id="image-classification">
+                                    <option value="art">Art</option>
+                                    <option value="map">Map</option>
+                                    <option value="decoration">Decoration</option>
+                                </select>
+                            </div>
+                            <button id="save-image-changes-btn" class="accent-btn">Save Changes</button>
+                            <div id="image-save-status"></div>
+                        </div>
+                    </div>
+                    <div id="image-review-loading" class="placeholder-pane">
+                        <p>Processing...</p>
                     </div>
                 </div>
             </div>

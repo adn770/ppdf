@@ -85,7 +85,7 @@ button.accent-btn:hover {
     background-color: var(--accent-hover);
 }
 
-/* --- Modal Styles (Inspired by Tracia) --- */
+/* --- Modal Styles --- */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -206,6 +206,7 @@ button.accent-btn:hover {
 }
 
 .form-group input[type="text"],
+.form-group select,
 .form-group textarea {
     width: 100%;
     background-color: #333;
@@ -265,4 +266,69 @@ button.accent-btn:hover {
 
 #wizard-upload-input {
     display: none;
+}
+
+/* --- Image Review UI --- */
+.image-review-container {
+    display: flex;
+    gap: 24px;
+    height: 100%;
+    width: 100%;
+}
+
+.image-viewer {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.image-display-area {
+    flex-grow: 1;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+#review-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#image-review-counter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.image-nav {
+    display: flex;
+    justify-content: space-between;
+}
+
+.image-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#save-image-changes-btn {
+    width: 100%;
+}
+
+#image-save-status {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.9em;
+    height: 1.2em;
+    color: var(--accent-color);
 }

@@ -1,11 +1,14 @@
 # --- dmme_lib/app.py ---
 import os
 import logging
+import configparser
 
 from flask import Flask, send_from_directory
 from .services.storage_service import StorageService
 from .services.vector_store_service import VectorStoreService
 from .services.ingestion_service import IngestionService
+
+ASSETS_DIR = os.path.join(os.path.expanduser("~"), ".dmme", "assets")
 
 
 def create_app(config_overrides=None):
@@ -21,17 +24,16 @@ def create_app(config_overrides=None):
     log = logging.getLogger("dmme.app")
 
     # --- Configuration ---
-    # 1. Set hardcoded safe defaults
     app.config.from_mapping(
         SECRET_KEY="dev",
         DATABASE=os.path.join(os.path.expanduser("~"), ".dmme", "dmme.db"),
         CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
+        ASSETS_PATH=ASSETS_DIR,
         OLLAMA_URL="http://localhost:11434",
         OLLAMA_MODEL="llama3.1:latest",
         EMBEDDING_MODEL="mxbai-embed-large",
     )
 
-    # 2. Apply any runtime overrides (e.g., from command line)
     if config_overrides:
         app.config.from_mapping(config_overrides)
         log.info("Applied runtime configuration overrides.")
@@ -62,10 +64,15 @@ def create_app(config_overrides=None):
     app.register_blueprint(knowledge.bp, url_prefix="/api/knowledge")
     log.info("Registered blueprints: /api/campaigns, /api/parties, /api/knowledge")
 
-    # --- Frontend Serving ---
+    # --- Static File Serving ---
     @app.route("/")
     def serve_index():
         return send_from_directory(app.static_folder, "index.html")
+
+    @app.route("/assets/<path:filename>")
+    def serve_assets(filename):
+        """Serves extracted assets like images."""
+        return send_from_directory(app.config["ASSETS_PATH"], filename)
 
     @app.route("/health")
     def health_check():
