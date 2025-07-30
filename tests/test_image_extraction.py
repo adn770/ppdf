@@ -10,6 +10,7 @@ from pdfminer.layout import LTImage
 
 from ppdf_lib.api import process_pdf_images
 
+
 @pytest.fixture
 def setup_test_environment():
     test_dir = "./test_output"
@@ -18,20 +19,23 @@ def setup_test_environment():
 
     # Create a dummy PDF file for testing
     with open(pdf_path, "w") as f:
-        f.write("%PDF-1.4\n1 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[1 0 R]>>endobj\n3 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000074 00000 n\n0000000121 00000 n\ntrailer<</Size 4/Root 3 0 R>>startxref\n168\n%%EOF")
+        f.write(
+            "%PDF-1.4\n1 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[1 0 R]>>endobj\n3 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000074 00000 n\n0000000121 00000 n\ntrailer<</Size 4/Root 3 0 R>>startxref\n168\n%%EOF"
+        )
 
     yield test_dir, pdf_path
 
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
 
+
 def test_process_pdf_images(setup_test_environment, mocker):
     test_dir, pdf_path = setup_test_environment
 
     # Create a dummy PNG image in bytes
-    dummy_img = Image.new('RGB', (1, 1), color = 'blue') # Use 1x1 for minimal data
+    dummy_img = Image.new("RGB", (1, 1), color="blue")  # Use 1x1 for minimal data
     byte_io = BytesIO()
-    dummy_img.save(byte_io, format='PNG')
+    dummy_img.save(byte_io, format="PNG")
     mock_image_data = byte_io.getvalue()
 
     # Mock LTImage object
@@ -51,13 +55,15 @@ def test_process_pdf_images(setup_test_environment, mocker):
     mock_page_layout.pageid = 1
     mock_page_layout.__iter__.return_value = [mock_lt_image]
 
-    mock_extract_pages = mocker.patch('ppdf_lib.api.extract_pages')
+    mock_extract_pages = mocker.patch("ppdf_lib.api.extract_pages")
     mock_extract_pages.return_value = [mock_page_layout]
 
     # Mock Image.open() and its returned instance's save method
     mock_image_instance = MagicMock()
-    mock_image_open = mocker.patch('ppdf_lib.api.Image.open', return_value=mock_image_instance)
-    
+    mock_image_open = mocker.patch(
+        "ppdf_lib.api.Image.open", return_value=mock_image_instance
+    )
+
     process_pdf_images(pdf_path, test_dir)
 
     # Verify Image.open was called with the correct BytesIO object
@@ -74,14 +80,10 @@ def test_process_pdf_images(setup_test_environment, mocker):
     json_file = os.path.join(test_dir, "image_001.json")
     assert os.path.exists(json_file)
 
-    with open(json_file, 'r') as f:
+    with open(json_file, "r") as f:
         metadata = json.load(f)
-        assert metadata['image_id'] == 1
-        assert metadata['page_number'] == 1
-        assert metadata['bbox'] == [10, 20, 110, 120]
-        assert metadata['description'] == "LLM_DESCRIPTION_PLACEHOLDER"
-        assert metadata['classification'] == "LLM_CLASSIFICATION_PLACEHOLDER"
-
-        
-
-
+        assert metadata["image_id"] == 1
+        assert metadata["page_number"] == 1
+        assert metadata["bbox"] == [10, 20, 110, 120]
+        assert metadata["description"] == "LLM_DESCRIPTION_PLACEHOLDER"
+        assert metadata["classification"] == "LLM_CLASSIFICATION_PLACEHOLDER"

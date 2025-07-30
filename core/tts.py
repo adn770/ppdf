@@ -19,6 +19,7 @@ import requests
 try:
     import pyaudio
     from piper import PiperVoice
+
     PIPER_AVAILABLE = True
 except ImportError:
     PIPER_AVAILABLE = False
@@ -39,7 +40,8 @@ class TTSManager:
     Raises:
         RuntimeError: If the Piper TTS engine fails to initialize.
     """
-    _SENTENCE_END = re.compile(r'(?<=[.!?])\s')
+
+    _SENTENCE_END = re.compile(r"(?<=[.!?])\s")
 
     def __init__(self, lang: str):
         self.app_log = logging.getLogger("ppdf")
@@ -55,20 +57,22 @@ class TTSManager:
         self.pyaudio_instance = pyaudio.PyAudio()
 
         # Safely get audio parameters with sensible fallbacks.
-        sample_rate = getattr(self.voice.config, 'sample_rate', 22050)
-        num_channels = getattr(self.voice.config, 'num_channels', 1)
-        sample_width = getattr(self.voice.config, 'sample_width', 2)
+        sample_rate = getattr(self.voice.config, "sample_rate", 22050)
+        num_channels = getattr(self.voice.config, "num_channels", 1)
+        sample_width = getattr(self.voice.config, "sample_width", 2)
 
         log_tts.debug(
             "Initializing PyAudio stream with: Rate=%d, Channels=%d, Width=%d",
-            sample_rate, num_channels, sample_width
+            sample_rate,
+            num_channels,
+            sample_width,
         )
 
         self.stream = self.pyaudio_instance.open(
             format=self.pyaudio_instance.get_format_from_width(sample_width),
             channels=num_channels,
             rate=sample_rate,
-            output=True
+            output=True,
         )
 
         self.text_queue = queue.Queue()
@@ -93,19 +97,25 @@ class TTSManager:
         MODELS_CONFIG = {
             "en": {
                 "model": "en_US-lessac-medium.onnx",
-                "url_base": ("https://huggingface.co/rhasspy/piper-voices"
-                             "/resolve/main/en/en_US/lessac/medium/")
+                "url_base": (
+                    "https://huggingface.co/rhasspy/piper-voices"
+                    "/resolve/main/en/en_US/lessac/medium/"
+                ),
             },
             "es": {
                 "model": "es_ES-sharvard-medium.onnx",
-                "url_base": ("https://huggingface.co/rhasspy/piper-voices"
-                             "/resolve/main/es/es_ES/sharvard/medium/")
+                "url_base": (
+                    "https://huggingface.co/rhasspy/piper-voices"
+                    "/resolve/main/es/es_ES/sharvard/medium/"
+                ),
             },
             "ca": {
                 "model": "ca_ES-upc_ona-medium.onnx",
-                "url_base": ("https://huggingface.co/rhasspy/piper-voices"
-                             "/resolve/main/ca/ca_ES/upc_ona/medium/")
-            }
+                "url_base": (
+                    "https://huggingface.co/rhasspy/piper-voices"
+                    "/resolve/main/ca/ca_ES/upc_ona/medium/"
+                ),
+            },
         }
         config = MODELS_CONFIG.get(lang)
         if not config:
@@ -121,14 +131,12 @@ class TTSManager:
             path = os.path.join(cache_dir, path_suffix)
             if not os.path.exists(path):
                 filename = os.path.basename(path)
-                self.app_log.info(
-                    "Performing one-time download for '%s'...", filename
-                )
+                self.app_log.info("Performing one-time download for '%s'...", filename)
                 try:
                     url = config["url_base"] + path_suffix
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
-                        with open(path, 'wb') as f:
+                        with open(path, "wb") as f:
                             for chunk in r.iter_content(chunk_size=8192):
                                 f.write(chunk)
                     self.app_log.info("Successfully downloaded %s", filename)
@@ -150,14 +158,14 @@ class TTSManager:
         Args:
             text (str): The text chunk to add.
         """
-        clean_text = re.sub(r'#+\s*|[\*_`]|<[^>]+>', '', text, flags=re.DOTALL)
+        clean_text = re.sub(r"#+\s*|[\*_`]|<[^>]+>", "", text, flags=re.DOTALL)
         self.text_buffer += clean_text
 
         while True:
             match = self._SENTENCE_END.search(self.text_buffer)
             if match:
-                sentence = self.text_buffer[:match.end()]
-                self.text_buffer = self.text_buffer[match.end():]
+                sentence = self.text_buffer[: match.end()]
+                self.text_buffer = self.text_buffer[match.end() :]
                 if sentence.strip():
                     log_tts.debug("Queueing sentence: '%s'", sentence.strip())
                     self.text_queue.put(sentence)
@@ -170,9 +178,7 @@ class TTSManager:
             try:
                 sentence = self.text_queue.get()
                 if sentence is None:  # Sentinel to stop the thread
-                    log_tts.debug(
-                        "Sentinel received, shutting down TTS worker thread."
-                    )
+                    log_tts.debug("Sentinel received, shutting down TTS worker thread.")
                     self.text_queue.task_done()
                     break
 
@@ -194,9 +200,7 @@ class TTSManager:
         fragments of speech are played.
         """
         if self.text_buffer.strip():
-            log_tts.debug(
-                "Queueing final buffer: '%s'", self.text_buffer.strip()
-            )
+            log_tts.debug("Queueing final buffer: '%s'", self.text_buffer.strip())
             self.text_queue.put(self.text_buffer)
             self.text_buffer = ""
 

@@ -55,8 +55,8 @@ PROMPT_CREATIVE_EXP = (
     "   a. To Proper Nouns: This includes names of characters,\n"
     "      creatures, items, spells, and game terms.\n"
     "   b. To Sub-Headers: This includes short, descriptive titles\n"
-    "      that introduce a section, such as \"Area B - The Ruined Wall:\"\n"
-    "      or \"General Features:\". Do NOT bold general\n"
+    '      that introduce a section, such as "Area B - The Ruined Wall:"\n'
+    '      or "General Features:". Do NOT bold general\n'
     "      descriptive phrases within a paragraph.\n"
     "3. Apply ITALICS: You MUST apply italics to full sentences or\n"
     "   entire paragraphs that are NOT narrative. Text is considered\n"
@@ -99,10 +99,10 @@ PROMPT_TTS = (
     "This involves merging broken text lines, fixing hyphenation, and expanding\n"
     "common abbreviations into full words for clear narration.\n\n"
     "EXAMPLES OF EXPANSION:\n"
-    "\"DC 15\" becomes \"Difficulty Class 15\".\n"
-    "\"HD 2d10\" becomes \"Hit Dice 2 d 10\".\n"
-    "\"5 gp\" becomes \"5 gold pieces\".\n"
-    "\"10' or 10 ft.\" becomes \"10 feet\".\n\n"
+    '"DC 15" becomes "Difficulty Class 15".\n'
+    '"HD 2d10" becomes "Hit Dice 2 d 10".\n'
+    '"5 gp" becomes "5 gold pieces".\n'
+    '"10\' or 10 ft." becomes "10 feet".\n\n'
     "STRICT PROHIBITIONS:\n"
     "You must not summarize, interpret, or add any commentary.\n"
     "You must not use any Markdown formatting like #, *, or |.\n"
@@ -129,8 +129,8 @@ PROMPT_DESCRIBE_TABLE_PURPOSE = (
     "EXAMPLE:\n"
     "If the text describes a d10 roll for random rumors, a good\n"
     "response would be:\n"
-    "\"A continuación, hay una tabla de rumores para determinar\n"
-    "qué información inicial tienen los jugadores.\"\n\n"
+    '"A continuación, hay una tabla de rumores para determinar\n'
+    'qué información inicial tienen los jugadores."\n\n'
     "CRITICAL RULES:\n"
     "- Do not summarize the content or rows of the table.\n"
     "- Do not describe the context paragraphs.\n"
@@ -159,30 +159,30 @@ PROMPT_PRESETS = {
         "prompt": PROMPT_STRICT,
         "desc": "Outputs clean, corrected plain text with no styling.",
         "markdown_output": False,
-        "table_summaries": False
+        "table_summaries": False,
     },
     "creative": {
         "prompt": PROMPT_CREATIVE,
         "desc": "Control preset for creative formatting.",
         "markdown_output": True,
-        "table_summaries": False
+        "table_summaries": False,
     },
     "creative-exp": {
         "prompt": PROMPT_CREATIVE_EXP,
         "desc": "Control preset for creative formatting (V1).",
         "markdown_output": True,
-        "table_summaries": False
+        "table_summaries": False,
     },
     "creative-old": {
         "prompt": PROMPT_CREATIVE_OLD,
         "desc": "Control preset for creative formatting (V2).",
         "markdown_output": True,
-        "table_summaries": False
+        "table_summaries": False,
     },
     "tts": {
         "prompt": PROMPT_TTS,
         "desc": "Outputs plain text optimized for TTS, describing table purposes.",
         "markdown_output": False,
-        "table_summaries": True
+        "table_summaries": True,
     },
 }

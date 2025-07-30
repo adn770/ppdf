@@ -12,6 +12,7 @@ This module contains:
 
 import logging
 
+
 def setup_logging(level=logging.INFO, color_logs=False, debug_topics=None):
     """Configures logging for the application."""
     root_logger = logging.getLogger()
@@ -26,9 +27,9 @@ def setup_logging(level=logging.INFO, color_logs=False, debug_topics=None):
 
     if debug_topics:
         app_logger.setLevel(logging.INFO)
-        topics = {'layout', 'structure', 'reconstruct', 'llm', 'tts', 'tables'}
-        user_topics = [t.strip() for t in debug_topics.split(',')]
-        if 'all' in user_topics:
+        topics = {"layout", "structure", "reconstruct", "llm", "tts", "tables"}
+        user_topics = [t.strip() for t in debug_topics.split(",")]
+        if "all" in user_topics:
             topics_to_set = topics
         else:
             topics_to_set = {
@@ -36,13 +37,14 @@ def setup_logging(level=logging.INFO, color_logs=False, debug_topics=None):
             }
         for topic in topics_to_set:
             logging.getLogger(f"ppdf.{topic}").setLevel(logging.DEBUG)
-    logging.getLogger('pdfminer').setLevel(logging.WARNING)
+    logging.getLogger("pdfminer").setLevel(logging.WARNING)
 
 
 class ContextFilter(logging.Filter):
     """
     A logging filter that injects contextual information into log records.
     """
+
     def __init__(self, context_str=""):
         super().__init__()
         self.context_str = context_str
@@ -69,23 +71,27 @@ class RichLogFormatter(logging.Formatter):
         if use_color:
             # ANSI escape codes for 256-color terminal
             self.COLORS = {
-                logging.DEBUG:    '\033[38;5;252m',  # Light Grey
-                logging.INFO:     '\033[38;5;111m',  # Pastel Blue
-                logging.WARNING:  '\033[38;5;229m',  # Pale Yellow
-                logging.ERROR:    '\033[38;5;210m',  # Soft Red
-                logging.CRITICAL: '\033[38;5;217m',  # Light Magenta
+                logging.DEBUG: "\033[38;5;252m",  # Light Grey
+                logging.INFO: "\033[38;5;111m",  # Pastel Blue
+                logging.WARNING: "\033[38;5;229m",  # Pale Yellow
+                logging.ERROR: "\033[38;5;210m",  # Soft Red
+                logging.CRITICAL: "\033[38;5;217m",  # Light Magenta
             }
-            self.BOLD = '\033[1m'
-            self.RESET = '\033[0m'
+            self.BOLD = "\033[1m"
+            self.RESET = "\033[0m"
         else:
             self.COLORS = {
-                level: '' for level in [
-                    logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
-                    logging.CRITICAL
+                level: ""
+                for level in [
+                    logging.DEBUG,
+                    logging.INFO,
+                    logging.WARNING,
+                    logging.ERROR,
+                    logging.CRITICAL,
                 ]
             }
-            self.BOLD = ''
-            self.RESET = ''
+            self.BOLD = ""
+            self.RESET = ""
 
     def format(self, record):
         """Formats a log record into a colored, aligned string.
@@ -101,16 +107,15 @@ class RichLogFormatter(logging.Formatter):
         """
         color = self.COLORS.get(record.levelno, self.RESET)
         level_name = record.levelname[:5]
-        topic = record.name.split('.')[-1][:5]
+        topic = record.name.split(".")[-1][:5]
 
-        has_ctx = hasattr(record, 'context') and record.context
+        has_ctx = hasattr(record, "context") and record.context
         context_str = f"[{getattr(record, 'context', '')}]" if has_ctx else ""
 
-        prefix = (f"{color}{level_name:<5}{self.RESET}:"
-                  f"{self.BOLD}{topic:<5}{self.RESET}{context_str}: ")
+        prefix = (
+            f"{color}{level_name:<5}{self.RESET}:"
+            f"{self.BOLD}{topic:<5}{self.RESET}{context_str}: "
+        )
         message = record.getMessage()
-        lines = message.split('\n')
+        lines = message.split("\n")
         return "\n".join([f"{prefix}{line}" for line in lines])
-
-
-

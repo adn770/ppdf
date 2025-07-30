@@ -3,6 +3,7 @@
 ppdf_lib/renderer.py: Provides the ASCIIRenderer class.
 """
 
+
 class ASCIIRenderer:
     """Renders an ASCII art diagram of a PageModel for debugging.
 
@@ -16,6 +17,7 @@ class ASCIIRenderer:
         width (int): The width of the ASCII canvas.
         height (int): The height of the ASCII canvas.
     """
+
     def __init__(self, extractor, width=80, height=50):
         self.extractor = extractor
         self.width = width
@@ -30,18 +32,20 @@ class ASCIIRenderer:
         Returns:
             str: The ASCII art representation of the page layout.
         """
-        canvas = [['.' for _ in range(self.width)] for _ in range(self.height)]
+        canvas = [["." for _ in range(self.width)] for _ in range(self.height)]
         layout = page_model.page_layout
 
-        if page_model.page_type != 'content':
+        if page_model.page_type != "content":
             text = f"--- SKIPPED ({page_model.page_type.upper()}) ---"
             start_col = (self.width - len(text)) // 2
             for i, char in enumerate(text):
-                in_bounds = (0 <= self.height // 2 < self.height and
-                             0 <= start_col + i < self.width)
+                in_bounds = (
+                    0 <= self.height // 2 < self.height
+                    and 0 <= start_col + i < self.width
+                )
                 if in_bounds:
                     canvas[self.height // 2][start_col + i] = char
-            return '\n'.join(''.join(row) for row in canvas) + '\n'
+            return "\n".join("".join(row) for row in canvas) + "\n"
 
         # --- Block Rendering Pass ---
         for zone in page_model.zones:
@@ -61,30 +65,30 @@ class ASCIIRenderer:
             for col in zone.columns:
                 self._draw_table_separators(canvas, layout, page_model, col)
 
-        return '\n'.join(''.join(row) for row in canvas) + '\n'
+        return "\n".join("".join(row) for row in canvas) + "\n"
 
     def _render_block(self, canvas, layout, block, clip_box):
         """Recursively renders a block and its children."""
         b_class = block.__class__.__name__
 
-        if b_class == 'BoxedNoteBlock':
-            self._draw_fill(canvas, layout, block.bbox, '•', clip_box)
+        if b_class == "BoxedNoteBlock":
+            self._draw_fill(canvas, layout, block.bbox, "•", clip_box)
             self._draw_text(
                 canvas, layout, block.title_lines, block.bbox, centered=True
             )
             for internal_block in block.internal_blocks:
                 self._render_block(canvas, layout, internal_block, block.bbox)
-        elif b_class == 'ProseBlock':
-            self._draw_fill(canvas, layout, block.bbox, 'a', clip_box)
-        elif b_class == 'TableBlock':
-            self._draw_fill(canvas, layout, block.bbox, '=', clip_box)
+        elif b_class == "ProseBlock":
+            self._draw_fill(canvas, layout, block.bbox, "a", clip_box)
+        elif b_class == "TableBlock":
+            self._draw_fill(canvas, layout, block.bbox, "=", clip_box)
             if block.lines:
                 h_bbox = self.extractor.compute_bbox([block.lines[0]])
                 bbox = (block.bbox[0], h_bbox[1], block.bbox[2], h_bbox[3])
                 self._draw_fill(
-                    canvas, layout, bbox, 'h', clip_box, force_single_line=True
+                    canvas, layout, bbox, "h", clip_box, force_single_line=True
                 )
-        elif b_class == 'Title':
+        elif b_class == "Title":
             self._draw_text(canvas, layout, block.lines, clip_box)
 
     def _draw_zone_separators(self, canvas, layout, zone):
@@ -101,23 +105,25 @@ class ASCIIRenderer:
             if 0 < sep_c < self.width:
                 for r in range(z_sr, z_er + 1):
                     if 0 <= r < self.height:
-                        canvas[r][sep_c] = '|'
+                        canvas[r][sep_c] = "|"
 
     def _draw_table_separators(self, canvas, layout, page_model, col):
         """Draws vertical separators inside tables."""
         blocks_to_check = list(col.blocks)
         for block in col.blocks:
-            if block.__class__.__name__ == 'BoxedNoteBlock':
+            if block.__class__.__name__ == "BoxedNoteBlock":
                 blocks_to_check.extend(block.internal_blocks)
 
         for block in blocks_to_check:
-            if block.__class__.__name__ != 'TableBlock' or not block.lines:
+            if block.__class__.__name__ != "TableBlock" or not block.lines:
                 continue
 
             parent_box = col.bbox
             for b in col.blocks:
-                is_parent = (b.__class__.__name__ == 'BoxedNoteBlock' and
-                             block in b.internal_blocks)
+                is_parent = (
+                    b.__class__.__name__ == "BoxedNoteBlock"
+                    and block in b.internal_blocks
+                )
                 if is_parent:
                     parent_box = b.bbox
                     break
@@ -137,10 +143,10 @@ class ASCIIRenderer:
                 phrase_starts.append(b_sc + int(rel_start * col_width_on_canvas))
 
             for i in range(len(phrases) - 1):
-                midpoint = phrase_starts[i+1] - 1
+                midpoint = phrase_starts[i + 1] - 1
                 for r in range(max(0, b_sr), min(self.height, b_er + 1)):
-                    if b_sc <= midpoint < b_ec and canvas[r][midpoint] in ('=', 'h'):
-                        canvas[r][midpoint] = ':'
+                    if b_sc <= midpoint < b_ec and canvas[r][midpoint] in ("=", "h"):
+                        canvas[r][midpoint] = ":"
 
     def _to_grid_coords(self, page_layout, bbox, clip_box=None):
         """Converts a PDF bounding box to canvas grid coordinates."""
@@ -159,8 +165,9 @@ class ASCIIRenderer:
         er = int((page_layout.y1 - y0) / page_layout.height * self.height)
         return (sc, sr, ec, er)
 
-    def _draw_fill(self, canvas, page_layout, bbox, char, clip_box=None,
-                   force_single_line=False):
+    def _draw_fill(
+        self, canvas, page_layout, bbox, char, clip_box=None, force_single_line=False
+    ):
         """Fills a region of the canvas with a character."""
         coords = self._to_grid_coords(page_layout, bbox, clip_box)
         if not coords:
@@ -173,8 +180,15 @@ class ASCIIRenderer:
                 if 0 <= r < self.height and 0 <= c < self.width:
                     canvas[r][c] = char
 
-    def _draw_text(self, canvas, page_layout, lines, clip_box=None,
-                   centered=False, v_centered=False):
+    def _draw_text(
+        self,
+        canvas,
+        page_layout,
+        lines,
+        clip_box=None,
+        centered=False,
+        v_centered=False,
+    ):
         """Draws text onto the canvas, respecting clip_box boundaries."""
         if not lines:
             return
