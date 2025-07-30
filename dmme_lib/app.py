@@ -48,9 +48,11 @@ def create_app(test_config=None):
 
     # --- Register Blueprints (APIs) ---
     log.info("Registering API blueprints...")
-    # Example:
-    # from .api import campaigns
-    # app.register_blueprint(campaigns.bp)
+    from .api import campaigns, parties
+
+    app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
+    app.register_blueprint(parties.bp, url_prefix="/api/parties")
+    log.info("Registered blueprints: /api/campaigns, /api/parties")
 
     @app.route("/health")
     def health_check():

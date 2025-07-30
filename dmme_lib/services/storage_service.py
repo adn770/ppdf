@@ -1,6 +1,7 @@
 # --- dmme_lib/services/storage_service.py ---
 import sqlite3
 import logging
+from datetime import datetime
 
 log = logging.getLogger("dmme.storage")
 
@@ -51,6 +52,7 @@ class StorageService:
         finally:
             conn.close()
 
+    # --- Schema Creation ---
     def _create_campaigns_table(self, conn: sqlite3.Connection):
         conn.execute(
             """
@@ -107,3 +109,71 @@ class StorageService:
             );
             """
         )
+
+    # --- Campaign CRUD Methods ---
+    def get_all_campaigns(self):
+        with self._get_connection() as conn:
+            return conn.execute("SELECT * FROM campaigns ORDER BY updated_at DESC;").fetchall()
+
+    def get_campaign(self, campaign_id: int):
+        with self._get_connection() as conn:
+            return conn.execute(
+                "SELECT * FROM campaigns WHERE id = ?;", (campaign_id,)
+            ).fetchone()
+
+    def create_campaign(self, name: str, description: str = ""):
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "INSERT INTO campaigns (name, description) VALUES (?, ?);", (name, description)
+            )
+            return cursor.lastrowid
+
+    def update_campaign(self, campaign_id: int, name: str, description: str):
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE campaigns SET name = ?, description = ?, updated_at = ? WHERE id = ?;",
+                (name, description, now, campaign_id),
+            )
+            return cursor.rowcount > 0
+
+    def delete_campaign(self, campaign_id: int):
+        with self._get_connection() as conn:
+            cursor = conn.execute("DELETE FROM campaigns WHERE id = ?;", (campaign_id,))
+            return cursor.rowcount > 0
+
+    # --- Party CRUD Methods ---
+    def get_all_parties(self):
+        with self._get_connection() as conn:
+            return conn.execute("SELECT * FROM parties ORDER BY updated_at DESC;").fetchall()
+
+    def get_party(self, party_id: int):
+        with self._get_connection() as conn:
+            return conn.execute("SELECT * FROM parties WHERE id = ?;", (party_id,)).fetchone()
+
+    def create_party(self, name: str):
+        with self._get_connection() as conn:
+            try:
+                cursor = conn.execute("INSERT INTO parties (name) VALUES (?);", (name,))
+                return cursor.lastrowid
+            except sqlite3.IntegrityError:
+                log.warning("Attempted to create a party with a non-unique name: %s", name)
+                return None
+
+    def update_party(self, party_id: int, name: str):
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            try:
+                cursor = conn.execute(
+                    "UPDATE parties SET name = ?, updated_at = ? WHERE id = ?;",
+                    (name, now, party_id),
+                )
+                return cursor.rowcount > 0
+            except sqlite3.IntegrityError:
+                log.warning("Attempted to update a party to a non-unique name: %s", name)
+                return False
+
+    def delete_party(self, party_id: int):
+        with self._get_connection() as conn:
+            cursor = conn.execute("DELETE FROM parties WHERE id = ?;", (party_id,))
+            return cursor.rowcount > 0
