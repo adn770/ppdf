@@ -4,3 +4,5 @@ __pycache__/
 .DS_Store
 GEMINI.md
 docs/*.txt
+docs/*.pdf
+temp_commit_message.txt
