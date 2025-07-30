@@ -1,5 +1,7 @@
 # --- dmme_lib/api/knowledge.py ---
 import json
+import os
+import tempfile
 from flask import Blueprint, request, jsonify, current_app
 
 bp = Blueprint("knowledge", __name__)
@@ -9,6 +11,7 @@ bp = Blueprint("knowledge", __name__)
 def import_knowledge():
     """
     Handles the file upload and metadata for knowledge base ingestion.
+    Supports both Markdown and PDF files.
     """
     if "file" not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
@@ -25,19 +28,28 @@ def import_knowledge():
         metadata = json.loads(metadata_str)
         metadata["filename"] = file.filename
 
-        # For this milestone, we only handle Markdown
-        if not file.filename.lower().endswith(".md"):
+        filename_lower = file.filename.lower()
+
+        if filename_lower.endswith(".md"):
+            file_content = file.read().decode("utf-8")
+            current_app.ingestion_service.ingest_markdown(file_content, metadata)
+
+        elif filename_lower.endswith(".pdf"):
+            # The ppdf library requires a file path, so we save to a temp file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            try:
+                current_app.ingestion_service.ingest_pdf(tmp_path, metadata)
+            finally:
+                # Ensure the temporary file is always cleaned up
+                os.remove(tmp_path)
+        else:
             return (
-                jsonify(
-                    {"error": "Only Markdown (.md) files are supported in this milestone."}
-                ),
+                jsonify({"error": "Unsupported file type. Please upload a .md or .pdf file."}),
                 400,
             )
-
-        file_content = file.read().decode("utf-8")
-
-        # Delegate to the IngestionService
-        current_app.ingestion_service.ingest_markdown(file_content, metadata)
 
         return (
             jsonify(
