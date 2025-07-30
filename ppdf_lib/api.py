@@ -14,33 +14,12 @@ from .extractor import PDFTextExtractor, Section
 from .constants import (
     PROMPT_DESCRIBE_IMAGE,
     PROMPT_CLASSIFY_IMAGE,
-    PROMPT_SEMANTIC_LABELER,
 )
 
+# Refactored to use the new shared utility
+from dmme_lib.utils.llm_utils import get_semantic_label
+
 log = logging.getLogger("ppdf.api")
-
-
-def _query_text_llm(prompt: str, user_content: str, ollama_url: str, model: str) -> str:
-    """Sends a standard text prompt to an Ollama model."""
-    try:
-        log.debug("Querying text LLM '%s'...", model)
-        response = requests.post(
-            f"{ollama_url}/api/generate",
-            json={
-                "model": model,
-                "system": prompt,
-                "prompt": user_content,
-                "stream": False,
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
-        data = response.json()
-        log.debug("LLM response received: %s", data.get("response", "").strip())
-        return data.get("response", "").strip()
-    except requests.exceptions.RequestException as e:
-        log.error("Failed to query text LLM: %s", e)
-        return ""
 
 
 def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, model: str) -> str:
@@ -61,7 +40,7 @@ def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, mode
                 "images": [encoded_image],
                 "stream": False,
             },
-            timeout=90,  # Increased timeout for potentially slow vision models
+            timeout=90,
         )
         response.raise_for_status()
         data = response.json()
@@ -77,16 +56,6 @@ def process_pdf_text(
 ) -> tuple[list[Section], list]:
     """
     Processes a PDF file to extract and reconstruct structured text.
-
-    Args:
-        pdf_path (str): The absolute path to the PDF file.
-        options (dict): A dictionary of options for PDFTextExtractor.
-        ollama_url (str): The URL of the Ollama API server.
-        model (str): The name of the LLM model to use for labeling.
-        apply_labeling (bool): If True, applies semantic labels to paragraphs.
-    Returns:
-        tuple[list[Section], list]: A tuple containing a list of Section objects
-                                    and a list of PageModel objects.
     """
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
@@ -103,7 +72,6 @@ def process_pdf_text(
         log.info("--- Stage 4: Applying Semantic Labels ---")
         for section in sections:
             for p_idx, para in enumerate(section.paragraphs):
-                # Don't label tables or very short paragraphs
                 if para.is_table or len(para.get_text()) < 50:
                     continue
 
@@ -112,11 +80,10 @@ def process_pdf_text(
                     p_idx + 1,
                     section.title or "Untitled",
                 )
-                label = _query_text_llm(
-                    PROMPT_SEMANTIC_LABELER, para.get_text(), ollama_url, model
-                )
+                # Updated to use refactored function
+                label = get_semantic_label(para.get_text(), ollama_url, model)
                 if label:
-                    para.labels = [lab.strip() for lab in label.split(",")]
+                    para.labels = [label]
 
     return sections, extractor.page_models
 
@@ -124,13 +91,6 @@ def process_pdf_text(
 def process_pdf_images(pdf_path: str, output_dir: str, ollama_url: str, model: str):
     """
     Processes a PDF file to extract images and their metadata.
-
-    Args:
-        pdf_path (str): The absolute path to the PDF file.
-        output_dir (str): The directory where extracted images and JSON metadata
-                          will be saved.
-        ollama_url (str): The URL of the Ollama API server.
-        model (str): The name of the multimodal model to use.
     """
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
@@ -148,7 +108,6 @@ def process_pdf_images(pdf_path: str, output_dir: str, ollama_url: str, model: s
                 try:
                     image_data = element.stream.get_data()
                     img = Image.open(BytesIO(image_data))
-                    # Convert to RGB if it has an alpha channel, common for PNGs
                     if img.mode in ("RGBA", "P"):
                         img = img.convert("RGB")
                     img.save(image_filename, "PNG")
@@ -157,25 +116,18 @@ def process_pdf_images(pdf_path: str, output_dir: str, ollama_url: str, model: s
                     log.error("Could not save image %s: %s. Skipping.", image_filename, e)
                     continue
 
-                # Read back the saved image bytes for the LLM call
                 with open(image_filename, "rb") as f:
                     saved_image_bytes = f.read()
 
-                # Get description from LLM
                 description = _query_multimodal_llm(
                     PROMPT_DESCRIBE_IMAGE, saved_image_bytes, ollama_url, model
                 )
-
-                # Get classification from LLM
                 classification = _query_multimodal_llm(
                     PROMPT_CLASSIFY_IMAGE, saved_image_bytes, ollama_url, model
                 )
                 valid_cats = {"art", "map", "decoration"}
                 if classification not in valid_cats:
-                    log.warning(
-                        "LLM classification '%s' is invalid. Defaulting to 'art'.",
-                        classification,
-                    )
+                    log.warning("LLM classification invalid. Defaulting to 'art'.")
                     classification = "art"
 
                 metadata = {

@@ -4,14 +4,14 @@ import logging
 
 from flask import Flask, send_from_directory
 from .services.storage_service import StorageService
+from .services.vector_store_service import VectorStoreService
+from .services.ingestion_service import IngestionService
 
 
-def create_app(test_config=None):
+def create_app(config_overrides=None):
     """
     Creates and configures an instance of the Flask application.
-    This follows the Application Factory pattern.
     """
-    # Adjust the static folder to point to our new frontend directory
     app = Flask(
         __name__,
         instance_relative_config=True,
@@ -21,40 +21,46 @@ def create_app(test_config=None):
     log = logging.getLogger("dmme.app")
 
     # --- Configuration ---
+    # 1. Set hardcoded safe defaults
     app.config.from_mapping(
-        SECRET_KEY="dev",  # Change for production
-        DATABASE=os.path.join(app.instance_path, "dmme.db"),
+        SECRET_KEY="dev",
+        DATABASE=os.path.join(os.path.expanduser("~"), ".dmme", "dmme.db"),
+        CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
+        OLLAMA_URL="http://localhost:11434",
+        OLLAMA_MODEL="llama3.1:latest",
+        EMBEDDING_MODEL="mxbai-embed-large",
     )
 
-    if test_config is None:
-        app.config.from_pyfile("dmme.cfg", silent=True)
-    else:
-        app.config.from_mapping(test_config)
-
-    try:
-        os.makedirs(app.instance_path, exist_ok=True)
-    except OSError:
-        pass
+    # 2. Apply any runtime overrides (e.g., from command line)
+    if config_overrides:
+        app.config.from_mapping(config_overrides)
+        log.info("Applied runtime configuration overrides.")
 
     # --- Initialize Services ---
     log.info("Initializing application services...")
     try:
-        storage = StorageService(app.config["DATABASE"])
+        app.storage = StorageService(app.config["DATABASE"])
+        app.vector_store = VectorStoreService(
+            app.config["CHROMA_PATH"], app.config["OLLAMA_URL"], app.config["EMBEDDING_MODEL"]
+        )
+        app.ingestion_service = IngestionService(
+            app.vector_store, app.config["OLLAMA_URL"], app.config["OLLAMA_MODEL"]
+        )
         with app.app_context():
-            storage.init_db()
-        app.storage = storage
-        log.info("StorageService initialized successfully.")
+            app.storage.init_db()
+        log.info("All services initialized successfully.")
     except Exception as e:
-        log.error("Failed to initialize StorageService: %s", e, exc_info=True)
+        log.error("Failed to initialize services: %s", e, exc_info=True)
         raise
 
     # --- Register Blueprints (APIs) ---
     log.info("Registering API blueprints...")
-    from .api import campaigns, parties
+    from .api import campaigns, parties, knowledge
 
     app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
     app.register_blueprint(parties.bp, url_prefix="/api/parties")
-    log.info("Registered blueprints: /api/campaigns, /api/parties")
+    app.register_blueprint(knowledge.bp, url_prefix="/api/knowledge")
+    log.info("Registered blueprints: /api/campaigns, /api/parties, /api/knowledge")
 
     # --- Frontend Serving ---
     @app.route("/")
