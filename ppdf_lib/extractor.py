@@ -438,8 +438,10 @@ class PDFTextExtractor:
         if not self.remove_footers:
             content_lines = list(all_lines)
 
+        page_level_cols = self._detect_page_level_column_count(content_lines, layout)
+
         page.title, title_lines = self._detect_page_title(
-            content_lines, layout, page.body_font_size
+            content_lines, layout, page.body_font_size, page_level_cols
         )
         content_lines = [l for l in content_lines if l not in title_lines]
 
@@ -837,7 +839,7 @@ class PDFTextExtractor:
                                 cont += 1
                             current_section = Section(title, page.page_num)
 
-                        self._process_block_for_reconstruction(
+                        current_section, last_title, cont = self._process_block_for_reconstruction(
                             block, page, sections, current_section, last_title, cont
                         )
 
@@ -858,10 +860,9 @@ class PDFTextExtractor:
             current_section = Section(block.text, page.page_num)
             last_title, cont = block.text, 2
         elif isinstance(block, BoxedNoteBlock):
-            self._handle_boxed_note_block(
+            current_section, last_title, cont = self._handle_boxed_note_block(
                 block, page, sections, current_section, last_title, cont
             )
-            current_section = None # Reset current section after note
         elif isinstance(block, TableBlock):
             current_section.add_paragraph(Paragraph(
                 lines=self._format_table_for_display(block),
@@ -872,6 +873,7 @@ class PDFTextExtractor:
             self._process_prose_block(
                 block, current_section, page.page_num, page.body_font_size
             )
+        return current_section, last_title, cont
 
     def _handle_boxed_note_block(
         self, block, page, sections, current_section, last_title, cont
@@ -911,6 +913,7 @@ class PDFTextExtractor:
             current_section.add_paragraph(dangling_para)
         else:
             current_section = None
+        return current_section, last_title, cont
 
     def _process_prose_block(self, block, section, page, font_size):
         """Splits a ProseBlock into Paragraphs and adds them to a Section."""
@@ -1052,6 +1055,23 @@ class PDFTextExtractor:
         log_layout.debug("Footer threshold set to y=%.2f", footer_y)
         return footer_y
 
+    def _detect_page_level_column_count(self, lines, layout):
+        """Detects if a set of lines is in one or two columns, for page-level analysis."""
+        if len(lines) < 5:
+            return 1
+        mid_x, leeway = layout.x0 + layout.width / 2, layout.width * 0.05
+        left_lines = [l for l in lines if l.x1 < mid_x + leeway]
+        right_lines = [l for l in lines if l.x0 > mid_x - leeway]
+        if not left_lines or not right_lines:
+            return 1
+
+        # Gutter Check
+        max_left = max((l.x1 for l in left_lines), default=layout.x0)
+        min_right = min((l.x0 for l in right_lines), default=layout.x1)
+        if max_left < min_right:
+            return 2
+        return 1
+
     def _detect_column_count(self, lines, layout):
         """Detects if a set of lines is in one or two columns."""
         if len(lines) < 5:
@@ -1101,16 +1121,23 @@ class PDFTextExtractor:
             cols[idx].append(l)
         return cols
 
-    def _detect_page_title(self, lines, layout, font_size):
+    def _detect_page_title(self, lines, layout, font_size, page_level_cols):
         """Detects a main title at the top of a page."""
         if not lines:
             return None, []
         sorted_lines = sorted(lines, key=lambda x: (-x.y1, x.x0))
         top_y_thresh = layout.y0 + layout.height * 0.85
-        top_candidates = [
-            l for l in sorted_lines
-            if l.y0 >= top_y_thresh and self._get_font_size(l) > (font_size*1.4)
-        ]
+        top_candidates = []
+        for l in sorted_lines:
+            if l.y0 < top_y_thresh:
+                continue
+            if self._get_font_size(l) <= (font_size * 1.4):
+                continue
+            # If multi-column, title must span a significant portion of the page width
+            if page_level_cols > 1 and l.width < (layout.width * 0.4):
+                continue
+            top_candidates.append(l)
+
         if not top_candidates:
             return None, []
 
@@ -1126,11 +1153,19 @@ class PDFTextExtractor:
             line, prev = sorted_lines[i], title_lines[-1]
             v_dist = prev.y0 - line.y1
             h_align_ok = abs(line.x0 - prev.x0) < (layout.width * 0.2)
-            font_size_ok = self._get_font_size(line) <= self._get_font_size(prev)
-            if v_dist < (self._get_font_size(prev) * 1.5) and h_align_ok and font_size_ok:
+
+            # Case 1: Continuation of the same title (font size is nearly identical)
+            same_level = abs(self._get_font_size(line) - self._get_font_size(prev)) < 0.1
+
+            # Case 2: A subtitle or byline (font is smaller, text is shorter)
+            is_subtitle = (self._get_font_size(line) < self._get_font_size(prev) and
+                           len(line.get_text()) < len(prev.get_text()) * 0.9 and
+                           not line.get_text().strip().endswith('.'))
+
+            if v_dist < (self._get_font_size(prev) * 1.5) and h_align_ok and (same_level or is_subtitle):
                 title_lines.append(line)
             else:
-                break  # Stop if the chain of title-like lines is broken
+                break
 
         if title_lines:
             text = " ".join(self.format_line_with_style(l) for l in title_lines)
