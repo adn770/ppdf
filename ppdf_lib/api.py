@@ -55,23 +55,14 @@ def process_pdf_images(pdf_path: str, output_dir: str):
                 image_filename = os.path.join(output_dir, f"image_{image_count:03d}.png")
                 json_filename = os.path.join(output_dir, f"image_{image_count:03d}.json")
 
-                # Save image data (placeholder for actual image extraction)
-                # pdfminer.six LTImage objects don't directly expose raw image data easily.
-                # This would typically involve more complex handling of PDF stream objects.
-                # For now, we'll create a dummy image or note this limitation.
                 try:
-                    # Attempt to get image data if available (e.g., from PDFStream)
-                    # This part is highly dependent on how pdfminer.six exposes image data.
-                    # A more robust solution might involve iterating through page.get_images()
-                    # and using PIL to save.
-                    # For a basic implementation, we'll create a placeholder image.
-                    img = Image.new('RGB', (element.width, element.height), color = 'red')
+                    image_data = element.stream.get_data()
+                    img = Image.open(BytesIO(image_data))
                     img.save(image_filename)
-                    print(f"Saved placeholder image: {image_filename}")
+                    print(f"Saved image: {image_filename}")
                 except Exception as e:
-                    print(f"Could not save image {image_filename}: {e}. Creating dummy file.")
-                    with open(image_filename, 'w') as f:
-                        f.write("Dummy image content") # Placeholder for actual image data
+                    print(f"Could not save image {image_filename}: {e}. Skipping.")
+                    continue # Skip to the next element if image extraction fails
 
                 # Placeholder for LLM call and metadata
                 metadata = {
