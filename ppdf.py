@@ -88,9 +88,7 @@ class Application:
         try:
             # Handle image extraction mode first, as it's an exclusive action
             if self.args.extract_images:
-                logging.getLogger("ppdf").info(
-                    "--- Running in Image Extraction Mode ---"
-                )
+                logging.getLogger("ppdf").info("--- Running in Image Extraction Mode ---")
                 process_pdf_images(
                     self.args.pdf_file,
                     self.args.extract_images,
@@ -123,7 +121,11 @@ class Application:
                 "style": self.args.keep_style,
             }
             sections, page_models = process_pdf_text(
-                self.args.pdf_file, extraction_options
+                self.args.pdf_file,
+                extraction_options,
+                self.args.url,
+                self.args.model,
+                apply_labeling=self.args.semantic_labeling,
             )
             self.stats["pdf_analysis_duration"] = time.monotonic() - pdf_start
             self.stats["pages_processed"] = len(page_models)
@@ -155,9 +157,7 @@ class Application:
             app_log.info("--speak flag detected. Auto-selecting 'tts' preset.")
         elif self.args.rich_stream:
             self.args.prompt_preset = "creative"
-            app_log.info(
-                "--rich-stream flag detected. Auto-selecting 'creative' preset."
-            )
+            app_log.info("--rich-stream flag detected. Auto-selecting 'creative' preset.")
         else:
             self.args.prompt_preset = "strict"  # Default fallback
 
@@ -172,9 +172,7 @@ class Application:
         prefix = self.args.batch_presets
         presets_to_run = [p for p in PROMPT_PRESETS.keys() if p.startswith(prefix)]
         if not presets_to_run:
-            logging.getLogger("ppdf").error(
-                "No presets found with prefix: '%s'", prefix
-            )
+            logging.getLogger("ppdf").error("No presets found with prefix: '%s'", prefix)
             sys.exit(1)
         return presets_to_run
 
@@ -296,9 +294,7 @@ class Application:
             produces_markdown = preset_data.get("markdown_output", False)
 
             self._log_run_conditions(system_prompt, preset_name)
-            processed_sections = self._preprocess_table_summaries(
-                sections, preset_name
-            )
+            processed_sections = self._preprocess_table_summaries(sections, preset_name)
             self._save_extracted_text(processed_sections)
 
             if self.args.dry_run:
@@ -330,12 +326,8 @@ class Application:
     def _initialize_tts(self):
         """Initializes the TTSManager if the --speak flag is used."""
         if not PIPER_AVAILABLE:
-            logging.warning(
-                "TTS dependencies not installed. --speak flag will be ignored."
-            )
-            logging.warning(
-                'To enable speech, run: pip install "piper-tts==1.3.0" pyaudio'
-            )
+            logging.warning("TTS dependencies not installed. --speak flag will be ignored.")
+            logging.warning('To enable speech, run: pip install "piper-tts==1.3.0" pyaudio')
             self.args.speak = None
             return
         try:
@@ -364,12 +356,9 @@ class Application:
                 if tags_resp.status_code == 200:
                     models = tags_resp.json().get("models", [])
                     names = "\n".join(
-                        f"  - {m['name']}"
-                        for m in sorted(models, key=lambda x: x["name"])
+                        f"  - {m['name']}" for m in sorted(models, key=lambda x: x["name"])
                     )
-                    app_log.error(
-                        f"Available models:\n{names if names else '  (None)'}"
-                    )
+                    app_log.error(f"Available models:\n{names if names else '  (None)'}")
                 sys.exit(1)
             response.raise_for_status()
             model_info = response.json()
@@ -476,9 +465,7 @@ class Application:
                     pages.add(int(part))
             return pages
         except ValueError:
-            logging.getLogger("ppdf").error(
-                "Invalid --pages format: %s.", self.args.pages
-            )
+            logging.getLogger("ppdf").error("Invalid --pages format: %s.", self.args.pages)
             return None
 
     def _display_dry_run_summary(self, sections):
@@ -515,21 +502,30 @@ class Application:
 
     def _save_extracted_text(self, sections):
         """Saves the raw, reconstructed text to a file if requested."""
-        if self.args.extracted_file and sections:
-            content = [
-                f"--- Page {s.page_start}-{s.page_end} "
-                f"(Title: {s.title or 'N/A'}) ---\n{s.get_text()}"
-                for s in sections
-            ]
-            try:
-                with open(self.args.extracted_file, "w", encoding="utf-8") as f:
-                    f.write("\n\n\n".join(content))
-                logging.getLogger("ppdf").info(
-                    "Raw extracted text saved to: '%s'",
-                    self.args.extracted_file,
-                )
-            except IOError as e:
-                logging.getLogger("ppdf").error("Error saving raw text: %s", e)
+        if not self.args.extracted_file or not sections:
+            return
+        content = []
+        for s in sections:
+            s_header = f"--- Page {s.page_start}-{s.page_end} (Title: {s.title or 'N/A'}) ---"
+            s_content = []
+            for p in s.paragraphs:
+                p_text = p.get_text()
+                p_header = ""
+                if p.labels:
+                    p_header = f"[{', '.join(p.labels).upper()}]"
+                elif p.is_table:
+                    p_header = "[TABLE]"
+                s_content.append(f"{p_header}\n{p_text}" if p_header else p_text)
+            content.append(f"{s_header}\n{'\n\n'.join(s_content)}")
+        try:
+            with open(self.args.extracted_file, "w", encoding="utf-8") as f:
+                f.write("\n\n\n".join(content))
+            logging.getLogger("ppdf").info(
+                "Raw extracted text saved to: '%s'",
+                self.args.extracted_file,
+            )
+        except IOError as e:
+            logging.getLogger("ppdf").error("Error saving raw text: %s", e)
 
     def _save_llm_output(self, markdown_text):
         """Saves the final LLM-generated markdown to a file."""
@@ -566,9 +562,7 @@ class Application:
         if current_chunk_parts:
             yield "\n\n".join(current_chunk_parts)
 
-    def _generate_output_with_llm(
-        self, sections, system_prompt, run_stats, produces_markdown
-    ):
+    def _generate_output_with_llm(self, sections, system_prompt, run_stats, produces_markdown):
         """Orchestrates section-by-section, chunk-aware processing with the LLM."""
         all_markdown, agg_stats = [], {"eval_count": 0, "eval_duration": 0}
         chars_sent, chars_received = 0, 0
@@ -585,9 +579,7 @@ class Application:
             )
             section_markdown_parts = []
             section_text = section.get_llm_text()
-            chunks = list(
-                self._chunk_text_by_paragraphs(section_text, self.args.chunk_size)
-            )
+            chunks = list(self._chunk_text_by_paragraphs(section_text, self.args.chunk_size))
 
             for j, chunk_text in enumerate(chunks):
                 self.stats["chunk_sizes"].append(len(chunk_text))
@@ -634,9 +626,7 @@ class Application:
                         and j > 0
                         and response.strip().startswith(f"# {title}")
                     ):
-                        response = re.sub(
-                            rf"^# {re.escape(title)}\s*", "", response.strip()
-                        )
+                        response = re.sub(rf"^# {re.escape(title)}\s*", "", response.strip())
 
                     section_markdown_parts.append(response)
                     for key in agg_stats:
@@ -644,9 +634,7 @@ class Application:
                     chars_sent += len(system_prompt) + len(user_content)
                     chars_received += len(full_response)
                 else:
-                    err_msg = (
-                        f"\n[ERROR: Could not process chunk {j + 1} of section {i + 1}]"
-                    )
+                    err_msg = f"\n[ERROR: Could not process chunk {j + 1} of section {i + 1}]"
                     section_markdown_parts.append(err_msg)
 
             all_markdown.append("\n\n".join(section_markdown_parts))
@@ -680,19 +668,13 @@ class Application:
         full_content, stats = "", {}
         thought_content, is_thinking = "", False
 
-        if (
-            not is_analysis
-            and self.args.debug_topics
-            and "llm" in self.args.debug_topics
-        ):
+        if not is_analysis and self.args.debug_topics and "llm" in self.args.debug_topics:
             log_llm.debug("User content for chunk:\n%s", payload["prompt"])
             if "options" in payload:
                 log_llm.debug("API options: %s", payload["options"])
 
         try:
-            r = requests.post(
-                f"{self.args.url}/api/generate", json=payload, stream=True
-            )
+            r = requests.post(f"{self.args.url}/api/generate", json=payload, stream=True)
             r.raise_for_status()
 
             if is_analysis:
@@ -808,7 +790,7 @@ class Application:
             "\nExamples:",
             '  python ppdf.py document.pdf -o "output.md"',
             '  python ppdf.py document.pdf --extract-images "assets/images/my_module"',
-            "  python ppdf.py document.pdf -S en",
+            "  python ppdf.py document.pdf --semantic-labeling -e out.txt",
             "  python ppdf.py document.pdf -d llm,struct --color-logs",
         ]
         presets_details = ["\nPrompt Preset Details:"]
@@ -934,6 +916,11 @@ class Application:
             metavar="DIR",
             default=None,
             help="Extract images to a directory and exit.",
+        )
+        g_out.add_argument(
+            "--semantic-labeling",
+            action="store_true",
+            help="Apply semantic labels to text chunks (requires LLM).",
         )
         g_out.add_argument(
             "--rich-stream",

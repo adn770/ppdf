@@ -1,11 +1,10 @@
+# --- ppdf_lib/extractor.py ---
 #!/usr/bin/env python3
 """
 core/extractor.py: The core PDF text and structure extraction engine.
-
 This module contains the PDFTextExtractor class, which performs a multi-stage
 analysis to parse PDF files, understand their layout (columns, zones, titles),
 and reconstruct the logical reading order.
-
 It also defines all the data model classes used to represent the document's
 structure, from low-level physical elements like `Column` and `PageModel` to
 high-level logical elements like `Section` and `Paragraph`.
@@ -150,6 +149,7 @@ class Paragraph:
     def __init__(self, lines, page, is_table=False, llm_lines=None):
         self.lines, self.page_num, self.is_table = lines, page, is_table
         self.llm_lines = llm_lines
+        self.labels: list[str] | None = None
 
     def get_text(self):
         """Returns the full text for display, preserving line breaks."""
@@ -224,10 +224,8 @@ class Section:
 class PDFTextExtractor:
     """
     Extracts structured text from a PDF file using a multi-stage process.
-
     This class orchestrates the entire pipeline from PDF parsing to the creation
     of logical Section objects.
-
     Args:
         pdf_path (str): The file path to the PDF.
         num_cols (str): The number of columns to assume ('auto' or a number).

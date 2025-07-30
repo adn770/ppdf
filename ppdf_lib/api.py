@@ -11,9 +11,36 @@ from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTImage
 
 from .extractor import PDFTextExtractor, Section
-from .constants import PROMPT_DESCRIBE_IMAGE, PROMPT_CLASSIFY_IMAGE
+from .constants import (
+    PROMPT_DESCRIBE_IMAGE,
+    PROMPT_CLASSIFY_IMAGE,
+    PROMPT_SEMANTIC_LABELER,
+)
 
 log = logging.getLogger("ppdf.api")
+
+
+def _query_text_llm(prompt: str, user_content: str, ollama_url: str, model: str) -> str:
+    """Sends a standard text prompt to an Ollama model."""
+    try:
+        log.debug("Querying text LLM '%s'...", model)
+        response = requests.post(
+            f"{ollama_url}/api/generate",
+            json={
+                "model": model,
+                "system": prompt,
+                "prompt": user_content,
+                "stream": False,
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        data = response.json()
+        log.debug("LLM response received: %s", data.get("response", "").strip())
+        return data.get("response", "").strip()
+    except requests.exceptions.RequestException as e:
+        log.error("Failed to query text LLM: %s", e)
+        return ""
 
 
 def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, model: str) -> str:
@@ -45,14 +72,18 @@ def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, mode
         return ""
 
 
-def process_pdf_text(pdf_path: str, options: dict) -> tuple[list[Section], list]:
+def process_pdf_text(
+    pdf_path: str, options: dict, ollama_url: str, model: str, apply_labeling=False
+) -> tuple[list[Section], list]:
     """
     Processes a PDF file to extract and reconstruct structured text.
 
     Args:
         pdf_path (str): The absolute path to the PDF file.
         options (dict): A dictionary of options for PDFTextExtractor.
-                        Expected keys: 'num_cols', 'rm_footers', 'style'.
+        ollama_url (str): The URL of the Ollama API server.
+        model (str): The name of the LLM model to use for labeling.
+        apply_labeling (bool): If True, applies semantic labels to paragraphs.
     Returns:
         tuple[list[Section], list]: A tuple containing a list of Section objects
                                     and a list of PageModel objects.
@@ -67,6 +98,26 @@ def process_pdf_text(pdf_path: str, options: dict) -> tuple[list[Section], list]
         style=options.get("style", False),
     )
     sections = extractor.extract_sections()
+
+    if apply_labeling:
+        log.info("--- Stage 4: Applying Semantic Labels ---")
+        for section in sections:
+            for p_idx, para in enumerate(section.paragraphs):
+                # Don't label tables or very short paragraphs
+                if para.is_table or len(para.get_text()) < 50:
+                    continue
+
+                log.info(
+                    "Labeling paragraph %d in section '%s'...",
+                    p_idx + 1,
+                    section.title or "Untitled",
+                )
+                label = _query_text_llm(
+                    PROMPT_SEMANTIC_LABELER, para.get_text(), ollama_url, model
+                )
+                if label:
+                    para.labels = [lab.strip() for lab in label.split(",")]
+
     return sections, extractor.page_models
 
 

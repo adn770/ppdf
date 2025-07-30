@@ -169,6 +169,22 @@ PROMPT_CLASSIFY_IMAGE = (
     "Your response must be ONLY one of these three words and nothing else."
 )
 
+PROMPT_SEMANTIC_LABELER = (
+    "You are a semantic analysis engine for a TTRPG tool. Your task is to analyze a\n"
+    "chunk of text and assign it ONE primary category label from the list below.\n"
+    "Pick the single most specific and accurate label that describes the ENTIRE chunk.\n\n"
+    "CATEGORY LABELS:\n"
+    "- `stat_block`: A creature or NPC's statistics (attributes, HP, AC, attacks).\n"
+    "- `read_aloud_text`: Descriptive text in a box, intended for a GM to read aloud.\n"
+    "- `item_description`: Details about a specific magic or mundane item.\n"
+    "- `location_description`: Details about a specific room, area, or general feature.\n"
+    "- `mechanics`: Explains a rule, trap, or interactive element of the game.\n"
+    "- `lore`: Background history, story, or narrative context.\n"
+    "- `dialogue`: Direct speech or conversation between characters.\n"
+    "- `prose`: General narrative text that doesn't fit a more specific category.\n\n"
+    "Your response must be ONLY the chosen category label and nothing else."
+)
+
 
 # --- PRESET REGISTRY ---
 PROMPT_PRESETS = {
