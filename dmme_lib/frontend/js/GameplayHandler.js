@@ -1,6 +1,4 @@
 // dmme_lib/frontend/js/GameplayHandler.js
-import { apiCall } from './wizards/ApiHelper.js';
-
 export class GameplayHandler {
     constructor() {
         this.gameConfig = null;
@@ -8,6 +6,7 @@ export class GameplayHandler {
         this.playerInput = document.getElementById('player-input');
         this.sendCommandBtn = document.getElementById('send-command-btn');
         this.knowledgePanel = document.getElementById('knowledge-panel');
+        this.dmInsight = '';
     }
 
     init(gameConfig) {
@@ -21,7 +20,6 @@ export class GameplayHandler {
 
     _addEventListeners() {
         this.sendCommandBtn.addEventListener('click', () => this._sendCommand());
-
         this.playerInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -49,16 +47,21 @@ export class GameplayHandler {
         this.playerInput.disabled = true;
         this.sendCommandBtn.disabled = true;
 
+        const responseParagraph = this._createAiResponseParagraph();
+
         try {
-            const response = await apiCall('/api/game/command', {
+            const response = await fetch('/api/game/command', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: commandText, config: this.gameConfig }),
             });
-            this._renderAiResponse(response);
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            await this._processStream(response, responseParagraph);
+
         } catch (error) {
-            // Error is already handled by apiCall helper, but we could add more here
-            console.error("Failed to get response from game command API.");
+            console.error("Failed to get response from game command API:", error);
+            responseParagraph.textContent = "Error: Could not connect to the game server.";
         } finally {
             this.playerInput.disabled = false;
             this.sendCommandBtn.disabled = false;
@@ -74,12 +77,42 @@ export class GameplayHandler {
         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
     }
 
-    _renderAiResponse(data) {
+    _createAiResponseParagraph() {
         const p = document.createElement('p');
         p.className = 'narrative-text';
-        // A more complex renderer would handle different data.type values
-        p.textContent = data.content;
         this.narrativeView.appendChild(p);
-        this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+        return p;
+    }
+
+    async _processStream(response, paragraphElement) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep the potentially incomplete last line
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const chunk = JSON.parse(line);
+                    if (chunk.type === 'insight') {
+                        this.dmInsight = chunk.content;
+                    } else if (chunk.type === 'narrative_chunk') {
+                        paragraphElement.textContent += chunk.content;
+                        this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+                    } else if (chunk.type === 'error') {
+                        paragraphElement.textContent = `Error: ${chunk.content}`;
+                    }
+                } catch (e) {
+                    console.error("Failed to parse stream chunk:", line, e);
+                }
+            }
+        }
     }
 }

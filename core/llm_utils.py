@@ -1,32 +1,51 @@
 # --- core/llm_utils.py ---
 import logging
 import requests
+import json
 
 from ppdf_lib.constants import PROMPT_SEMANTIC_LABELER
 
 log = logging.getLogger("dmme.llm_utils")
 
 
-def query_text_llm(prompt: str, user_content: str, ollama_url: str, model: str) -> str:
-    """Sends a standard text prompt to an Ollama model."""
+def query_text_llm(
+    prompt: str, user_content: str, ollama_url: str, model: str, stream: bool = False
+):
+    """
+    Sends a standard text prompt to an Ollama model.
+    Can operate in both streaming and non-streaming modes.
+    """
     try:
-        log.debug("Querying text LLM '%s'...", model)
+        log.debug("Querying text LLM '%s' (Stream: %s)...", model, stream)
+        payload = {
+            "model": model,
+            "system": prompt,
+            "prompt": user_content,
+            "stream": stream,
+        }
         response = requests.post(
-            f"{ollama_url}/api/generate",
-            json={
-                "model": model,
-                "system": prompt,
-                "prompt": user_content,
-                "stream": False,
-            },
-            timeout=60,
+            f"{ollama_url}/api/generate", json=payload, stream=stream, timeout=60
         )
         response.raise_for_status()
-        data = response.json()
-        log.debug("LLM response received: %s", data.get("response", "").strip())
-        return data.get("response", "").strip()
+
+        if not stream:
+            data = response.json()
+            log.debug("LLM response received: %s", data.get("response", "").strip())
+            return data.get("response", "").strip()
+        else:
+            # In streaming mode, this function becomes a generator
+            def generator():
+                for line in response.iter_lines():
+                    if line:
+                        chunk_data = json.loads(line.decode("utf-8"))
+                        yield chunk_data.get("response", "")
+
+            return generator()
+
     except requests.exceptions.RequestException as e:
         log.error("Failed to query text LLM: %s", e)
+        if stream:
+            return iter([])  # Return an empty iterator on error
         return ""
 
 
