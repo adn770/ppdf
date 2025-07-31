@@ -7,6 +7,29 @@ from core.llm_utils import query_text_llm
 bp = Blueprint("game", __name__)
 
 
+@bp.route("/command", methods=["POST"])
+def handle_command():
+    """
+    Handles a player command. (STUB for Milestone 12)
+    This is a hardcoded response and does not use the RAG system yet.
+    """
+    # We can log the incoming data to show it's being received, but we ignore it.
+    player_input = request.get_json()
+    current_app.logger.info("Received player command: %s", player_input)
+
+    # Return a fixed, predictable JSON response for the frontend to render.
+    stub_response = {
+        "type": "narrative",
+        "content": (
+            "You stand at the edge of a dark forest. A narrow path winds its way "
+            "into the oppressive gloom. The air is still, and an unnatural silence "
+            "hangs over the woods. This is a hardcoded response from the backend stub."
+        ),
+        "dm_insight": "The backend stub is working correctly.",
+    }
+    return jsonify(stub_response)
+
+
 @bp.route("/generate-character", methods=["POST"])
 def generate_character():
     """Generates a character using an LLM based on a user description."""

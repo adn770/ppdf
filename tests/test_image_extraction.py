@@ -86,7 +86,6 @@ def test_process_pdf_images(setup_test_environment, mocker):
     image_file = os.path.join(test_dir, "image_001.png")
     mock_image_instance.save.assert_called_once_with(image_file, "PNG")
 
-
     # Verify JSON metadata file was created
     json_file = os.path.join(test_dir, "image_001.json")
     assert os.path.exists(json_file)
