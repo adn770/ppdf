@@ -386,7 +386,7 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: A user can create a high-quality, curated knowledge base of visual
         aids from a PDF.
 
-### Phase 4: Core Gameplay
+### Phase 4: Core Gameplay (Revised)
 
 -   **Milestone 10: Build Party and Game Creation Wizards**
     -   **Goal**: Build the UI and connect the backend for creating a party and
@@ -398,15 +398,75 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: A user can create a party of characters and configure a new game
         session using all the designed options.
 
--   **Milestone 11: Implement Main UI Layout & Core Gameplay Loop**
-    -   **Goal**: Create the main gameplay interface and connect it to the backend RAG
-        logic.
-    -   **Description**: This milestone brings the game to life for a solo player.
-    -   **Key Tasks**: Implement the two-column UI layout. Build the Narrative View and
-        Player Input components. Implement the backend RAG logic for both game modes.
-        Connect the UI to the streaming API.
-    -   **Outcome**: A user can start a configured game, type a command, and receive
-        an AI-generated response in the narrative log.
+---
+
+-   **Milestone 11: Build Static Gameplay UI**
+    -   **Goal**: Create the static HTML and CSS for the main two-column gameplay interface.
+    -   **Description**: This milestone focuses on building the complete visual layout for
+        the game screen without any backend interaction. It establishes the foundational
+        structure for all subsequent gameplay functionality.
+    -   **Key Tasks**: Implement the two-column layout using HTML and CSS. Create the
+        static Party Status Panel, Dice Roller, Knowledge Source Panel, Narrative View,
+        and Player Input components.
+    -   **Outcome**: A non-interactive but visually complete gameplay screen is rendered
+        in the browser, matching the design specifications.
+
+---
+
+-   **Milestone 12: Implement Backend Gameplay Stub**
+    -   **Goal**: Create the backend API endpoint for handling player commands with a
+        hardcoded, non-streaming response.
+    -   **Description**: This step creates the necessary backend infrastructure for the
+        gameplay loop. The endpoint will accept a player command but return a fixed,
+        predictable JSON response, allowing for frontend development without a
+        functioning RAG system.
+    -   **Key Tasks**: Implement the `POST /api/game/command` endpoint in Flask. The
+        endpoint logic will ignore the input and immediately return a hardcoded JSON
+        object representing a sample AI response.
+    -   **Outcome**: The backend has a testable `/api/game/command` endpoint that the
+        frontend can successfully call and receive a valid, albeit static, response from.
+
+---
+
+-   **Milestone 13: Connect UI to Gameplay Stub**
+    -   **Goal**: Wire up the frontend player input to the backend stub and display the
+        returned data.
+    -   **Description**: This connects the two halves of the application. The user will be
+        able to type a command, press enter, and see the hardcoded response from the
+        backend appear in the Narrative View.
+    -   **Key Tasks**: Write JavaScript to capture the user's input from the text area.
+        Implement the `fetch` call to the `POST /api/game/command` endpoint. Write the
+        logic to render the received JSON data into the Narrative View.
+    -   **Outcome**: A user can type a command, send it to the backend, and see the
+        static, hardcoded response render correctly in the main narrative log.
+
+---
+
+-   **Milestone 14: Implement Full RAG Logic**
+    -   **Goal**: Implement the complete, non-streaming RAG and LLM logic on the backend.
+    -   **Description**: This milestone replaces the backend stub with the full
+        Retrieval-Augmented Generation system. It will now query the vector store based
+        on the player's command and generate a unique response from the LLM.
+    -   **Key Tasks**: Implement the RAG service logic to query the ChromaDB collections.
+        Integrate the LLM call using the retrieved context. Replace the stub logic in
+        the `/api/game/command` endpoint with the new RAG service call.
+    -   **Outcome**: The backend now processes player commands dynamically, generating a
+        contextually relevant response from the LLM, though the response is not yet
+        streamed.
+
+---
+
+-   **Milestone 15: Integrate Streaming Response**
+    -   **Goal**: Upgrade the backend endpoint and frontend logic to support real-time,
+        streaming responses.
+    -   **Description**: The final step in core gameplay implementation. This changes the
+        interaction from a simple request-response to a streaming connection, allowing
+        the AI's response to appear token-by-token in the UI.
+    -   **Key Tasks**: Modify the Flask endpoint to return a streaming response. Update
+        the frontend JavaScript to handle the streaming data and append it
+        progressively to the Narrative View, creating a "live typing" effect.
+    -   **Outcome**: A user can type a command and receive an AI-generated response that
+        streams into the narrative log in real-time, completing the core gameplay loop.
 
 ---
 
