@@ -27,7 +27,77 @@
     <div id="modal-overlay" class="modal-overlay"></div>
 
     <div id="import-wizard-modal" class="modal modal-lg">
+        <div class="modal-header">
+            <h2 id="import-wizard-title">Import Knowledge Wizard</h2>
+            <button class="close-btn">&times;</button>
         </div>
+        <div class="modal-body">
+            <div class="wizard-pane active" id="wizard-pane-0">
+                <h3>Step 1: Select File & Name</h3>
+                <div class="form-group">
+                    <label for="kb-name">Knowledge Base Name</label>
+                    <input type="text" id="kb-name" placeholder="e.g., Core Rules v5.1">
+                </div>
+                <div class="form-group">
+                    <label>Knowledge Base Type</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="kb-type" value="rules" checked> Rules</label>
+                        <label><input type="radio" name="kb-type" value="module"> Module</label>
+                        <label><input type="radio" name="kb-type" value="setting"> Setting</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="kb-desc">Description (Optional)</label>
+                    <textarea id="kb-desc" rows="3"></textarea>
+                </div>
+                <div id="wizard-upload-area" class="upload-area">
+                    <p>Drag & Drop a PDF or Markdown file here, or click to select</p>
+                    <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md">
+                    <p id="wizard-upload-filename"></p>
+                </div>
+            </div>
+            <div class="wizard-pane" id="wizard-pane-1">
+                <h3>Step 2: Review & Ingest</h3>
+                <p>Ready to process <strong id="ingest-filename-confirm"></strong>.</p>
+                <div id="image-review-ui" style="display: none;">
+                    <h4>Image Review</h4>
+                    <div id="image-review-loading" class="loading-spinner">
+                        <p>Extracting images, this may take a moment...</p>
+                    </div>
+                    <div class="image-review-container">
+                        <button id="image-prev-btn">&lt;</button>
+                        <div class="image-display-area">
+                            <img id="review-image" src="" alt="Review Image" />
+                            <p id="image-review-counter"></p>
+                        </div>
+                        <button id="image-next-btn">&gt;</button>
+                        <div class="image-metadata-editor">
+                            <div class="form-group">
+                                <label for="image-description">Description</label>
+                                <textarea id="image-description" rows="4"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="image-classification">Classification</label>
+                                <select id="image-classification">
+                                    <option value="art">Art</option>
+                                    <option value="map">Map</option>
+                                    <option value="handout">Handout</option>
+                                    <option value="decoration">Decoration</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <button id="save-image-changes-btn" class="accent-btn">Save Changes</button>
+                            <span id="image-save-status"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="import-wizard-back-btn" class="secondary-btn">Back</button>
+            <button id="import-wizard-next-btn" class="accent-btn">Next</button>
+        </div>
+    </div>
 
     <div id="party-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
@@ -104,7 +174,39 @@
     </div>
 
     <div id="new-game-wizard-modal" class="modal modal-md">
+        <div class="modal-header">
+            <h2>New Game Setup</h2>
+            <button class="close-btn">&times;</button>
         </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Game Mode</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="game-mode" value="module" checked> Adventure Module</label>
+                    <label><input type="radio" name="game-mode" value="freestyle"> Freestyle</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="game-rules-kb">Rules System</label>
+                <select id="game-rules-kb"></select>
+            </div>
+            <div id="game-module-group" class="form-group">
+                <label for="game-module-kb">Adventure Module</label>
+                <select id="game-module-kb"></select>
+            </div>
+            <div id="game-setting-group" class="form-group" style="display: none;">
+                <label for="game-setting-kb">Setting</label>
+                <select id="game-setting-kb"></select>
+            </div>
+            <div class="form-group">
+                <label for="game-party-selector">Party</label>
+                <select id="game-party-selector"></select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="start-game-btn" class="accent-btn">Start Game</button>
+        </div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
 </body>

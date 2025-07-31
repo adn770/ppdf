@@ -18,14 +18,7 @@ class App {
         this.partyWizard = new PartyWizard();
         this.newGameWizard = new NewGameWizard();
 
-        // Now that instances exist, initialize their event listeners.
-        console.log("Initializing ImportWizard...");
-        this.importWizard.init();
-        console.log("Initializing PartyWizard...");
-        this.partyWizard.init();
-        console.log("Initializing NewGameWizard...");
-        this.newGameWizard.init();
-        console.log("All wizards initialized.");
+        console.log("All wizards instantiated. Setting up open triggers.");
 
         document.getElementById('import-knowledge-btn').addEventListener('click',
             () => this.importWizard.open()
