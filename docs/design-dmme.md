@@ -514,6 +514,108 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: When a user selects a language in the settings, the AI Dungeon
         Master's responses will be generated in that language.
 
+### Phase 6: Gameplay Features & Enhancements
+
+-   **Milestone 20: Implement Interactive Dice Roller**
+    -   **Goal**: Make the Dice Roller component in the left panel fully interactive.
+    -   **Description**: Transforms the static dice buttons into a functional "dice
+        expression builder." Users can click multiple dice, see the expression being
+        built, and click a "Roll" button to submit the expression as a command to the
+        game.
+    -   **Key Tasks**: Add a display, "Roll" button, and backspace button to the Dice
+        Roller HTML. Create a `DiceRoller.js` module to manage state. Add event
+        listeners to build a dice expression array, render it to the display, and
+        submit the final expression as a natural language command to the backend.
+    -   **Outcome**: The Dice Roller is fully functional. A user can click to build an
+        expression like `3d6`, click "Roll," and see the command appear in the narrative
+        log.
+
+-   **Milestone 21: Implement Backend Autosave Service**
+    -   **Goal**: Create the backend mechanism for saving and retrieving the current game
+        state to a temporary recovery file.
+    -   **Description**: This provides the core safety net for in-progress games. The
+        backend will manage a dedicated `autosave.json` file.
+    -   **Key Tasks**: Implement `POST /api/session/autosave` to write the game state
+        to `autosave.json`. Implement `GET /api/session/recover` to read from it.
+    -   **Outcome**: The backend has a functional API for saving and retrieving a
+        temporary game session state.
+
+-   **Milestone 22: Implement Frontend Autosave and Recovery Logic**
+    -   **Goal**: Implement the frontend logic to periodically autosave and to
+        automatically recover the state on application startup.
+    -   **Description**: This makes the autosave feature functional from the user's
+        perspective.
+    -   **Key Tasks**: Implement a `setInterval` to post the game state to the autosave
+        endpoint. On startup, call the recover endpoint. If data exists, load the game
+        view directly and show a banner with "Save", "Load Other", or "New Game" options.
+    -   **Outcome**: A user who accidentally closes their browser can reload the
+        application and find their game state exactly as it was.
+
+-   **Milestone 23: Implement Backend Journaling Service**
+    -   **Goal**: Create the backend service to summarize a session's raw log into a
+        narrative "Journal Recap."
+    -   **Description**: This service will take a session's history and use an LLM to
+        create a concise, story-like summary.
+    -   **Key Tasks**: Create a `POST /api/sessions/summarize` endpoint. The service
+        will take a session log, use an LLM with a specific summarization prompt, and
+        save the result to the `sessions` table in the database.
+    -   **Outcome**: The backend can generate and persist narrative summaries of gameplay
+        sessions.
+
+-   **Milestone 24: Implement Campaign Load and Recap UI**
+    -   **Goal**: Build the user interface for loading a campaign and displaying the
+        latest session recap.
+    -   **Description**: This milestone creates the workflow for returning to a saved game.
+    -   **Key Tasks**: Build the "Load Campaign" modal, populated by calling `GET
+        /api/campaigns`. When a user loads a campaign, fetch the latest session recap
+        and display it in a prominent modal before gameplay begins.
+    -   **Outcome**: A user can load a saved campaign and is immediately presented with a
+        summary of their last session.
+
+### Phase 7: Optional Game Aids
+
+-   **Milestone 25: Implement RAG and API for Visual Aids**
+    -   **Goal**: Enhance the backend to retrieve and stream relevant visual aid data.
+    -   **Description**: This milestone makes the backend "aware" of the curated images
+        in the knowledge base and enables it to send them to the frontend.
+    -   **Key Tasks**: Modify the `RAGService` to retrieve `image_description` documents.
+        Update the `game` API to stream a new JSON object type: `{"type":
+        "visual_aid", "image_url": "...", "caption": "..."}`.
+    -   **Outcome**: The backend API can now send structured data to the frontend,
+        instructing it to display a specific visual aid.
+
+-   **Milestone 26: Implement Frontend Rendering of Visual Aids**
+    -   **Goal**: Update the Narrative View to render the images sent by the backend,
+        respecting a user setting.
+    -   **Description**: The frontend will listen for the `visual_aid` object and, if
+        the feature is enabled, display the image directly in the game log.
+    -   **Key Tasks**: Add a "Show Visual Aids" toggle to the Settings Panel. In the
+        `GameplayHandler.js`, check for the `visual_aid` chunk type and the user
+        setting, then dynamically create and append the `<img>` element to the log.
+    -   **Outcome**: When relevant, and if the user has the feature enabled, images
+        appear directly in the narrative log during gameplay.
+
+-   **Milestone 27: Implement Backend ASCII Scene Generation**
+    -   **Goal**: Integrate the ASCII map generation prompt into the backend game loop.
+    -   **Description**: After a narrative response is generated, it will be used as
+        input for a second LLM call to create the ASCII map.
+    -   **Key Tasks**: Design and test the ASCII map generation prompt. In the
+        `RAGService`, after generating the narrative, make a second LLM call with the
+        new prompt. Modify the `game` API to stream a new JSON object type: `{"type":
+        "ascii_map", "content": "..."}`.
+    -   **Outcome**: The backend can now generate both a narrative response and a
+        corresponding ASCII map for a player command.
+
+-   **Milestone 28: Implement Frontend Rendering of ASCII Scene**
+    -   **Goal**: Update the Narrative View to render the ASCII map sent by the backend.
+    -   **Description**: The frontend will listen for the `ascii_map` object and, if
+        the feature is enabled, display the map correctly formatted.
+    -   **Key Tasks**: Add a "Show ASCII Scene" toggle to the Settings Panel. In the
+        `GameplayHandler.js`, check for the `ascii_map` chunk type and the user
+        setting, then render the content inside a `<pre><code>` block.
+    -   **Outcome**: When enabled, a rogue-like ASCII map of the scene appears in the
+        narrative log after the descriptive text for a turn.
+
 ---
 
 ## 7. AI Assistant Procedures
