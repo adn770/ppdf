@@ -398,8 +398,6 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: A user can create a party of characters and configure a new game
         session using all the designed options.
 
----
-
 -   **Milestone 11: Build Static Gameplay UI**
     -   **Goal**: Create the static HTML and CSS for the main two-column gameplay interface.
     -   **Description**: This milestone focuses on building the complete visual layout for
@@ -410,8 +408,6 @@ details the incremental steps to build the `dmme` application.
         and Player Input components.
     -   **Outcome**: A non-interactive but visually complete gameplay screen is rendered
         in the browser, matching the design specifications.
-
----
 
 -   **Milestone 12: Implement Backend Gameplay Stub**
     -   **Goal**: Create the backend API endpoint for handling player commands with a
@@ -426,8 +422,6 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: The backend has a testable `/api/game/command` endpoint that the
         frontend can successfully call and receive a valid, albeit static, response from.
 
----
-
 -   **Milestone 13: Connect UI to Gameplay Stub**
     -   **Goal**: Wire up the frontend player input to the backend stub and display the
         returned data.
@@ -440,12 +434,10 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: A user can type a command, send it to the backend, and see the
         static, hardcoded response render correctly in the main narrative log.
 
----
-
 -   **Milestone 14: Implement Full RAG Logic**
     -   **Goal**: Implement the complete, non-streaming RAG and LLM logic on the backend.
     -   **Description**: This milestone replaces the backend stub with the full
-        Retrieval-Augmented Generation system. It will now query the vector store based
+        Retrieval- Augmented Generation system. It will now query the vector store based
         on the player's command and generate a unique response from the LLM.
     -   **Key Tasks**: Implement the RAG service logic to query the ChromaDB collections.
         Integrate the LLM call using the retrieved context. Replace the stub logic in
@@ -453,8 +445,6 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: The backend now processes player commands dynamically, generating a
         contextually relevant response from the LLM, though the response is not yet
         streamed.
-
----
 
 -   **Milestone 15: Integrate Streaming Response**
     -   **Goal**: Upgrade the backend endpoint and frontend logic to support real-time,
@@ -467,6 +457,62 @@ details the incremental steps to build the `dmme` application.
         progressively to the Narrative View, creating a "live typing" effect.
     -   **Outcome**: A user can type a command and receive an AI-generated response that
         streams into the narrative log in real-time, completing the core gameplay loop.
+
+### Phase 5: UI/UX & Internationalization
+
+-   **Milestone 16: Implement Settings Panel & Configuration Persistence**
+    -   **Goal**: Create a UI for application settings and save user choices persistently.
+    -   **Description**: This milestone introduces a settings modal where users can
+        configure various application options. These settings will be saved to and loaded
+        from a `dmme.cfg` file in the user's `~/.dmme/` directory, making them
+        persistent across sessions.
+    -   **Key Tasks**: Build the HTML/CSS for the multi-pane Settings Panel modal.
+        Implement frontend JavaScript to manage the modal's state. Add backend API
+        endpoints (e.g., `GET /api/settings`, `POST /api/settings`) to read and write
+        key-value pairs to `dmme.cfg`. Implement the logic for theme switching.
+    -   **Outcome**: A functional settings panel where a user can, at a minimum, select a
+        theme, and that choice will persist the next time they launch the application.
+
+-   **Milestone 17: Implement DM's Insight Modal**
+    -   **Goal**: Allow the user to view the raw RAG context that the LLM used for a
+        specific response.
+    -   **Description**: To improve transparency and aid in debugging, each AI-generated
+        narrative block will have an icon. Clicking this icon will open a modal window
+        displaying the exact context retrieved from the vector store that was used to
+        generate that specific piece of narrative.
+    -   **Key Tasks**: Modify the `GameplayHandler.js` to store the `dm_insight` content
+        received from the stream. Add a '🔍' icon button to each AI response in the
+        narrative log. Create the HTML/CSS for the "DM's Insight" modal. Write
+        JavaScript to show the stored context in the modal when an icon is clicked.
+    -   **Outcome**: A user can click an icon next to any AI response in the game log and
+        see the underlying RAG context that informed that response.
+
+-   **Milestone 18: Frontend Internationalization (i18n)**
+    -   **Goal**: Refactor the frontend UI to support multiple languages for all static
+        text elements.
+    -   **Description**: This milestone introduces a framework for internationalization.
+        All hardcoded text in the UI (buttons, labels, titles) will be replaced with
+        keys that are translated at runtime based on the user's selected language.
+    -   **Key Tasks**: Create JSON language files (e.g., `en.json`, `es.json`) containing
+        key-value pairs for all UI text. Write a JavaScript helper to load the
+        appropriate language file. Refactor all HTML and JS to use this helper function
+        instead of hardcoded strings. Add a language selector dropdown to the Settings
+        Panel.
+    -   **Outcome**: The entire user interface can be switched between English and Spanish
+        (or other added languages) dynamically from the settings panel.
+
+-   **Milestone 19: Backend Multi-language LLM Support**
+    -   **Goal**: Enable the LLM to understand context and generate narrative responses
+        in the user's selected language.
+    -   **Description**: This extends the multi-language support to the AI itself. The
+        backend will use a system prompt translated into the target language to ensure
+        the LLM's entire "personality" and response framing match the user's selection.
+    -   **Key Tasks**: Create translated versions of the core system prompts (e.g.,
+        `PROMPT_GAME_MASTER`) in `dmme_lib/constants.py`. Modify the `RAGService` to
+        accept a language parameter. The service will then select the appropriate system
+        prompt before querying the LLM.
+    -   **Outcome**: When a user selects a language in the settings, the AI Dungeon
+        Master's responses will be generated in that language.
 
 ---
 
