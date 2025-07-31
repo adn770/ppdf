@@ -17,6 +17,10 @@ class VectorStoreService:
         """Gets or creates a ChromaDB collection."""
         return self.client.get_or_create_collection(name=collection_name)
 
+    def list_collections(self):
+        """Lists all collections in the vector store."""
+        return self.client.list_collections()
+
     def add_to_kb(self, kb_name: str, documents: list[str], metadatas: list[dict]):
         """Adds documents to an existing knowledge base (collection)."""
         if not documents:

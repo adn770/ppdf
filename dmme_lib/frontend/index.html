@@ -11,13 +11,15 @@
         <header class="app-header">
             <h1>DMme</h1>
             <div class="global-controls">
+                <button id="new-game-btn">New Game</button>
+                <button id="party-manager-btn">Party Manager</button>
                 <button id="import-knowledge-btn">Import Knowledge Base</button>
             </div>
         </header>
         <main class="main-content">
             <div class="welcome-message">
                 <h2>Welcome to DMme</h2>
-                <p>Click "Import Knowledge Base" to get started.</p>
+                <p>Click "New Game" to begin an adventure, or "Import Knowledge Base" to expand your library.</p>
             </div>
         </main>
     </div>
@@ -25,88 +27,84 @@
     <div id="modal-overlay" class="modal-overlay"></div>
 
     <div id="import-wizard-modal" class="modal modal-lg">
+        </div>
+
+    <div id="party-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
-            <h2 id="wizard-title">Import Knowledge Wizard</h2>
+            <h2>Party Manager</h2>
             <button class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="wizard-content">
-                <div class="wizard-pane active" data-pane="upload">
-                    <h3>Step 1: Upload & Classify</h3>
-                    <div class="form-group form-group-stretch">
-                        <label>Upload a PDF or Markdown file.</label>
-                        <div id="wizard-upload-area" class="upload-area">
-                            <p>Click to browse or drag & drop a file here.</p>
-                            <span id="wizard-upload-filename"></span>
-                        </div>
-                        <input type="file" id="wizard-upload-input" accept=".pdf,.md,.txt">
+            <div class="panel-container">
+                <div class="left-panel">
+                    <div class="party-selection-area">
+                        <h4>Parties</h4>
+                        <ul id="party-list" class="item-list"></ul>
+                        <button id="show-create-party-panel-btn" class="accent-btn">+ Create New Party</button>
                     </div>
-                    <div class="form-group">
-                        <label>Select Knowledge Source Type</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="kb-type" value="rules" checked> Rules</label>
-                            <label><input type="radio" name="kb-type" value="setting"> Setting</label>
-                            <label><input type="radio" name="kb-type" value="module"> Module</label>
-                            <label><input type="radio" name="kb-type" value="adapter"> Adapter</label>
-                        </div>
+                    <div class="party-roster-area">
+                        <h4>Roster</h4>
+                        <ul id="character-list" class="character-list"></ul>
                     </div>
                 </div>
-
-                <div class="wizard-pane" data-pane="metadata">
-                    <h3>Step 2: Enter Metadata</h3>
-                    <div class="form-group">
-                        <label for="kb-name">Knowledge Base Name</label>
-                        <input type="text" id="kb-name" placeholder="e.g., D&D 5e Core Rules">
+                <div class="right-panel">
+                    <div id="party-welcome-panel" class="placeholder-pane">
+                        <p>Select a party to view its roster, or create a new one.</p>
                     </div>
-                    <div class="form-group form-group-stretch">
-                        <label for="kb-desc">Description (Optional)</label>
-                        <textarea id="kb-desc" rows="4" placeholder="A brief summary of this knowledge base."></textarea>
-                    </div>
-                </div>
-
-                <div class="wizard-pane" data-pane="review">
-                    <h3>Step 3: Review Extracted Images</h3>
-                    <div id="image-review-ui" class="image-review-container" style="display: none;">
-                        <div class="image-viewer">
-                            <div class="image-display-area">
-                                <span id="image-review-counter"></span>
-                                <img id="review-image" src="" alt="Review Image">
-                            </div>
-                            <div class="image-nav">
-                                <button id="image-prev-btn">&lt; Prev</button>
-                                <button id="image-next-btn">Next &gt;</button>
-                            </div>
+                    <div id="party-creator-panel" style="display: none;">
+                        <h3>Create New Party</h3>
+                        <div class="form-group">
+                            <label for="new-party-name-input">Party Name</label>
+                            <input type="text" id="new-party-name-input" placeholder="e.g., The Brightswords">
                         </div>
-                        <div class="image-editor">
-                            <div class="form-group form-group-stretch">
-                                <label for="image-description">Description</label>
-                                <textarea id="image-description" rows="8"></textarea>
+                        <button id="create-party-btn" class="accent-btn">Save Party</button>
+                    </div>
+                    <div id="character-editor-panel" style="display: none;">
+                        <h4>Add New Character</h4>
+                        <div class="form-group">
+                            <label for="char-name">Name</label>
+                            <input type="text" id="char-name">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="char-class">Class</label>
+                                <input type="text" id="char-class" list="class-suggestions">
+                                <datalist id="class-suggestions">
+                                    <option value="Fighter"></option>
+                                    <option value="Wizard"></option>
+                                    <option value="Rogue"></option>
+                                    <option value="Cleric"></option>
+                                    <option value="Ranger"></option>
+                                    <option value="Barbarian"></option>
+                                    <option value="Bard"></option>
+                                    <option value="Druid"></option>
+                                    <option value="Monk"></option>
+                                    <option value="Paladin"></option>
+                                    <option value="Sorcerer"></option>
+                                    <option value="Warlock"></option>
+                                </datalist>
                             </div>
                             <div class="form-group">
-                                <label>Classification</label>
-                                <select id="image-classification">
-                                    <option value="art">Art</option>
-                                    <option value="map">Map</option>
-                                    <option value="decoration">Decoration</option>
-                                </select>
+                                <label for="char-level">Level</label>
+                                <input type="number" id="char-level" value="1">
                             </div>
-                            <button id="save-image-changes-btn" class="accent-btn">Save Changes</button>
-                            <div id="image-save-status"></div>
                         </div>
-                    </div>
-                    <div id="image-review-loading" class="placeholder-pane">
-                        <p>Processing...</p>
+                        <button id="add-char-manual-btn" class="accent-btn">Add Manually</button>
+                        <div class="ai-generator">
+                            <h5>AI Character Generator</h5>
+                            <div class="form-group form-group-stretch ai-input-container">
+                                <textarea id="ai-char-desc" rows="4" placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
+                                <button id="ai-char-generate-btn" title="Generate with AI">✨</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="modal-footer">
-            <button id="wizard-back-btn" disabled>Back</button>
-            <div class="modal-footer-spacer"></div>
-            <button id="wizard-next-btn">Next</button>
-            <button id="wizard-finish-btn" style="display: none;" class="accent-btn">Finish</button>
-        </div>
     </div>
+
+    <div id="new-game-wizard-modal" class="modal modal-md">
+        </div>
 
     <script type="module" src="js/main.js"></script>
 </body>

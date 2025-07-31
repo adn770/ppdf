@@ -3,7 +3,7 @@ import os
 import logging
 import configparser
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify
 from .services.storage_service import StorageService
 from .services.vector_store_service import VectorStoreService
 from .services.ingestion_service import IngestionService
@@ -57,12 +57,30 @@ def create_app(config_overrides=None):
 
     # --- Register Blueprints (APIs) ---
     log.info("Registering API blueprints...")
-    from .api import campaigns, parties, knowledge
+    from .api import campaigns, parties, knowledge, characters, game
 
     app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
     app.register_blueprint(parties.bp, url_prefix="/api/parties")
     app.register_blueprint(knowledge.bp, url_prefix="/api/knowledge")
-    log.info("Registered blueprints: /api/campaigns, /api/parties, /api/knowledge")
+    app.register_blueprint(characters.bp, url_prefix="/api")
+    app.register_blueprint(game.bp, url_prefix="/api/game")
+    log.info("Registered blueprints: campaigns, parties, knowledge, characters, game")
+
+    # --- Global Error Handler (NEW) ---
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        """Catches all unhandled exceptions, logs them, and returns JSON."""
+        # Pass through HTTP exceptions
+        if hasattr(e, "code"):
+            # To avoid catching 404s, etc., you could be more specific
+            if e.code < 500:
+                return jsonify(error=str(e)), e.code
+
+        # Log the full traceback for any 500-level error
+        app.logger.exception("An unhandled exception occurred: %s", e)
+
+        # Return a generic JSON error response
+        return jsonify(error="An internal server error occurred."), 500
 
     # --- Static File Serving ---
     @app.route("/")

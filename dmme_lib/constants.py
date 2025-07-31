@@ -37,3 +37,24 @@ PERSONA_PRESETS = {
         ),
     },
 }
+
+
+# --- GAME MECHANIC PROMPTS ---
+PROMPT_GENERATE_CHARACTER = (
+    "You are a character creation assistant for a TTRPG. Your task is to generate a "
+    "character sheet in JSON format based on a user's description and a specified "
+    "rule system.\n\n"
+    "USER DESCRIPTION:\n{description}\n\n"
+    "RULE SYSTEM CONTEXT:\n{rules_context}\n\n"
+    "Your response MUST be a single, valid JSON object with the following keys:\n"
+    '- "name": A fitting name for the character.\n'
+    '- "class": The character\'s class (e.g., "Fighter", "Wizard").\n'
+    '- "level": The character\'s starting level, which must be 1.\n'
+    '- "description": A brief, one-paragraph summary of the character\'s backstory '
+    "and personality, based on the user's input.\n"
+    '- "stats": An object containing key-value pairs for core attributes '
+    '(e.g., "Strength": 14, "Dexterity": 12, "HP": 10). The stats must be '
+    "appropriate for the specified rule system.\n\n"
+    "Do not include any text, explanations, or markdown formatting outside of the "
+    "single JSON object."
+)

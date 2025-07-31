@@ -1,6 +1,7 @@
 # --- dmme_lib/services/storage_service.py ---
 import sqlite3
 import logging
+import json
 from datetime import datetime
 
 log = logging.getLogger("dmme.storage")
@@ -14,7 +15,6 @@ class StorageService:
     def __init__(self, db_path: str):
         """
         Initializes the service with the path to the SQLite database.
-
         Args:
             db_path (str): The full file path to the database.
         """
@@ -87,6 +87,7 @@ class StorageService:
                 name TEXT NOT NULL,
                 class TEXT,
                 level INTEGER DEFAULT 1,
+                description TEXT,
                 stats TEXT, -- Stored as JSON
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -176,4 +177,38 @@ class StorageService:
     def delete_party(self, party_id: int):
         with self._get_connection() as conn:
             cursor = conn.execute("DELETE FROM parties WHERE id = ?;", (party_id,))
+            return cursor.rowcount > 0
+
+    # --- Character CRUD Methods ---
+    def get_characters_for_party(self, party_id: int):
+        with self._get_connection() as conn:
+            return conn.execute(
+                "SELECT * FROM characters WHERE party_id = ? ORDER BY created_at ASC;",
+                (party_id,),
+            ).fetchall()
+
+    def get_character(self, character_id: int):
+        with self._get_connection() as conn:
+            return conn.execute(
+                "SELECT * FROM characters WHERE id = ?;", (character_id,)
+            ).fetchone()
+
+    def create_character(
+        self, party_id: int, name: str, char_class: str, level: int, desc: str, stats: dict
+    ):
+        stats_json = json.dumps(stats)
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO characters
+                    (party_id, name, class, level, description, stats)
+                VALUES (?, ?, ?, ?, ?, ?);
+                """,
+                (party_id, name, char_class, level, desc, stats_json),
+            )
+            return cursor.lastrowid
+
+    def delete_character(self, character_id: int):
+        with self._get_connection() as conn:
+            cursor = conn.execute("DELETE FROM characters WHERE id = ?;", (character_id,))
             return cursor.rowcount > 0

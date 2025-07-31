@@ -9,6 +9,22 @@ from ppdf_lib.api import process_pdf_images, process_pdf_text
 bp = Blueprint("knowledge", __name__)
 
 
+@bp.route("/", methods=["GET"])
+def list_knowledge_bases():
+    """Lists all available knowledge bases (ChromaDB collections)."""
+    try:
+        collections = current_app.vector_store.list_collections()
+        kbs = [
+            {"name": c.name, "count": c.count()}
+            for c in collections
+            if not c.name.endswith("_reviewing")
+        ]
+        return jsonify(kbs)
+    except Exception as e:
+        current_app.logger.error("Failed to list knowledge bases: %s", e, exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/import-text", methods=["POST"])
 def import_knowledge_text():
     """Handles file upload and metadata for knowledge base TEXT ingestion."""
