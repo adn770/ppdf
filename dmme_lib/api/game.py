@@ -40,9 +40,7 @@ def handle_command():
                 yield json.dumps(chunk) + "\n"
 
             if full_narrative:
-                conversation_history.append(
-                    {"role": "assistant", "content": full_narrative}
-                )
+                conversation_history.append({"role": "assistant", "content": full_narrative})
         except Exception as e:
             logger.error("Error in RAG stream: %s", e, exc_info=True)
             error_chunk = json.dumps(

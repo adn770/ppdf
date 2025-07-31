@@ -8,6 +8,7 @@ from .services.storage_service import StorageService
 from .services.vector_store_service import VectorStoreService
 from .services.ingestion_service import IngestionService
 from .services.rag_service import RAGService
+from .services.config_service import ConfigService
 
 ASSETS_DIR = os.path.join(os.path.expanduser("~"), ".dmme", "assets")
 
@@ -28,6 +29,7 @@ def create_app(config_overrides=None):
     app.config.from_mapping(
         SECRET_KEY="dev",
         DATABASE=os.path.join(os.path.expanduser("~"), ".dmme", "dmme.db"),
+        CONFIG_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "dmme.cfg"),
         CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
         ASSETS_PATH=ASSETS_DIR,
         OLLAMA_URL="http://localhost:11434",
@@ -43,6 +45,7 @@ def create_app(config_overrides=None):
     log.info("Initializing application services...")
     try:
         app.storage = StorageService(app.config["DATABASE"])
+        app.config_service = ConfigService(app.config["CONFIG_PATH"])
         app.vector_store = VectorStoreService(
             app.config["CHROMA_PATH"], app.config["OLLAMA_URL"], app.config["EMBEDDING_MODEL"]
         )
@@ -61,29 +64,25 @@ def create_app(config_overrides=None):
 
     # --- Register Blueprints (APIs) ---
     log.info("Registering API blueprints...")
-    from .api import campaigns, parties, knowledge, characters, game
+    from .api import campaigns, parties, knowledge, characters, game, settings
 
     app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
     app.register_blueprint(parties.bp, url_prefix="/api/parties")
     app.register_blueprint(knowledge.bp, url_prefix="/api/knowledge")
     app.register_blueprint(characters.bp, url_prefix="/api")
     app.register_blueprint(game.bp, url_prefix="/api/game")
-    log.info("Registered blueprints: campaigns, parties, knowledge, characters, game")
+    app.register_blueprint(settings.bp, url_prefix="/api/settings")
+    log.info(
+        "Registered blueprints: campaigns, parties, knowledge, characters, game, settings"
+    )
 
-    # --- Global Error Handler (NEW) ---
+    # --- Global Error Handler ---
     @app.errorhandler(Exception)
     def handle_exception(e):
         """Catches all unhandled exceptions, logs them, and returns JSON."""
-        # Pass through HTTP exceptions
-        if hasattr(e, "code"):
-            # To avoid catching 404s, etc., you could be more specific
-            if e.code < 500:
-                return jsonify(error=str(e)), e.code
-
-        # Log the full traceback for any 500-level error
+        if hasattr(e, "code") and e.code < 500:
+            return jsonify(error=str(e)), e.code
         app.logger.exception("An unhandled exception occurred: %s", e)
-
-        # Return a generic JSON error response
         return jsonify(error="An internal server error occurred."), 500
 
     # --- Static File Serving ---

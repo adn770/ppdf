@@ -3,14 +3,15 @@ import { ImportWizard } from './wizards/ImportWizard.js';
 import { PartyWizard } from './wizards/PartyWizard.js';
 import { NewGameWizard } from './wizards/NewGameWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
+import { SettingsManager } from './SettingsManager.js';
 
 class App {
     constructor() {
         this.importWizard = new ImportWizard();
         this.partyWizard = new PartyWizard();
         this.gameplayHandler = new GameplayHandler();
+        this.settingsManager = new SettingsManager();
 
-        // Pass a callback to the NewGameWizard to start the game
         this.newGameWizard = new NewGameWizard(
             (gameConfig) => this.startGame(gameConfig)
         );
@@ -25,6 +26,9 @@ class App {
         );
         document.getElementById('new-game-btn').addEventListener('click',
             () => this.newGameWizard.open()
+        );
+        document.getElementById('settings-btn').addEventListener('click',
+            () => this.settingsManager.open()
         );
 
         this.initAccordions();
@@ -45,25 +49,19 @@ class App {
             button.addEventListener('click', () => {
                 const accordionBody = button.nextElementSibling;
                 const icon = button.querySelector('.accordion-icon');
-
-                const isActive = accordionBody.classList.contains('active');
                 accordionBody.classList.toggle('active');
-                icon.textContent = isActive ? '+' : '-';
-
-                // Optional: close other accordions
-                document.querySelectorAll('.accordion-body').forEach(body => {
-                    if (body !== accordionBody) {
-                        body.classList.remove('active');
-                        body.previousElementSibling.querySelector('.accordion-icon').textContent = '+';
-                    }
-                });
+                icon.textContent = accordionBody.classList.contains('active') ? '-' : '+';
             });
         });
     }
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Apply theme on startup before initializing the app
+    const settingsMgr = new SettingsManager();
+    await settingsMgr.loadAndApplyTheme();
+
     const app = new App();
     app.init();
 });
