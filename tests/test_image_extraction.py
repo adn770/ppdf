@@ -60,9 +60,21 @@ def test_process_pdf_images(setup_test_environment, mocker):
 
     # Mock Image.open() and its returned instance's save method
     mock_image_instance = MagicMock()
+
+    def mock_save(filename, format):
+        with open(filename, "wb") as f:
+            f.write(mock_image_data)
+
+    mock_image_instance.save.side_effect = mock_save
     mock_image_open = mocker.patch("ppdf_lib.api.Image.open", return_value=mock_image_instance)
 
-    process_pdf_images(pdf_path, test_dir)
+    mock_query_llm = mocker.patch("ppdf_lib.api._query_multimodal_llm")
+    mock_query_llm.side_effect = [
+        "LLM_DESCRIPTION_PLACEHOLDER",
+        "art",  # Ensure a valid classification is returned
+    ]
+
+    process_pdf_images(pdf_path, test_dir, "http://mock-url", "mock-model")
 
     # Verify Image.open was called with the correct BytesIO object
     mock_image_open.assert_called_once()
@@ -72,7 +84,8 @@ def test_process_pdf_images(setup_test_environment, mocker):
 
     # Verify Image.save was called with the correct filename
     image_file = os.path.join(test_dir, "image_001.png")
-    mock_image_instance.save.assert_called_once_with(image_file)
+    mock_image_instance.save.assert_called_once_with(image_file, "PNG")
+
 
     # Verify JSON metadata file was created
     json_file = os.path.join(test_dir, "image_001.json")
@@ -84,4 +97,4 @@ def test_process_pdf_images(setup_test_environment, mocker):
         assert metadata["page_number"] == 1
         assert metadata["bbox"] == [10, 20, 110, 120]
         assert metadata["description"] == "LLM_DESCRIPTION_PLACEHOLDER"
-        assert metadata["classification"] == "LLM_CLASSIFICATION_PLACEHOLDER"
+        assert metadata["classification"] == "art"

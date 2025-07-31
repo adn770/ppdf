@@ -1,4 +1,3 @@
-# --- ppdf.py ---
 #!/usr/bin/env python3
 """
 ppdf: An advanced PDF text and structure extraction tool.

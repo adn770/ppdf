@@ -5,7 +5,7 @@ import os
 import json
 import shutil
 from .vector_store_service import VectorStoreService
-from dmme_lib.utils.llm_utils import get_semantic_label
+from core.llm_utils import get_semantic_label
 from ppdf_lib.api import process_pdf_text
 
 log = logging.getLogger("dmme.ingestion")

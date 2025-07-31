@@ -1,4 +1,3 @@
-# --- ppdf_lib/extractor.py ---
 #!/usr/bin/env python3
 """
 core/extractor.py: The core PDF text and structure extraction engine.

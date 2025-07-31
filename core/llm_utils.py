@@ -1,4 +1,4 @@
-# --- dmme_lib/utils/llm_utils.py ---
+# --- core/llm_utils.py ---
 import logging
 import requests
 

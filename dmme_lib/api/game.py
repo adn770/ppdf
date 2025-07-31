@@ -2,7 +2,7 @@
 import json
 from flask import Blueprint, request, jsonify, current_app
 from dmme_lib.constants import PROMPT_GENERATE_CHARACTER
-from dmme_lib.utils.llm_utils import query_text_llm
+from core.llm_utils import query_text_llm
 
 bp = Blueprint("game", __name__)
 

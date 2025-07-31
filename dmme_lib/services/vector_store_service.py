@@ -1,7 +1,7 @@
 # --- dmme_lib/services/vector_store_service.py ---
 import logging
 import chromadb
-from dmme_lib.utils.llm_utils import generate_embeddings_ollama
+from core.llm_utils import generate_embeddings_ollama
 
 log = logging.getLogger("dmme.vector_store")
 
@@ -38,7 +38,7 @@ class VectorStoreService:
 
             # Generate unique IDs to avoid collisions
             start_id = collection.count()
-            ids = [f"{kb_name}_{i+start_id}" for i in range(len(documents))]
+            ids = [f"{kb_name}_{i + start_id}" for i in range(len(documents))]
 
             collection.add(
                 embeddings=embeddings, documents=documents, metadatas=metadatas, ids=ids

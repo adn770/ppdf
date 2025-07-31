@@ -4,7 +4,7 @@ import os
 import shutil
 import tempfile
 from flask import Blueprint, request, jsonify, current_app
-from ppdf_lib.api import process_pdf_images, process_pdf_text
+from ppdf_lib.api import process_pdf_images
 
 bp = Blueprint("knowledge", __name__)
 

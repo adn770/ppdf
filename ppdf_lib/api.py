@@ -17,7 +17,7 @@ from .constants import (
 )
 
 # Refactored to use the new shared utility
-from dmme_lib.utils.llm_utils import get_semantic_label
+from core.llm_utils import get_semantic_label
 
 log = logging.getLogger("ppdf.api")
 

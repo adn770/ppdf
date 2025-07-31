@@ -1,4 +1,3 @@
-# --- dmme.py ---
 #!/usr/bin/env python3
 """dmme: Main entry point for the game driver."""
 
