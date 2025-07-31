@@ -16,17 +16,23 @@
                 <button id="import-knowledge-btn">Import Knowledge Base</button>
             </div>
         </header>
-        <main class="main-content">
-            <div id="game-view-container" class="game-view-container">
+        <main id="main-content" class="main-content">
+            <div id="welcome-view">
+                <div class="welcome-message">
+                    <h2>Welcome to DMme</h2>
+                    <p>Click "New Game" to begin an adventure, or "Import Knowledge Base" to expand your library.</p>
+                </div>
+            </div>
+            <div id="game-view" class="game-view-container">
                 <div class="left-panel-game">
                     <div class="party-status-panel">
                         <h4>Party Status</h4>
                         <div class="accordion-item">
                             <button class="accordion-header">
                                 <span>Gimli, Son of Gloin</span>
-                                <span class="accordion-icon">+</span>
+                                <span class="accordion-icon">-</span>
                             </button>
-                            <div class="accordion-body">
+                            <div class="accordion-body active">
                                 <p>Lvl 1 Fighter</p>
                                 <p>HP: 12/12</p>
                             </div>
@@ -55,21 +61,10 @@
                     </div>
                 </div>
                 <div class="right-panel-game">
-                    <div class="knowledge-panel">
-                        <span>Rules: <strong>D&D 5e</strong></span>
-                        <span>Module: <strong>Lost Mine of Phandelver</strong></span>
-                    </div>
-                    <div class="narrative-view">
-                        <p class="narrative-text">
-                            The adventure begins...
-                        </p>
-                        <p class="narrative-text read-aloud">
-                            <em>The late afternoon sun dips toward the horizon as you travel
-                            down the High Road. You've spent the last few days following
-                            the road south from the city of Neverwinter, and the an...
-                            </em>
-                        </p>
-                    </div>
+                    <div id="knowledge-panel" class="knowledge-panel">
+                        </div>
+                    <div id="narrative-view" class="narrative-view">
+                        </div>
                     <div class="input-panel">
                         <textarea id="player-input"
                             placeholder="What do you do?"></textarea>

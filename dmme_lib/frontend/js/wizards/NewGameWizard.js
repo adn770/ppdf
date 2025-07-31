@@ -1,9 +1,8 @@
 // dmme_lib/frontend/js/wizards/NewGameWizard.js
 import { apiCall } from './ApiHelper.js';
-
 export class NewGameWizard {
-    constructor() {
-        // State is handled locally in methods
+    constructor(onStartGameCallback) {
+        this.onStartGame = onStartGameCallback;
     }
 
     init() {
@@ -50,14 +49,12 @@ export class NewGameWizard {
         this.moduleSelect.innerHTML = '';
         this.settingSelect.innerHTML = '';
         this.partySelect.innerHTML = '';
-        
         kbs.forEach(kb => {
             const option = new Option(`${kb.name} (${kb.count} docs)`, kb.name);
             this.rulesSelect.add(option.cloneNode(true));
             this.moduleSelect.add(option.cloneNode(true));
             this.settingSelect.add(option.cloneNode(true));
         });
-
         if (parties.length === 0) {
             this.partySelect.innerHTML = '<option value="">No parties created yet</option>';
             this.startGameBtn.disabled = true;
@@ -90,14 +87,13 @@ export class NewGameWizard {
             module: selectedMode === 'module' ? this.moduleSelect.value : null,
             setting: selectedMode === 'freestyle' ? this.settingSelect.value : null
         };
-
         if (!gameConfig.rules || !gameConfig.party) {
             alert("A Rules System and a Party are required to start a game.");
             return;
         }
 
         console.log("Starting game with config:", gameConfig);
-        alert("Game start logic not yet implemented! Check the console for the configuration.");
+        this.onStartGame(gameConfig);
         this.close();
     }
 }

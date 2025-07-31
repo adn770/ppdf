@@ -43,7 +43,12 @@ body, html {
 .app-header h1 { margin: 0; font-size: 1.5em; }
 .global-controls { display: flex;
     gap: 12px; }
-.main-content { flex-grow: 1; padding: 24px; }
+.main-content {
+    flex-grow: 1;
+    padding: 24px;
+    height: calc(100vh - 65px); /* Full height minus header */
+    box-sizing: border-box;
+}
 .welcome-message { text-align: center; color: #888;
 }
 
@@ -159,9 +164,12 @@ li:hover > .delete-icon-btn, li.selected > .delete-icon-btn { opacity: 1; }
 
 /* --- NEW: Gameplay View Styles --- */
 .game-view-container {
-    display: flex;
+    display: none; /* Initially hidden */
     height: 100%;
     width: 100%;
+}
+.game-view-container.active {
+    display: flex;
 }
 .left-panel-game {
     width: 25%;
@@ -184,6 +192,7 @@ li:hover > .delete-icon-btn, li.selected > .delete-icon-btn { opacity: 1; }
     border: 1px solid var(--border-color);
     border-radius: 4px;
     margin-bottom: 8px;
+    overflow: hidden;
 }
 .party-status-panel .accordion-header {
     width: 100%;
@@ -196,7 +205,10 @@ li:hover > .delete-icon-btn, li.selected > .delete-icon-btn { opacity: 1; }
     padding: 12px;
     font-size: 0.9em;
     background-color: #333;
-    display: block; /* Change to none in JS to hide */
+    display: none; /* Hidden by default */
+}
+.party-status-panel .accordion-body.active {
+    display: block; /* Shown when active */
 }
 .party-status-panel .accordion-body p {
     margin: 4px 0;
@@ -227,6 +239,13 @@ li:hover > .delete-icon-btn, li.selected > .delete-icon-btn { opacity: 1; }
     overflow-y: auto;
     font-family: var(--font-family-mono);
     line-height: 1.6;
+}
+.narrative-view p {
+    margin: 0 0 1em 0;
+}
+.narrative-view .player-command {
+    color: var(--accent-color);
+    font-style: italic;
 }
 .narrative-view .read-aloud {
     color: #ccc;
