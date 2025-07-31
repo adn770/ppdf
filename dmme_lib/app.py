@@ -7,6 +7,7 @@ from flask import Flask, send_from_directory, jsonify
 from .services.storage_service import StorageService
 from .services.vector_store_service import VectorStoreService
 from .services.ingestion_service import IngestionService
+from .services.rag_service import RAGService
 
 ASSETS_DIR = os.path.join(os.path.expanduser("~"), ".dmme", "assets")
 
@@ -46,6 +47,9 @@ def create_app(config_overrides=None):
             app.config["CHROMA_PATH"], app.config["OLLAMA_URL"], app.config["EMBEDDING_MODEL"]
         )
         app.ingestion_service = IngestionService(
+            app.vector_store, app.config["OLLAMA_URL"], app.config["OLLAMA_MODEL"]
+        )
+        app.rag_service = RAGService(
             app.vector_store, app.config["OLLAMA_URL"], app.config["OLLAMA_MODEL"]
         )
         with app.app_context():

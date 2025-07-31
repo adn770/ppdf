@@ -6,28 +6,37 @@ from core.llm_utils import query_text_llm
 
 bp = Blueprint("game", __name__)
 
+# Simple in-memory cache for conversation history (replace with DB persistence later)
+conversation_history = []
+
 
 @bp.route("/command", methods=["POST"])
 def handle_command():
-    """
-    Handles a player command. (STUB for Milestone 12)
-    This is a hardcoded response and does not use the RAG system yet.
-    """
-    # We can log the incoming data to show it's being received, but we ignore it.
-    player_input = request.get_json()
-    current_app.logger.info("Received player command: %s", player_input)
+    """Handles a player command by using the RAG service."""
+    global conversation_history
+    data = request.get_json()
+    player_command = data.get("command")
+    game_config = data.get("config")
 
-    # Return a fixed, predictable JSON response for the frontend to render.
-    stub_response = {
-        "type": "narrative",
-        "content": (
-            "You stand at the edge of a dark forest. A narrow path winds its way "
-            "into the oppressive gloom. The air is still, and an unnatural silence "
-            "hangs over the woods. This is a hardcoded response from the backend stub."
-        ),
-        "dm_insight": "The backend stub is working correctly.",
-    }
-    return jsonify(stub_response)
+    if not player_command or not game_config:
+        return jsonify({"error": "Missing 'command' or 'config' in request"}), 400
+
+    # Add player's turn to history
+    conversation_history.append({"role": "user", "content": player_command})
+
+    # Limit history to the last 10 turns to keep context size manageable
+    conversation_history = conversation_history[-10:]
+
+    try:
+        response_data = current_app.rag_service.generate_response(
+            player_command, game_config, conversation_history
+        )
+        # Add AI's turn to history
+        conversation_history.append({"role": "assistant", "content": response_data["content"]})
+        return jsonify(response_data)
+    except Exception as e:
+        current_app.logger.error("Error in RAG service: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to generate response from RAG service."}), 500
 
 
 @bp.route("/generate-character", methods=["POST"])
