@@ -3,10 +3,21 @@ import json
 import os
 import shutil
 import tempfile
-from flask import Blueprint, request, jsonify, current_app
+import logging
+import uuid
+from flask import Blueprint, request, jsonify, current_app, Response
 from ppdf_lib.api import process_pdf_images
 
 bp = Blueprint("knowledge", __name__)
+log = logging.getLogger("dmme.api")
+log_ingest = logging.getLogger("dmme.ingest")
+
+TEMP_DIR = os.path.join(os.path.expanduser("~"), ".dmme", "temp")
+
+
+def _ensure_temp_dir_exists():
+    """Creates the temporary directory if it doesn't exist."""
+    os.makedirs(TEMP_DIR, exist_ok=True)
 
 
 @bp.route("/", methods=["GET"])
@@ -21,100 +32,98 @@ def list_knowledge_bases():
         ]
         return jsonify(kbs)
     except Exception as e:
-        current_app.logger.error("Failed to list knowledge bases: %s", e, exc_info=True)
+        log.error("Failed to list knowledge bases: %s", e, exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
-@bp.route("/import-text", methods=["POST"])
-def import_knowledge_text():
-    """Handles file upload and metadata for knowledge base TEXT ingestion."""
+@bp.route("/upload-temp-file", methods=["POST"])
+def upload_temp_file():
+    """Saves an uploaded file to a temporary directory for later processing."""
+    _ensure_temp_dir_exists()
     if "file" not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
-
     file = request.files["file"]
     if file.filename == "":
         return jsonify({"error": "No file selected"}), 400
 
     try:
-        metadata_str = request.form.get("metadata")
-        if not metadata_str:
-            return jsonify({"error": "Missing metadata for the knowledge base"}), 400
+        ext = os.path.splitext(file.filename)[1]
+        temp_filename = f"{uuid.uuid4().hex}{ext}"
+        temp_file_path = os.path.join(TEMP_DIR, temp_filename)
+        file.save(temp_file_path)
+        log.info("Uploaded file saved to temporary path: %s", temp_file_path)
+        return jsonify({"temp_file_path": temp_file_path})
+    except Exception as e:
+        log.error("Failed to save temporary file: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to save temporary file"}), 500
 
-        metadata = json.loads(metadata_str)
-        metadata["filename"] = file.filename
-        filename_lower = file.filename.lower()
 
-        if filename_lower.endswith(".md"):
-            file_content = file.read().decode("utf-8")
-            current_app.ingestion_service.ingest_markdown(file_content, metadata)
-        elif filename_lower.endswith(".pdf"):
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                file.save(tmp.name)
-                tmp_path = tmp.name
+@bp.route("/ingest-document", methods=["POST"])
+def ingest_document():
+    """
+    Processes a previously uploaded temporary file.
+    """
+    data = request.get_json()
+    metadata = data.get("metadata")
+    tmp_path = data.get("temp_file_path")
+
+    if not metadata or not tmp_path:
+        return jsonify({"error": "Missing metadata or temp_file_path"}), 400
+    if not os.path.exists(tmp_path) or not tmp_path.startswith(TEMP_DIR):
+        log.warning("Invalid or non-existent temp_file_path provided: %s", tmp_path)
+        return jsonify({"error": "Invalid temp_file_path"}), 400
+
+    app = current_app._get_current_object()
+    filename = metadata.get("filename", "unknown")
+
+    def stream_ingestion():
+        with app.app_context():
             try:
-                current_app.ingestion_service.ingest_pdf_text(tmp_path, metadata)
+                kb_name = metadata.get("kb_name", "Unknown")
+                is_pdf = filename.lower().endswith(".pdf")
+                yield f"data: {json.dumps({'message': '✔ Beginning processing...'})}\n\n"
+
+                # --- Text Ingestion ---
+                if filename.lower().endswith(".md"):
+                    with open(tmp_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    current_app.ingestion_service.ingest_markdown(content, metadata)
+                elif is_pdf:
+                    for message in current_app.ingestion_service.ingest_pdf_text(
+                        tmp_path, metadata
+                    ):
+                        yield f"data: {json.dumps({'message': message})}\n\n"
+
+                # --- Image Extraction (for PDFs only) ---
+                if is_pdf:
+                    assets_path = current_app.config["ASSETS_PATH"]
+                    review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
+                    if os.path.exists(review_dir):
+                        shutil.rmtree(review_dir)
+                    os.makedirs(review_dir, exist_ok=True)
+                    for message in process_pdf_images(
+                        tmp_path,
+                        review_dir,
+                        current_app.config["OLLAMA_URL"],
+                        current_app.config["OLLAMA_MODEL"],
+                    ):
+                        yield f"data: {json.dumps({'message': message})}\n\n"
+            except Exception as e:
+                log.error("Document ingestion stream failed: %s", e, exc_info=True)
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
             finally:
-                os.remove(tmp_path)
-        else:
-            return (
-                jsonify({"error": "Unsupported file type. Please upload a .md or .pdf file."}),
-                400,
-            )
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
 
-        return (
-            jsonify(
-                {"success": True, "message": f"Text for KB '{metadata['kb_name']}' ingested."}
-            ),
-            201,
-        )
-    except Exception as e:
-        current_app.logger.error("Text ingestion failed: %s", e, exc_info=True)
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
-
-@bp.route("/start-image-extraction", methods=["POST"])
-def start_image_extraction():
-    """Extracts images from a PDF to a temporary review directory."""
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files["file"]
-    kb_name = request.form.get("kb_name")
-    if not kb_name:
-        return jsonify({"error": "Missing kb_name"}), 400
-
-    assets_path = current_app.config["ASSETS_PATH"]
-    review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
-    if os.path.exists(review_dir):
-        shutil.rmtree(review_dir)
-    os.makedirs(review_dir, exist_ok=True)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        file.save(tmp.name)
-        tmp_path = tmp.name
-
-    try:
-        process_pdf_images(
-            tmp_path,
-            review_dir,
-            current_app.config["OLLAMA_URL"],
-            current_app.config["OLLAMA_MODEL"],
-        )
-        return jsonify({"success": True, "message": "Image extraction complete."})
-    except Exception as e:
-        current_app.logger.error("Image extraction failed: %s", e, exc_info=True)
-        return jsonify({"error": str(e)}), 500
-    finally:
-        os.remove(tmp_path)
+    return Response(stream_ingestion(), mimetype="text/event-stream")
 
 
 @bp.route("/review-images/<kb_name>", methods=["GET"])
 def get_review_images(kb_name):
-    """Lists all images and their metadata from a review directory."""
     assets_path = current_app.config["ASSETS_PATH"]
     review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
     if not os.path.isdir(review_dir):
         return jsonify({"error": "Review directory not found"}), 404
-
     images_data = []
     files = sorted(os.listdir(review_dir))
     for filename in files:
@@ -135,42 +144,49 @@ def get_review_images(kb_name):
 
 @bp.route("/review-images/<kb_name>/<image_filename>", methods=["PUT"])
 def update_review_image(kb_name, image_filename):
-    """Updates the metadata for a single image under review."""
     data = request.json
-    if not data or "description" not in data or "classification" not in data:
-        return jsonify({"error": "Invalid data"}), 400
-
     assets_path = current_app.config["ASSETS_PATH"]
     review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
-    json_filename = image_filename.replace(".png", ".json")
-    json_path = os.path.join(review_dir, json_filename)
-
+    json_path = os.path.join(review_dir, image_filename.replace(".png", ".json"))
     if not os.path.exists(json_path):
         return jsonify({"error": "Metadata file not found"}), 404
-
     with open(json_path, "r") as f:
         metadata = json.load(f)
-
     metadata["description"] = data["description"]
     metadata["classification"] = data["classification"]
-
     with open(json_path, "w") as f:
         json.dump(metadata, f, indent=4)
-
     return jsonify({"success": True, "message": "Image metadata updated."})
+
+
+@bp.route("/review-images/<kb_name>/<image_filename>", methods=["DELETE"])
+def delete_review_image(kb_name, image_filename):
+    assets_path = current_app.config["ASSETS_PATH"]
+    review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
+    img_path = os.path.join(review_dir, image_filename)
+    json_path = os.path.join(review_dir, image_filename.replace(".png", ".json"))
+    try:
+        if os.path.exists(img_path):
+            os.remove(img_path)
+        if os.path.exists(json_path):
+            os.remove(json_path)
+        return "", 204
+    except OSError as e:
+        log.error("Error deleting review image files: %s", e, exc_info=True)
+        return jsonify({"error": "Failed to delete files"}), 500
 
 
 @bp.route("/ingest-images", methods=["POST"])
 def ingest_images():
-    """Finalizes the image ingestion process."""
     data = request.json
     kb_name = data.get("kb_name")
     if not kb_name:
         return jsonify({"error": "Missing kb_name"}), 400
-
     try:
         current_app.ingestion_service.ingest_images(kb_name, current_app.config["ASSETS_PATH"])
         return jsonify({"success": True, "message": "Image ingestion complete."})
     except Exception as e:
-        current_app.logger.error("Image ingestion finalization failed: %s", e, exc_info=True)
+        log.error(
+            "Image ingestion finalization failed for KB '%s': %s", kb_name, e, exc_info=True
+        )
         return jsonify({"error": str(e)}), 500

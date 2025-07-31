@@ -28,26 +28,8 @@
                 <div class="left-panel-game">
                     <div class="party-status-panel">
                         <h4>Party Status</h4>
-                        <div class="accordion-item">
-                            <button class="accordion-header">
-                                <span>Gimli, Son of Gloin</span>
-                                <span class="accordion-icon">-</span>
-                            </button>
-                            <div class="accordion-body active">
-                                <p>Lvl 1 Fighter</p>
-                                <p>HP: 12/12</p>
+                        <div id="party-accordion-container">
                             </div>
-                        </div>
-                        <div class="accordion-item">
-                            <button class="accordion-header">
-                                <span>Legolas Greenleaf</span>
-                                <span class="accordion-icon">+</span>
-                            </button>
-                            <div class="accordion-body">
-                                <p>Lvl 1 Ranger</p>
-                                <p>HP: 10/10</p>
-                            </div>
-                        </div>
                     </div>
                     <div class="dice-roller">
                         <h4>Dice Roller</h4>
@@ -85,61 +67,78 @@
         </div>
         <div class="modal-body">
             <div class="wizard-pane active" id="wizard-pane-0">
-                <h3>Step 1: Select File & Name</h3>
-                <div class="form-group">
-                    <label for="kb-name">Knowledge Base Name</label>
-                    <input type="text" id="kb-name" placeholder="e.g., Core Rules v5.1">
-                </div>
-                <div class="form-group">
-                    <label>Knowledge Base Type</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="kb-type" value="rules" checked> Rules</label>
-                        <label><input type="radio" name="kb-type" value="module"> Module</label>
-                        <label><input type="radio" name="kb-type" value="setting"> Setting</label>
+                <div class="wizard-section">
+                    <h3>Step 1: Upload File</h3>
+                    <div id="wizard-upload-area" class="upload-area">
+                        <p id="wizard-upload-text">Drag & Drop a PDF or Markdown file here, or click to select</p>
+                        <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="kb-desc">Description (Optional)</label>
-                    <textarea id="kb-desc" rows="3"></textarea>
-                </div>
-                <div id="wizard-upload-area" class="upload-area">
-                    <p>Drag & Drop a PDF or Markdown file here, or click to select</p>
-                    <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md">
-                    <p id="wizard-upload-filename"></p>
+                <hr class="wizard-divider">
+                <div class="wizard-section">
+                    <h3>Step 2: Add Details</h3>
+                    <div class="form-row">
+                        <div class="form-group form-group-wide">
+                            <label for="kb-name">Name</label>
+                            <input type="text" id="kb-name" placeholder="e.g., Core Rules v5.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="kb-type">Type</label>
+                            <select id="kb-type" name="kb-type">
+                                <option value="module" selected>Module</option>
+                                <option value="setting">Setting</option>
+                                <option value="rules">Rules</option>
+                                <option value="adapter">Adapter</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="kb-lang">Language</label>
+                            <select id="kb-lang" name="kb-lang">
+                                <option value="en" selected>English</option>
+                                <option value="es">Spanish</option>
+                                <option value="ca">Catalan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group form-group-fill">
+                        <label for="kb-desc">Description (Optional)</label>
+                        <textarea id="kb-desc"></textarea>
+                    </div>
                 </div>
             </div>
             <div class="wizard-pane" id="wizard-pane-1">
-                <h3>Step 2: Review & Ingest</h3>
-                <p>Ready to process <strong id="ingest-filename-confirm"></strong>.</p>
-                <div id="image-review-ui" style="display: none;">
-                    <h4>Image Review</h4>
-                    <div id="image-review-loading" class="loading-spinner">
-                        <p>Extracting images, this may take a moment...</p>
+                <h3>Step 3: Processing...</h3>
+                <div class="spinner"></div>
+                <pre id="wizard-progress-log" class="progress-log"></pre>
+            </div>
+            <div class="wizard-pane" id="wizard-pane-2">
+                <h3>Step 4: Review Images</h3>
+                <div class="image-review-container">
+                    <div class="image-display-area">
+                        <img id="review-image" src="" alt="Review Image" />
+                        <button id="image-prev-btn" class="image-nav-btn prev">&lt;</button>
+                        <button id="image-next-btn" class="image-nav-btn next">&gt;</button>
+                        <p id="image-review-counter"></p>
                     </div>
-                    <div class="image-review-container">
-                        <button id="image-prev-btn">&lt;</button>
-                        <div class="image-display-area">
-                            <img id="review-image" src="" alt="Review Image" />
-                            <p id="image-review-counter"></p>
+                    <div class="image-metadata-editor">
+                        <div class="form-group form-group-fill">
+                            <label for="image-description">Description</label>
+                            <textarea id="image-description"></textarea>
                         </div>
-                        <button id="image-next-btn">&gt;</button>
-                        <div class="image-metadata-editor">
-                            <div class="form-group">
-                                <label for="image-description">Description</label>
-                                <textarea id="image-description" rows="4"></textarea>
+                        <div class="form-group">
+                            <label>Classification</label>
+                            <div class="radio-group image-classification-group">
+                                <label><input type="radio" name="image-classification" value="art" checked> Art</label>
+                                <label><input type="radio" name="image-classification" value="map"> Map</label>
+                                <label><input type="radio" name="image-classification" value="handout"> Handout</label>
+                                <label><input type="radio" name="image-classification" value="decoration"> Decoration</label>
+                                <label><input type="radio" name="image-classification" value="other"> Other</label>
                             </div>
-                            <div class="form-group">
-                                <label for="image-classification">Classification</label>
-                                <select id="image-classification">
-                                    <option value="art">Art</option>
-                                    <option value="map">Map</option>
-                                    <option value="handout">Handout</option>
-                                    <option value="decoration">Decoration</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
+                        </div>
+                        <div class="review-actions">
                             <button id="save-image-changes-btn" class="accent-btn">Save Changes</button>
                             <span id="image-save-status"></span>
+                            <button id="discard-image-btn" class="discard-btn danger-btn" title="Discard Image">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -295,6 +294,18 @@
             <div class="modal-footer-spacer"></div>
             <button id="settings-cancel-btn">Cancel</button>
             <button id="settings-save-btn" class="accent-btn">Save Changes</button>
+        </div>
+    </div>
+
+    <div id="dm-insight-modal" class="modal modal-lg">
+        <div class="modal-header">
+            <h2>DM's Insight</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body wizard-body">
+            <h3>RAG Context</h3>
+            <p>This is the raw context retrieved from the knowledge bases that the AI used to generate its last response.</p>
+            <pre id="dm-insight-content" class="dm-insight-content-box"></pre>
         </div>
     </div>
 

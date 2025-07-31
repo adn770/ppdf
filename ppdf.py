@@ -79,9 +79,11 @@ class Application:
         """Main entry point for the application logic."""
         self.stats["start_time"] = time.monotonic()
         setup_logging(
+            project_name="ppdf",
             level=logging.INFO if self.args.verbose else logging.WARNING,
             color_logs=self.args.color_logs,
             debug_topics=self.args.debug_topics,
+            log_file=self.args.log_file,
         )
 
         try:
@@ -681,8 +683,8 @@ class Application:
                     j, chunk = self._process_stream_line(line, None)
                     if chunk is not None:
                         full_content += chunk
-                    if j and j.get("done"):
-                        stats = j
+                if j and j.get("done"):
+                    stats = j
                 return full_content.strip(), stats
 
             def process_chunk(chunk):
@@ -909,6 +911,12 @@ class Application:
             default=None,
             metavar="FILE",
             help="Save raw extracted text. Defaults to PDF name.",
+        )
+        g_out.add_argument(
+            "--log-file",
+            metavar="FILE",
+            default=None,
+            help="Redirect all logging output to a specified file.",
         )
         g_out.add_argument(
             "--extract-images",

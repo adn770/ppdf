@@ -33,7 +33,7 @@ def create_app(config_overrides=None):
         CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
         ASSETS_PATH=ASSETS_DIR,
         OLLAMA_URL="http://localhost:11434",
-        OLLAMA_MODEL="llama3.1:latest",
+        OLLAMA_MODEL="llava:latest",
         EMBEDDING_MODEL="mxbai-embed-large",
     )
 

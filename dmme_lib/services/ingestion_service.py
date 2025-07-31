@@ -8,7 +8,7 @@ from .vector_store_service import VectorStoreService
 from core.llm_utils import get_semantic_label
 from ppdf_lib.api import process_pdf_text
 
-log = logging.getLogger("dmme.ingestion")
+log = logging.getLogger("dmme.ingest")
 
 
 class IngestionService:
@@ -24,21 +24,20 @@ class IngestionService:
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        log.info("Starting Markdown ingestion for knowledge base '%s'.", kb_name)
-
+        log.info("Starting Markdown ingestion for KB '%s'.", kb_name)
         chunks = [
             chunk.strip() for chunk in re.split(r"\n{2,}", file_content) if chunk.strip()
         ]
+        log.debug("Split Markdown file into %d raw chunks.", len(chunks))
 
-        documents = []
-        metadatas = []
-
+        documents, metadatas = [], []
         for i, chunk in enumerate(chunks):
             if len(chunk) < 50:
                 continue
 
-            log.debug("Labeling chunk %d/%d...", i + 1, len(chunks))
+            log.debug("Applying semantic label to chunk %d/%d.", i + 1, len(chunks))
             label = get_semantic_label(chunk, self.ollama_url, self.model)
+            log.debug("...Label for chunk %d is '%s'.", i + 1, label)
 
             documents.append(chunk)
             metadatas.append(
@@ -54,28 +53,33 @@ class IngestionService:
             return
 
         self.vector_store.add_to_kb(kb_name, documents, metadatas)
-        log.info("Markdown ingestion for '%s' completed.", kb_name)
 
     def ingest_pdf_text(self, pdf_path: str, metadata: dict):
-        """Processes and ingests a PDF file's text content."""
+        """Processes and ingests a PDF file's text content, yielding progress."""
         kb_name = metadata.get("kb_name")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        log.info("Starting PDF text ingestion for knowledge base '%s'.", kb_name)
+        yield "Analyzing PDF structure..."
         extraction_options = {"num_cols": "auto", "rm_footers": True, "style": False}
         sections, _ = process_pdf_text(
-            pdf_path, extraction_options, self.ollama_url, self.model, apply_labeling=True
+            pdf_path, extraction_options, self.ollama_url, self.model, apply_labeling=False
         )
+        yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
 
-        documents = []
-        metadatas = []
+        documents, metadatas = [], []
         chunk_id = 0
+        total_paras = sum(len(s.paragraphs) for s in sections)
 
-        for section in sections:
-            for para in section.paragraphs:
+        yield f"Applying semantic labels to {total_paras} paragraphs..."
+        for s_idx, section in enumerate(sections):
+            for p_idx, para in enumerate(section.paragraphs):
                 if para.is_table or len(para.get_text()) < 50:
                     continue
+
+                label = get_semantic_label(para.get_text(), self.ollama_url, self.model)
+                if p_idx == 0:  # Log once per section
+                    yield f"  -> Labeling section {s_idx+1}/{len(sections)} ('{section.title or '...'}')"
 
                 documents.append(para.get_text())
                 metadatas.append(
@@ -83,32 +87,37 @@ class IngestionService:
                         "source_file": metadata.get("filename", "unknown.pdf"),
                         "section": section.title or "Untitled",
                         "chunk_id": chunk_id,
-                        "label": para.labels[0] if para.labels else "prose",
+                        "label": label if label else "prose",
                     }
                 )
                 chunk_id += 1
+        yield f"✔ Semantic labeling complete. Found {len(documents)} valid text chunks."
 
+        yield "Generating embeddings and saving to vector store..."
         if not documents:
             log.warning("No suitable text documents found to ingest for '%s'.", kb_name)
             return
-
         self.vector_store.add_to_kb(kb_name, documents, metadatas)
-        log.info("PDF text ingestion for '%s' completed.", kb_name)
+        yield "✔ Saved to vector store."
 
     def ingest_images(self, kb_name: str, assets_path: str):
         """Finalizes image ingestion from a review directory."""
         review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
+        log.info("Finalizing image ingestion for KB '%s' from dir: %s", kb_name, review_dir)
         if not os.path.isdir(review_dir):
             raise FileNotFoundError(f"Review directory not found: {review_dir}")
 
-        log.info("Finalizing image ingestion for knowledge base '%s'.", kb_name)
-        documents = []
-        metadatas = []
+        documents, metadatas = [], []
         json_files = [f for f in os.listdir(review_dir) if f.endswith(".json")]
+        log.debug("Found %d metadata files in review directory.", len(json_files))
 
         for json_file in json_files:
             with open(os.path.join(review_dir, json_file), "r") as f:
                 data = json.load(f)
+
+            if data.get("classification") == "decoration":
+                log.debug("Skipping decorative image: %s", json_file)
+                continue
 
             doc_text = (
                 f"An image of type '{data['classification']}' depicting: {data['description']}"
@@ -116,14 +125,16 @@ class IngestionService:
             documents.append(doc_text)
 
             image_filename = json_file.replace(".json", ".png")
+            final_image_path = os.path.join("images", kb_name, image_filename)
             metadatas.append(
                 {
                     "source_file": "PDF Images",
                     "label": "image_description",
                     "classification": data["classification"],
-                    "image_url": f"images/{kb_name}/{image_filename}",
+                    "image_url": final_image_path,
                 }
             )
+        log.info("Prepared %d images for vector store ingestion.", len(documents))
 
         if documents:
             self.vector_store.add_to_kb(kb_name, documents, metadatas)
@@ -133,4 +144,8 @@ class IngestionService:
         if os.path.exists(final_dir):
             shutil.rmtree(final_dir)
         os.rename(review_dir, final_dir)
-        log.info("Image ingestion for '%s' finalized and review directory promoted.", kb_name)
+        log.info(
+            "Image ingestion for '%s' finalized. Review dir promoted to: %s",
+            kb_name,
+            final_dir,
+        )
