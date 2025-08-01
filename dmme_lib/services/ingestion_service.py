@@ -19,25 +19,24 @@ class IngestionService:
         log.info("IngestionService initialized.")
 
     def ingest_markdown(self, file_content: str, metadata: dict):
-        """Processes and ingests a Markdown file's content."""
+        """Processes and ingests a Markdown file's content, yielding progress."""
         kb_name = metadata.get("kb_name")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        log.info("Starting Markdown ingestion for KB '%s'.", kb_name)
+        yield f"✔ Starting Markdown processing for KB '{kb_name}'."
         chunks = [
             chunk.strip() for chunk in re.split(r"\n{2,}", file_content) if chunk.strip()
         ]
-        log.debug("Split Markdown file into %d raw chunks.", len(chunks))
+        yield f"Splitting file into {len(chunks)} raw chunks."
 
         documents, metadatas = [], []
         for i, chunk in enumerate(chunks):
             if len(chunk) < 50:
                 continue
 
-            log.debug("Applying semantic label to chunk %d/%d.", i + 1, len(chunks))
+            yield f"  -> Applying semantic label to chunk {i + 1}/{len(chunks)}..."
             label = get_semantic_label(chunk, self.ollama_url, self.model)
-            log.debug("...Label for chunk %d is '%s'.", i + 1, label)
 
             documents.append(chunk)
             metadatas.append(
@@ -50,9 +49,13 @@ class IngestionService:
 
         if not documents:
             log.warning("No suitable documents found to ingest for '%s'.", kb_name)
+            yield f"✔ No valid text chunks found to ingest."
             return
 
+        yield f"✔ Semantic labeling complete. Found {len(documents)} valid text chunks."
+        yield "Generating embeddings and saving to vector store..."
         self.vector_store.add_to_kb(kb_name, documents, metadatas)
+        yield "✔ Saved to vector store."
 
     def ingest_pdf_text(self, pdf_path: str, metadata: dict):
         """Processes and ingests a PDF file's text content, yielding progress."""

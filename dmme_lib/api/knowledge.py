@@ -86,7 +86,10 @@ def ingest_document():
                 if filename.lower().endswith(".md"):
                     with open(tmp_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                    current_app.ingestion_service.ingest_markdown(content, metadata)
+                    for message in current_app.ingestion_service.ingest_markdown(
+                        content, metadata
+                    ):
+                        yield f"data: {json.dumps({'message': message})}\n\n"
                 elif is_pdf:
                     for message in current_app.ingestion_service.ingest_pdf_text(
                         tmp_path, metadata

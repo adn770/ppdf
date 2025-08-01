@@ -1,6 +1,5 @@
 // dmme_lib/frontend/js/wizards/ImportWizard.js
 import { apiCall } from './ApiHelper.js';
-
 export class ImportWizard {
     constructor() {
         this.currentStep = 0;
@@ -14,6 +13,7 @@ export class ImportWizard {
             'Drag & Drop a PDF or Markdown file here, or click to select';
         this.reviewListenersAttached = false;
         this.progressLog = null;
+        this.isProcessing = false;
 
         // --- DOM Element Querying & Listener Setup (Moved from open()) ---
         // This ensures event listeners are only attached once for the lifetime
@@ -29,6 +29,7 @@ export class ImportWizard {
         this.reviewImage = document.getElementById('review-image');
         this.reviewCounter = document.getElementById('image-review-counter');
         this.imgDesc = document.getElementById('image-description');
+        this.spinner = this.modal.querySelector('.spinner');
 
         this._addEventListeners();
     }
@@ -79,8 +80,7 @@ export class ImportWizard {
     }
 
     close() {
-        // Only prevent closing during the "Processing" step (index 1).
-        if (this.currentStep === 1) return;
+        if (this.isProcessing) return;
         this.overlay.style.display = 'none';
         this.modal.style.display = 'none';
     }
@@ -99,6 +99,7 @@ export class ImportWizard {
         document.getElementById('kb-desc').value = '';
         this.unhighlight();
         this.progressLog = null;
+        this.isProcessing = false;
         this.updateView();
         // Reset buttons are handled in updateView
     }
@@ -120,7 +121,6 @@ export class ImportWizard {
             'block' : 'none';
         this.nextBtn.style.display = this.currentStep < 1 ? 'block' : 'none';
         this.nextBtn.disabled = !this.serverTempFilePath;
-
         if (this.currentStep === 2) {
             if (!finalizeBtn) {
                 const btnHTML =
@@ -183,6 +183,8 @@ export class ImportWizard {
         this.progressLog = document.getElementById('wizard-progress-log');
         this.progressLog.textContent = ''; // Clear log
         try {
+            this.isProcessing = true;
+            this.spinner.style.display = 'block';
             const payload = {
                 temp_file_path: this.serverTempFilePath,
                 metadata: {
@@ -209,15 +211,18 @@ export class ImportWizard {
                     this.navigate(1); // Move to step 2 (review)
                 } else {
                     this.logProgress("No images found for review.");
-                    alert("Knowledge base created successfully (no images found).");
-                    this.close();
+                    this.logProgress("✔ Knowledge base created successfully.");
+                    this.logProgress("All processes finished. You may now close this window.");
                 }
             } else {
-                alert("Knowledge base created successfully.");
-                this.close();
+                this.logProgress("✔ Knowledge base created successfully.");
+                this.logProgress("All processes finished. You may now close this window.");
             }
         } catch (error) {
             this.logProgress(`✖ ERROR: ${error.message}`);
+        } finally {
+            this.isProcessing = false;
+            this.spinner.style.display = 'none';
         }
     }
 
@@ -266,7 +271,6 @@ export class ImportWizard {
         }
         const newIdx = this.currentReviewIndex;
         this.currentReviewIndex = Math.max(0, Math.min(newIdx, this.reviewImages.length - 1));
-
         const current = this.reviewImages[this.currentReviewIndex];
         this.reviewImage.src = `${current.url}?t=${new Date().getTime()}`;
         const count = `${this.currentReviewIndex + 1} / ${this.reviewImages.length}`;
@@ -297,7 +301,6 @@ export class ImportWizard {
         const statusEl = document.getElementById('image-save-status');
         const classification =
             this.modal.querySelector('input[name="image-classification"]:checked').value;
-
         const payload = {
             description: this.imgDesc.value.trim(),
             classification: classification,
