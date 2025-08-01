@@ -4,7 +4,8 @@
 .game-view-container.active { display: flex; }
 
 .left-panel-game {
-    width: 25%;
+    flex-basis: 300px;
+    flex-shrink: 0;
     max-width: 300px;
     padding-right: 24px;
     border-right: 1px solid var(--border-color);
@@ -19,6 +20,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-width: 0; /* Prevents flexbox overflow */
 }
 
 .party-status-panel .accordion-item {
@@ -86,5 +88,25 @@
     border-top: 1px solid var(--border-color);
 }
 
-.input-panel textarea { flex-grow: 1; resize: none; height: 60px; }
+.input-panel textarea {
+    flex-grow: 1;
+    resize: none;
+    height: 60px;
+    background-color: #1e1e1e;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-panel textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--focus-color);
+}
+
 .input-panel button { height: 100%; }
