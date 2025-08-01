@@ -327,6 +327,7 @@
                 <div class="wizard-tabs">
                     <button class="wizard-tab-btn active" data-pane="general">General</button>
                     <button class="wizard-tab-btn" data-pane="appearance">Appearance</button>
+                    <button class="wizard-tab-btn" data-pane="rag">RAG Management</button>
                 </div>
                 <div class="settings-content">
                     <div class="settings-pane" id="pane-appearance">
@@ -385,6 +386,11 @@
                         </div>
                         <datalist id="ollama-models-list"></datalist>
                         <datalist id="kb-list"></datalist>
+                    </div>
+                    <div class="settings-pane" id="pane-rag">
+                        <h3>Knowledge Base Management</h3>
+                        <div id="rag-status-container">
+                            </div>
                     </div>
                 </div>
             </div>

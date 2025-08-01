@@ -65,3 +65,15 @@ class VectorStoreService:
         except Exception as e:
             log.error("Failed to query knowledge base '%s': %s", kb_name, e)
             raise
+
+    def delete_kb(self, kb_name: str):
+        """Deletes an entire knowledge base (collection)."""
+        try:
+            log.warning("Deleting knowledge base: '%s'", kb_name)
+            self.client.delete_collection(name=kb_name)
+            log.info("Knowledge base '%s' deleted successfully.", kb_name)
+        except ValueError:
+            log.info("Knowledge base '%s' did not exist, nothing to delete.", kb_name)
+        except Exception as e:
+            log.error("Failed to delete knowledge base '%s': %s", kb_name, e)
+            raise

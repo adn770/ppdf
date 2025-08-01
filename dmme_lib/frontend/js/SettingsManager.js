@@ -20,6 +20,7 @@ export class SettingsManager {
         this.inputs = this.modal.querySelectorAll('[data-section][data-key]');
         this.modelsDatalist = document.getElementById('ollama-models-list');
         this.kbDatalist = document.getElementById('kb-list');
+        this.ragStatusContainer = document.getElementById('rag-status-container');
     }
 
     _addEventListeners() {
@@ -29,6 +30,7 @@ export class SettingsManager {
         this.tabs.forEach(tab => {
             tab.addEventListener('click', (e) => this._switchPane(e));
         });
+        this.ragStatusContainer.addEventListener('click', (e) => this._handleRagActions(e));
     }
 
     async open() {
@@ -37,6 +39,7 @@ export class SettingsManager {
         await this.loadSettings();
         await this._populateModelSuggestions();
         await this._populateKbSuggestions();
+        await this._loadRagStatus();
     }
 
     close() {
@@ -93,6 +96,68 @@ export class SettingsManager {
             });
         } catch (error) {
             console.error("Failed to populate knowledge base suggestions:", error);
+        }
+    }
+
+    async _loadRagStatus() {
+        this.ragStatusContainer.innerHTML = '<p>Loading knowledge bases...</p>';
+        try {
+            const kbs = await apiCall('/api/knowledge/');
+            this._renderRagStatus(kbs);
+        } catch (error) {
+            this.ragStatusContainer.innerHTML =
+                '<p class="error">Failed to load knowledge bases.</p>';
+        }
+    }
+
+    _renderRagStatus(kbs) {
+        if (kbs.length === 0) {
+            this.ragStatusContainer.innerHTML = '<p>No knowledge bases have been created yet.</p>';
+            return;
+        }
+        const table = document.createElement('table');
+        table.className = 'rag-status-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Documents</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+        `;
+        const tbody = document.createElement('tbody');
+        kbs.forEach(kb => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${kb.name}</td>
+                <td>${kb.count}</td>
+                <td>
+                    <button class="danger-btn clear-rag-btn" data-kb-name="${kb.name}">
+                        Clear
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        this.ragStatusContainer.innerHTML = '';
+        this.ragStatusContainer.appendChild(table);
+    }
+
+    async _handleRagActions(event) {
+        const clearBtn = event.target.closest('.clear-rag-btn');
+        if (!clearBtn) return;
+
+        const kbName = clearBtn.dataset.kbName;
+        const msg = `Are you sure you want to permanently delete the '${kbName}' knowledge base?`;
+        if (confirm(msg)) {
+            try {
+                await apiCall(`/api/knowledge/${kbName}`, { method: 'DELETE' });
+                await this._loadRagStatus(); // Refresh the list
+            } catch (error) {
+                // The apiCall helper already shows an alert
+            }
         }
     }
 

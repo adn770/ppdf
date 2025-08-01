@@ -35,6 +35,17 @@ def list_knowledge_bases():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/<kb_name>", methods=["DELETE"])
+def delete_knowledge_base(kb_name):
+    """Deletes a knowledge base."""
+    try:
+        current_app.vector_store.delete_kb(kb_name)
+        return jsonify({"success": True, "message": f"Knowledge base '{kb_name}' deleted."})
+    except Exception as e:
+        log.error("Failed to delete knowledge base '%s': %s", kb_name, e, exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/upload-temp-file", methods=["POST"])
 def upload_temp_file():
     """Saves an uploaded file to a temporary directory for later processing."""
