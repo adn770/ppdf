@@ -79,11 +79,30 @@
     margin: 1em 0;
 }
 
+.game-aids-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.game-aids-toolbar .icon-btn {
+    background: none;
+    border: 1px solid transparent;
+    font-size: 1.2em;
+    padding: 4px 8px;
+}
+.game-aids-toolbar .icon-btn:hover {
+    border-color: var(--border-color);
+}
+.game-aids-toolbar .icon-btn.active {
+    background-color: var(--accent-color);
+}
+
 .input-panel {
     flex-shrink: 0;
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 4px;
     padding-top: 12px;
     border-top: 1px solid var(--border-color);
 }

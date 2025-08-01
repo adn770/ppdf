@@ -1,0 +1,12 @@
+/* dmme_lib/frontend/css/components/statusbar.css */
+
+.status-bar {
+    padding: 8px 24px;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    color: #aaa;
+    font-size: 0.9em;
+    flex-shrink: 0;
+    height: 18px; /* Fixed height for stability */
+    line-height: 18px;
+}

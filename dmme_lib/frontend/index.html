@@ -52,6 +52,12 @@
                     </div>
                     <div id="narrative-view" class="narrative-view">
                     </div>
+                    <div class="game-aids-toolbar">
+                        <button id="toggle-visual-aids-btn" class="icon-btn"
+                            title="Toggle Visual Aids">🖼️</button>
+                        <button id="toggle-ascii-scene-btn" class="icon-btn"
+                            title="Toggle ASCII Scene">#</button>
+                    </div>
                     <div class="input-panel">
                         <textarea id="player-input"
                             placeholder="What do you do?"></textarea>
@@ -60,6 +66,9 @@
                 </div>
             </div>
         </main>
+        <footer class="status-bar">
+            <span id="status-text">Ready.</span>
+        </footer>
     </div>
 
     <div id="modal-overlay" class="modal-overlay"></div>
@@ -317,6 +326,7 @@
             <div class="settings-body">
                 <nav class="settings-nav">
                     <a href="#" class="active" data-pane="appearance">Appearance</a>
+                    <a href="#" data-pane="gameplay">Gameplay</a>
                     <a href="#" data-pane="ollama">Ollama</a>
                 </nav>
                 <div class="settings-content">
@@ -336,6 +346,10 @@
                             </select>
                         </div>
                     </div>
+                    <div class="settings-pane" id="pane-gameplay">
+                        <h3>Gameplay Aids</h3>
+                        <p>Configure optional gameplay enhancements.</p>
+                        </div>
                     <div class="settings-pane" id="pane-ollama">
                         <h3>Ollama Configuration</h3>
                         <p>Settings for your local Ollama server.</p>
