@@ -1,0 +1,43 @@
+/* dmme_lib/frontend/css/components/settings.css */
+
+.settings-body {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.settings-nav {
+    width: 150px;
+    background-color: var(--bg-color);
+    border-right: 1px solid var(--border-color);
+    padding: 16px;
+    flex-shrink: 0;
+}
+
+.settings-nav a {
+    display: block;
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: background-color 0.2s;
+}
+
+.settings-nav a:hover {
+    background-color: var(--panel-bg);
+}
+
+.settings-nav a.active {
+    background-color: var(--accent-color);
+    font-weight: bold;
+}
+
+.settings-content {
+    flex-grow: 1;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.settings-pane { display: none; }
+.settings-pane.active { display: block; }

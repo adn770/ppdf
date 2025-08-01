@@ -1,0 +1,90 @@
+/* dmme_lib/frontend/css/components/game-view.css */
+
+.game-view-container { display: none; height: 100%; width: 100%; }
+.game-view-container.active { display: flex; }
+
+.left-panel-game {
+    width: 25%;
+    max-width: 300px;
+    padding-right: 24px;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.right-panel-game {
+    flex-grow: 1;
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.party-status-panel .accordion-item {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.party-status-panel .accordion-header {
+    width: 100%;
+    background-color: var(--panel-bg);
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+}
+
+.party-status-panel .accordion-body {
+    padding: 12px;
+    font-size: 0.9em;
+    background-color: #333;
+    display: none;
+}
+
+.party-status-panel .accordion-body.active { display: block; }
+.party-status-panel .accordion-body p { margin: 4px 0; }
+.dice-roller .dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dice-roller .dice-grid button { width: 100%; }
+
+.knowledge-panel {
+    flex-shrink: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+    font-size: 0.9em;
+    color: #aaa;
+    display: flex;
+    gap: 24px;
+}
+
+.narrative-view {
+    flex-grow: 1;
+    overflow-y: auto;
+    font-family: var(--font-family-mono);
+    line-height: 1.6;
+}
+
+.narrative-view .narrative-entry { margin-bottom: 1em; position: relative; }
+.narrative-view p { margin: 0; }
+.narrative-view .player-command { color: var(--accent-color); font-style: italic; }
+
+.narrative-view .read-aloud {
+    color: #ccc;
+    border-left: 3px solid var(--accent-color);
+    padding-left: 12px;
+    margin: 1em 0;
+}
+
+.input-panel {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.input-panel textarea { flex-grow: 1; resize: none; height: 60px; }
+.input-panel button { height: 100%; }

@@ -21,7 +21,10 @@
             <div id="welcome-view">
                 <div class="welcome-message">
                     <h2>Welcome to DMme</h2>
-                    <p>Click "New Game" to begin an adventure, or "Import Knowledge Base" to expand your library.</p>
+                    <p>
+                        Click "New Game" to begin an adventure, or
+                        "Import Knowledge Base" to expand your library.
+                    </p>
                 </div>
             </div>
             <div id="game-view" class="game-view-container">
@@ -29,7 +32,7 @@
                     <div class="party-status-panel">
                         <h4>Party Status</h4>
                         <div id="party-accordion-container">
-                            </div>
+                        </div>
                     </div>
                     <div class="dice-roller">
                         <h4>Dice Roller</h4>
@@ -45,9 +48,9 @@
                 </div>
                 <div class="right-panel-game">
                     <div id="knowledge-panel" class="knowledge-panel">
-                        </div>
+                    </div>
                     <div id="narrative-view" class="narrative-view">
-                        </div>
+                    </div>
                     <div class="input-panel">
                         <textarea id="player-input"
                             placeholder="What do you do?"></textarea>
@@ -67,20 +70,24 @@
         </div>
         <div class="modal-body">
             <div class="wizard-pane active" id="wizard-pane-0">
-                <div class="wizard-section">
+                <div class="wizard-section" id="wizard-section-upload">
                     <h3>Step 1: Upload File</h3>
                     <div id="wizard-upload-area" class="upload-area">
-                        <p id="wizard-upload-text">Drag & Drop a PDF or Markdown file here, or click to select</p>
-                        <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md">
+                        <p id="wizard-upload-text">
+                            Drag & Drop a PDF or Markdown file here, or click to select
+                        </p>
+                        <input type="file" id="wizard-upload-input"
+                            style="display: none;" accept=".pdf,.md">
                     </div>
                 </div>
                 <hr class="wizard-divider">
-                <div class="wizard-section">
+                <div class="wizard-section" id="wizard-section-details">
                     <h3>Step 2: Add Details</h3>
                     <div class="form-row">
                         <div class="form-group form-group-wide">
                             <label for="kb-name">Name</label>
-                            <input type="text" id="kb-name" placeholder="e.g., Core Rules v5.1">
+                            <input type="text" id="kb-name"
+                                placeholder="e.g., Core Rules v5.1">
                         </div>
                         <div class="form-group">
                             <label for="kb-type">Type</label>
@@ -101,15 +108,18 @@
                         </div>
                     </div>
                     <div class="form-group form-group-fill">
-                        <label for="kb-desc">Description (Optional)</label>
-                        <textarea id="kb-desc"></textarea>
+                        <textarea id="kb-desc" placeholder="Description (Optional)"></textarea>
                     </div>
                 </div>
             </div>
             <div class="wizard-pane" id="wizard-pane-1">
-                <h3>Step 3: Processing...</h3>
-                <div class="spinner"></div>
-                <pre id="wizard-progress-log" class="progress-log"></pre>
+                <div class="wizard-pane-header">
+                    <h3>Step 3: Processing...</h3>
+                </div>
+                <div class="progress-container">
+                    <div class="spinner"></div>
+                    <pre id="wizard-progress-log" class="progress-log"></pre>
+                </div>
             </div>
             <div class="wizard-pane" id="wizard-pane-2">
                 <h3>Step 4: Review Images</h3>
@@ -128,17 +138,37 @@
                         <div class="form-group">
                             <label>Classification</label>
                             <div class="radio-group image-classification-group">
-                                <label><input type="radio" name="image-classification" value="art" checked> Art</label>
-                                <label><input type="radio" name="image-classification" value="map"> Map</label>
-                                <label><input type="radio" name="image-classification" value="handout"> Handout</label>
-                                <label><input type="radio" name="image-classification" value="decoration"> Decoration</label>
-                                <label><input type="radio" name="image-classification" value="other"> Other</label>
+                                <label>
+                                    <input type="radio" name="image-classification"
+                                        value="art" checked> Art
+                                </label>
+                                <label>
+                                    <input type="radio" name="image-classification"
+                                        value="map"> Map
+                                </label>
+                                <label>
+                                    <input type="radio" name="image-classification"
+                                        value="handout"> Handout
+                                </label>
+                                <label>
+                                    <input type="radio" name="image-classification"
+                                        value="decoration"> Decoration
+                                </label>
+                                <label>
+                                    <input type="radio" name="image-classification"
+                                        value="other"> Other
+                                </label>
                             </div>
                         </div>
                         <div class="review-actions">
-                            <button id="save-image-changes-btn" class="accent-btn">Save Changes</button>
+                            <button id="save-image-changes-btn" class="accent-btn">
+                                Save Changes
+                            </button>
                             <span id="image-save-status"></span>
-                            <button id="discard-image-btn" class="discard-btn danger-btn" title="Discard Image">Delete</button>
+                            <button id="discard-image-btn"
+                                class="discard-btn danger-btn" title="Discard Image">
+                                Delete
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -161,7 +191,9 @@
                     <div class="party-selection-area">
                         <h4>Parties</h4>
                         <ul id="party-list" class="item-list"></ul>
-                        <button id="show-create-party-panel-btn" class="accent-btn">+ Create New Party</button>
+                        <button id="show-create-party-panel-btn" class="accent-btn">
+                            + Create New Party
+                        </button>
                     </div>
                     <div class="party-roster-area">
                         <h4>Roster</h4>
@@ -176,7 +208,8 @@
                         <h3>Create New Party</h3>
                         <div class="form-group">
                             <label for="new-party-name-input">Party Name</label>
-                            <input type="text" id="new-party-name-input" placeholder="e.g., The Brightswords">
+                            <input type="text" id="new-party-name-input"
+                                placeholder="e.g., The Brightswords">
                         </div>
                         <button id="create-party-btn" class="accent-btn">Save Party</button>
                     </div>
@@ -210,12 +243,18 @@
                                 <input type="number" id="char-level" value="1">
                             </div>
                         </div>
-                        <button id="add-char-manual-btn" class="accent-btn">Add Manually</button>
+                        <button id="add-char-manual-btn" class="accent-btn">
+                            Add Manually
+                        </button>
                         <div class="ai-generator">
                             <h5>AI Character Generator</h5>
                             <div class="form-group form-group-stretch ai-input-container">
-                                <textarea id="ai-char-desc" rows="4" placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
-                                <button id="ai-char-generate-btn" title="Generate with AI">✨</button>
+                                <textarea id="ai-char-desc" rows="4"
+                                    placeholder="e.g., A grumpy dwarf cleric who lost his faith...">
+                                </textarea>
+                                <button id="ai-char-generate-btn" title="Generate with AI">
+                                    ✨
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -233,8 +272,14 @@
             <div class="form-group">
                 <label>Game Mode</label>
                 <div class="radio-group">
-                    <label><input type="radio" name="game-mode" value="module" checked> Adventure Module</label>
-                    <label><input type="radio" name="game-mode" value="freestyle"> Freestyle</label>
+                    <label>
+                        <input type="radio" name="game-mode" value="module" checked>
+                        Adventure Module
+                    </label>
+                    <label>
+                        <input type="radio" name="game-mode" value="freestyle">
+                        Freestyle
+                    </label>
                 </div>
             </div>
             <div class="form-group">
@@ -304,7 +349,10 @@
         </div>
         <div class="modal-body wizard-body">
             <h3>RAG Context</h3>
-            <p>This is the raw context retrieved from the knowledge bases that the AI used to generate its last response.</p>
+            <p>
+                This is the raw context retrieved from the knowledge bases that
+                the AI used to generate its last response.
+            </p>
             <pre id="dm-insight-content" class="dm-insight-content-box"></pre>
         </div>
     </div>

@@ -1,0 +1,103 @@
+/* dmme_lib/frontend/css/components/import-wizard.css */
+
+#wizard-section-upload { flex: 2; }
+#wizard-section-details { flex: 3; }
+
+.progress-container {
+    position: relative;
+    flex-grow: 1;
+    min-height: 0;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 12px;
+}
+
+#wizard-pane-1 .spinner {
+    position: absolute;
+    top: 12px;
+    right: 22px;
+    z-index: 1;
+}
+
+#wizard-pane-2 { display: none; }
+#wizard-pane-2.active { display: flex; flex-direction: column; }
+
+.review-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.review-actions .discard-btn {
+    margin-left: auto;
+    padding: 10px 16px;
+}
+
+.image-review-container {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.image-display-area {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    position: relative;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    padding: 8px;
+    height: 400px;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-display-area #review-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.image-display-area #image-review-counter {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    color: #ccc;
+}
+
+.image-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    font-size: 2em;
+    width: 50px;
+    height: 80px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.image-display-area:hover .image-nav-btn { opacity: 0.7; }
+.image-nav-btn:hover { opacity: 1 !important; background-color: rgba(0, 0, 0, 0.7); }
+.image-nav-btn.prev { left: 8px; }
+.image-nav-btn.next { right: 8px; }
+
+.image-metadata-editor {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+}

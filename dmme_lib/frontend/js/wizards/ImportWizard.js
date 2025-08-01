@@ -1,5 +1,6 @@
 // dmme_lib/frontend/js/wizards/ImportWizard.js
 import { apiCall } from './ApiHelper.js';
+
 export class ImportWizard {
     constructor() {
         this.currentStep = 0;
@@ -9,11 +10,29 @@ export class ImportWizard {
         this.knowledgeBaseName = '';
         this.reviewImages = [];
         this.currentReviewIndex = 0;
-        this.uploadDefaultText = 'Drag & Drop a PDF or Markdown file here, or click to select';
+        this.uploadDefaultText =
+            'Drag & Drop a PDF or Markdown file here, or click to select';
         this.reviewListenersAttached = false;
         this.progressLog = null;
+
+        // --- DOM Element Querying & Listener Setup (Moved from open()) ---
+        // This ensures event listeners are only attached once for the lifetime
+        // of the component, preventing the double-dialog bug.
+        this.modal = document.getElementById('import-wizard-modal');
+        this.overlay = document.getElementById('modal-overlay');
+        this.panes = this.modal.querySelectorAll('.wizard-pane');
+        this.backBtn = document.getElementById('import-wizard-back-btn');
+        this.nextBtn = document.getElementById('import-wizard-next-btn');
+        this.uploadArea = document.getElementById('wizard-upload-area');
+        this.uploadInput = document.getElementById('wizard-upload-input');
+        this.uploadText = document.getElementById('wizard-upload-text');
+        this.reviewImage = document.getElementById('review-image');
+        this.reviewCounter = document.getElementById('image-review-counter');
+        this.imgDesc = document.getElementById('image-description');
+
+        this._addEventListeners();
     }
-    
+
     _addEventListeners() {
         this.modal.querySelector('.close-btn').addEventListener('click', () => this.close());
         this.overlay.addEventListener('click', (e) => {
@@ -22,7 +41,7 @@ export class ImportWizard {
         this.nextBtn.addEventListener('click', () => this.handleNext());
         this.backBtn.addEventListener('click', () => this.navigate(-1));
         this.uploadArea.addEventListener('click', () => this.uploadInput.click());
-        this.uploadInput.addEventListener('change', 
+        this.uploadInput.addEventListener('change',
             (e) => this.handleFileSelect(e.target.files)
         );
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => {
@@ -39,7 +58,6 @@ export class ImportWizard {
 
     _initReviewListeners() {
         if (this.reviewListenersAttached) return;
-
         this.prevImgBtn = document.getElementById('image-prev-btn');
         this.nextImgBtn = document.getElementById('image-next-btn');
         this.saveImgBtn = document.getElementById('save-image-changes-btn');
@@ -49,24 +67,11 @@ export class ImportWizard {
         this.nextImgBtn.addEventListener('click', () => this.navigateReviewImage(1));
         this.saveImgBtn.addEventListener('click', () => this.saveImageChanges());
         this.discardImgBtn.addEventListener('click', () => this.discardCurrentImage());
-        
+
         this.reviewListenersAttached = true;
     }
 
     open() {
-        this.modal = document.getElementById('import-wizard-modal');
-        this.overlay = document.getElementById('modal-overlay');
-        this.panes = this.modal.querySelectorAll('.wizard-pane');
-        this.backBtn = document.getElementById('import-wizard-back-btn');
-        this.nextBtn = document.getElementById('import-wizard-next-btn');
-        this.uploadArea = document.getElementById('wizard-upload-area');
-        this.uploadInput = document.getElementById('wizard-upload-input');
-        this.uploadText = document.getElementById('wizard-upload-text');
-        this.reviewImage = document.getElementById('review-image');
-        this.reviewCounter = document.getElementById('image-review-counter');
-        this.imgDesc = document.getElementById('image-description');
-        
-        this._addEventListeners();
         this.resetState();
         this.updateView();
         this.overlay.style.display = 'block';
@@ -74,7 +79,8 @@ export class ImportWizard {
     }
 
     close() {
-        if (this.nextBtn && this.nextBtn.disabled) return;
+        // Only prevent closing during the "Processing" step (index 1).
+        if (this.currentStep === 1) return;
         this.overlay.style.display = 'none';
         this.modal.style.display = 'none';
     }
@@ -92,9 +98,9 @@ export class ImportWizard {
         document.getElementById('kb-name').value = '';
         document.getElementById('kb-desc').value = '';
         this.unhighlight();
-        this.reviewListenersAttached = false;
         this.progressLog = null;
-        this.updateView(); // Reset buttons
+        this.updateView();
+        // Reset buttons are handled in updateView
     }
 
     navigate(direction) {
@@ -107,27 +113,30 @@ export class ImportWizard {
         this.panes.forEach((pane, index) => {
             pane.classList.toggle('active', index === this.currentStep);
         });
-        
         const finalizeContainer = this.modal.querySelector('.modal-footer');
         let finalizeBtn = this.modal.querySelector('#finalize-btn');
 
-        this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 1) ? 'block' : 'none';
+        this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 1) ?
+            'block' : 'none';
         this.nextBtn.style.display = this.currentStep < 1 ? 'block' : 'none';
-        this.nextBtn.disabled = !this.serverTempFilePath; // Can't proceed until upload is done
+        this.nextBtn.disabled = !this.serverTempFilePath;
 
         if (this.currentStep === 2) {
             if (!finalizeBtn) {
-                finalizeContainer.insertAdjacentHTML('beforeend', `<button id="finalize-btn" class="accent-btn">Finalize Ingestion</button>`);
-                this.modal.querySelector('#finalize-btn').addEventListener('click', () => this.finalizeImageIngestion());
+                const btnHTML =
+                    `<button id="finalize-btn" class="accent-btn">Finalize Ingestion</button>`;
+                finalizeContainer.insertAdjacentHTML('beforeend', btnHTML);
+                this.modal.querySelector('#finalize-btn')
+                    .addEventListener('click', () => this.finalizeImageIngestion());
             }
         } else {
             if (finalizeBtn) finalizeBtn.remove();
         }
-        
-        this.nextBtn.textContent = 'Next';
 
+        this.nextBtn.textContent = 'Next';
         const title = document.getElementById('import-wizard-title');
-        title.textContent = this.knowledgeBaseName ? `Importing: ${this.knowledgeBaseName}` : 'Import Knowledge Wizard';
+        const name = this.knowledgeBaseName;
+        title.textContent = name ? `Importing: ${name}` : 'Import Knowledge Wizard';
     }
 
     logProgress(message) {
@@ -140,13 +149,14 @@ export class ImportWizard {
     async handleNext() {
         if (this.currentStep === 0) {
             this.knowledgeBaseName = document.getElementById('kb-name').value.trim();
-            if (!this.serverTempFilePath) return alert("Please wait for the file to finish uploading.");
+            const msg = "Please wait for the file to finish uploading.";
+            if (!this.serverTempFilePath) return alert(msg);
             if (!this.knowledgeBaseName) return alert("Please provide a name.");
             this.navigate(1);
             await this.runFullIngestionProcess();
         }
     }
-    
+
     async _uploadFile(file) {
         this.serverTempFilePath = null;
         this.nextBtn.disabled = true;
@@ -155,7 +165,6 @@ export class ImportWizard {
 
         const formData = new FormData();
         formData.append('file', file);
-
         try {
             const result = await apiCall('/api/knowledge/upload-temp-file', {
                 method: 'POST',
@@ -184,8 +193,7 @@ export class ImportWizard {
                     filename: this.selectedFile.name
                 }
             };
-
-            const response = await fetch('/api/knowledge/ingest-document', { 
+            const response = await fetch('/api/knowledge/ingest-document', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -196,7 +204,8 @@ export class ImportWizard {
             if (isPdf) {
                 await this.loadImagesForReview();
                 if (this.reviewImages.length > 0) {
-                    this.logProgress(`✔ Found ${this.reviewImages.length} images to review.`);
+                    const msg = `✔ Found ${this.reviewImages.length} images to review.`;
+                    this.logProgress(msg);
                     this.navigate(1); // Move to step 2 (review)
                 } else {
                     this.logProgress("No images found for review.");
@@ -211,20 +220,19 @@ export class ImportWizard {
             this.logProgress(`✖ ERROR: ${error.message}`);
         }
     }
-    
+
     async _processStream(response) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-    
+
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-    
+
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); 
-    
+            buffer = lines.pop();
             for (const line of lines) {
                 if (!line.startsWith('data: ')) continue;
                 try {
@@ -243,7 +251,7 @@ export class ImportWizard {
     async loadImagesForReview() {
         const url = `/api/knowledge/review-images/${this.knowledgeBaseName}`;
         this.reviewImages = await apiCall(url);
-        
+
         if (this.reviewImages && this.reviewImages.length > 0) {
             this._initReviewListeners();
             this.currentReviewIndex = 0;
@@ -256,15 +264,17 @@ export class ImportWizard {
             this.finalizeImageIngestion();
             return;
         }
-        this.currentReviewIndex = Math.max(0, Math.min(this.currentReviewIndex, this.reviewImages.length - 1));
-        
+        const newIdx = this.currentReviewIndex;
+        this.currentReviewIndex = Math.max(0, Math.min(newIdx, this.reviewImages.length - 1));
+
         const current = this.reviewImages[this.currentReviewIndex];
         this.reviewImage.src = `${current.url}?t=${new Date().getTime()}`;
-        this.reviewCounter.textContent = `${this.currentReviewIndex + 1} / ${this.reviewImages.length}`;
+        const count = `${this.currentReviewIndex + 1} / ${this.reviewImages.length}`;
+        this.reviewCounter.textContent = count;
         this.imgDesc.value = current.metadata.description;
-        
-        // Set the correct radio button
-        const radioToSelect = this.modal.querySelector(`input[name="image-classification"][value="${current.metadata.classification}"]`);
+
+        const selector = `input[name="image-classification"][value="${current.metadata.classification}"]`;
+        const radioToSelect = this.modal.querySelector(selector);
         if (radioToSelect) {
             radioToSelect.checked = true;
         }
@@ -285,16 +295,22 @@ export class ImportWizard {
     async saveImageChanges() {
         const current = this.reviewImages[this.currentReviewIndex];
         const statusEl = document.getElementById('image-save-status');
-        const selectedClassification = this.modal.querySelector('input[name="image-classification"]:checked').value;
+        const classification =
+            this.modal.querySelector('input[name="image-classification"]:checked').value;
 
         const payload = {
             description: this.imgDesc.value.trim(),
-            classification: selectedClassification,
+            classification: classification,
         };
         try {
             statusEl.textContent = 'Saving...';
             const url = `/api/knowledge/review-images/${this.knowledgeBaseName}/${current.filename}`;
-            await apiCall(url, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            const opts = {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            };
+            await apiCall(url, opts);
             current.metadata.description = payload.description;
             current.metadata.classification = payload.classification;
             statusEl.textContent = 'Saved!';
@@ -318,14 +334,14 @@ export class ImportWizard {
             }
         }
     }
-    
+
     async finalizeImageIngestion() {
         const finalizeBtn = this.modal.querySelector('#finalize-btn');
         if (finalizeBtn) {
             finalizeBtn.disabled = true;
             finalizeBtn.textContent = 'Finalizing...';
         }
-        
+
         try {
             await apiCall('/api/knowledge/ingest-images', {
                 method: 'POST',
@@ -338,11 +354,12 @@ export class ImportWizard {
             if (finalizeBtn) finalizeBtn.disabled = false;
         }
     }
-    
+
     preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
     highlight() { this.uploadArea.classList.add('drag-over'); }
     unhighlight() { this.uploadArea.classList.remove('drag-over'); }
     handleFileDrop(e) { this.handleFileSelect(e.dataTransfer.files); }
+
     handleFileSelect(files) {
         if (files.length > 0) {
             this.selectedFile = files[0];

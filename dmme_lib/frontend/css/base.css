@@ -1,0 +1,81 @@
+/* dmme_lib/frontend/css/base.css */
+
+/* --- Themes & Variables --- */
+:root, .theme-default {
+    --bg-color: #1a1a1a;
+    --panel-bg: #2a2a2e;
+    --border-color: #444;
+    --text-color: #e0e0e0;
+    --accent-color: #007acc;
+    --accent-hover: #0099ff;
+    --danger-color: #e53935;
+    --danger-hover: #c62828;
+    --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+        Arial, sans-serif;
+    --font-family-mono: "Courier New", Courier, monospace;
+}
+
+body.theme-vibrant-focus {
+    --bg-color: #1c1c24;
+    --panel-bg: #2b2b3a;
+    --border-color: #50506e;
+    --text-color: #d1d1e0;
+    --accent-color: #8a3ffc;
+    --accent-hover: #a46cfc;
+}
+
+body.theme-high-contrast {
+    --bg-color: #000000;
+    --panel-bg: #1a1a1a;
+    --border-color: #888;
+    --text-color: #ffffff;
+    --accent-color: #00aaff;
+    --accent-hover: #33bbff;
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: transparent; border-radius: 4px; }
+:hover::-webkit-scrollbar-thumb { background-color: var(--accent-color); }
+
+
+/* --- Global Styles --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--font-family-sans);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 16px;
+    overflow: hidden;
+}
+
+/* --- Core Layout --- */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--panel-bg);
+}
+
+.app-header h1 { margin: 0; font-size: 1.5em; }
+.global-controls { display: flex; gap: 12px; }
+
+.main-content {
+    flex-grow: 1;
+    padding: 24px;
+    height: calc(100vh - 65px); /* Full height minus header */
+    box-sizing: border-box;
+}
+
+.welcome-message { text-align: center; color: #888; }

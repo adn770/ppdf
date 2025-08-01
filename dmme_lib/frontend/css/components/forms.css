@@ -1,0 +1,80 @@
+/* dmme_lib/frontend/css/components/forms.css */
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 8px; }
+.form-row { display: flex; align-items: flex-start; gap: 16px; }
+.form-row .form-group { flex: 1; margin-bottom: 0; }
+.form-group-wide { flex: 2 !important; }
+
+.form-group-fill {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group-fill textarea {
+    flex-grow: 1;
+    resize: none;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    background-color: #1e1e1e;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+}
+
+.radio-group { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 0; }
+.form-row .radio-group { padding-top: 8px; padding-bottom: 8px; }
+
+.image-classification-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0;
+}
+
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-area.drag-over {
+    border-color: var(--accent-color);
+    background-color: rgba(0, 122, 204, 0.1);
+}
+
+.upload-area p.has-file {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.form-row + .form-group {
+    margin-top: 16px;
+}

@@ -1,0 +1,78 @@
+/* dmme_lib/frontend/css/components/lists.css */
+
+.item-list, .character-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.item-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    border-left: 3px solid transparent;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.item-list li:hover {
+    background-color: #3e3e42;
+}
+
+.item-list li.selected {
+    background-color: rgba(0, 122, 204, 0.2);
+    border-left-color: var(--accent-color);
+    font-weight: bold;
+}
+
+.character-list {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    flex-grow: 1;
+}
+
+.character-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+}
+
+.character-list li:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.character-list .char-info { font-weight: bold; }
+.character-list .char-details { font-size: 0.9em; color: #aaa; margin-left: 8px; }
+
+.delete-icon-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+li:hover > .delete-icon-btn,
+li.selected > .delete-icon-btn {
+    opacity: 1;
+}
+
+.delete-icon-btn:hover {
+    background-color: var(--danger-color);
+    color: white;
+}
