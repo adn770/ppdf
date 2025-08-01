@@ -1,11 +1,12 @@
 // dmme_lib/frontend/js/GameplayHandler.js
+import { showGameSpinner, hideGameSpinner } from './ui.js';
 export class GameplayHandler {
     constructor() {
         this.gameConfig = null;
         this.narrativeView = document.getElementById('narrative-view');
         this.playerInput = document.getElementById('player-input');
         this.sendCommandBtn = document.getElementById('send-command-btn');
-        this.knowledgePanel = document.getElementById('knowledge-panel');
+        this.kbDisplay = document.getElementById('kb-display');
         this.dmInsight = '';
 
         this._addEventListeners();
@@ -16,7 +17,7 @@ export class GameplayHandler {
         console.log("GameplayHandler initialized with config:", this.gameConfig);
 
         this._updateKnowledgePanel();
-        this.playerInput.focus();
+        this._startNarration();
     }
 
     _addEventListeners() {
@@ -36,7 +37,33 @@ export class GameplayHandler {
         } else {
             kbHtml += `<span>Setting: <strong>${this.gameConfig.setting}</strong></span>`;
         }
-        this.knowledgePanel.innerHTML = kbHtml;
+        this.kbDisplay.innerHTML = kbHtml;
+    }
+
+    async _startNarration() {
+        this.playerInput.disabled = true;
+        this.sendCommandBtn.disabled = true;
+        this.narrativeView.innerHTML = ''; // Clear view for new game
+        showGameSpinner();
+
+        const responseParagraph = this._createAiResponseParagraph();
+        try {
+            const response = await fetch('/api/game/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config: this.gameConfig }),
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            await this._processStream(response, responseParagraph);
+        } catch (error) {
+            console.error("Failed to get response from game start API:", error);
+            responseParagraph.textContent = "Error: Could not start the game narration.";
+        } finally {
+            this.playerInput.disabled = false;
+            this.sendCommandBtn.disabled = false;
+            this.playerInput.focus();
+            hideGameSpinner();
+        }
     }
 
     async _sendCommand() {
@@ -47,6 +74,7 @@ export class GameplayHandler {
         this.playerInput.value = '';
         this.playerInput.disabled = true;
         this.sendCommandBtn.disabled = true;
+        showGameSpinner();
 
         const responseParagraph = this._createAiResponseParagraph();
         try {
@@ -64,21 +92,25 @@ export class GameplayHandler {
             this.playerInput.disabled = false;
             this.sendCommandBtn.disabled = false;
             this.playerInput.focus();
+            hideGameSpinner();
         }
     }
 
     _renderPlayerCommand(text) {
-        const p = document.createElement('p');
-        p.className = 'player-command';
-        p.textContent = `> ${text}`;
-        this.narrativeView.appendChild(p);
+        const entry = document.createElement('div');
+        entry.className = 'narrative-entry player-command';
+        entry.textContent = `> ${text}`;
+        this.narrativeView.appendChild(entry);
         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
     }
 
     _createAiResponseParagraph() {
+        const entry = document.createElement('div');
+        entry.className = 'narrative-entry';
         const p = document.createElement('p');
         p.className = 'narrative-text';
-        this.narrativeView.appendChild(p);
+        entry.appendChild(p);
+        this.narrativeView.appendChild(entry);
         return p;
     }
 

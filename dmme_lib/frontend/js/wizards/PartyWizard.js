@@ -179,7 +179,6 @@ export class PartyWizard {
             }
 
             this.aiGenerateBtn.disabled = true;
-            this.aiGenerateBtn.textContent = '...';
             status.setText(`Generating character with '${rules}' ruleset...`);
             try {
                 charData = await apiCall('/api/game/generate-character', {
@@ -192,7 +191,6 @@ export class PartyWizard {
                 return; // apiCall helper shows status
             } finally {
                 this.aiGenerateBtn.disabled = false;
-                this.aiGenerateBtn.textContent = '✨';
                 this.aiDescInput.value = '';
             }
         } else {

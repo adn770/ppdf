@@ -49,14 +49,19 @@
                 </div>
                 <div class="right-panel-game">
                     <div id="knowledge-panel" class="knowledge-panel">
+                        <div id="kb-display">
+                            </div>
+                        <div class="game-controls-container">
+                            <div id="game-spinner" class="spinner-container" style="display: none;">
+                                <div class="spinner spinner-sm"></div>
+                            </div>
+                            <button id="toggle-visual-aids-btn" class="icon-btn"
+                                title="Toggle Visual Aids">🖼️</button>
+                            <button id="toggle-ascii-scene-btn" class="icon-btn"
+                                title="Toggle ASCII Scene">#</button>
+                        </div>
                     </div>
                     <div id="narrative-view" class="narrative-view">
-                    </div>
-                    <div class="game-aids-toolbar">
-                        <button id="toggle-visual-aids-btn" class="icon-btn"
-                            title="Toggle Visual Aids">🖼️</button>
-                        <button id="toggle-ascii-scene-btn" class="icon-btn"
-                            title="Toggle ASCII Scene">#</button>
                     </div>
                     <div class="input-panel">
                         <textarea id="player-input"
@@ -128,7 +133,7 @@
                     <h3>Step 3: Processing...</h3>
                 </div>
                 <div class="progress-container">
-                    <div class="spinner"></div>
+                    <div class="spinner spinner-lg"></div>
                     <pre id="wizard-progress-log" class="progress-log"></pre>
                 </div>
             </div>

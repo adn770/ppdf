@@ -1,13 +1,52 @@
 # --- dmme_lib/api/game.py ---
 import json
+import logging
 from flask import Blueprint, request, jsonify, current_app, Response
 from dmme_lib.constants import PROMPT_GENERATE_CHARACTER
 from core.llm_utils import query_text_llm
 
 bp = Blueprint("game", __name__)
+log = logging.getLogger("dmme.api")
 
 # Simple in-memory cache for conversation history (replace with DB persistence later)
 conversation_history = []
+
+
+@bp.route("/start", methods=["POST"])
+def start_game():
+    """Handles the start of a game, generating the initial narration."""
+    global conversation_history
+    conversation_history = []  # Reset history for a new game
+    data = request.get_json()
+    game_config = data.get("config")
+    log.debug("Game start requested with config: %s", game_config)
+    # session_recap = data.get("recap") # Placeholder for future implementation
+
+    if not game_config:
+        return jsonify({"error": "Missing 'config' in request"}), 400
+
+    logger = current_app.logger
+    rag_service = current_app.rag_service
+
+    def stream_kickoff():
+        try:
+            response_generator = rag_service.generate_kickoff_narration(game_config)
+            full_narrative = ""
+            for chunk in response_generator:
+                if chunk.get("type") == "narrative_chunk":
+                    full_narrative += chunk.get("content", "")
+                yield json.dumps(chunk) + "\n"
+
+            if full_narrative:
+                conversation_history.append({"role": "assistant", "content": full_narrative})
+        except Exception as e:
+            logger.error("Error in RAG kickoff stream: %s", e, exc_info=True)
+            error_chunk = json.dumps(
+                {"type": "error", "content": "Failed to generate opening narration."}
+            )
+            yield error_chunk + "\n"
+
+    return Response(stream_kickoff(), mimetype="application/x-ndjson")
 
 
 @bp.route("/command", methods=["POST"])

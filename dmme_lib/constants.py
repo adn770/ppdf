@@ -57,6 +57,23 @@ PROMPT_GAME_MASTER = (
     "headings or extra text."
 )
 
+PROMPT_KICKOFF_ADVENTURE = (
+    "You are the Dungeon Master for a tabletop role-playing game. Your task is to "
+    "start the adventure with an engaging opening narration.\n\n"
+    "GUIDING PRINCIPLES:\n"
+    "1.  **Use the Context**: The [ADVENTURE INTRODUCTION] provides the opening "
+    "    text from the adventure module. Use this as your primary source to set "
+    "    the scene.\n"
+    "2.  **Address the Players**: Speak directly to the players. Describe what their "
+    "    characters see, hear, and feel.\n"
+    "3.  **Prompt for Action**: End your narration with a clear question that prompts "
+    "    the players to act, such as 'What do you do?'.\n"
+    "4.  **Stay in Character**: Your entire response must be narrative. Do not use "
+    "    phrases like 'Based on the context provided...'.\n\n"
+    "Your response must ONLY be the opening narrative. Do not include any other "
+    "headings or extra text."
+)
+
 PROMPT_GENERATE_CHARACTER = (
     "You are a character creation assistant for a TTRPG. Your task is to generate a "
     "character sheet in JSON format based on a user's description and a specified "

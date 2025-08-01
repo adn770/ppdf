@@ -31,7 +31,7 @@ export class ImportWizard {
         this.reviewImage = document.getElementById('review-image');
         this.reviewCounter = document.getElementById('image-review-counter');
         this.imgDesc = document.getElementById('image-description');
-        this.spinner = this.modal.querySelector('.spinner');
+        this.spinner = this.modal.querySelector('.progress-container .spinner');
 
         this._addEventListeners();
     }

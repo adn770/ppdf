@@ -1,5 +1,15 @@
 // dmme_lib/frontend/js/ui.js
 
+const _gameSpinner = document.getElementById('game-spinner');
+
+export function showGameSpinner() {
+    if (_gameSpinner) _gameSpinner.style.display = 'flex';
+}
+
+export function hideGameSpinner() {
+    if (_gameSpinner) _gameSpinner.style.display = 'none';
+}
+
 class ConfirmationModal {
     constructor() {
         this.modal = document.getElementById('confirmation-modal');
