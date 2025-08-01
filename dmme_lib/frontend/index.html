@@ -324,13 +324,12 @@
         </div>
         <div class="modal-body">
             <div class="settings-body">
-                <nav class="settings-nav">
-                    <a href="#" class="active" data-pane="appearance">Appearance</a>
-                    <a href="#" data-pane="gameplay">Gameplay</a>
-                    <a href="#" data-pane="ollama">Ollama</a>
-                </nav>
+                <div class="wizard-tabs">
+                    <button class="wizard-tab-btn active" data-pane="ollama">Ollama</button>
+                    <button class="wizard-tab-btn" data-pane="appearance">Appearance</button>
+                </div>
                 <div class="settings-content">
-                    <div class="settings-pane active" id="pane-appearance">
+                    <div class="settings-pane" id="pane-appearance">
                         <h3>Appearance</h3>
                         <div class="form-group">
                             <label for="theme-selector">Theme</label>
@@ -346,13 +345,32 @@
                             </select>
                         </div>
                     </div>
-                    <div class="settings-pane" id="pane-gameplay">
-                        <h3>Gameplay Aids</h3>
-                        <p>Configure optional gameplay enhancements.</p>
-                        </div>
-                    <div class="settings-pane" id="pane-ollama">
+                    <div class="settings-pane active" id="pane-ollama">
                         <h3>Ollama Configuration</h3>
-                        <p>Settings for your local Ollama server.</p>
+                        <div class="form-group">
+                            <label for="ollama-url">Server URL</label>
+                            <input type="text" id="ollama-url" data-section="Ollama"
+                                data-key="url" placeholder="http://localhost:11434">
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="ollama-main-model">Main Gameplay Model</label>
+                                <input type="text" id="ollama-main-model" list="ollama-models-list"
+                                    data-section="Ollama" data-key="main_model">
+                            </div>
+                            <div class="form-group">
+                                <label for="ollama-vision-model">Image Analysis Model</label>
+                                <input type="text" id="ollama-vision-model" list="ollama-models-list"
+                                    data-section="Ollama" data-key="vision_model">
+                            </div>
+                            <div class="form-group">
+                                <label for="ollama-embedding-model">Embedding Model</label>
+                                <input type="text" id="ollama-embedding-model"
+                                    list="ollama-models-list" data-section="Ollama"
+                                    data-key="embedding_model">
+                            </div>
+                        </div>
+                        <datalist id="ollama-models-list"></datalist>
                     </div>
                 </div>
             </div>

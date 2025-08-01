@@ -2,35 +2,32 @@
 
 .settings-body {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     height: 100%;
 }
 
-.settings-nav {
-    width: 150px;
-    background-color: var(--bg-color);
-    border-right: 1px solid var(--border-color);
-    padding: 16px;
+.wizard-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
 
-.settings-nav a {
-    display: block;
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    transition: background-color 0.2s;
+.wizard-tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 16px;
+    margin-bottom: -1px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 1em;
 }
 
-.settings-nav a:hover {
-    background-color: var(--panel-bg);
-}
-
-.settings-nav a.active {
-    background-color: var(--accent-color);
+.wizard-tab-btn.active {
+    border-bottom-color: var(--accent-color);
     font-weight: bold;
+    color: var(--text-color);
 }
 
 .settings-content {
@@ -41,3 +38,8 @@
 
 .settings-pane { display: none; }
 .settings-pane.active { display: block; }
+
+.settings-pane h3 {
+    margin-top: 0;
+    margin-bottom: 24px;
+}

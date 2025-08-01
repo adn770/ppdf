@@ -15,7 +15,7 @@ ASSETS_DIR = os.path.join(os.path.expanduser("~"), ".dmme", "assets")
 
 def create_app(config_overrides=None):
     """
-    Creates and configures an instance of the Flask application.
+    Creates and configs an instance of the Flask application.
     """
     app = Flask(
         __name__,
@@ -64,7 +64,7 @@ def create_app(config_overrides=None):
 
     # --- Register Blueprints (APIs) ---
     log.info("Registering API blueprints...")
-    from .api import campaigns, parties, knowledge, characters, game, settings
+    from .api import campaigns, parties, knowledge, characters, game, settings, ollama
 
     app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
     app.register_blueprint(parties.bp, url_prefix="/api/parties")
@@ -72,9 +72,8 @@ def create_app(config_overrides=None):
     app.register_blueprint(characters.bp, url_prefix="/api")
     app.register_blueprint(game.bp, url_prefix="/api/game")
     app.register_blueprint(settings.bp, url_prefix="/api/settings")
-    log.info(
-        "Registered blueprints: campaigns, parties, knowledge, characters, game, settings"
-    )
+    app.register_blueprint(ollama.bp, url_prefix="/api/ollama")
+    log.info("All API blueprints registered.")
 
     # --- Global Error Handler ---
     @app.errorhandler(Exception)

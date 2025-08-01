@@ -17,6 +17,12 @@
     resize: none;
 }
 
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px 24px;
+}
+
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group textarea,

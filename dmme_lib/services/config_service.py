@@ -16,7 +16,8 @@ class ConfigService:
             },
             "Ollama": {
                 "url": "http://localhost:11434",
-                "model": "llama3.1:latest",
+                "main_model": "llama3.1:latest",
+                "vision_model": "llava:latest",
                 "embedding_model": "mxbai-embed-large",
             },
         }
