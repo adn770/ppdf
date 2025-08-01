@@ -65,6 +65,11 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    justify-content: flex-end;
 }
 
 .modal-footer-spacer { flex-grow: 1; }
+
+#new-game-wizard-modal .form-group {
+    margin-bottom: 24px;
+}

@@ -1,6 +1,6 @@
 /* dmme_lib/frontend/css/components/lists.css */
 
-.item-list, .character-list {
+.item-list {
     list-style-type: none;
     padding: 0;
     margin: 0;
@@ -29,26 +29,8 @@
     font-weight: bold;
 }
 
-.character-list {
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--bg-color);
-    flex-grow: 1;
-}
-
-.character-list li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-}
-
-.character-list li:not(:last-child) {
-    border-bottom: 1px solid var(--border-color);
-}
-
-.character-list .char-info { font-weight: bold; }
-.character-list .char-details { font-size: 0.9em; color: #aaa; margin-left: 8px; }
+.item-list li .char-info { font-weight: bold; }
+.item-list li .char-details { font-size: 0.9em; color: #aaa; margin-left: 8px; }
 
 .delete-icon-btn {
     background: none;

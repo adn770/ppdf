@@ -189,15 +189,18 @@
             <div class="panel-container">
                 <div class="left-panel">
                     <div class="party-selection-area">
-                        <h4>Parties</h4>
+                        <div class="panel-header">
+                            <h4>Parties</h4>
+                            <button id="show-create-party-panel-btn"
+                                class="accent-btn icon-btn" title="Create New Party">+
+                            </button>
+                        </div>
                         <ul id="party-list" class="item-list"></ul>
-                        <button id="show-create-party-panel-btn" class="accent-btn">
-                            + Create New Party
-                        </button>
                     </div>
+                    <hr class="wizard-divider">
                     <div class="party-roster-area">
                         <h4>Roster</h4>
-                        <ul id="character-list" class="character-list"></ul>
+                        <ul id="character-list" class="item-list"></ul>
                     </div>
                 </div>
                 <div class="right-panel">
@@ -214,7 +217,11 @@
                         <button id="create-party-btn" class="accent-btn">Save Party</button>
                     </div>
                     <div id="character-editor-panel" style="display: none;">
-                        <h4>Add New Character</h4>
+                        <div class="panel-header">
+                            <h4>Add New Character</h4>
+                            <button id="add-char-manual-btn" class="accent-btn icon-btn"
+                                title="Add Manually">+</button>
+                        </div>
                         <div class="form-group">
                             <label for="char-name">Name</label>
                             <input type="text" id="char-name">
@@ -243,18 +250,13 @@
                                 <input type="number" id="char-level" value="1">
                             </div>
                         </div>
-                        <button id="add-char-manual-btn" class="accent-btn">
-                            Add Manually
-                        </button>
                         <div class="ai-generator">
                             <h5>AI Character Generator</h5>
                             <div class="form-group form-group-stretch ai-input-container">
                                 <textarea id="ai-char-desc" rows="4"
-                                    placeholder="e.g., A grumpy dwarf cleric who lost his faith...">
-                                </textarea>
-                                <button id="ai-char-generate-btn" title="Generate with AI">
-                                    ✨
-                                </button>
+                                    placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
+                                <button id="ai-char-generate-btn"
+                                    class="icon-btn" title="Generate with AI">✨</button>
                             </div>
                         </div>
                     </div>
@@ -268,7 +270,7 @@
             <h2>New Game Setup</h2>
             <button class="close-btn">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body wizard-body">
             <div class="form-group">
                 <label>Game Mode</label>
                 <div class="radio-group">

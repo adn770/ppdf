@@ -1,27 +1,41 @@
 /* dmme_lib/frontend/css/components/party-wizard.css */
 
-.party-selection-area {
-    flex-shrink: 0;
+.panel-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
-.party-roster-area {
+.panel-header h4 {
+    margin: 0;
+}
+
+.left-panel .wizard-divider {
+    margin: 12px 0;
+}
+
+.party-selection-area, .party-roster-area {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    margin-top: 16px;
 }
 
-.party-selection-area h4, .party-roster-area h4 { margin: 0 0 10px 0; }
-#show-create-party-panel-btn { width: 100%; margin-top: 10px; }
+.party-roster-area h4 {
+    margin: 0 0 10px 0;
+}
+
+.party-selection-area .item-list,
+.party-roster-area .item-list {
+    flex-grow: 1;
+}
 
 .ai-generator {
     border: 1px solid var(--border-color);
     padding: 16px;
     border-radius: 4px;
-    margin-top: 16px;
+    margin-top: 24px;
 }
 
 .ai-generator h5 { margin-top: 0; }
@@ -37,10 +51,4 @@
     position: absolute;
     bottom: 8px;
     right: 8px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    padding: 0;
-    font-size: 1.2em;
-    line-height: 1;
 }
