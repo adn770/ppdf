@@ -2,7 +2,6 @@
 import json
 import os
 import shutil
-import tempfile
 import logging
 import uuid
 from flask import Blueprint, request, jsonify, current_app, Response

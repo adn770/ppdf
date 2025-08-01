@@ -79,7 +79,10 @@ class IngestionService:
 
                 label = get_semantic_label(para.get_text(), self.ollama_url, self.model)
                 if p_idx == 0:  # Log once per section
-                    yield f"  -> Labeling section {s_idx+1}/{len(sections)} ('{section.title or '...'}')"
+                    yield (
+                        f"  -> Labeling section {s_idx + 1}/{len(sections)} "
+                        f"('{section.title or '...'}')"
+                    )
 
                 documents.append(para.get_text())
                 metadatas.append(

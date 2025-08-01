@@ -1,6 +1,5 @@
 # --- dmme_lib/services/rag_service.py ---
 import logging
-import json
 from .vector_store_service import VectorStoreService
 from core.llm_utils import query_text_llm
 from dmme_lib.constants import PROMPT_GAME_MASTER
