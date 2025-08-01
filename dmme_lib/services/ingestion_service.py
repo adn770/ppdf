@@ -54,7 +54,8 @@ class IngestionService:
 
         yield f"✔ Semantic labeling complete. Found {len(documents)} valid text chunks."
         yield "Generating embeddings and saving to vector store..."
-        self.vector_store.add_to_kb(kb_name, documents, metadatas)
+        # Pass the full metadata dict to be stored with the collection
+        self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
 
     def ingest_pdf_text(self, pdf_path: str, metadata: dict):
@@ -103,7 +104,8 @@ class IngestionService:
         if not documents:
             log.warning("No suitable text documents found to ingest for '%s'.", kb_name)
             return
-        self.vector_store.add_to_kb(kb_name, documents, metadatas)
+        # Pass the full metadata dict to be stored with the collection
+        self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
 
     def ingest_images(self, kb_name: str, assets_path: str):
@@ -143,6 +145,8 @@ class IngestionService:
         log.info("Prepared %d images for vector store ingestion.", len(documents))
 
         if documents:
+            # We don't need to pass kb_metadata here, as the collection
+            # should have been created during the text ingestion phase.
             self.vector_store.add_to_kb(kb_name, documents, metadatas)
 
         # Finalize by renaming the directory

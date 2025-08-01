@@ -1,4 +1,5 @@
 // dmme_lib/frontend/js/wizards/ApiHelper.js
+import { status } from '../ui.js';
 
 export async function apiCall(url, options = {}) {
     try {
@@ -13,7 +14,7 @@ export async function apiCall(url, options = {}) {
         return await response.json();
     } catch (error) {
         console.error(`API call to ${url} failed:`, error);
-        alert(`Error: ${error.message}`);
+        status.setText(`Error: ${error.message}`, true);
         throw error;
     }
 }

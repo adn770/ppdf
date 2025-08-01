@@ -24,11 +24,17 @@ def list_knowledge_bases():
     """Lists all available knowledge bases (ChromaDB collections)."""
     try:
         collections = current_app.vector_store.list_collections()
-        kbs = [
-            {"name": c.name, "count": c.count()}
-            for c in collections
-            if not c.name.endswith("_reviewing")
-        ]
+        kbs = []
+        for c in collections:
+            if not c.name.endswith("_reviewing"):
+                kbs.append(
+                    {
+                        "name": c.name,
+                        "count": c.count(),
+                        "metadata": c.metadata or {},  # Ensure metadata is always a dict
+                    }
+                )
+        log.debug("Returning knowledge bases: %s", kbs)
         return jsonify(kbs)
     except Exception as e:
         log.error("Failed to list knowledge bases: %s", e, exc_info=True)

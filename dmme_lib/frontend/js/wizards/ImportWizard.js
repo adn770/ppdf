@@ -1,5 +1,7 @@
 // dmme_lib/frontend/js/wizards/ImportWizard.js
 import { apiCall } from './ApiHelper.js';
+import { status } from '../ui.js';
+
 export class ImportWizard {
     constructor() {
         this.currentStep = 0;
@@ -149,9 +151,9 @@ export class ImportWizard {
     async handleNext() {
         if (this.currentStep === 0) {
             this.knowledgeBaseName = document.getElementById('kb-name').value.trim();
-            const msg = "Please wait for the file to finish uploading.";
-            if (!this.serverTempFilePath) return alert(msg);
-            if (!this.knowledgeBaseName) return alert("Please provide a name.");
+            const msg = "Please provide a name for the knowledge base.";
+            if (!this.knowledgeBaseName) return status.setText(msg, true);
+            if (!this.serverTempFilePath) return status.setText("Please upload a file first.", true);
             this.navigate(1);
             await this.runFullIngestionProcess();
         }
@@ -175,7 +177,7 @@ export class ImportWizard {
             this.nextBtn.disabled = false;
         } catch (error) {
             this.uploadText.textContent = `✖ Upload Failed`;
-            // apiCall helper shows the alert
+            // apiCall helper shows the status bar error
         }
     }
 
@@ -351,7 +353,7 @@ export class ImportWizard {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ kb_name: this.knowledgeBaseName })
             });
-            alert("Knowledge base with images created successfully!");
+            status.setText("Knowledge base with images created successfully.");
             this.close();
         } catch (error) {
             if (finalizeBtn) finalizeBtn.disabled = false;

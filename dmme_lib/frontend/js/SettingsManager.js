@@ -1,7 +1,10 @@
 // dmme_lib/frontend/js/SettingsManager.js
 import { apiCall } from './wizards/ApiHelper.js';
+import { status, confirmationModal } from './ui.js';
+
 export class SettingsManager {
-    constructor() {
+    constructor(appInstance) {
+        this.app = appInstance; // Store a reference to the main app
         this.settings = null;
 
         this._setupElements();
@@ -115,48 +118,64 @@ export class SettingsManager {
             this.ragStatusContainer.innerHTML = '<p>No knowledge bases have been created yet.</p>';
             return;
         }
+
+        const allMetaKeys = new Set();
+        kbs.forEach(kb => Object.keys(kb.metadata).forEach(key => allMetaKeys.add(key)));
+        
+        // Define a preferred order, but still be dynamic
+        const preferredOrder = ['kb_type', 'language', 'filename'];
+        const sortedMetaKeys = preferredOrder.filter(k => allMetaKeys.has(k));
+        allMetaKeys.forEach(k => {
+            if (!preferredOrder.includes(k) && k !== 'description') {
+                sortedMetaKeys.push(k);
+            }
+        });
+
+        const headers = ['Name', ...sortedMetaKeys, 'Documents'];
+        
         const table = document.createElement('table');
-        table.className = 'rag-status-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Documents</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-        `;
+        table.className = 'info-table';
+        const thead = document.createElement('thead');
+        thead.innerHTML = `<tr>${headers.map(h => `<th>${h.replace('kb_','')}</th>`).join('')}<th></th></tr>`;
+        
         const tbody = document.createElement('tbody');
         kbs.forEach(kb => {
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${kb.name}</td>
-                <td>${kb.count}</td>
-                <td>
-                    <button class="danger-btn clear-rag-btn" data-kb-name="${kb.name}">
-                        Clear
-                    </button>
-                </td>
-            `;
+            row.title = kb.metadata?.description || 'No description provided.';
+
+            let cells = `<td>${kb.name}</td>`;
+            sortedMetaKeys.forEach(key => {
+                cells += `<td>${kb.metadata[key] || 'N/A'}</td>`;
+            });
+            cells += `<td>${kb.count}</td>`;
+            cells += `<td class="actions-cell"><button class="delete-icon-btn" data-kb-name="${kb.name}">🗑️</button></td>`;
+            row.innerHTML = cells;
             tbody.appendChild(row);
         });
+
+        table.appendChild(thead);
         table.appendChild(tbody);
         this.ragStatusContainer.innerHTML = '';
         this.ragStatusContainer.appendChild(table);
     }
 
     async _handleRagActions(event) {
-        const clearBtn = event.target.closest('.clear-rag-btn');
-        if (!clearBtn) return;
+        const deleteBtn = event.target.closest('.delete-icon-btn');
+        if (!deleteBtn) return;
 
-        const kbName = clearBtn.dataset.kbName;
-        const msg = `Are you sure you want to permanently delete the '${kbName}' knowledge base?`;
-        if (confirm(msg)) {
+        const kbName = deleteBtn.dataset.kbName;
+        const confirmed = await confirmationModal.confirm(
+            'Delete Knowledge Base',
+            `Are you sure you want to permanently delete the '${kbName}' knowledge base?`
+        );
+
+        if (confirmed) {
             try {
                 await apiCall(`/api/knowledge/${kbName}`, { method: 'DELETE' });
+                status.setText(`Knowledge base '${kbName}' deleted.`);
                 await this._loadRagStatus(); // Refresh the list
             } catch (error) {
-                // The apiCall helper already shows an alert
+                // The apiCall helper already shows a status bar error
             }
         }
     }
@@ -181,10 +200,10 @@ export class SettingsManager {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newSettings),
         });
-        this.settings = newSettings;
-        this.applyTheme(this.settings.Appearance.theme);
+        this.app.settings = newSettings; // Update the global app settings
+        this.applyTheme(this.app.settings.Appearance.theme);
         this.statusEl.textContent = 'Saved!';
-        setTimeout(() => this.statusEl.textContent = '', 2000);
+        setTimeout(() => this.close(), 1000);
     }
 
     applyTheme(themeName) {

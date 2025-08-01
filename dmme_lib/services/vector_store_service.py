@@ -19,17 +19,23 @@ class VectorStoreService:
         )
         log.info("VectorStoreService initialized. ChromaDB path: %s", chroma_path)
 
-    def get_or_create_collection(self, collection_name: str):
+    def get_or_create_collection(self, collection_name: str, metadata: dict = None):
         """Gets or creates a ChromaDB collection with the Ollama embedding function."""
         return self.client.get_or_create_collection(
-            name=collection_name, embedding_function=self.embedding_function
+            name=collection_name, metadata=metadata, embedding_function=self.embedding_function
         )
 
     def list_collections(self):
         """Lists all collections in the vector store."""
         return self.client.list_collections()
 
-    def add_to_kb(self, kb_name: str, documents: list[str], metadatas: list[dict]):
+    def add_to_kb(
+        self,
+        kb_name: str,
+        documents: list[str],
+        metadatas: list[dict],
+        kb_metadata: dict = None,
+    ):
         """Adds documents to a knowledge base, letting ChromaDB handle embeddings."""
         if not documents:
             log.warning("No documents provided to add to knowledge base '%s'.", kb_name)
@@ -37,7 +43,7 @@ class VectorStoreService:
 
         log.info("Adding %d documents to knowledge base '%s'.", len(documents), kb_name)
         try:
-            collection = self.get_or_create_collection(kb_name)
+            collection = self.get_or_create_collection(kb_name, metadata=kb_metadata)
 
             # Generate unique IDs to avoid collisions
             start_id = collection.count()

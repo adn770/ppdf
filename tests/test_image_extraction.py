@@ -58,8 +58,6 @@ def test_process_pdf_images(setup_test_environment, mocker):
     mock_extract_pages = mocker.patch("ppdf_lib.api.extract_pages")
     mock_extract_pages.return_value = [mock_page_layout]
 
-    
-
     # Mock Image.open() and its returned instance's save method
     mock_image_instance = MagicMock()
 

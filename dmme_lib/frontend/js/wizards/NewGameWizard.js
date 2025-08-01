@@ -1,10 +1,11 @@
 // dmme_lib/frontend/js/wizards/NewGameWizard.js
 import { apiCall } from './ApiHelper.js';
+import { status } from '../ui.js';
 
 export class NewGameWizard {
-    constructor(onStartGameCallback) {
+    constructor(appInstance, onStartGameCallback) {
+        this.app = appInstance;
         this.onStartGame = onStartGameCallback;
-
         this.modal = document.getElementById('new-game-wizard-modal');
         this.overlay = document.getElementById('modal-overlay');
         this.rulesSelect = document.getElementById('game-rules-kb');
@@ -43,17 +44,24 @@ export class NewGameWizard {
         const kbs = await apiCall('/api/knowledge/');
         const parties = await apiCall('/api/parties/');
 
-        this.rulesSelect.innerHTML = '';
-        this.moduleSelect.innerHTML = '';
-        this.settingSelect.innerHTML = '';
-        this.partySelect.innerHTML = '';
+        // Clear existing options
+        [this.rulesSelect, this.moduleSelect, this.settingSelect, this.partySelect].forEach(
+            sel => sel.innerHTML = ''
+        );
 
+        // Populate KBs filtered by type, accessing the nested metadata property
         kbs.forEach(kb => {
             const option = new Option(`${kb.name} (${kb.count} docs)`, kb.name);
-            this.rulesSelect.add(option.cloneNode(true));
-            this.moduleSelect.add(option.cloneNode(true));
-            this.settingSelect.add(option.cloneNode(true));
+            if (kb.metadata?.kb_type === 'rules') this.rulesSelect.add(option.cloneNode(true));
+            if (kb.metadata?.kb_type === 'module') this.moduleSelect.add(option.cloneNode(true));
+            if (kb.metadata?.kb_type === 'setting') this.settingSelect.add(option.cloneNode(true));
         });
+
+        // Set the default preferred ruleset from settings
+        const defaultRuleset = this.app.settings?.Game?.default_ruleset;
+        if (defaultRuleset) {
+            this.rulesSelect.value = defaultRuleset;
+        }
 
         if (parties.length === 0) {
             this.partySelect.innerHTML = '<option value="">No parties created yet</option>';
@@ -87,9 +95,8 @@ export class NewGameWizard {
             module: selectedMode === 'module' ? this.moduleSelect.value : null,
             setting: selectedMode === 'freestyle' ? this.settingSelect.value : null
         };
-
         if (!gameConfig.rules || !gameConfig.party) {
-            alert("A Rules System and a Party are required to start a game.");
+            status.setText("A Rules System and a Party are required to start a game.", true);
             return;
         }
 

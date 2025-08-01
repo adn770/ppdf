@@ -4,21 +4,23 @@ import { PartyWizard } from './wizards/PartyWizard.js';
 import { NewGameWizard } from './wizards/NewGameWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
 import { SettingsManager } from './SettingsManager.js';
+import { status } from './ui.js';
 
 class App {
     constructor() {
-        this.settingsManager = new SettingsManager();
-        this.importWizard = new ImportWizard();
         // Pass a reference to the app instance for settings access
+        this.settingsManager = new SettingsManager(this);
+        this.importWizard = new ImportWizard();
         this.partyWizard = new PartyWizard(this);
         this.gameplayHandler = new GameplayHandler();
-        this.newGameWizard = new NewGameWizard(
+        this.newGameWizard = new NewGameWizard(this,
             (gameConfig) => this.startGame(gameConfig)
         );
         this.settings = null;
     }
 
     async init() {
+        status.setText('Initializing application...');
         // Load settings first, as other components depend on them
         this.settings = await this.settingsManager.loadSettings();
         this.settingsManager.applyTheme(this.settings.Appearance.theme);
@@ -36,6 +38,7 @@ class App {
             () => this.settingsManager.open()
         );
         this.initAccordions();
+        status.setText('Ready.');
     }
 
     startGame(gameConfig) {
@@ -53,8 +56,13 @@ class App {
             button.addEventListener('click', () => {
                 const accordionBody = button.nextElementSibling;
                 const icon = button.querySelector('.accordion-icon');
-                accordionBody.classList.toggle('active');
-                icon.textContent = accordionBody.classList.contains('active') ? '-' : '+';
+                if (accordionBody.classList.contains('active')) {
+                    accordionBody.classList.remove('active');
+                    if (icon) icon.textContent = '+';
+                } else {
+                    accordionBody.classList.add('active');
+                    if (icon) icon.textContent = '-';
+                }
             });
         });
     }

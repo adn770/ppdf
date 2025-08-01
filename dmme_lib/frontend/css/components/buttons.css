@@ -48,3 +48,25 @@ button.icon-btn {
     line-height: 1;
     flex-shrink: 0;
 }
+
+.delete-icon-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.delete-icon-btn:hover {
+    background-color: var(--danger-color);
+    color: white;
+}
