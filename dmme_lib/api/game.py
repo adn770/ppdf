@@ -63,9 +63,8 @@ def generate_character():
 
     try:
         # Perform a RAG query to get actual rules context
-        rag_service = current_app.rag_service
         query = "Core rules for character creation, attributes, classes, and levels."
-        rules_docs = rag_service.vector_store.query(rules_kb, query, n_results=5)
+        rules_docs = current_app.vector_store.query(rules_kb, query, n_results=5)
         rules_context = "\n\n".join(rules_docs)
         if not rules_context:
             rules_context = (
