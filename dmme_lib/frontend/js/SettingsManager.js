@@ -4,6 +4,9 @@ import { apiCall } from './wizards/ApiHelper.js';
 export class SettingsManager {
     constructor() {
         this.settings = null;
+
+        this._setupElements();
+        this._addEventListeners();
     }
 
     _setupElements() {
@@ -28,8 +31,6 @@ export class SettingsManager {
     }
 
     async open() {
-        this._setupElements();
-        this._addEventListeners();
         this.modal.style.display = 'flex';
         this.overlay.style.display = 'block';
         await this._loadSettings();
@@ -71,13 +72,11 @@ export class SettingsManager {
             const key = input.dataset.key;
             newSettings[section][key] = input.value;
         });
-
         await apiCall('/api/settings/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newSettings),
         });
-
         this.settings = newSettings;
         this.applyTheme(this.settings.Appearance.theme);
         this.statusEl.textContent = 'Saved!';

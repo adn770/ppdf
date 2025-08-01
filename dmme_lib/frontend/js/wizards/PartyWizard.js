@@ -4,21 +4,7 @@ import { apiCall } from './ApiHelper.js';
 export class PartyWizard {
     constructor() {
         this.selectedPartyId = null;
-    }
 
-    init() {
-        // This method now does nothing, as the open button is handled by main.js
-    }
-
-    _addEventListeners() {
-        this.modal.querySelector('.close-btn').addEventListener('click', () => this.close());
-        this.showCreateBtn.addEventListener('click', () => this.showCreatorPanel());
-        this.createPartyBtn.addEventListener('click', () => this.createParty());
-        this.addManualBtn.addEventListener('click', () => this.addCharacter(false));
-        this.aiGenerateBtn.addEventListener('click', () => this.addCharacter(true));
-    }
-
-    async open() {
         this.modal = document.getElementById('party-wizard-modal');
         this.overlay = document.getElementById('modal-overlay');
         this.partyList = document.getElementById('party-list');
@@ -37,6 +23,17 @@ export class PartyWizard {
         this.aiDescInput = document.getElementById('ai-char-desc');
         
         this._addEventListeners();
+    }
+
+    _addEventListeners() {
+        this.modal.querySelector('.close-btn').addEventListener('click', () => this.close());
+        this.showCreateBtn.addEventListener('click', () => this.showCreatorPanel());
+        this.createPartyBtn.addEventListener('click', () => this.createParty());
+        this.addManualBtn.addEventListener('click', () => this.addCharacter(false));
+        this.aiGenerateBtn.addEventListener('click', () => this.addCharacter(true));
+    }
+
+    async open() {
         this.overlay.style.display = 'block';
         this.modal.style.display = 'flex';
         this.showWelcomePanel();
@@ -88,8 +85,9 @@ export class PartyWizard {
             const li = document.createElement('li');
             li.dataset.partyId = party.id;
             li.dataset.partyName = party.name;
-            const deleteBtnHTML = `<button class="delete-icon-btn" data-party-id="${party.id}">🗑️</button>`;
-            li.innerHTML = `<span>${party.name}</span> ${deleteBtnHTML}`;
+            const btnHTML =
+                `<button class="delete-icon-btn" data-party-id="${party.id}">🗑️</button>`;
+            li.innerHTML = `<span>${party.name}</span> ${btnHTML}`;
             
             li.querySelector('.delete-icon-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -143,7 +141,8 @@ export class PartyWizard {
         const characters = await apiCall(url);
         if (characters.length === 0) {
             const msg = 'No characters in this party yet.';
-            this.characterList.innerHTML = `<li class="char-details" style="justify-content: center;">${msg}</li>`;
+            const html = `<li class="char-details" style="justify-content: center;">${msg}</li>`;
+            this.characterList.innerHTML = html;
         } else {
             characters.forEach(char => {
                 const li = document.createElement('li');
@@ -201,7 +200,6 @@ export class PartyWizard {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(charData),
         });
-
         this.charNameInput.value = '';
         this.charClassInput.value = '';
         this.charLevelInput.value = 1;

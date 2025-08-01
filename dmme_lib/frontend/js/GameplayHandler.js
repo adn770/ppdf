@@ -7,13 +7,14 @@ export class GameplayHandler {
         this.sendCommandBtn = document.getElementById('send-command-btn');
         this.knowledgePanel = document.getElementById('knowledge-panel');
         this.dmInsight = '';
+
+        this._addEventListeners();
     }
 
     init(gameConfig) {
         this.gameConfig = gameConfig;
         console.log("GameplayHandler initialized with config:", this.gameConfig);
 
-        this._addEventListeners();
         this._updateKnowledgePanel();
         this.playerInput.focus();
     }
@@ -48,17 +49,14 @@ export class GameplayHandler {
         this.sendCommandBtn.disabled = true;
 
         const responseParagraph = this._createAiResponseParagraph();
-
         try {
             const response = await fetch('/api/game/command', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: commandText, config: this.gameConfig }),
             });
-
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             await this._processStream(response, responseParagraph);
-
         } catch (error) {
             console.error("Failed to get response from game command API:", error);
             responseParagraph.textContent = "Error: Could not connect to the game server.";
