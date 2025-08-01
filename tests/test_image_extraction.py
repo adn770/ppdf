@@ -58,6 +58,8 @@ def test_process_pdf_images(setup_test_environment, mocker):
     mock_extract_pages = mocker.patch("ppdf_lib.api.extract_pages")
     mock_extract_pages.return_value = [mock_page_layout]
 
+    
+
     # Mock Image.open() and its returned instance's save method
     mock_image_instance = MagicMock()
 
@@ -66,6 +68,7 @@ def test_process_pdf_images(setup_test_environment, mocker):
             f.write(mock_image_data)
 
     mock_image_instance.save.side_effect = mock_save
+    # NOTE: We patch Image.open in the module where it's *used* (ppdf_lib.api)
     mock_image_open = mocker.patch("ppdf_lib.api.Image.open", return_value=mock_image_instance)
 
     mock_query_llm = mocker.patch("ppdf_lib.api._query_multimodal_llm")
@@ -74,7 +77,8 @@ def test_process_pdf_images(setup_test_environment, mocker):
         "art",  # Ensure a valid classification is returned
     ]
 
-    process_pdf_images(pdf_path, test_dir, "http://mock-url", "mock-model")
+    # Consume the generator to execute the function
+    list(process_pdf_images(pdf_path, test_dir, "http://mock-url", "mock-model"))
 
     # Verify Image.open was called with the correct BytesIO object
     mock_image_open.assert_called_once()
