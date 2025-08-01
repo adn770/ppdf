@@ -1,10 +1,9 @@
 // dmme_lib/frontend/js/wizards/PartyWizard.js
 import { apiCall } from './ApiHelper.js';
-
 export class PartyWizard {
-    constructor() {
+    constructor(appInstance) {
+        this.app = appInstance; // Store a reference to the main app
         this.selectedPartyId = null;
-
         this.modal = document.getElementById('party-wizard-modal');
         this.overlay = document.getElementById('modal-overlay');
         this.partyList = document.getElementById('party-list');
@@ -167,8 +166,11 @@ export class PartyWizard {
                 alert("Please provide a character description.");
                 return;
             }
-            const rules = prompt("Which ruleset should the AI use? (e.g., D&D 5e)");
-            if (!rules) return;
+            const rules = this.app.settings?.Game?.default_ruleset;
+            if (!rules) {
+                alert("Please set a 'Default Preferred Ruleset' in the Settings menu first.");
+                return;
+            }
 
             this.aiGenerateBtn.disabled = true;
             this.aiGenerateBtn.textContent = '...';

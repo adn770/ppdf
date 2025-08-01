@@ -62,7 +62,16 @@ def generate_character():
         return jsonify({"error": "Description and rules_kb are required."}), 400
 
     try:
-        rules_context = f"The game is based on the '{rules_kb}' rule system."
+        # Perform a RAG query to get actual rules context
+        rag_service = current_app.rag_service
+        query = "Core rules for character creation, attributes, classes, and levels."
+        rules_docs = rag_service.vector_store.query(rules_kb, query, n_results=5)
+        rules_context = "\n\n".join(rules_docs)
+        if not rules_context:
+            rules_context = (
+                f"No specific rules found. Use general knowledge for the '{rules_kb}' system."
+            )
+
         prompt = PROMPT_GENERATE_CHARACTER.format(
             description=description, rules_context=rules_context
         )

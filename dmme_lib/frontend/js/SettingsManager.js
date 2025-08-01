@@ -19,6 +19,7 @@ export class SettingsManager {
         this.panes = this.modal.querySelectorAll('.settings-pane');
         this.inputs = this.modal.querySelectorAll('[data-section][data-key]');
         this.modelsDatalist = document.getElementById('ollama-models-list');
+        this.kbDatalist = document.getElementById('kb-list');
     }
 
     _addEventListeners() {
@@ -33,8 +34,9 @@ export class SettingsManager {
     async open() {
         this.modal.style.display = 'flex';
         this.overlay.style.display = 'block';
-        await this._loadSettings();
+        await this.loadSettings();
         await this._populateModelSuggestions();
+        await this._populateKbSuggestions();
     }
 
     close() {
@@ -54,7 +56,7 @@ export class SettingsManager {
         });
     }
 
-    async _loadSettings() {
+    async loadSettings() {
         this.settings = await apiCall('/api/settings/');
         this.inputs.forEach(input => {
             const section = input.dataset.section;
@@ -63,6 +65,7 @@ export class SettingsManager {
                 input.value = this.settings[section][key];
             }
         });
+        return this.settings;
     }
 
     async _populateModelSuggestions() {
@@ -79,9 +82,27 @@ export class SettingsManager {
         }
     }
 
+    async _populateKbSuggestions() {
+        try {
+            const kbs = await apiCall('/api/knowledge/');
+            this.kbDatalist.innerHTML = '';
+            kbs.forEach(kb => {
+                const option = document.createElement('option');
+                option.value = kb.name;
+                this.kbDatalist.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Failed to populate knowledge base suggestions:", error);
+        }
+    }
+
     async saveSettings() {
         this.statusEl.textContent = 'Saving...';
-        const newSettings = JSON.parse(JSON.stringify(this.settings));
+        const newSettings = {
+            Appearance: {},
+            Ollama: {},
+            Game: {}
+        };
         this.inputs.forEach(input => {
             const section = input.dataset.section;
             const key = input.dataset.key;
@@ -99,13 +120,6 @@ export class SettingsManager {
         this.applyTheme(this.settings.Appearance.theme);
         this.statusEl.textContent = 'Saved!';
         setTimeout(() => this.statusEl.textContent = '', 2000);
-    }
-
-    async loadAndApplyTheme() {
-        if (!this.settings) {
-            this.settings = await apiCall('/api/settings/');
-        }
-        this.applyTheme(this.settings.Appearance.theme);
     }
 
     applyTheme(themeName) {

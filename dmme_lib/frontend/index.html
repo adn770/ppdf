@@ -325,7 +325,7 @@
         <div class="modal-body">
             <div class="settings-body">
                 <div class="wizard-tabs">
-                    <button class="wizard-tab-btn active" data-pane="ollama">Ollama</button>
+                    <button class="wizard-tab-btn active" data-pane="general">General</button>
                     <button class="wizard-tab-btn" data-pane="appearance">Appearance</button>
                 </div>
                 <div class="settings-content">
@@ -345,7 +345,20 @@
                             </select>
                         </div>
                     </div>
-                    <div class="settings-pane active" id="pane-ollama">
+                    <div class="settings-pane active" id="pane-general">
+                        <h3>Game Configuration</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="game-default-ruleset">Default Preferred Ruleset</label>
+                                <input type="text" id="game-default-ruleset" list="kb-list"
+                                    data-section="Game" data-key="default_ruleset">
+                            </div>
+                            <div class="form-group">
+                                <label for="game-default-setting">Default Preferred Setting</label>
+                                <input type="text" id="game-default-setting" list="kb-list"
+                                    data-section="Game" data-key="default_setting">
+                            </div>
+                        </div>
                         <h3>Ollama Configuration</h3>
                         <div class="form-group">
                             <label for="ollama-url">Server URL</label>
@@ -371,6 +384,7 @@
                             </div>
                         </div>
                         <datalist id="ollama-models-list"></datalist>
+                        <datalist id="kb-list"></datalist>
                     </div>
                 </div>
             </div>

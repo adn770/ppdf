@@ -20,6 +20,10 @@ class ConfigService:
                 "vision_model": "llava:latest",
                 "embedding_model": "mxbai-embed-large",
             },
+            "Game": {
+                "default_ruleset": "",
+                "default_setting": "",
+            },
         }
 
     def get_settings(self) -> dict:

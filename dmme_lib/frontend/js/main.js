@@ -7,17 +7,22 @@ import { SettingsManager } from './SettingsManager.js';
 
 class App {
     constructor() {
-        this.importWizard = new ImportWizard();
-        this.partyWizard = new PartyWizard();
-        this.gameplayHandler = new GameplayHandler();
         this.settingsManager = new SettingsManager();
-
+        this.importWizard = new ImportWizard();
+        // Pass a reference to the app instance for settings access
+        this.partyWizard = new PartyWizard(this);
+        this.gameplayHandler = new GameplayHandler();
         this.newGameWizard = new NewGameWizard(
             (gameConfig) => this.startGame(gameConfig)
         );
+        this.settings = null;
     }
 
-    init() {
+    async init() {
+        // Load settings first, as other components depend on them
+        this.settings = await this.settingsManager.loadSettings();
+        this.settingsManager.applyTheme(this.settings.Appearance.theme);
+
         document.getElementById('import-knowledge-btn').addEventListener('click',
             () => this.importWizard.open()
         );
@@ -30,7 +35,6 @@ class App {
         document.getElementById('settings-btn').addEventListener('click',
             () => this.settingsManager.open()
         );
-
         this.initAccordions();
     }
 
@@ -58,10 +62,6 @@ class App {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Apply theme on startup before initializing the app
-    const settingsMgr = new SettingsManager();
-    await settingsMgr.loadAndApplyTheme();
-
     const app = new App();
-    app.init();
+    await app.init();
 });
