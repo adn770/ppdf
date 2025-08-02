@@ -64,19 +64,20 @@ class App {
         // Check if the recovered state object is not empty
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
+            // Translate the page content BEFORE showing the panel to prevent flicker
+            this.i18n.translatePage();
             recoveryView.style.display = 'flex';
-            this.i18n.translatePage(); // Ensure dynamic content is translated
 
             document.getElementById('recover-continue-btn').onclick = () => {
                 recoveryView.style.display = 'none';
                 this.startGame(recoveredState.config, recoveredState);
             };
             document.getElementById('recover-discard-btn').onclick = async () => {
-                // Clear the autosave file on the backend
+                // Clear the autosave file on the backend by sending a valid, empty state
                 await apiCall('/api/session/autosave', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({ config: null, narrativeHTML: "" })
                 });
                 recoveryView.style.display = 'none';
                 welcomeView.style.display = 'block';
