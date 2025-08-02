@@ -11,6 +11,7 @@ export class NewGameWizard {
         this.rulesSelect = document.getElementById('game-rules-kb');
         this.moduleSelect = document.getElementById('game-module-kb');
         this.settingSelect = document.getElementById('game-setting-kb');
+        this.modelSelect = document.getElementById('game-llm-model');
         this.partySelect = document.getElementById('game-party-selector');
         this.moduleGroup = document.getElementById('game-module-group');
         this.settingGroup = document.getElementById('game-setting-group');
@@ -41,33 +42,44 @@ export class NewGameWizard {
     }
 
     async populateSelectors() {
-        const kbs = await apiCall('/api/knowledge/');
-        const parties = await apiCall('/api/parties/');
+        const [kbs, parties, models] = await Promise.all([
+            apiCall('/api/knowledge/'),
+            apiCall('/api/parties/'),
+            apiCall('/api/ollama/models')
+        ]);
 
         // Clear existing options
-        [this.rulesSelect, this.moduleSelect, this.settingSelect, this.partySelect].forEach(
-            sel => sel.innerHTML = ''
-        );
-        // Populate KBs filtered by type, accessing the nested metadata property
+        [
+            this.rulesSelect, this.moduleSelect, this.settingSelect,
+            this.partySelect, this.modelSelect
+        ].forEach(sel => sel.innerHTML = '');
+
+        // Populate KBs filtered by type
         kbs.forEach(kb => {
             const option = new Option(`${kb.name} (${kb.count} docs)`, kb.name);
             if (kb.metadata?.kb_type === 'rules') this.rulesSelect.add(option.cloneNode(true));
             if (kb.metadata?.kb_type === 'module') this.moduleSelect.add(option.cloneNode(true));
             if (kb.metadata?.kb_type === 'setting') this.settingSelect.add(option.cloneNode(true));
         });
-        // Set the default preferred ruleset from settings
+
+        // Populate models
+        models.forEach(modelName => {
+            this.modelSelect.add(new Option(modelName, modelName));
+        });
+
+        // Set defaults from settings
         const defaultRuleset = this.app.settings?.Game?.default_ruleset;
-        if (defaultRuleset) {
-            this.rulesSelect.value = defaultRuleset;
-        }
+        if (defaultRuleset) this.rulesSelect.value = defaultRuleset;
+        const defaultModel = this.app.settings?.Ollama?.main_model;
+        if (defaultModel) this.modelSelect.value = defaultModel;
 
         if (parties.length === 0) {
-            this.partySelect.innerHTML = `<option value="">${this.app.i18n.t('noParties')}</option>`;
+            const key = 'noParties';
+            this.partySelect.innerHTML = `<option value="">${this.app.i18n.t(key)}</option>`;
             this.startGameBtn.disabled = true;
         } else {
              parties.forEach(party => {
-                const option = new Option(party.name, party.id);
-                this.partySelect.add(option);
+                this.partySelect.add(new Option(party.name, party.id));
             });
             this.startGameBtn.disabled = false;
         }
@@ -92,9 +104,10 @@ export class NewGameWizard {
             party: this.partySelect.value,
             module: selectedMode === 'module' ? this.moduleSelect.value : null,
             setting: selectedMode === 'freestyle' ? this.settingSelect.value : null,
+            llm_model: this.modelSelect.value,
             language: this.app.settings.Appearance.language || 'en'
         };
-        if (!gameConfig.rules || !gameConfig.party) {
+        if (!gameConfig.rules || !gameConfig.party || !gameConfig.llm_model) {
             status.setText("errorStartGame", true);
             return;
         }

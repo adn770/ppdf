@@ -19,6 +19,7 @@
                 <button id="settings-btn" data-i18n-key="settingsBtn">Settings</button>
             </div>
         </header>
+
         <main id="main-content" class="main-content">
             <div id="recovery-view">
                 <div class="recovery-box">
@@ -95,9 +96,6 @@
                         <div id="kb-display">
                         </div>
                         <div class="game-controls-container">
-                            <div id="game-spinner" class="spinner-container" style="display: none;">
-                                <div class="spinner spinner-sm"></div>
-                            </div>
                             <div class="style-controls">
                                 <div class="style-control-group">
                                     <label for="quick-theme-selector" class="icon-label" data-i18n-key="sessionThemeTitle" data-i18n-target="title" title="Session Theme">🎨</label>
@@ -115,9 +113,12 @@
                             </div>
                             <button id="toggle-visual-aids-btn" class="icon-btn"
                                 data-i18n-key="toggleVisualAids"
-                                data-i18n-target="title" title="Toggle Visual Aids">🖼️</button>
+                                data-i18n-target="title" title="Toggle Visual Aids">🏞️</button>
                             <button id="toggle-ascii-scene-btn" class="icon-btn"
                                 data-i18n-key="toggleAsciiScene" data-i18n-target="title" title="Toggle ASCII Scene">#</button>
+                            <div id="game-spinner" class="spinner-container" style="display: none;">
+                                <div class="spinner spinner-sm"></div>
+                            </div>
                         </div>
                     </div>
                     <div id="narrative-view" class="narrative-view">
@@ -411,6 +412,10 @@
                 <label for="game-party-selector" data-i18n-key="party">Party</label>
                 <select id="game-party-selector"></select>
             </div>
+            <div class="form-group">
+                <label for="game-llm-model" data-i18n-key="dmModel">DM Model</label>
+                <select id="game-llm-model"></select>
+            </div>
         </div>
         <div class="modal-footer">
             <button id="start-game-btn" class="accent-btn" data-i18n-key="startGame">Start Game</button>
@@ -540,6 +545,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

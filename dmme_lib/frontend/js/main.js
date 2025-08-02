@@ -23,8 +23,7 @@ class App {
         this.gameplayHandler = new GameplayHandler(this);
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.settings = null;
-        this.i18n = i18n;
-        // Make i18n service available to other components
+        this.i18n = i18n; // Make i18n service available to other components
     }
 
     async init() {
@@ -59,7 +58,6 @@ class App {
 
     async checkForRecovery() {
         const recoveredState = await apiCall('/api/session/recover');
-
         const welcomeView = document.getElementById('welcome-view');
         const recoveryView = document.getElementById('recovery-view');
 
@@ -105,11 +103,23 @@ class App {
         const mainSelector = document.getElementById('theme-selector');
         const quickSelector = document.getElementById('quick-theme-selector');
         if (mainSelector && quickSelector) {
-            quickSelector.innerHTML = mainSelector.innerHTML;
-            const defaultOption = document.createElement('option');
-            defaultOption.value = "";
-            defaultOption.textContent = this.i18n.t('themeDefault');
-            quickSelector.prepend(defaultOption);
+            // Clear the quick selector first
+            quickSelector.innerHTML = '';
+
+            // Add the placeholder option that reverts to the main setting
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = "";
+            placeholderOption.textContent = this.i18n.t('themeDefault');
+            quickSelector.appendChild(placeholderOption);
+
+            // Copy all other themes from the main settings selector
+            mainSelector.querySelectorAll('option').forEach(option => {
+                // Exclude the original 'default' value to prevent duplication
+                if (option.value !== 'default') {
+                    quickSelector.appendChild(option.cloneNode(true));
+                }
+            });
+
             quickSelector.value = ""; // Start with the placeholder selected
         }
     }

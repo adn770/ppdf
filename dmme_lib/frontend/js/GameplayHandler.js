@@ -11,8 +11,8 @@ export class GameplayHandler {
         this.kbDisplay = document.getElementById('kb-display');
         this.dmInsight = '';
         this.autosaveInterval = null;
-        this.showVisualAids = true;
-        this.showAsciiScene = true;
+        this.showVisualAids = false;
+        this.showAsciiScene = false;
 
         // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
@@ -96,9 +96,11 @@ export class GameplayHandler {
         const i18n = this.app.i18n;
         let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
         if (this.gameConfig.mode === 'module') {
-            kbHtml += ` | <span>${i18n.t('kbDisplayModule')}: <strong>${this.gameConfig.module}</strong></span>`;
+            kbHtml += ` |
+ <span>${i18n.t('kbDisplayModule')}: <strong>${this.gameConfig.module}</strong></span>`;
         } else {
-            kbHtml += ` | <span>${i18n.t('kbDisplaySetting')}: <strong>${this.gameConfig.setting}</strong></span>`;
+            kbHtml += ` |
+ <span>${i18n.t('kbDisplaySetting')}: <strong>${this.gameConfig.setting}</strong></span>`;
         }
         this.kbDisplay.innerHTML = kbHtml;
     }
@@ -146,12 +148,19 @@ export class GameplayHandler {
         this.sendCommandBtn.disabled = true;
         showGameSpinner();
 
+        // Create a temporary config for this command including UI state
+        const commandConfig = {
+            ...this.gameConfig,
+            show_visual_aids: this.showVisualAids,
+            show_ascii_scene: this.showAsciiScene,
+        };
+
         const { entry, paragraph } = this._createAiResponseEntry();
         try {
             const response = await fetch('/api/game/command', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: commandText, config: this.gameConfig }),
+                body: JSON.stringify({ command: commandText, config: commandConfig }),
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             await this._processStream(response, entry, paragraph);
@@ -192,7 +201,6 @@ export class GameplayHandler {
         img.src = chunk.image_url;
         img.alt = chunk.caption;
         img.title = chunk.caption;
-
         const figcaption = document.createElement('figcaption');
         figcaption.textContent = chunk.caption;
 
@@ -216,6 +224,7 @@ export class GameplayHandler {
         const decoder = new TextDecoder();
         let buffer = '';
         let currentParagraph = initialParagraph;
+        let currentParagraphMarkdown = '';
 
         while (true) {
             const { value, done } = await reader.read();
@@ -233,17 +242,28 @@ export class GameplayHandler {
                         this.dmInsight = chunk.content;
                     } else if (chunk.type === 'narrative_chunk') {
                         let content = chunk.content;
-                        while (content.includes('\n\n')) {
-                            const [before, after] = content.split('\n\n', 2);
-                            currentParagraph.textContent += before;
-                            
+                        if (content.includes('\n\n')) {
+                            const parts = content.split('\n\n');
+                            // Finish the current paragraph with the first part
+                            currentParagraphMarkdown += parts[0];
+                            currentParagraph.innerHTML = window.marked.parse(currentParagraphMarkdown);
+                            // Create new paragraphs for the middle parts
+                            for (let i = 1; i < parts.length - 1; i++) {
+                                const newP = document.createElement('p');
+                                newP.className = 'narrative-text';
+                                newP.innerHTML = window.marked.parse(parts[i]);
+                                entryElement.appendChild(newP);
+                            }
+                            // Start a new paragraph for the last part
                             const newP = document.createElement('p');
                             newP.className = 'narrative-text';
                             entryElement.appendChild(newP);
                             currentParagraph = newP;
-                            content = after;
+                            currentParagraphMarkdown = parts[parts.length - 1];
+                        } else {
+                            currentParagraphMarkdown += content;
                         }
-                        currentParagraph.textContent += content;
+                        currentParagraph.innerHTML = window.marked.parse(currentParagraphMarkdown + '▍');
                         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
                     } else if (chunk.type === 'visual_aid' && this.showVisualAids) {
                         this._renderVisualAid(chunk);
@@ -257,6 +277,8 @@ export class GameplayHandler {
                 }
             }
         }
+        // Final render without the cursor
+        currentParagraph.innerHTML = window.marked.parse(currentParagraphMarkdown);
     }
 
     startAutosave() {
@@ -278,7 +300,6 @@ export class GameplayHandler {
             config: this.gameConfig,
             narrativeHTML: this.narrativeView.innerHTML,
         };
-
         try {
             await fetch('/api/session/autosave', {
                 method: 'POST',

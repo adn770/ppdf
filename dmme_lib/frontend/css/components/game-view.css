@@ -102,8 +102,7 @@
 .knowledge-panel {
     flex-shrink: 0;
     padding-bottom: 12px;
-    padding-right: 24px; /* Compensate for main content padding */
-    border-bottom: 1px solid var(--border-color);
+    padding-right: 12px; /* Compensate for main content padding */
     margin-bottom: 12px;
     font-size: 0.9em;
     color: #aaa;
@@ -111,6 +110,17 @@
     justify-content: space-between;
     align-items: center;
     gap: 24px;
+    position: relative;
+}
+
+.knowledge-panel::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 12px;
+    height: 1px;
+    background-color: var(--border-color);
 }
 
 .game-controls-container {
@@ -120,11 +130,14 @@
     flex-grow: 1;
 }
 
+.game-controls-container .spinner-container {
+    margin-left: auto;
+}
+
 .style-controls {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-left: auto;
 }
 
 .style-control-group {
@@ -134,17 +147,29 @@
 }
 
 .icon-label {
-    font-size: 1.2em;
+    font-size: 1.6em;
     cursor: default;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    line-height: 1;
 }
 
 .style-control-select {
     background-color: var(--bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 2px 4px;
-    font-size: 0.8em;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    min-width: 120px;
+    height: 36px;
+    box-sizing: border-box;
 }
 
 .style-control-slider {
@@ -178,15 +203,22 @@
 .game-controls-container .icon-btn {
     background: none;
     border: 1px solid transparent;
-    font-size: 1.2em;
-    padding: 4px 8px;
+    font-size: 1.6em;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 .game-controls-container .icon-btn:hover {
     border-color: var(--border-color);
 }
 .game-controls-container .icon-btn.active {
-    background-color: var(--accent-color);
     border-color: var(--accent-color);
+    box-shadow: 0 0 8px var(--accent-color);
 }
 
 .narrative-view {
@@ -260,7 +292,17 @@
     margin-top: 12px;
     padding-top: 12px;
     padding-right: 24px; /* Compensate for main content padding */
-    border-top: 1px solid var(--border-color);
+    position: relative;
+}
+
+.input-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 24px;
+    height: 1px;
+    background-color: var(--border-color);
 }
 
 .input-panel textarea {
