@@ -4,6 +4,7 @@ import { PartyWizard } from './wizards/PartyWizard.js';
 import { NewGameWizard } from './wizards/NewGameWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
 import { SettingsManager } from './SettingsManager.js';
+import { DiceRoller } from './components/DiceRoller.js';
 import { status } from './ui.js';
 import { i18n } from './i18n.js';
 
@@ -17,6 +18,7 @@ class App {
         this.newGameWizard = new NewGameWizard(this,
             (gameConfig) => this.startGame(gameConfig)
         );
+        this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.settings = null;
         this.i18n = i18n; // Make i18n service available to other components
     }

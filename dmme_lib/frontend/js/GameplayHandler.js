@@ -1,7 +1,9 @@
 // dmme_lib/frontend/js/GameplayHandler.js
 import { showGameSpinner, hideGameSpinner } from './ui.js';
+
 export class GameplayHandler {
-    constructor() {
+    constructor(appInstance) {
+        this.app = appInstance;
         this.gameConfig = null;
         this.narrativeView = document.getElementById('narrative-view');
         this.playerInput = document.getElementById('player-input');
@@ -21,21 +23,22 @@ export class GameplayHandler {
     }
 
     _addEventListeners() {
-        this.sendCommandBtn.addEventListener('click', () => this._sendCommand());
+        this.sendCommandBtn.addEventListener('click', () => this._sendCommandFromInput());
         this.playerInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                this._sendCommand();
+                this._sendCommandFromInput();
             }
         });
     }
 
     _updateKnowledgePanel() {
-        let kbHtml = `<span>Rules: <strong>${this.gameConfig.rules}</strong></span>`;
+        const i18n = this.app.i18n;
+        let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
         if (this.gameConfig.mode === 'module') {
-            kbHtml += `<span>Module: <strong>${this.gameConfig.module}</strong></span>`;
+            kbHtml += `<span>${i18n.t('kbDisplayModule')}: <strong>${this.gameConfig.module}</strong></span>`;
         } else {
-            kbHtml += `<span>Setting: <strong>${this.gameConfig.setting}</strong></span>`;
+            kbHtml += `<span>${i18n.t('kbDisplaySetting')}: <strong>${this.gameConfig.setting}</strong></span>`;
         }
         this.kbDisplay.innerHTML = kbHtml;
     }
@@ -45,7 +48,6 @@ export class GameplayHandler {
         this.sendCommandBtn.disabled = true;
         this.narrativeView.innerHTML = ''; // Clear view for new game
         showGameSpinner();
-
         const responseParagraph = this._createAiResponseParagraph();
         try {
             const response = await fetch('/api/game/start', {
@@ -66,12 +68,21 @@ export class GameplayHandler {
         }
     }
 
-    async _sendCommand() {
+    submitCommand(commandText) {
+        this._processAndSendCommand(commandText);
+    }
+
+    _sendCommandFromInput() {
         const commandText = this.playerInput.value.trim();
+        if (!commandText) return;
+        this.playerInput.value = '';
+        this._processAndSendCommand(commandText);
+    }
+
+    async _processAndSendCommand(commandText) {
         if (!commandText) return;
 
         this._renderPlayerCommand(commandText);
-        this.playerInput.value = '';
         this.playerInput.disabled = true;
         this.sendCommandBtn.disabled = true;
         showGameSpinner();

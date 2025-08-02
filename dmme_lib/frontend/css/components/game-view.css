@@ -47,8 +47,56 @@
 
 .party-status-panel .accordion-body.active { display: block; }
 .party-status-panel .accordion-body p { margin: 4px 0; }
-.dice-roller .dice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.dice-roller .dice-grid button { width: 100%; }
+
+.dice-roller .dice-display {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    text-align: right;
+    font-family: var(--font-family-mono);
+    font-size: 1.2em;
+    height: 24px;
+    line-height: 24px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.dice-special-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.dice-special-grid button {
+    padding: 8px 6px;
+    font-size: 0.9em;
+}
+
+.dice-main-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.dice-main-grid button {
+    width: 100%;
+}
+
+.dice-main-grid button.dice-divider {
+    border-right: 1px solid var(--border-color);
+}
+
+.dice-roll-row {
+    margin-top: 8px;
+}
+
+.dice-roll-row button {
+    width: 100%;
+}
 
 .knowledge-panel {
     flex-shrink: 0;
