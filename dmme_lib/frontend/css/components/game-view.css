@@ -237,6 +237,22 @@
     font-style: italic;
 }
 
+.ascii-map-container {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1em;
+    overflow-x: auto;
+}
+
+.ascii-map-container pre {
+    margin: 0;
+    font-family: var(--font-family-mono);
+    font-size: 0.9em;
+    line-height: 1.2;
+    white-space: pre;
+}
+
 .input-panel {
     flex-shrink: 0;
     display: flex;

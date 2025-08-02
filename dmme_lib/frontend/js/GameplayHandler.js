@@ -12,12 +12,14 @@ export class GameplayHandler {
         this.dmInsight = '';
         this.autosaveInterval = null;
         this.showVisualAids = true;
+        this.showAsciiScene = true;
 
         // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
         this.fontSizeSlider = document.getElementById('font-size-slider');
         this.lineHeightSlider = document.getElementById('line-height-slider');
         this.toggleVisualAidsBtn = document.getElementById('toggle-visual-aids-btn');
+        this.toggleAsciiSceneBtn = document.getElementById('toggle-ascii-scene-btn');
 
         this._addEventListeners();
     }
@@ -50,6 +52,7 @@ export class GameplayHandler {
         this.fontSizeSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.lineHeightSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.toggleVisualAidsBtn.addEventListener('click', () => this._toggleVisualAids());
+        this.toggleAsciiSceneBtn.addEventListener('click', () => this._toggleAsciiScene());
     }
 
     _applyInitialStyles() {
@@ -60,10 +63,16 @@ export class GameplayHandler {
 
     _updateToolbarState() {
         this.toggleVisualAidsBtn.classList.toggle('active', this.showVisualAids);
+        this.toggleAsciiSceneBtn.classList.toggle('active', this.showAsciiScene);
     }
 
     _toggleVisualAids() {
         this.showVisualAids = !this.showVisualAids;
+        this._updateToolbarState();
+    }
+
+    _toggleAsciiScene() {
+        this.showAsciiScene = !this.showAsciiScene;
         this._updateToolbarState();
     }
 
@@ -194,6 +203,14 @@ export class GameplayHandler {
         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
     }
 
+    _renderAsciiMap(chunk) {
+        const pre = document.createElement('pre');
+        pre.className = 'narrative-entry ascii-map-container';
+        pre.textContent = chunk.content;
+        this.narrativeView.appendChild(pre);
+        this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+    }
+
     async _processStream(response, entryElement, initialParagraph) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -230,6 +247,8 @@ export class GameplayHandler {
                         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
                     } else if (chunk.type === 'visual_aid' && this.showVisualAids) {
                         this._renderVisualAid(chunk);
+                    } else if (chunk.type === 'ascii_map' && this.showAsciiScene) {
+                        this._renderAsciiMap(chunk);
                     } else if (chunk.type === 'error') {
                         currentParagraph.textContent = `Error: ${chunk.content}`;
                     }

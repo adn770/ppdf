@@ -1,5 +1,6 @@
 # --- dmme_lib/services/rag_service.py ---
 import logging
+import re
 from .vector_store_service import VectorStoreService
 from core.llm_utils import query_text_llm
 from dmme_lib.constants import PROMPT_REGISTRY
@@ -102,11 +103,12 @@ class RAGService:
             full_narrative += chunk
             yield {"type": "narrative_chunk", "content": chunk}
 
-        # After narrative, search for a relevant image
         if full_narrative and kb_sources["module"]:
+            # Yield visual aid and ascii map in parallel-like fashion
             yield from self._find_and_yield_visual_aid(
                 player_command, full_narrative, kb_sources["module"]
             )
+            yield from self._find_and_yield_ascii_map(full_narrative, lang)
 
     def _find_and_yield_visual_aid(self, command, narrative, kb_name):
         """Queries for a relevant image and yields a visual_aid chunk if found."""
@@ -132,6 +134,19 @@ class RAGService:
                     }
         except Exception as e:
             log.error("Failed during visual aid search: %s", e)
+
+    def _find_and_yield_ascii_map(self, narrative, lang):
+        """Generates an ASCII map from a narrative and yields it."""
+        log.debug("Generating ASCII map for narrative.")
+        try:
+            prompt = self._get_prompt("ASCII_MAP_GENERATOR", lang)
+            map_response = query_text_llm(prompt, narrative, self.ollama_url, self.model)
+            if map_response:
+                # Clean the response to remove markdown code block delimiters
+                cleaned_map = re.sub(r"```(text|ascii)?\n?|\n?```", "", map_response).strip()
+                yield {"type": "ascii_map", "content": cleaned_map}
+        except Exception as e:
+            log.error("Failed during ASCII map generation: %s", e)
 
     def generate_journal_recap(self, session_log: str, lang: str) -> str:
         """
