@@ -16,6 +16,7 @@ export class ImportWizard {
         this.reviewListenersAttached = false;
         this.progressLog = null;
         this.isProcessing = false;
+        this.autosaveDebounceTimer = null;
 
         this.modal = document.getElementById('import-wizard-modal');
         this.overlay = document.getElementById('modal-overlay');
@@ -60,13 +61,19 @@ export class ImportWizard {
         if (this.reviewListenersAttached) return;
         this.prevImgBtn = document.getElementById('image-prev-btn');
         this.nextImgBtn = document.getElementById('image-next-btn');
-        this.saveImgBtn = document.getElementById('save-image-changes-btn');
         this.discardImgBtn = document.getElementById('discard-image-btn');
+        this.classificationRadios =
+            this.modal.querySelectorAll('input[name="image-classification"]');
 
         this.prevImgBtn.addEventListener('click', () => this.navigateReviewImage(-1));
         this.nextImgBtn.addEventListener('click', () => this.navigateReviewImage(1));
-        this.saveImgBtn.addEventListener('click', () => this.saveImageChanges());
         this.discardImgBtn.addEventListener('click', () => this.discardCurrentImage());
+
+        // Autosave listeners
+        this.imgDesc.addEventListener('input', () => this.debouncedSaveImageChanges());
+        this.classificationRadios.forEach(radio => {
+            radio.addEventListener('change', () => this.saveImageChanges());
+        });
 
         this.reviewListenersAttached = true;
     }
@@ -281,7 +288,6 @@ export class ImportWizard {
             radioToSelect.checked = true;
         }
 
-        document.getElementById('image-save-status').textContent = '';
         this.prevImgBtn.disabled = this.currentReviewIndex === 0;
         this.nextImgBtn.disabled = this.currentReviewIndex === this.reviewImages.length - 1;
     }
@@ -294,9 +300,15 @@ export class ImportWizard {
         }
     }
 
+    debouncedSaveImageChanges() {
+        clearTimeout(this.autosaveDebounceTimer);
+        this.autosaveDebounceTimer = setTimeout(() => {
+            this.saveImageChanges();
+        }, 500); // Wait 500ms after user stops typing
+    }
+
     async saveImageChanges() {
         const current = this.reviewImages[this.currentReviewIndex];
-        const statusEl = document.getElementById('image-save-status');
         const classification =
             this.modal.querySelector('input[name="image-classification"]:checked').value;
         const payload = {
@@ -304,7 +316,7 @@ export class ImportWizard {
             classification: classification,
         };
         try {
-            statusEl.textContent = this.app.i18n.t('imageSaveStatusSaving');
+            console.log("Autosaving image metadata...", payload);
             const url = `/api/knowledge/review-images/${this.knowledgeBaseName}/${current.filename}`;
             const opts = {
                 method: 'PUT',
@@ -312,12 +324,11 @@ export class ImportWizard {
                 body: JSON.stringify(payload)
             };
             await apiCall(url, opts);
+            // Update local data to match
             current.metadata.description = payload.description;
             current.metadata.classification = payload.classification;
-            statusEl.textContent = this.app.i18n.t('imageSaveStatusSaved');
-            setTimeout(() => statusEl.textContent = '', 2000);
         } catch(error) {
-            statusEl.textContent = this.app.i18n.t('imageSaveStatusError');
+            console.error("Failed to autosave image metadata:", error);
         }
     }
 
