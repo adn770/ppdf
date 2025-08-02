@@ -62,6 +62,7 @@ class App {
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
             recoveryView.style.display = 'flex';
+            this.i18n.translatePage(); // Ensure dynamic content is translated
 
             document.getElementById('recover-continue-btn').onclick = () => {
                 recoveryView.style.display = 'none';
