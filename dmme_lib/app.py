@@ -64,7 +64,7 @@ def create_app(config_overrides=None):
 
     # --- Register Blueprints (APIs) ---
     log.info("Registering API blueprints...")
-    from .api import campaigns, parties, knowledge, characters, game, settings, ollama
+    from .api import campaigns, parties, knowledge, characters, game, settings, ollama, session
 
     app.register_blueprint(campaigns.bp, url_prefix="/api/campaigns")
     app.register_blueprint(parties.bp, url_prefix="/api/parties")
@@ -73,6 +73,7 @@ def create_app(config_overrides=None):
     app.register_blueprint(game.bp, url_prefix="/api/game")
     app.register_blueprint(settings.bp, url_prefix="/api/settings")
     app.register_blueprint(ollama.bp, url_prefix="/api/ollama")
+    app.register_blueprint(session.bp, url_prefix="/api/session")
     log.info("All API blueprints registered.")
 
     # --- Global Error Handler ---
