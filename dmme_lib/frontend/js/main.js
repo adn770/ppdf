@@ -20,7 +20,8 @@ class App {
         );
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.settings = null;
-        this.i18n = i18n; // Make i18n service available to other components
+        this.i18n = i18n;
+        // Make i18n service available to other components
     }
 
     async init() {
@@ -31,7 +32,7 @@ class App {
 
         // Initialize i18n before setting up event listeners
         await this.i18n.init(this.settings.Appearance.language);
-
+        this.populateQuickThemeSelector(); // Must be after i18n init
         document.getElementById('import-knowledge-btn').addEventListener('click',
             () => this.importWizard.open()
         );
@@ -56,6 +57,19 @@ class App {
         gameView.classList.add('active');
 
         this.gameplayHandler.init(gameConfig);
+    }
+
+    populateQuickThemeSelector() {
+        const mainSelector = document.getElementById('theme-selector');
+        const quickSelector = document.getElementById('quick-theme-selector');
+        if (mainSelector && quickSelector) {
+            quickSelector.innerHTML = mainSelector.innerHTML;
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = this.i18n.t('themeDefault');
+            quickSelector.prepend(defaultOption);
+            quickSelector.value = ""; // Start with the placeholder selected
+        }
     }
 
     initAccordions() {

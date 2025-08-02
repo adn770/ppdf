@@ -85,6 +85,21 @@
                             <div id="game-spinner" class="spinner-container" style="display: none;">
                                 <div class="spinner spinner-sm"></div>
                             </div>
+                            <div class="style-controls">
+                                <div class="style-control-group">
+                                    <label for="quick-theme-selector" class="icon-label" data-i18n-key="sessionThemeTitle" data-i18n-target="title" title="Session Theme">🎨</label>
+                                    <select id="quick-theme-selector" class="style-control-select">
+                                    </select>
+                                </div>
+                                <div class="style-control-group">
+                                    <label for="font-size-slider" class="icon-label" data-i18n-key="fontSizeTitle" data-i18n-target="title" title="Font Size">🇦</label>
+                                    <input type="range" id="font-size-slider" class="style-control-slider" min="0.8" max="1.5" step="0.05" value="1">
+                                </div>
+                                <div class="style-control-group">
+                                    <label for="line-height-slider" class="icon-label" data-i18n-key="lineSpacingTitle" data-i18n-target="title" title="Line Spacing">↕️</label>
+                                    <input type="range" id="line-height-slider" class="style-control-slider" min="1.2" max="2.2" step="0.1" value="1.6">
+                                </div>
+                            </div>
                             <button id="toggle-visual-aids-btn" class="icon-btn"
                                 data-i18n-key="toggleVisualAids"
                                 data-i18n-target="title" title="Toggle Visual Aids">🖼️</button>

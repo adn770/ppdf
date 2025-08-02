@@ -115,6 +115,62 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-grow: 1;
+}
+
+.style-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.style-control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-label {
+    font-size: 1.2em;
+    cursor: default;
+}
+
+.style-control-select {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 0.8em;
+}
+
+.style-control-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 5px;
+    background: #555;
+    outline: none;
+    border-radius: 5px;
+}
+
+.style-control-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: var(--accent-color);
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.style-control-slider::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    background: var(--accent-color);
+    cursor: pointer;
+    border-radius: 50%;
 }
 
 .game-controls-container .icon-btn {
@@ -135,6 +191,8 @@
     overflow-y: auto;
     font-family: var(--font-family-mono);
     line-height: 1.6;
+    font-size: 1rem;
+    transition: font-size 0.1s, line-height 0.1s;
 }
 
 .narrative-view .narrative-entry { margin-bottom: 1em; position: relative; }
