@@ -73,12 +73,8 @@ class App {
                 this.startGame(recoveredState.config, recoveredState);
             };
             document.getElementById('recover-discard-btn').onclick = async () => {
-                // Clear the autosave file on the backend by sending a valid, empty state
-                await apiCall('/api/session/autosave', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ config: null, narrativeHTML: "" })
-                });
+                // Clear the autosave file on the backend
+                await apiCall('/api/session/autosave', { method: 'DELETE' });
                 recoveryView.style.display = 'none';
                 welcomeView.style.display = 'block';
                 status.setText('statusBarReady');
@@ -92,6 +88,9 @@ class App {
 
     startGame(gameConfig, recoveredState = null) {
         console.log("Switching to game view with config:", gameConfig);
+        // End any previous game session before starting a new one
+        this.gameplayHandler.endGame();
+
         document.getElementById('welcome-view').style.display = 'none';
         const gameView = document.getElementById('game-view');
         gameView.style.display = 'flex';

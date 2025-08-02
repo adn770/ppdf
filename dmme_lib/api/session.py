@@ -20,8 +20,8 @@ def _get_autosave_path():
 def autosave_session():
     """Saves the current game state to a temporary recovery file."""
     state = request.get_json()
-    if not state:
-        return jsonify({"error": "No game state provided in request body"}), 400
+    if not state or not state.get("config"):
+        return jsonify({"error": "No valid game state provided"}), 400
 
     autosave_path = _get_autosave_path()
     log.debug("Autosaving session state to: %s", autosave_path)
@@ -33,6 +33,21 @@ def autosave_session():
     except IOError as e:
         log.error("Failed to write to autosave file: %s", e, exc_info=True)
         return jsonify({"error": "Could not save session state."}), 500
+
+
+@bp.route("/autosave", methods=["DELETE"])
+def delete_autosave():
+    """Deletes the autosave file."""
+    autosave_path = _get_autosave_path()
+    log.debug("Deleting autosave file at: %s", autosave_path)
+    if os.path.exists(autosave_path):
+        try:
+            os.remove(autosave_path)
+            return "", 204  # No Content
+        except OSError as e:
+            log.error("Failed to delete autosave file: %s", e, exc_info=True)
+            return jsonify({"error": "Could not delete autosave file."}), 500
+    return "", 204  # File didn't exist, which is also a success
 
 
 @bp.route("/recover", methods=["GET"])
@@ -47,6 +62,11 @@ def recover_session():
     try:
         with open(autosave_path, "r", encoding="utf-8") as f:
             state = json.load(f)
+        # Ensure the recovered state is not empty
+        if not state or not state.get("config"):
+            log.warning("Autosave file is empty or invalid. Discarding.")
+            os.remove(autosave_path)
+            return jsonify({})
         return jsonify(state)
     except (IOError, json.JSONDecodeError) as e:
         log.error("Failed to read or parse autosave file: %s", e, exc_info=True)

@@ -295,7 +295,18 @@ export class GameplayHandler {
         }
     }
 
+    endGame() {
+        this.stopAutosave();
+        this.gameConfig = null;
+        console.log("Game session ended and autosave stopped.");
+    }
+
     async _performAutosave() {
+        if (!this.gameConfig) {
+            console.log("No active game, skipping autosave.");
+            return;
+        }
+
         const state = {
             config: this.gameConfig,
             narrativeHTML: this.narrativeView.innerHTML,
