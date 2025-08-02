@@ -36,6 +36,11 @@ def setup_logging(
     root_logger.addHandler(console_handler)
     root_logger.setLevel(level)
 
+    # Set the main level for included projects as well
+    if include_projects:
+        for proj in include_projects:
+            logging.getLogger(proj).setLevel(level)
+
     # File Handler (optional)
     if log_file:
         try:
