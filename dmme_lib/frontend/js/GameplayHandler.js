@@ -11,11 +11,13 @@ export class GameplayHandler {
         this.kbDisplay = document.getElementById('kb-display');
         this.dmInsight = '';
         this.autosaveInterval = null;
+        this.showVisualAids = true;
 
-        // New style controls
+        // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
         this.fontSizeSlider = document.getElementById('font-size-slider');
         this.lineHeightSlider = document.getElementById('line-height-slider');
+        this.toggleVisualAidsBtn = document.getElementById('toggle-visual-aids-btn');
 
         this._addEventListeners();
     }
@@ -26,6 +28,7 @@ export class GameplayHandler {
 
         this._updateKnowledgePanel();
         this._applyInitialStyles();
+        this._updateToolbarState();
 
         if (recoveredState) {
             this.loadState(recoveredState);
@@ -46,18 +49,26 @@ export class GameplayHandler {
         this.quickThemeSelector.addEventListener('change', (e) => this._applyQuickTheme(e));
         this.fontSizeSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.lineHeightSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
+        this.toggleVisualAidsBtn.addEventListener('click', () => this._toggleVisualAids());
     }
 
     _applyInitialStyles() {
         this.narrativeView.style.fontSize = `${this.fontSizeSlider.value}rem`;
         this.narrativeView.style.lineHeight = this.lineHeightSlider.value;
-        // Reset quick theme selector to its placeholder
-        this.quickThemeSelector.value = "";
+        this.quickThemeSelector.value = ""; // Reset quick theme selector
+    }
+
+    _updateToolbarState() {
+        this.toggleVisualAidsBtn.classList.toggle('active', this.showVisualAids);
+    }
+
+    _toggleVisualAids() {
+        this.showVisualAids = !this.showVisualAids;
+        this._updateToolbarState();
     }
 
     _applyQuickTheme(event) {
         const themeName = event.target.value;
-        // Use the default theme if the placeholder is selected
         const themeToApply = themeName || this.app.settings.Appearance.theme;
         this.app.settingsManager.applyTheme(themeToApply);
     }
@@ -164,6 +175,25 @@ export class GameplayHandler {
         return { entry, paragraph: p };
     }
 
+    _renderVisualAid(chunk) {
+        const figure = document.createElement('figure');
+        figure.className = 'narrative-entry visual-aid-container';
+
+        const img = document.createElement('img');
+        img.src = chunk.image_url;
+        img.alt = chunk.caption;
+        img.title = chunk.caption;
+
+        const figcaption = document.createElement('figcaption');
+        figcaption.textContent = chunk.caption;
+
+        figure.appendChild(img);
+        figure.appendChild(figcaption);
+
+        this.narrativeView.appendChild(figure);
+        this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+    }
+
     async _processStream(response, entryElement, initialParagraph) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -186,7 +216,6 @@ export class GameplayHandler {
                         this.dmInsight = chunk.content;
                     } else if (chunk.type === 'narrative_chunk') {
                         let content = chunk.content;
-                        // Process content for paragraph breaks
                         while (content.includes('\n\n')) {
                             const [before, after] = content.split('\n\n', 2);
                             currentParagraph.textContent += before;
@@ -194,11 +223,13 @@ export class GameplayHandler {
                             const newP = document.createElement('p');
                             newP.className = 'narrative-text';
                             entryElement.appendChild(newP);
-                            currentParagraph = newP; // Switch to the new paragraph
+                            currentParagraph = newP;
                             content = after;
                         }
                         currentParagraph.textContent += content;
                         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+                    } else if (chunk.type === 'visual_aid' && this.showVisualAids) {
+                        this._renderVisualAid(chunk);
                     } else if (chunk.type === 'error') {
                         currentParagraph.textContent = `Error: ${chunk.content}`;
                     }
@@ -230,7 +261,6 @@ export class GameplayHandler {
         };
 
         try {
-            // Use fetch with keepalive to increase chance of success on page close
             await fetch('/api/session/autosave', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

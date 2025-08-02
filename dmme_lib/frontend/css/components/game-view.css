@@ -17,6 +17,7 @@
 .right-panel-game {
     flex-grow: 1;
     padding-left: 24px;
+    padding-right: 0px; /* Compensate for main content padding */
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -101,6 +102,7 @@
 .knowledge-panel {
     flex-shrink: 0;
     padding-bottom: 12px;
+    padding-right: 24px; /* Compensate for main content padding */
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 12px;
     font-size: 0.9em;
@@ -184,10 +186,12 @@
 }
 .game-controls-container .icon-btn.active {
     background-color: var(--accent-color);
+    border-color: var(--accent-color);
 }
 
 .narrative-view {
     flex-grow: 1;
+    padding-right: 24px; /* Compensate for main content padding */
     overflow-y: auto;
     font-family: var(--font-family-mono);
     line-height: 1.6;
@@ -195,7 +199,11 @@
     transition: font-size 0.1s, line-height 0.1s;
 }
 
-.narrative-view .narrative-entry { margin-bottom: 1em; position: relative; }
+.narrative-view .narrative-entry {
+    margin: 1em 1.5rem;
+    position: relative;
+}
+
 .narrative-view p { margin: 0; }
 .narrative-view .player-command { color: var(--accent-color); font-style: italic; }
 
@@ -206,12 +214,36 @@
     margin: 1em 0;
 }
 
+.visual-aid-container {
+    margin: 1em 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px;
+    background-color: var(--bg-color);
+}
+
+.visual-aid-container img {
+    max-width: 100%;
+    border-radius: 4px;
+    display: block;
+    margin: 0 auto;
+}
+
+.visual-aid-container figcaption {
+    font-size: 0.9em;
+    color: #aaa;
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+}
+
 .input-panel {
     flex-shrink: 0;
     display: flex;
     gap: 8px;
     margin-top: 12px;
     padding-top: 12px;
+    padding-right: 24px; /* Compensate for main content padding */
     border-top: 1px solid var(--border-color);
 }
 

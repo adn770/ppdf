@@ -122,12 +122,14 @@ class RAGService:
             if docs and metas:
                 image_doc = docs[0]
                 image_meta = metas[0]
-                log.info("Found relevant visual aid: %s", image_meta.get("image_url"))
-                yield {
-                    "type": "visual_aid",
-                    "image_url": image_meta.get("image_url"),
-                    "caption": image_doc,
-                }
+                image_path = image_meta.get("image_url")
+                if image_path:
+                    log.info("Found relevant visual aid: %s", image_path)
+                    yield {
+                        "type": "visual_aid",
+                        "image_url": f"/assets/{image_path}",
+                        "caption": image_doc,
+                    }
         except Exception as e:
             log.error("Failed during visual aid search: %s", e)
 
