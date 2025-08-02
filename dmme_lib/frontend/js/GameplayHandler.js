@@ -10,6 +10,7 @@ export class GameplayHandler {
         this.sendCommandBtn = document.getElementById('send-command-btn');
         this.kbDisplay = document.getElementById('kb-display');
         this.dmInsight = '';
+        this.autosaveInterval = null;
 
         // New style controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
@@ -19,13 +20,19 @@ export class GameplayHandler {
         this._addEventListeners();
     }
 
-    init(gameConfig) {
+    init(gameConfig, recoveredState = null) {
         this.gameConfig = gameConfig;
         console.log("GameplayHandler initialized with config:", this.gameConfig);
 
         this._updateKnowledgePanel();
         this._applyInitialStyles();
-        this._startNarration();
+
+        if (recoveredState) {
+            this.loadState(recoveredState);
+        } else {
+            this._startNarration();
+        }
+        this.startAutosave();
     }
 
     _addEventListeners() {
@@ -200,5 +207,48 @@ export class GameplayHandler {
                 }
             }
         }
+    }
+
+    startAutosave() {
+        if (this.autosaveInterval) clearInterval(this.autosaveInterval);
+        this.autosaveInterval = setInterval(() => this._performAutosave(), 15000);
+        console.log("Autosave interval started.");
+    }
+
+    stopAutosave() {
+        if (this.autosaveInterval) {
+            clearInterval(this.autosaveInterval);
+            this.autosaveInterval = null;
+            console.log("Autosave interval stopped.");
+        }
+    }
+
+    async _performAutosave() {
+        const state = {
+            config: this.gameConfig,
+            narrativeHTML: this.narrativeView.innerHTML,
+        };
+
+        try {
+            // Use fetch with keepalive to increase chance of success on page close
+            await fetch('/api/session/autosave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(state),
+                keepalive: true
+            });
+            console.log("Autosave successful.");
+        } catch (error) {
+            console.error("Autosave failed:", error);
+        }
+    }
+
+    loadState(recoveredState) {
+        this.narrativeView.innerHTML = recoveredState.narrativeHTML;
+        this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+        this.playerInput.disabled = false;
+        this.sendCommandBtn.disabled = false;
+        this.playerInput.focus();
+        hideGameSpinner();
     }
 }

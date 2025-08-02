@@ -1,0 +1,34 @@
+/* dmme_lib/frontend/css/components/recovery.css */
+
+#recovery-view {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    color: #ccc;
+}
+
+.recovery-box {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 48px;
+    max-width: 500px;
+}
+
+.recovery-box h2 {
+    margin-top: 0;
+}
+
+.recovery-box p {
+    color: #aaa;
+    margin-bottom: 32px;
+}
+
+.recovery-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}

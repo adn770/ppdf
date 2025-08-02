@@ -7,6 +7,7 @@ import { SettingsManager } from './SettingsManager.js';
 import { DiceRoller } from './components/DiceRoller.js';
 import { status } from './ui.js';
 import { i18n } from './i18n.js';
+import { apiCall } from './wizards/ApiHelper.js';
 
 class App {
     constructor() {
@@ -46,17 +47,52 @@ class App {
             () => this.settingsManager.open()
         );
         this.initAccordions();
-        status.setText('statusBarReady');
+
+        // Check for a recoverable session before showing the welcome screen
+        await this.checkForRecovery();
     }
 
-    startGame(gameConfig) {
+    async checkForRecovery() {
+        const recoveredState = await apiCall('/api/session/recover');
+
+        const welcomeView = document.getElementById('welcome-view');
+        const recoveryView = document.getElementById('recovery-view');
+
+        // Check if the recovered state object is not empty
+        if (recoveredState && Object.keys(recoveredState).length > 0) {
+            welcomeView.style.display = 'none';
+            recoveryView.style.display = 'flex';
+
+            document.getElementById('recover-continue-btn').onclick = () => {
+                recoveryView.style.display = 'none';
+                this.startGame(recoveredState.config, recoveredState);
+            };
+            document.getElementById('recover-discard-btn').onclick = async () => {
+                // Clear the autosave file on the backend
+                await apiCall('/api/session/autosave', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                recoveryView.style.display = 'none';
+                welcomeView.style.display = 'block';
+                status.setText('statusBarReady');
+            };
+        } else {
+            welcomeView.style.display = 'block';
+            recoveryView.style.display = 'none';
+            status.setText('statusBarReady');
+        }
+    }
+
+    startGame(gameConfig, recoveredState = null) {
         console.log("Switching to game view with config:", gameConfig);
         document.getElementById('welcome-view').style.display = 'none';
         const gameView = document.getElementById('game-view');
         gameView.style.display = 'flex';
         gameView.classList.add('active');
 
-        this.gameplayHandler.init(gameConfig);
+        this.gameplayHandler.init(gameConfig, recoveredState);
     }
 
     populateQuickThemeSelector() {
