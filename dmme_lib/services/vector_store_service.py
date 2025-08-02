@@ -57,7 +57,7 @@ class VectorStoreService:
             raise
 
     def query(
-        self, kb_name: str, query_text: str, n_results: int = 5
+        self, kb_name: str, query_text: str, n_results: int = 5, where_filter: dict = None
     ) -> tuple[list[str], list[dict]]:
         """Queries a knowledge base, returning documents and their metadata."""
         try:
@@ -70,6 +70,7 @@ class VectorStoreService:
             results = collection.query(
                 query_texts=[query_text],
                 n_results=n_results,
+                where=where_filter,
                 include=["metadatas", "documents"],
             )
             docs = results.get("documents", [[]])[0]

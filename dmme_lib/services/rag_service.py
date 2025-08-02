@@ -96,8 +96,40 @@ class RAGService:
         llm_stream = query_text_llm(
             game_master_prompt, user_prompt, self.ollama_url, self.model, stream=True
         )
+
+        full_narrative = ""
         for chunk in llm_stream:
+            full_narrative += chunk
             yield {"type": "narrative_chunk", "content": chunk}
+
+        # After narrative, search for a relevant image
+        if full_narrative and kb_sources["module"]:
+            yield from self._find_and_yield_visual_aid(
+                player_command, full_narrative, kb_sources["module"]
+            )
+
+    def _find_and_yield_visual_aid(self, command, narrative, kb_name):
+        """Queries for a relevant image and yields a visual_aid chunk if found."""
+        log.debug("Searching for relevant visual aid in '%s'.", kb_name)
+        image_query = f"Scene described by: {command}. {narrative}"
+        try:
+            docs, metas = self.vector_store.query(
+                kb_name,
+                image_query,
+                n_results=1,
+                where_filter={"label": "image_description"},
+            )
+            if docs and metas:
+                image_doc = docs[0]
+                image_meta = metas[0]
+                log.info("Found relevant visual aid: %s", image_meta.get("image_url"))
+                yield {
+                    "type": "visual_aid",
+                    "image_url": image_meta.get("image_url"),
+                    "caption": image_doc,
+                }
+        except Exception as e:
+            log.error("Failed during visual aid search: %s", e)
 
     def generate_journal_recap(self, session_log: str, lang: str) -> str:
         """
