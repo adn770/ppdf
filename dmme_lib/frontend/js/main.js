@@ -2,6 +2,7 @@
 import { ImportWizard } from './wizards/ImportWizard.js';
 import { PartyWizard } from './wizards/PartyWizard.js';
 import { NewGameWizard } from './wizards/NewGameWizard.js';
+import { LoadCampaignWizard } from './wizards/LoadCampaignWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
 import { SettingsManager } from './SettingsManager.js';
 import { DiceRoller } from './components/DiceRoller.js';
@@ -15,10 +16,11 @@ class App {
         this.settingsManager = new SettingsManager(this);
         this.importWizard = new ImportWizard(this);
         this.partyWizard = new PartyWizard(this);
-        this.gameplayHandler = new GameplayHandler(this);
         this.newGameWizard = new NewGameWizard(this,
             (gameConfig) => this.startGame(gameConfig)
         );
+        this.loadCampaignWizard = new LoadCampaignWizard(this);
+        this.gameplayHandler = new GameplayHandler(this);
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.settings = null;
         this.i18n = i18n;
@@ -42,6 +44,9 @@ class App {
         );
         document.getElementById('new-game-btn').addEventListener('click',
             () => this.newGameWizard.open()
+        );
+        document.getElementById('load-game-btn').addEventListener('click',
+            () => this.loadCampaignWizard.open()
         );
         document.getElementById('settings-btn').addEventListener('click',
             () => this.settingsManager.open()

@@ -13,6 +13,7 @@
             <h1>DMme</h1>
             <div class="global-controls">
                 <button id="new-game-btn" data-i18n-key="newGameBtn">New Game</button>
+                <button id="load-game-btn" data-i18n-key="loadGameBtn">Load Game</button>
                 <button id="party-manager-btn" data-i18n-key="partyManagerBtn">Party Manager</button>
                 <button id="import-knowledge-btn" data-i18n-key="importKnowledgeBtn">Import Knowledge Base</button>
                 <button id="settings-btn" data-i18n-key="settingsBtn">Settings</button>
@@ -135,6 +136,42 @@
     </div>
 
     <div id="modal-overlay" class="modal-overlay"></div>
+
+    <div id="load-campaign-modal" class="modal modal-lg">
+        <div class="modal-header">
+            <h2 data-i18n-key="loadCampaignTitle">Load Campaign</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        </div>
+        <div class="modal-body load-campaign-body">
+            <div class="load-campaign-list-panel">
+                <h4 data-i18n-key="savedCampaigns">Saved Campaigns</h4>
+                <ul id="campaign-list" class="item-list"></ul>
+            </div>
+            <div class="load-campaign-details-panel">
+                <div id="campaign-details-content" class="campaign-details-content placeholder">
+                    <p data-i18n-key="selectCampaignPrompt">Select a campaign to see details.</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="load-campaign-btn-confirm" class="accent-btn" data-i18n-key="loadBtn" disabled>Load</button>
+        </div>
+    </div>
+
+    <div id="session-recap-modal" class="modal modal-md">
+        <div class="modal-header">
+            <h2 data-i18n-key="sessionRecapTitle">Session Recap</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        </div>
+        <div class="modal-body session-recap-body">
+            <h3 id="recap-header"></h3>
+            <div id="recap-content" class="recap-content"></div>
+        </div>
+        <div class="modal-footer">
+            <button id="recap-continue-btn" class="accent-btn" data-i18n-key="continueCampaign">Continue Campaign</button>
+        </div>
+    </div>
+
 
     <div id="import-wizard-modal" class="modal modal-lg">
         <div class="modal-header">

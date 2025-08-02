@@ -1,0 +1,57 @@
+/* dmme_lib/frontend/css/components/load-campaign.css */
+
+.load-campaign-body {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+}
+
+.load-campaign-list-panel {
+    flex: 1;
+    max-width: 250px;
+    border-right: 1px solid var(--border-color);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.load-campaign-list-panel h4 {
+    margin: 0 0 10px 0;
+}
+
+.load-campaign-details-panel {
+    flex: 2;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.campaign-details-content.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+}
+
+.session-recap-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.session-recap-body h3 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+}
+
+.session-recap-body .recap-content {
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    padding: 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: var(--font-family-mono);
+    max-height: 400px;
+    overflow-y: auto;
+}

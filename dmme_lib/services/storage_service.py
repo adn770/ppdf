@@ -122,6 +122,18 @@ class StorageService:
                 "SELECT * FROM campaigns WHERE id = ?;", (campaign_id,)
             ).fetchone()
 
+    def get_latest_session_for_campaign(self, campaign_id: int):
+        """Gets the most recent session for a given campaign."""
+        with self._get_connection() as conn:
+            return conn.execute(
+                """
+                SELECT * FROM sessions
+                WHERE campaign_id = ? AND journal_recap IS NOT NULL
+                ORDER BY session_number DESC LIMIT 1;
+                """,
+                (campaign_id,),
+            ).fetchone()
+
     def create_campaign(self, name: str, description: str = ""):
         with self._get_connection() as conn:
             cursor = conn.execute(

@@ -20,6 +20,15 @@ def get_campaign(campaign_id):
     return jsonify(dict(campaign))
 
 
+@bp.route("/<int:campaign_id>/latest-session", methods=["GET"])
+def get_latest_session(campaign_id):
+    """Gets the latest session with a journal recap for a campaign."""
+    session = current_app.storage.get_latest_session_for_campaign(campaign_id)
+    if session is None:
+        return jsonify({"error": "No saved sessions with recaps found for this campaign"}), 404
+    return jsonify(dict(session))
+
+
 @bp.route("/", methods=["POST"])
 def create_campaign():
     """Creates a new campaign."""
