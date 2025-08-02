@@ -212,3 +212,32 @@ class StorageService:
         with self._get_connection() as conn:
             cursor = conn.execute("DELETE FROM characters WHERE id = ?;", (character_id,))
             return cursor.rowcount > 0
+
+    # --- Session & Journaling Methods ---
+    def create_session(self, campaign_id: int) -> int:
+        """Creates a new session record for a campaign and returns the new session ID."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT MAX(session_number) FROM sessions WHERE campaign_id = ?;",
+                (campaign_id,),
+            )
+            max_session = cursor.fetchone()[0]
+            new_session_number = (max_session or 0) + 1
+
+            cursor.execute(
+                "INSERT INTO sessions (campaign_id, session_number) VALUES (?, ?);",
+                (campaign_id, new_session_number),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def save_journal_recap(self, session_id: int, recap_text: str):
+        """Saves the journal recap and sets the end time for a given session."""
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE sessions SET journal_recap = ?, end_time = ? WHERE id = ?;",
+                (recap_text, now, session_id),
+            )
+            return cursor.rowcount > 0

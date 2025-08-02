@@ -51,3 +51,39 @@ def recover_session():
     except (IOError, json.JSONDecodeError) as e:
         log.error("Failed to read or parse autosave file: %s", e, exc_info=True)
         return jsonify({"error": "Could not recover session state."}), 500
+
+
+@bp.route("/summarize", methods=["POST"])
+def summarize_session():
+    """Summarizes a session log and saves it as a journal recap."""
+    data = request.get_json()
+    campaign_id = data.get("campaign_id")
+    session_log = data.get("session_log")
+    language = data.get("language", "en")
+
+    if not campaign_id or not session_log:
+        return jsonify({"error": "Missing campaign_id or session_log"}), 400
+
+    try:
+        # Step 1: Create a new session record in the database
+        session_id = current_app.storage.create_session(campaign_id)
+        log.info(
+            "Created new session record (ID: %d) for campaign %d.", session_id, campaign_id
+        )
+
+        # Step 2: Use the RAG service to generate the summary
+        summary = current_app.rag_service.generate_journal_recap(session_log, language)
+        if not summary:
+            raise Exception("LLM failed to generate a summary.")
+
+        # Step 3: Save the summary to the new session record
+        current_app.storage.save_journal_recap(session_id, summary)
+        log.info("Saved journal recap for session %d.", session_id)
+
+        return jsonify({"session_id": session_id, "recap": summary}), 201
+
+    except Exception as e:
+        log.error(
+            "Failed to summarize session for campaign %d: %s", campaign_id, e, exc_info=True
+        )
+        return jsonify({"error": "Failed to create session summary."}), 500

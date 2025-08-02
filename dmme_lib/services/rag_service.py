@@ -98,3 +98,12 @@ class RAGService:
         )
         for chunk in llm_stream:
             yield {"type": "narrative_chunk", "content": chunk}
+
+    def generate_journal_recap(self, session_log: str, lang: str) -> str:
+        """
+        Uses an LLM to summarize a session log into a narrative recap.
+        """
+        log.info("Generating journal recap in '%s'.", lang)
+        prompt = self._get_prompt("SUMMARIZE_SESSION", lang)
+        summary = query_text_llm(prompt, session_log, self.ollama_url, self.model)
+        return summary
