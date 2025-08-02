@@ -11,11 +11,6 @@ from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTImage
 
 from .extractor import PDFTextExtractor, Section
-from .constants import (
-    PROMPT_DESCRIBE_IMAGE,
-    PROMPT_CLASSIFY_IMAGE,
-)
-
 from core.llm_utils import get_semantic_label
 
 log = logging.getLogger("ppdf.api")
@@ -67,27 +62,21 @@ def process_pdf_text(
     )
     sections = extractor.extract_sections()
 
-    if apply_labeling:
-        log.info("--- Stage 4: Applying Semantic Labels ---")
-        for section in sections:
-            for p_idx, para in enumerate(section.paragraphs):
-                if para.is_table or len(para.get_text()) < 50:
-                    continue
-
-                log.info(
-                    "Labeling paragraph %d in section '%s'...",
-                    p_idx + 1,
-                    section.title or "Untitled",
-                )
-                # Updated to use refactored function
-                label = get_semantic_label(para.get_text(), ollama_url, model)
-                if label:
-                    para.labels = [label]
+    # Note: Semantic labeling is now handled by the dmme IngestionService,
+    # which has access to the internationalized prompts.
+    # This function is now only responsible for raw structural extraction.
 
     return sections, extractor.page_models
 
 
-def process_pdf_images(pdf_path: str, output_dir: str, ollama_url: str, model: str):
+def process_pdf_images(
+    pdf_path: str,
+    output_dir: str,
+    ollama_url: str,
+    model: str,
+    describe_prompt: str,
+    classify_prompt: str,
+):
     """
     Processes a PDF, extracts images, and yields progress messages.
     """
@@ -132,10 +121,10 @@ def process_pdf_images(pdf_path: str, output_dir: str, ollama_url: str, model: s
                 saved_image_bytes = f.read()
 
             description = _query_multimodal_llm(
-                PROMPT_DESCRIBE_IMAGE, saved_image_bytes, ollama_url, model
+                describe_prompt, saved_image_bytes, ollama_url, model
             )
             classification = _query_multimodal_llm(
-                PROMPT_CLASSIFY_IMAGE, saved_image_bytes, ollama_url, model
+                classify_prompt, saved_image_bytes, ollama_url, model
             )
             valid_cats = {"art", "map", "decoration"}
             if classification.lower().strip() not in valid_cats:

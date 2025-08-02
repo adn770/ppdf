@@ -91,7 +91,8 @@ export class NewGameWizard {
             rules: this.rulesSelect.value,
             party: this.partySelect.value,
             module: selectedMode === 'module' ? this.moduleSelect.value : null,
-            setting: selectedMode === 'freestyle' ? this.settingSelect.value : null
+            setting: selectedMode === 'freestyle' ? this.settingSelect.value : null,
+            language: this.app.settings.Appearance.language || 'en'
         };
         if (!gameConfig.rules || !gameConfig.party) {
             status.setText("errorStartGame", true);

@@ -56,18 +56,25 @@ class VectorStoreService:
             log.error("Failed to add documents to knowledge base '%s': %s", kb_name, e)
             raise
 
-    def query(self, kb_name: str, query_text: str, n_results: int = 5) -> list[str]:
-        """Queries a knowledge base using text, letting ChromaDB handle embeddings."""
+    def query(
+        self, kb_name: str, query_text: str, n_results: int = 5
+    ) -> tuple[list[str], list[dict]]:
+        """Queries a knowledge base, returning documents and their metadata."""
         try:
             log.debug("Querying KB '%s' for: '%s'", kb_name, query_text)
             collection = self.get_or_create_collection(kb_name)
             if collection.count() == 0:
                 log.warning("Query attempted on empty collection '%s'.", kb_name)
-                return []
+                return [], []
 
-            # ChromaDB now uses the configured function to embed the query text
-            results = collection.query(query_texts=[query_text], n_results=n_results)
-            return results["documents"][0] if results.get("documents") else []
+            results = collection.query(
+                query_texts=[query_text],
+                n_results=n_results,
+                include=["metadatas", "documents"],
+            )
+            docs = results.get("documents", [[]])[0]
+            metas = results.get("metadatas", [[]])[0]
+            return docs, metas
         except Exception as e:
             log.error("Failed to query knowledge base '%s': %s", kb_name, e)
             raise

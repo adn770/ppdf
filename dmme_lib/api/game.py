@@ -2,7 +2,7 @@
 import json
 import logging
 from flask import Blueprint, request, jsonify, current_app, Response
-from dmme_lib.constants import PROMPT_GENERATE_CHARACTER
+from dmme_lib.constants import PROMPT_REGISTRY
 from core.llm_utils import query_text_llm
 
 bp = Blueprint("game", __name__)
@@ -10,6 +10,11 @@ log = logging.getLogger("dmme.api")
 
 # Simple in-memory cache for conversation history (replace with DB persistence later)
 conversation_history = []
+
+
+def _get_prompt_from_registry(key: str, lang: str) -> str:
+    """Safely retrieves a prompt, falling back to English."""
+    return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
 
 
 @bp.route("/start", methods=["POST"])
@@ -20,16 +25,15 @@ def start_game():
     data = request.get_json()
     game_config = data.get("config")
     log.debug("Game start requested with config: %s", game_config)
-    # session_recap = data.get("recap") # Placeholder for future implementation
 
     if not game_config:
         return jsonify({"error": "Missing 'config' in request"}), 400
 
-    logger = current_app.logger
     rag_service = current_app.rag_service
 
     def stream_kickoff():
         try:
+            # The RAG service is now responsible for handling language
             response_generator = rag_service.generate_kickoff_narration(game_config)
             full_narrative = ""
             for chunk in response_generator:
@@ -40,10 +44,8 @@ def start_game():
             if full_narrative:
                 conversation_history.append({"role": "assistant", "content": full_narrative})
         except Exception as e:
-            logger.error("Error in RAG kickoff stream: %s", e, exc_info=True)
-            error_chunk = json.dumps(
-                {"type": "error", "content": "Failed to generate opening narration."}
-            )
+            log.error("Error in RAG kickoff stream: %s", e, exc_info=True)
+            error_chunk = json.dumps({"type": "error", "content": str(e)})
             yield error_chunk + "\n"
 
     return Response(stream_kickoff(), mimetype="application/x-ndjson")
@@ -60,10 +62,7 @@ def handle_command():
     if not player_command or not game_config:
         return jsonify({"error": "Missing 'command' or 'config' in request"}), 400
 
-    # Get direct references to app components while context is available
-    logger = current_app.logger
     rag_service = current_app.rag_service
-
     conversation_history.append({"role": "user", "content": player_command})
     conversation_history = conversation_history[-10:]  # Limit history
 
@@ -81,10 +80,8 @@ def handle_command():
             if full_narrative:
                 conversation_history.append({"role": "assistant", "content": full_narrative})
         except Exception as e:
-            logger.error("Error in RAG stream: %s", e, exc_info=True)
-            error_chunk = json.dumps(
-                {"type": "error", "content": "Failed to generate response stream."}
-            )
+            log.error("Error in RAG stream: %s", e, exc_info=True)
+            error_chunk = json.dumps({"type": "error", "content": str(e)})
             yield error_chunk + "\n"
 
     return Response(stream_response(), mimetype="application/x-ndjson")
@@ -96,23 +93,22 @@ def generate_character():
     data = request.get_json()
     description = data.get("description")
     rules_kb = data.get("rules_kb")
+    lang = data.get("language", "en")
 
     if not description or not rules_kb:
         return jsonify({"error": "Description and rules_kb are required."}), 400
 
     try:
-        # Perform a RAG query to get actual rules context
         query = "Core rules for character creation, attributes, classes, and levels."
-        rules_docs = current_app.vector_store.query(rules_kb, query, n_results=5)
+        rules_docs, _ = current_app.vector_store.query(rules_kb, query, n_results=5)
         rules_context = "\n\n".join(rules_docs)
         if not rules_context:
-            rules_context = (
-                f"No specific rules found. Use general knowledge for the '{rules_kb}' system."
-            )
+            rules_context = f"No specific rules found. Use general knowledge for '{rules_kb}'."
 
-        prompt = PROMPT_GENERATE_CHARACTER.format(
-            description=description, rules_context=rules_context
-        )
+        prompt_template = _get_prompt_from_registry("GENERATE_CHARACTER", lang)
+        prompt = prompt_template.format(description=description, rules_context=rules_context)
+
+        # NOTE: For character generation, the prompt is the user content
         response_str = query_text_llm(
             "", prompt, current_app.config["OLLAMA_URL"], current_app.config["OLLAMA_MODEL"]
         )

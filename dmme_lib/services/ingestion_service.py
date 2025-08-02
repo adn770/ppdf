@@ -6,7 +6,8 @@ import json
 import shutil
 from .vector_store_service import VectorStoreService
 from core.llm_utils import get_semantic_label
-from ppdf_lib.api import process_pdf_text
+from ppdf_lib.api import process_pdf_text, process_pdf_images
+from dmme_lib.constants import PROMPT_REGISTRY
 
 log = logging.getLogger("dmme.ingest")
 
@@ -18,25 +19,29 @@ class IngestionService:
         self.model = model
         log.info("IngestionService initialized.")
 
+    def _get_prompt(self, key: str, lang: str) -> str:
+        """Safely retrieves a prompt from the registry, falling back to English."""
+        return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
+
     def ingest_markdown(self, file_content: str, metadata: dict):
         """Processes and ingests a Markdown file's content, yielding progress."""
         kb_name = metadata.get("kb_name")
+        lang = metadata.get("language", "en")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        yield f"✔ Starting Markdown processing for KB '{kb_name}'."
-        chunks = [
-            chunk.strip() for chunk in re.split(r"\n{2,}", file_content) if chunk.strip()
-        ]
+        yield f"✔ Starting Markdown processing for KB '{kb_name}' in '{lang}'."
+        chunks = [c.strip() for c in re.split(r"\n{2,}", file_content) if c.strip()]
         yield f"Splitting file into {len(chunks)} raw chunks."
 
+        labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
         documents, metadatas = [], []
         for i, chunk in enumerate(chunks):
             if len(chunk) < 50:
                 continue
 
             yield f"  -> Applying semantic label to chunk {i + 1}/{len(chunks)}..."
-            label = get_semantic_label(chunk, self.ollama_url, self.model)
+            label = get_semantic_label(chunk, labeler_prompt, self.ollama_url, self.model)
 
             documents.append(chunk)
             metadatas.append(
@@ -48,29 +53,27 @@ class IngestionService:
             )
 
         if not documents:
-            log.warning("No suitable documents found to ingest for '%s'.", kb_name)
-            yield f"✔ No valid text chunks found to ingest."
+            yield "✔ No valid text chunks found to ingest."
             return
 
-        yield f"✔ Semantic labeling complete. Found {len(documents)} valid text chunks."
+        yield f"✔ Semantic labeling complete. Found {len(documents)} valid chunks."
         yield "Generating embeddings and saving to vector store..."
-        # Pass the full metadata dict to be stored with the collection
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
 
     def ingest_pdf_text(self, pdf_path: str, metadata: dict):
         """Processes and ingests a PDF file's text content, yielding progress."""
         kb_name = metadata.get("kb_name")
+        lang = metadata.get("language", "en")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        yield "Analyzing PDF structure..."
+        yield f"Analyzing PDF structure for '{kb_name}'..."
         extraction_options = {"num_cols": "auto", "rm_footers": True, "style": False}
-        sections, _ = process_pdf_text(
-            pdf_path, extraction_options, self.ollama_url, self.model, apply_labeling=False
-        )
+        sections, _ = process_pdf_text(pdf_path, extraction_options, "", "", False)
         yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
 
+        labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
         documents, metadatas = [], []
         chunk_id = 0
         total_paras = sum(len(s.paragraphs) for s in sections)
@@ -81,12 +84,12 @@ class IngestionService:
                 if para.is_table or len(para.get_text()) < 50:
                     continue
 
-                label = get_semantic_label(para.get_text(), self.ollama_url, self.model)
-                if p_idx == 0:  # Log once per section
-                    yield (
-                        f"  -> Labeling section {s_idx + 1}/{len(sections)} "
-                        f"('{section.title or '...'}')"
-                    )
+                label = get_semantic_label(
+                    para.get_text(), labeler_prompt, self.ollama_url, self.model
+                )
+                if p_idx == 0:
+                    msg = f"  -> Labeling section {s_idx + 1}/{len(sections)} ('{section.title or '...'}')"
+                    yield msg
 
                 documents.append(para.get_text())
                 metadatas.append(
@@ -98,15 +101,32 @@ class IngestionService:
                     }
                 )
                 chunk_id += 1
-        yield f"✔ Semantic labeling complete. Found {len(documents)} valid text chunks."
+        yield f"✔ Semantic labeling complete. Found {len(documents)} valid chunks."
 
         yield "Generating embeddings and saving to vector store..."
         if not documents:
-            log.warning("No suitable text documents found to ingest for '%s'.", kb_name)
+            yield "✔ No valid text chunks found to ingest."
             return
-        # Pass the full metadata dict to be stored with the collection
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
+
+    def process_and_extract_images(self, pdf_path: str, assets_path: str, metadata: dict):
+        """Extracts images from a PDF and processes them using language-aware prompts."""
+        kb_name = metadata.get("kb_name")
+        lang = metadata.get("language", "en")
+        yield f"Starting image extraction for '{kb_name}'..."
+
+        review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
+        if os.path.exists(review_dir):
+            shutil.rmtree(review_dir)
+        os.makedirs(review_dir, exist_ok=True)
+
+        describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
+        classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
+
+        yield from process_pdf_images(
+            pdf_path, review_dir, self.ollama_url, self.model, describe_prompt, classify_prompt
+        )
 
     def ingest_images(self, kb_name: str, assets_path: str):
         """Finalizes image ingestion from a review directory."""
@@ -145,11 +165,8 @@ class IngestionService:
         log.info("Prepared %d images for vector store ingestion.", len(documents))
 
         if documents:
-            # We don't need to pass kb_metadata here, as the collection
-            # should have been created during the text ingestion phase.
             self.vector_store.add_to_kb(kb_name, documents, metadatas)
 
-        # Finalize by renaming the directory
         final_dir = os.path.join(assets_path, "images", kb_name)
         if os.path.exists(final_dir):
             shutil.rmtree(final_dir)

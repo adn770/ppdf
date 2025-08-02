@@ -3,8 +3,6 @@ import logging
 import requests
 import json
 
-from ppdf_lib.constants import PROMPT_SEMANTIC_LABELER
-
 log = logging.getLogger("dmme.llm_utils")
 
 
@@ -69,8 +67,8 @@ def generate_embeddings_ollama(
         raise
 
 
-def get_semantic_label(chunk: str, ollama_url: str, model: str) -> str:
-    """Gets a single semantic label for a text chunk."""
+def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> str:
+    """Gets a single semantic label for a text chunk using a provided prompt."""
     # We only want the single most relevant label
     valid_labels = [
         "stat_block",
@@ -82,7 +80,7 @@ def get_semantic_label(chunk: str, ollama_url: str, model: str) -> str:
         "dialogue",
         "prose",
     ]
-    label = query_text_llm(PROMPT_SEMANTIC_LABELER, chunk, ollama_url, model)
+    label = query_text_llm(prompt, chunk, ollama_url, model)
     if label in valid_labels:
         return label
     return "prose"  # Default fallback

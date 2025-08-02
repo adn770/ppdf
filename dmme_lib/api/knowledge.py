@@ -5,7 +5,6 @@ import shutil
 import logging
 import uuid
 from flask import Blueprint, request, jsonify, current_app, Response
-from ppdf_lib.api import process_pdf_images
 
 bp = Blueprint("knowledge", __name__)
 log = logging.getLogger("dmme.api")
@@ -95,38 +94,28 @@ def ingest_document():
     def stream_ingestion():
         with app.app_context():
             try:
-                kb_name = metadata.get("kb_name", "Unknown")
                 is_pdf = filename.lower().endswith(".pdf")
                 yield f"data: {json.dumps({'message': '✔ Beginning processing...'})}\n\n"
+                ingestion_service = app.ingestion_service
 
                 # --- Text Ingestion ---
                 if filename.lower().endswith(".md"):
                     with open(tmp_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                    for message in current_app.ingestion_service.ingest_markdown(
-                        content, metadata
-                    ):
-                        yield f"data: {json.dumps({'message': message})}\n\n"
+                    for msg in ingestion_service.ingest_markdown(content, metadata):
+                        yield f"data: {json.dumps({'message': msg})}\n\n"
                 elif is_pdf:
-                    for message in current_app.ingestion_service.ingest_pdf_text(
-                        tmp_path, metadata
-                    ):
-                        yield f"data: {json.dumps({'message': message})}\n\n"
+                    for msg in ingestion_service.ingest_pdf_text(tmp_path, metadata):
+                        yield f"data: {json.dumps({'message': msg})}\n\n"
 
                 # --- Image Extraction (for PDFs only) ---
                 if is_pdf:
-                    assets_path = current_app.config["ASSETS_PATH"]
-                    review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
-                    if os.path.exists(review_dir):
-                        shutil.rmtree(review_dir)
-                    os.makedirs(review_dir, exist_ok=True)
-                    for message in process_pdf_images(
-                        tmp_path,
-                        review_dir,
-                        current_app.config["OLLAMA_URL"],
-                        current_app.config["OLLAMA_MODEL"],
+                    assets_path = app.config["ASSETS_PATH"]
+                    for msg in ingestion_service.process_and_extract_images(
+                        tmp_path, assets_path, metadata
                     ):
-                        yield f"data: {json.dumps({'message': message})}\n\n"
+                        yield f"data: {json.dumps({'message': msg})}\n\n"
+
             except Exception as e:
                 log.error("Document ingestion stream failed: %s", e, exc_info=True)
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"

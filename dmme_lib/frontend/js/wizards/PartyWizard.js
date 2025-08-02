@@ -183,10 +183,15 @@ export class PartyWizard {
             this.aiGenerateBtn.disabled = true;
             status.setText('generatingChar', false, { rules: rules });
             try {
+                const payload = {
+                    description: description,
+                    rules_kb: rules,
+                    language: this.app.settings.Appearance.language || 'en'
+                };
                 charData = await apiCall('/api/game/generate-character', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ description, rules_kb: rules }),
+                    body: JSON.stringify(payload),
                 });
                 status.setText('generatedChar', false, {name: charData.name, class: charData.class});
             } catch (error) {
