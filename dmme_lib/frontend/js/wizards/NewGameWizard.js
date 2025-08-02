@@ -48,7 +48,6 @@ export class NewGameWizard {
         [this.rulesSelect, this.moduleSelect, this.settingSelect, this.partySelect].forEach(
             sel => sel.innerHTML = ''
         );
-
         // Populate KBs filtered by type, accessing the nested metadata property
         kbs.forEach(kb => {
             const option = new Option(`${kb.name} (${kb.count} docs)`, kb.name);
@@ -56,7 +55,6 @@ export class NewGameWizard {
             if (kb.metadata?.kb_type === 'module') this.moduleSelect.add(option.cloneNode(true));
             if (kb.metadata?.kb_type === 'setting') this.settingSelect.add(option.cloneNode(true));
         });
-
         // Set the default preferred ruleset from settings
         const defaultRuleset = this.app.settings?.Game?.default_ruleset;
         if (defaultRuleset) {
@@ -64,7 +62,7 @@ export class NewGameWizard {
         }
 
         if (parties.length === 0) {
-            this.partySelect.innerHTML = '<option value="">No parties created yet</option>';
+            this.partySelect.innerHTML = `<option value="">${this.app.i18n.t('noParties')}</option>`;
             this.startGameBtn.disabled = true;
         } else {
              parties.forEach(party => {
@@ -96,7 +94,7 @@ export class NewGameWizard {
             setting: selectedMode === 'freestyle' ? this.settingSelect.value : null
         };
         if (!gameConfig.rules || !gameConfig.party) {
-            status.setText("A Rules System and a Party are required to start a game.", true);
+            status.setText("errorStartGame", true);
             return;
         }
 

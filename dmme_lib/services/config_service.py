@@ -13,6 +13,7 @@ class ConfigService:
         self.defaults = {
             "Appearance": {
                 "theme": "default",
+                "language": "en",
             },
             "Ollama": {
                 "url": "http://localhost:11434",

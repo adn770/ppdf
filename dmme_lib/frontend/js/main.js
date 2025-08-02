@@ -5,25 +5,30 @@ import { NewGameWizard } from './wizards/NewGameWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
 import { SettingsManager } from './SettingsManager.js';
 import { status } from './ui.js';
+import { i18n } from './i18n.js';
 
 class App {
     constructor() {
-        // Pass a reference to the app instance for settings access
+        // Pass a reference to the app instance for cross-component communication
         this.settingsManager = new SettingsManager(this);
-        this.importWizard = new ImportWizard();
+        this.importWizard = new ImportWizard(this);
         this.partyWizard = new PartyWizard(this);
-        this.gameplayHandler = new GameplayHandler();
+        this.gameplayHandler = new GameplayHandler(this);
         this.newGameWizard = new NewGameWizard(this,
             (gameConfig) => this.startGame(gameConfig)
         );
         this.settings = null;
+        this.i18n = i18n; // Make i18n service available to other components
     }
 
     async init() {
-        status.setText('Initializing application...');
+        status.setText('initializing');
         // Load settings first, as other components depend on them
         this.settings = await this.settingsManager.loadSettings();
         this.settingsManager.applyTheme(this.settings.Appearance.theme);
+
+        // Initialize i18n before setting up event listeners
+        await this.i18n.init(this.settings.Appearance.language);
 
         document.getElementById('import-knowledge-btn').addEventListener('click',
             () => this.importWizard.open()
@@ -38,7 +43,7 @@ class App {
             () => this.settingsManager.open()
         );
         this.initAccordions();
-        status.setText('Ready.');
+        status.setText('statusBarReady');
     }
 
     startGame(gameConfig) {

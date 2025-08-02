@@ -4,7 +4,8 @@ import { status, confirmationModal } from './ui.js';
 
 export class SettingsManager {
     constructor(appInstance) {
-        this.app = appInstance; // Store a reference to the main app
+        this.app = appInstance;
+        // Store a reference to the main app
         this.settings = null;
 
         this._setupElements();
@@ -103,26 +104,25 @@ export class SettingsManager {
     }
 
     async _loadRagStatus() {
-        this.ragStatusContainer.innerHTML = '<p>Loading knowledge bases...</p>';
+        this.ragStatusContainer.innerHTML = `<p>${this.app.i18n.t('kbMgmtLoading')}</p>`;
         try {
             const kbs = await apiCall('/api/knowledge/');
             this._renderRagStatus(kbs);
         } catch (error) {
             this.ragStatusContainer.innerHTML =
-                '<p class="error">Failed to load knowledge bases.</p>';
+                `<p class="error">${this.app.i18n.t('kbMgmtFailed')}</p>`;
         }
     }
 
     _renderRagStatus(kbs) {
         if (kbs.length === 0) {
-            this.ragStatusContainer.innerHTML = '<p>No knowledge bases have been created yet.</p>';
+            this.ragStatusContainer.innerHTML = `<p>${this.app.i18n.t('kbMgmtEmpty')}</p>`;
             return;
         }
 
+        const i18n = this.app.i18n;
         const allMetaKeys = new Set();
         kbs.forEach(kb => Object.keys(kb.metadata).forEach(key => allMetaKeys.add(key)));
-        
-        // Define a preferred order, but still be dynamic
         const preferredOrder = ['kb_type', 'language', 'filename'];
         const sortedMetaKeys = preferredOrder.filter(k => allMetaKeys.has(k));
         allMetaKeys.forEach(k => {
@@ -130,18 +130,19 @@ export class SettingsManager {
                 sortedMetaKeys.push(k);
             }
         });
-
-        const headers = ['Name', ...sortedMetaKeys, 'Documents'];
+        const headers = [
+            i18n.t('kbHeaderName'), ...sortedMetaKeys.map(k => i18n.t(`kbHeader${k.charAt(0).toUpperCase() + k.slice(1).replace('kb_','')}`)), i18n.t('kbHeaderDocs')
+        ];
         
         const table = document.createElement('table');
         table.className = 'info-table';
         const thead = document.createElement('thead');
-        thead.innerHTML = `<tr>${headers.map(h => `<th>${h.replace('kb_','')}</th>`).join('')}<th></th></tr>`;
+        thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}<th></th></tr>`;
         
         const tbody = document.createElement('tbody');
         kbs.forEach(kb => {
             const row = document.createElement('tr');
-            row.title = kb.metadata?.description || 'No description provided.';
+            row.title = kb.metadata?.description || i18n.t('kbNoDesc');
 
             let cells = `<td>${kb.name}</td>`;
             sortedMetaKeys.forEach(key => {
@@ -152,7 +153,6 @@ export class SettingsManager {
             row.innerHTML = cells;
             tbody.appendChild(row);
         });
-
         table.appendChild(thead);
         table.appendChild(tbody);
         this.ragStatusContainer.innerHTML = '';
@@ -165,14 +165,14 @@ export class SettingsManager {
 
         const kbName = deleteBtn.dataset.kbName;
         const confirmed = await confirmationModal.confirm(
-            'Delete Knowledge Base',
-            `Are you sure you want to permanently delete the '${kbName}' knowledge base?`
+            'deleteKbTitle',
+            'deleteKbMsg',
+            { name: kbName }
         );
-
         if (confirmed) {
             try {
                 await apiCall(`/api/knowledge/${kbName}`, { method: 'DELETE' });
-                status.setText(`Knowledge base '${kbName}' deleted.`);
+                status.setText('deleteKbSuccess', false, { name: kbName });
                 await this._loadRagStatus(); // Refresh the list
             } catch (error) {
                 // The apiCall helper already shows a status bar error
@@ -181,7 +181,7 @@ export class SettingsManager {
     }
 
     async saveSettings() {
-        this.statusEl.textContent = 'Saving...';
+        this.statusEl.textContent = this.app.i18n.t('imageSaveStatusSaving');
         const newSettings = {
             Appearance: {},
             Ollama: {},
@@ -202,12 +202,14 @@ export class SettingsManager {
         });
         this.app.settings = newSettings; // Update the global app settings
         this.applyTheme(this.app.settings.Appearance.theme);
-        this.statusEl.textContent = 'Saved!';
+        this.app.i18n.setLanguage(this.app.settings.Appearance.language);
+        this.statusEl.textContent = this.app.i18n.t('settingsSaveStatus');
         setTimeout(() => this.close(), 1000);
     }
 
     applyTheme(themeName) {
-        document.body.className = ''; // Clear existing themes
+        document.body.className = '';
+        // Clear existing themes
         if (themeName && themeName !== 'default') {
             document.body.classList.add(`theme-${themeName}`);
         }

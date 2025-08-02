@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DMme - AI Dungeon Master Engine</title>
+    <title data-i18n-key="appTitle">DMme - AI Dungeon Master Engine</title>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 </head>
@@ -12,17 +12,17 @@
         <header class="app-header">
             <h1>DMme</h1>
             <div class="global-controls">
-                <button id="new-game-btn">New Game</button>
-                <button id="party-manager-btn">Party Manager</button>
-                <button id="import-knowledge-btn">Import Knowledge Base</button>
-                <button id="settings-btn">Settings</button>
+                <button id="new-game-btn" data-i18n-key="newGameBtn">New Game</button>
+                <button id="party-manager-btn" data-i18n-key="partyManagerBtn">Party Manager</button>
+                <button id="import-knowledge-btn" data-i18n-key="importKnowledgeBtn">Import Knowledge Base</button>
+                <button id="settings-btn" data-i18n-key="settingsBtn">Settings</button>
             </div>
         </header>
         <main id="main-content" class="main-content">
             <div id="welcome-view">
                 <div class="welcome-message">
-                    <h2>Welcome to DMme</h2>
-                    <p>
+                    <h2 data-i18n-key="welcomeTitle">Welcome to DMme</h2>
+                    <p data-i18n-key="welcomeMsg">
                         Click "New Game" to begin an adventure, or
                         "Import Knowledge Base" to expand your library.
                     </p>
@@ -31,12 +31,12 @@
             <div id="game-view" class="game-view-container">
                 <div class="left-panel-game">
                     <div class="party-status-panel">
-                        <h4>Party Status</h4>
+                        <h4 data-i18n-key="partyStatusTitle">Party Status</h4>
                         <div id="party-accordion-container">
                         </div>
                     </div>
                     <div class="dice-roller">
-                        <h4>Dice Roller</h4>
+                        <h4 data-i18n-key="diceRollerTitle">Dice Roller</h4>
                         <div class="dice-grid">
                             <button>d4</button>
                             <button>d6</button>
@@ -56,23 +56,23 @@
                                 <div class="spinner spinner-sm"></div>
                             </div>
                             <button id="toggle-visual-aids-btn" class="icon-btn"
-                                title="Toggle Visual Aids">🖼️</button>
+                                data-i18n-key="toggleVisualAids" data-i18n-target="title" title="Toggle Visual Aids">🖼️</button>
                             <button id="toggle-ascii-scene-btn" class="icon-btn"
-                                title="Toggle ASCII Scene">#</button>
+                                data-i18n-key="toggleAsciiScene" data-i18n-target="title" title="Toggle ASCII Scene">#</button>
                         </div>
                     </div>
                     <div id="narrative-view" class="narrative-view">
                     </div>
                     <div class="input-panel">
                         <textarea id="player-input"
-                            placeholder="What do you do?"></textarea>
-                        <button id="send-command-btn">Send</button>
+                            data-i18n-key="playerInputPlaceholder" data-i18n-target="placeholder" placeholder="What do you do?"></textarea>
+                        <button id="send-command-btn" data-i18n-key="sendCommand">Send</button>
                     </div>
                 </div>
             </div>
         </main>
         <footer class="status-bar">
-            <span id="status-text">Ready.</span>
+            <span id="status-text" data-i18n-key="statusBarReady">Ready.</span>
         </footer>
     </div>
 
@@ -80,15 +80,15 @@
 
     <div id="import-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
-            <h2 id="import-wizard-title">Import Knowledge Wizard</h2>
-            <button class="close-btn">&times;</button>
+            <h2 id="import-wizard-title" data-i18n-key="importWizardTitle">Import Knowledge Wizard</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="wizard-pane active" id="wizard-pane-0">
                 <div class="wizard-section" id="wizard-section-upload">
-                    <h3>Step 1: Upload File</h3>
+                    <h3 data-i18n-key="wizardPane1Title">Step 1: Upload File</h3>
                     <div id="wizard-upload-area" class="upload-area">
-                        <p id="wizard-upload-text">
+                        <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
                             Drag & Drop a PDF or Markdown file here, or click to select
                         </p>
                         <input type="file" id="wizard-upload-input"
@@ -97,40 +97,40 @@
                 </div>
                 <hr class="wizard-divider">
                 <div class="wizard-section" id="wizard-section-details">
-                    <h3>Step 2: Add Details</h3>
+                    <h3 data-i18n-key="wizardPane2Title">Step 2: Add Details</h3>
                     <div class="form-row">
                         <div class="form-group form-group-wide">
-                            <label for="kb-name">Name</label>
+                            <label for="kb-name" data-i18n-key="formName">Name</label>
                             <input type="text" id="kb-name"
-                                placeholder="e.g., Core Rules v5.1" autocomplete="off">
+                                data-i18n-key="formNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Core Rules v5.1" autocomplete="off">
                         </div>
                         <div class="form-group">
-                            <label for="kb-type">Type</label>
+                            <label for="kb-type" data-i18n-key="formType">Type</label>
                             <select id="kb-type" name="kb-type">
-                                <option value="module" selected>Module</option>
-                                <option value="setting">Setting</option>
-                                <option value="rules">Rules</option>
-                                <option value="adapter">Adapter</option>
+                                <option value="module" data-i18n-key="formTypeModule" selected>Module</option>
+                                <option value="setting" data-i18n-key="formTypeSetting">Setting</option>
+                                <option value="rules" data-i18n-key="formTypeRules">Rules</option>
+                                <option value="adapter" data-i18n-key="formTypeAdapter">Adapter</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="kb-lang">Language</label>
+                            <label for="kb-lang" data-i18n-key="formLanguage">Language</label>
                             <select id="kb-lang" name="kb-lang">
-                                <option value="en" selected>English</option>
-                                <option value="es">Spanish</option>
-                                <option value="ca">Catalan</option>
+                                <option value="en" data-i18n-key="formLangEn" selected>English</option>
+                                <option value="es" data-i18n-key="formLangEs">Spanish</option>
+                                <option value="ca" data-i18n-key="formLangCa">Catalan</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-group form-group-fill">
-                        <textarea id="kb-desc" placeholder="Description (Optional)"
+                        <textarea id="kb-desc" data-i18n-key="formDescriptionPlaceholder" data-i18n-target="placeholder" placeholder="Description (Optional)"
                             autocomplete="off"></textarea>
                     </div>
                 </div>
             </div>
             <div class="wizard-pane" id="wizard-pane-1">
                 <div class="wizard-pane-header">
-                    <h3>Step 3: Processing...</h3>
+                    <h3 data-i18n-key="wizardPane3Title">Step 3: Processing...</h3>
                 </div>
                 <div class="progress-container">
                     <div class="spinner spinner-lg"></div>
@@ -138,7 +138,7 @@
                 </div>
             </div>
             <div class="wizard-pane" id="wizard-pane-2">
-                <h3>Step 4: Review Images</h3>
+                <h3 data-i18n-key="wizardPane4Title">Step 4: Review Images</h3>
                 <div class="image-review-container">
                     <div class="image-display-area">
                         <img id="review-image" src="" alt="Review Image" />
@@ -148,41 +148,41 @@
                     </div>
                     <div class="image-metadata-editor">
                         <div class="form-group form-group-fill">
-                            <label for="image-description">Description</label>
+                            <label for="image-description" data-i18n-key="imageDescription">Description</label>
                             <textarea id="image-description"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Classification</label>
+                            <label data-i18n-key="imageClassification">Classification</label>
                             <div class="radio-group image-classification-group">
                                 <label>
                                     <input type="radio" name="image-classification"
-                                        value="art" checked> Art
+                                        value="art" checked> <span data-i18n-key="imgClassArt">Art</span>
                                 </label>
                                 <label>
                                     <input type="radio" name="image-classification"
-                                        value="map"> Map
+                                        value="map"> <span data-i18n-key="imgClassMap">Map</span>
                                 </label>
                                 <label>
                                     <input type="radio" name="image-classification"
-                                        value="handout"> Handout
+                                        value="handout"> <span data-i18n-key="imgClassHandout">Handout</span>
                                 </label>
                                 <label>
                                     <input type="radio" name="image-classification"
-                                        value="decoration"> Decoration
+                                        value="decoration"> <span data-i18n-key="imgClassDecoration">Decoration</span>
                                 </label>
                                 <label>
                                     <input type="radio" name="image-classification"
-                                        value="other"> Other
+                                        value="other"> <span data-i18n-key="imgClassOther">Other</span>
                                 </label>
                             </div>
                         </div>
                         <div class="review-actions">
-                            <button id="save-image-changes-btn" class="accent-btn">
+                            <button id="save-image-changes-btn" class="accent-btn" data-i18n-key="saveImgChanges">
                                 Save Changes
                             </button>
                             <span id="image-save-status"></span>
                             <button id="discard-image-btn"
-                                class="discard-btn danger-btn" title="Discard Image">
+                                class="discard-btn danger-btn" data-i18n-key="discardImage" data-i18n-target="title" title="Discard Image">
                                 Delete
                             </button>
                         </div>
@@ -191,60 +191,60 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button id="import-wizard-back-btn" class="secondary-btn">Back</button>
-            <button id="import-wizard-next-btn" class="accent-btn">Next</button>
+            <button id="import-wizard-back-btn" class="secondary-btn" data-i18n-key="wizardBack">Back</button>
+            <button id="import-wizard-next-btn" class="accent-btn" data-i18n-key="wizardNext">Next</button>
         </div>
     </div>
 
     <div id="party-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
-            <h2>Party Manager</h2>
-            <button class="close-btn">&times;</button>
+            <h2 data-i18n-key="partyManagerTitle">Party Manager</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="panel-container">
                 <div class="left-panel">
                     <div class="party-selection-area">
                         <div class="panel-header">
-                            <h4>Parties</h4>
+                            <h4 data-i18n-key="partiesTitle">Parties</h4>
                             <button id="show-create-party-panel-btn"
-                                class="accent-btn icon-btn" title="Create New Party">+
+                                class="accent-btn icon-btn" data-i18n-key="newParty" data-i18n-target="title" title="Create New Party">+
                             </button>
                         </div>
                         <ul id="party-list" class="item-list"></ul>
                     </div>
                     <hr class="wizard-divider">
                     <div class="party-roster-area">
-                        <h4>Roster</h4>
+                        <h4 data-i18n-key="rosterTitle">Roster</h4>
                         <ul id="character-list" class="item-list"></ul>
                     </div>
                 </div>
                 <div class="right-panel">
                     <div id="party-welcome-panel" class="placeholder-pane">
-                        <p>Select a party to view its roster, or create a new one.</p>
+                        <p data-i18n-key="partyWelcome">Select a party to view its roster, or create a new one.</p>
                     </div>
                     <div id="party-creator-panel" style="display: none;">
-                        <h3>Create New Party</h3>
+                        <h3 data-i18n-key="partyCreatorTitle">Create New Party</h3>
                         <div class="form-group">
-                            <label for="new-party-name-input">Party Name</label>
+                            <label for="new-party-name-input" data-i18n-key="partyNameLabel">Party Name</label>
                             <input type="text" id="new-party-name-input"
-                                placeholder="e.g., The Brightswords">
+                                data-i18n-key="partyNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., The Brightswords">
                         </div>
-                        <button id="create-party-btn" class="accent-btn">Save Party</button>
+                        <button id="create-party-btn" class="accent-btn" data-i18n-key="saveParty">Save Party</button>
                     </div>
                     <div id="character-editor-panel" style="display: none;">
                         <div class="panel-header">
-                            <h4>Add New Character</h4>
+                            <h4 data-i18n-key="addCharacterTitle">Add New Character</h4>
                             <button id="add-char-manual-btn" class="accent-btn icon-btn"
-                                title="Add Manually">+</button>
+                                data-i18n-key="addCharManual" data-i18n-target="title" title="Add Manually">+</button>
                         </div>
                         <div class="form-group">
-                            <label for="char-name">Name</label>
+                            <label for="char-name" data-i18n-key="formName">Name</label>
                             <input type="text" id="char-name">
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="char-class">Class</label>
+                                <label for="char-class" data-i18n-key="charClass">Class</label>
                                 <input type="text" id="char-class" list="class-suggestions">
                                 <datalist id="class-suggestions">
                                     <option value="Fighter"></option>
@@ -262,17 +262,17 @@
                                 </datalist>
                             </div>
                             <div class="form-group">
-                                <label for="char-level">Level</label>
+                                <label for="char-level" data-i18n-key="charLevel">Level</label>
                                 <input type="number" id="char-level" value="1">
                             </div>
                         </div>
                         <div class="ai-generator">
-                            <h5>AI Character Generator</h5>
+                            <h5 data-i18n-key="aiCharGenerator">AI Character Generator</h5>
                             <div class="form-group form-group-stretch ai-input-container">
                                 <textarea id="ai-char-desc" rows="4"
-                                    placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
+                                    data-i18n-key="aiCharDescPlaceholder" data-i18n-target="placeholder" placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
                                 <button id="ai-char-generate-btn"
-                                    class="icon-btn" title="Generate with AI">✨</button>
+                                    class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
                             </div>
                         </div>
                     </div>
@@ -283,107 +283,116 @@
 
     <div id="new-game-wizard-modal" class="modal modal-md">
         <div class="modal-header">
-            <h2>New Game Setup</h2>
-            <button class="close-btn">&times;</button>
+            <h2 data-i18n-key="newGameWizardTitle">New Game Setup</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
         </div>
         <div class="modal-body wizard-body">
             <div class="form-group">
-                <label>Game Mode</label>
+                <label data-i18n-key="gameMode">Game Mode</label>
                 <div class="radio-group">
                     <label>
                         <input type="radio" name="game-mode" value="module" checked>
-                        Adventure Module
+                        <span data-i18n-key="gameModeModule">Adventure Module</span>
                     </label>
                     <label>
                         <input type="radio" name="game-mode" value="freestyle">
-                        Freestyle
+                        <span data-i18n-key="gameModeFreestyle">Freestyle</span>
                     </label>
                 </div>
             </div>
             <div class="form-group">
-                <label for="game-rules-kb">Rules System</label>
+                <label for="game-rules-kb" data-i18n-key="rulesSystem">Rules System</label>
                 <select id="game-rules-kb"></select>
             </div>
             <div id="game-module-group" class="form-group">
-                <label for="game-module-kb">Adventure Module</label>
+                <label for="game-module-kb" data-i18n-key="advModule">Adventure Module</label>
                 <select id="game-module-kb"></select>
             </div>
             <div id="game-setting-group" class="form-group" style="display: none;">
-                <label for="game-setting-kb">Setting</label>
+                <label for="game-setting-kb" data-i18n-key="setting">Setting</label>
                 <select id="game-setting-kb"></select>
             </div>
             <div class="form-group">
-                <label for="game-party-selector">Party</label>
+                <label for="game-party-selector" data-i18n-key="party">Party</label>
                 <select id="game-party-selector"></select>
             </div>
         </div>
         <div class="modal-footer">
-            <button id="start-game-btn" class="accent-btn">Start Game</button>
+            <button id="start-game-btn" class="accent-btn" data-i18n-key="startGame">Start Game</button>
         </div>
     </div>
 
     <div id="settings-modal" class="modal modal-lg">
         <div class="modal-header">
-            <h2>Settings</h2>
-            <button class="close-btn">&times;</button>
+            <h2 data-i18n-key="settingsTitle">Settings</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="settings-body">
                 <div class="wizard-tabs">
-                    <button class="wizard-tab-btn active" data-pane="general">General</button>
-                    <button class="wizard-tab-btn" data-pane="appearance">Appearance</button>
-                    <button class="wizard-tab-btn" data-pane="rag">RAG Management</button>
+                    <button class="wizard-tab-btn active" data-pane="general" data-i18n-key="settingsTabGeneral">General</button>
+                    <button class="wizard-tab-btn" data-pane="appearance" data-i18n-key="settingsTabAppearance">Appearance</button>
+                    <button class="wizard-tab-btn" data-pane="rag" data-i18n-key="settingsTabRag">RAG Management</button>
                 </div>
                 <div class="settings-content">
                     <div class="settings-pane" id="pane-appearance">
-                        <h3>Appearance</h3>
+                        <h3 data-i18n-key="appearanceTitle">Appearance</h3>
                         <div class="form-group">
-                            <label for="theme-selector">Theme</label>
+                            <label for="theme-selector" data-i18n-key="theme">Theme</label>
                             <select id="theme-selector" data-section="Appearance" data-key="theme">
-                                <option value="default">Default</option>
-                                <option value="vibrant-focus">Vibrant Focus</option>
-                                <option value="high-contrast">High Contrast</option>
-                                <option value="crt-green">CRT Green Phosphorus</option>
-                                <option value="ocean-blue">Ocean Blue</option>
-                                <option value="forest-green">Forest Green</option>
-                                <option value="warm-sepia">Warm Sepia</option>
-                                <option value="cyberpunk">Cyberpunk</option>
+                                <option value="default" data-i18n-key="themeDefault">Default</option>
+                                <option value="vibrant-focus" data-i18n-key="themeVibrant">Vibrant Focus</option>
+                                <option value="high-contrast" data-i18n-key="themeContrast">High Contrast</option>
+                                <option value="crt-green" data-i18n-key="themeCrt">CRT Green Phosphorus</option>
+                                <option value="ocean-blue" data-i18n-key="themeOcean">Ocean Blue</option>
+                                <option value="forest-green" data-i18n-key="themeForest">Forest Green</option>
+                                <option value="warm-sepia" data-i18n-key="themeSepia">Warm Sepia</option>
+                                <option value="cyberpunk" data-i18n-key="themeCyberpunk">Cyberpunk</option>
                             </select>
                         </div>
                     </div>
                     <div class="settings-pane active" id="pane-general">
-                        <h3>Game Configuration</h3>
+                        <h3>UI Settings</h3>
+                        <div class="form-group">
+                            <label for="language-selector" data-i18n-key="formLanguage">Language</label>
+                            <select id="language-selector" data-section="Appearance" data-key="language">
+                                <option value="en" data-i18n-key="formLangEn">English</option>
+                                <option value="es" data-i18n-key="formLangEs">Spanish</option>
+                                <option value="ca" data-i18n-key="formLangCa">Catalan</option>
+                            </select>
+                        </div>
+                        <h3 data-i18n-key="gameConfigTitle">Game Configuration</h3>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="game-default-ruleset">Default Preferred Ruleset</label>
+                                <label for="game-default-ruleset" data-i18n-key="defaultRuleset">Default Preferred Ruleset</label>
                                 <input type="text" id="game-default-ruleset" list="kb-list"
                                     data-section="Game" data-key="default_ruleset">
                             </div>
                             <div class="form-group">
-                                <label for="game-default-setting">Default Preferred Setting</label>
+                                <label for="game-default-setting" data-i18n-key="defaultSetting">Default Preferred Setting</label>
                                 <input type="text" id="game-default-setting" list="kb-list"
                                     data-section="Game" data-key="default_setting">
                             </div>
                         </div>
-                        <h3>Ollama Configuration</h3>
+                        <h3 data-i18n-key="ollamaConfigTitle">Ollama Configuration</h3>
                         <div class="form-group">
-                            <label for="ollama-url">Server URL</label>
+                            <label for="ollama-url" data-i18n-key="ollamaUrl">Server URL</label>
                             <input type="text" id="ollama-url" data-section="Ollama"
-                                data-key="url" placeholder="http://localhost:11434">
+                                data-key="url" data-i18n-key="ollamaUrlPlaceholder" data-i18n-target="placeholder" placeholder="http://localhost:11434">
                         </div>
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="ollama-main-model">Main Gameplay Model</label>
+                                <label for="ollama-main-model" data-i18n-key="ollamaMainModel">Main Gameplay Model</label>
                                 <input type="text" id="ollama-main-model" list="ollama-models-list"
                                     data-section="Ollama" data-key="main_model">
                             </div>
                             <div class="form-group">
-                                <label for="ollama-vision-model">Image Analysis Model</label>
+                                <label for="ollama-vision-model" data-i18n-key="ollamaVisionModel">Image Analysis Model</label>
                                 <input type="text" id="ollama-vision-model" list="ollama-models-list"
                                     data-section="Ollama" data-key="vision_model">
                             </div>
                             <div class="form-group">
-                                <label for="ollama-embedding-model">Embedding Model</label>
+                                <label for="ollama-embedding-model" data-i18n-key="ollamaEmbeddingModel">Embedding Model</label>
                                 <input type="text" id="ollama-embedding-model"
                                     list="ollama-models-list" data-section="Ollama"
                                     data-key="embedding_model">
@@ -393,7 +402,7 @@
                         <datalist id="kb-list"></datalist>
                     </div>
                     <div class="settings-pane" id="pane-rag">
-                        <h3>Knowledge Base Management</h3>
+                        <h3 data-i18n-key="kbMgmtTitle">Knowledge Base Management</h3>
                         <div id="rag-status-container">
                             </div>
                     </div>
@@ -403,19 +412,19 @@
         <div class="modal-footer">
             <span id="settings-save-status"></span>
             <div class="modal-footer-spacer"></div>
-            <button id="settings-cancel-btn">Cancel</button>
-            <button id="settings-save-btn" class="accent-btn">Save Changes</button>
+            <button id="settings-cancel-btn" data-i18n-key="settingsCancel">Cancel</button>
+            <button id="settings-save-btn" class="accent-btn" data-i18n-key="settingsSave">Save Changes</button>
         </div>
     </div>
 
     <div id="dm-insight-modal" class="modal modal-lg">
         <div class="modal-header">
-            <h2>DM's Insight</h2>
-            <button class="close-btn">&times;</button>
+            <h2 data-i18n-key="dmInsightTitle">DM's Insight</h2>
+            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
         </div>
         <div class="modal-body wizard-body">
-            <h3>RAG Context</h3>
-            <p>
+            <h3 data-i18n-key="dmInsightHeader">RAG Context</h3>
+            <p data-i18n-key="dmInsightMsg">
                 This is the raw context retrieved from the knowledge bases that
                 the AI used to generate its last response.
             </p>
@@ -425,14 +434,14 @@
 
     <div id="confirmation-modal" class="modal modal-md">
         <div class="modal-header">
-            <h2 id="confirmation-title">Confirm</h2>
+            <h2 id="confirmation-title" data-i18n-key="confirmTitle">Confirm</h2>
         </div>
         <div class="modal-body wizard-body">
-            <p id="confirmation-message">Are you sure?</p>
+            <p id="confirmation-message" data-i18n-key="confirmMsg">Are you sure?</p>
         </div>
         <div class="modal-footer">
-            <button id="confirmation-cancel-btn">Cancel</button>
-            <button id="confirmation-confirm-btn" class="danger-btn">Confirm</button>
+            <button id="confirmation-cancel-btn" data-i18n-key="confirmCancel">Cancel</button>
+            <button id="confirmation-confirm-btn" class="danger-btn" data-i18n-key="confirmConfirm">Confirm</button>
         </div>
     </div>
 

@@ -1,7 +1,7 @@
 // dmme_lib/frontend/js/ui.js
+import { i18n } from './i18n.js';
 
 const _gameSpinner = document.getElementById('game-spinner');
-
 export function showGameSpinner() {
     if (_gameSpinner) _gameSpinner.style.display = 'flex';
 }
@@ -31,10 +31,10 @@ class ConfirmationModal {
         }
     }
 
-    confirm(title, message) {
+    confirm(titleKey, messageKey, replacements = {}) {
         return new Promise((resolve) => {
-            this.title.textContent = title;
-            this.message.textContent = message;
+            this.title.textContent = i18n.t(titleKey);
+            this.message.textContent = i18n.t(messageKey, replacements);
             this.resolvePromise = resolve;
             document.getElementById('modal-overlay').style.display = 'block';
             this.modal.style.display = 'flex';
@@ -46,10 +46,16 @@ class ConfirmationModal {
 export const confirmationModal = new ConfirmationModal();
 export const status = {
     _el: document.getElementById('status-text'),
-    setText(message, isError = false) {
+    setText(key, isError = false, replacements = {}) {
         if (this._el) {
-            this._el.textContent = message;
+            this._el.textContent = i18n.t(key, replacements);
             this._el.style.color = isError ? 'var(--danger-color)' : '#aaa';
+        }
+    },
+    clear() {
+        if (this._el) {
+            this._el.textContent = i18n.t('statusBarReady');
+            this._el.style.color = '#aaa';
         }
     }
 };

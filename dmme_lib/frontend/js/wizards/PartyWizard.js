@@ -4,7 +4,8 @@ import { status, confirmationModal } from '../ui.js';
 
 export class PartyWizard {
     constructor(appInstance) {
-        this.app = appInstance; // Store a reference to the main app
+        this.app = appInstance;
+        // Store a reference to the main app
         this.selectedPartyId = null;
         this.modal = document.getElementById('party-wizard-modal');
         this.overlay = document.getElementById('modal-overlay');
@@ -112,7 +113,7 @@ export class PartyWizard {
     async createParty() {
         const name = this.newPartyNameInput.value.trim();
         if (!name) {
-            status.setText("Please enter a party name.", true);
+            status.setText("errorPartyName", true);
             return;
         }
         const newParty = await apiCall('/api/parties/', {
@@ -126,8 +127,9 @@ export class PartyWizard {
 
     async deleteParty(partyId, partyName) {
         const confirmed = await confirmationModal.confirm(
-            'Delete Party',
-            `Are you sure you want to delete the party "${partyName}"? This cannot be undone.`
+            'deletePartyTitle',
+            'deletePartyMsg',
+            { name: partyName }
         );
         if (confirmed) {
             await apiCall(`/api/parties/${partyId}`, { method: 'DELETE' });
@@ -135,7 +137,7 @@ export class PartyWizard {
                 this.showWelcomePanel();
             }
             await this.loadParties();
-            status.setText(`Party "${partyName}" deleted.`);
+            status.setText('deletePartySuccess', false, { name: partyName });
         }
     }
 
@@ -169,26 +171,27 @@ export class PartyWizard {
         if (useAI) {
             const description = this.aiDescInput.value.trim();
             if (!description) {
-                status.setText("Please provide a character description.", true);
+                status.setText("errorCharDesc", true);
                 return;
             }
             const rules = this.app.settings?.Game?.default_ruleset;
             if (!rules) {
-                status.setText("Please set a 'Default Preferred Ruleset' in Settings.", true);
+                status.setText("errorDefaultRules", true);
                 return;
             }
 
             this.aiGenerateBtn.disabled = true;
-            status.setText(`Generating character with '${rules}' ruleset...`);
+            status.setText('generatingChar', false, { rules: rules });
             try {
                 charData = await apiCall('/api/game/generate-character', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ description, rules_kb: rules }),
                 });
-                status.setText(`Generated ${charData.name} the ${charData.class}.`);
+                status.setText('generatedChar', false, {name: charData.name, class: charData.class});
             } catch (error) {
-                return; // apiCall helper shows status
+                return;
+                // apiCall helper shows status
             } finally {
                 this.aiGenerateBtn.disabled = false;
                 this.aiDescInput.value = '';
@@ -198,7 +201,7 @@ export class PartyWizard {
             const charClass = this.charClassInput.value.trim();
             const level = parseInt(this.charLevelInput.value, 10);
             if (!name || !charClass) {
-                status.setText("Please provide a name and class.", true);
+                status.setText("errorCharNameClass", true);
                 return;
             }
             charData = { name, class: charClass, level, description: '', stats: {} };
@@ -218,13 +221,14 @@ export class PartyWizard {
 
     async deleteCharacter(characterId, characterName) {
         const confirmed = await confirmationModal.confirm(
-            'Delete Character',
-            `Are you sure you want to delete ${characterName}?`
+            'deleteCharTitle',
+            'deleteCharMsg',
+            { name: characterName }
         );
         if (confirmed) {
             await apiCall(`/api/characters/${characterId}`, { method: 'DELETE' });
             await this.loadCharacters();
-            status.setText(`Character "${characterName}" deleted.`);
+            status.setText('deleteCharSuccess', false, { name: characterName });
         }
     }
 }

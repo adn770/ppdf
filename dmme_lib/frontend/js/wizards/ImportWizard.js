@@ -3,7 +3,8 @@ import { apiCall } from './ApiHelper.js';
 import { status } from '../ui.js';
 
 export class ImportWizard {
-    constructor() {
+    constructor(appInstance) {
+        this.app = appInstance;
         this.currentStep = 0;
         this.totalSteps = 3; // 0:Details, 1:Processing, 2:Review
         this.selectedFile = null;
@@ -11,15 +12,11 @@ export class ImportWizard {
         this.knowledgeBaseName = '';
         this.reviewImages = [];
         this.currentReviewIndex = 0;
-        this.uploadDefaultText =
-            'Drag & Drop a PDF or Markdown file here, or click to select';
+        this.uploadDefaultTextKey = 'wizardUploadArea';
         this.reviewListenersAttached = false;
         this.progressLog = null;
         this.isProcessing = false;
 
-        // --- DOM Element Querying & Listener Setup (Moved from open()) ---
-        // This ensures event listeners are only attached once for the lifetime
-        // of the component, preventing the double-dialog bug.
         this.modal = document.getElementById('import-wizard-modal');
         this.overlay = document.getElementById('modal-overlay');
         this.panes = this.modal.querySelectorAll('.wizard-pane');
@@ -94,7 +91,7 @@ export class ImportWizard {
         this.knowledgeBaseName = '';
         this.reviewImages = [];
         this.currentReviewIndex = 0;
-        this.uploadText.textContent = this.uploadDefaultText;
+        this.uploadText.textContent = this.app.i18n.t(this.uploadDefaultTextKey);
         this.uploadText.classList.remove('has-file');
         this.uploadInput.value = '';
         document.getElementById('kb-name').value = '';
@@ -103,7 +100,6 @@ export class ImportWizard {
         this.progressLog = null;
         this.isProcessing = false;
         this.updateView();
-        // Reset buttons are handled in updateView
     }
 
     navigate(direction) {
@@ -113,6 +109,7 @@ export class ImportWizard {
     }
 
     updateView() {
+        const i18n = this.app.i18n;
         this.panes.forEach((pane, index) => {
             pane.classList.toggle('active', index === this.currentStep);
         });
@@ -126,19 +123,20 @@ export class ImportWizard {
         if (this.currentStep === 2) {
             if (!finalizeBtn) {
                 const btnHTML =
-                    `<button id="finalize-btn" class="accent-btn">Finalize Ingestion</button>`;
+                    `<button id="finalize-btn" class="accent-btn" data-i18n-key="wizardFinalize">Finalize Ingestion</button>`;
                 finalizeContainer.insertAdjacentHTML('beforeend', btnHTML);
-                this.modal.querySelector('#finalize-btn')
-                    .addEventListener('click', () => this.finalizeImageIngestion());
+                finalizeBtn = this.modal.querySelector('#finalize-btn');
+                finalizeBtn.addEventListener('click', () => this.finalizeImageIngestion());
             }
         } else {
             if (finalizeBtn) finalizeBtn.remove();
         }
 
-        this.nextBtn.textContent = 'Next';
+        this.nextBtn.textContent = i18n.t('wizardNext');
         const title = document.getElementById('import-wizard-title');
         const name = this.knowledgeBaseName;
-        title.textContent = name ? `Importing: ${name}` : 'Import Knowledge Wizard';
+        const titleKey = name ? 'importWizardTitleWithName' : 'importWizardTitle';
+        title.textContent = i18n.t(titleKey, { name });
     }
 
     logProgress(message) {
@@ -151,9 +149,8 @@ export class ImportWizard {
     async handleNext() {
         if (this.currentStep === 0) {
             this.knowledgeBaseName = document.getElementById('kb-name').value.trim();
-            const msg = "Please provide a name for the knowledge base.";
-            if (!this.knowledgeBaseName) return status.setText(msg, true);
-            if (!this.serverTempFilePath) return status.setText("Please upload a file first.", true);
+            if (!this.knowledgeBaseName) return status.setText('errorKbName', true);
+            if (!this.serverTempFilePath) return status.setText('errorFile', true);
             this.navigate(1);
             await this.runFullIngestionProcess();
         }
@@ -162,7 +159,7 @@ export class ImportWizard {
     async _uploadFile(file) {
         this.serverTempFilePath = null;
         this.nextBtn.disabled = true;
-        this.uploadText.textContent = `Uploading ${file.name}...`;
+        this.uploadText.textContent = this.app.i18n.t('wizardUploading', {filename: file.name});
         this.uploadText.classList.add('has-file');
 
         const formData = new FormData();
@@ -173,11 +170,10 @@ export class ImportWizard {
                 body: formData
             });
             this.serverTempFilePath = result.temp_file_path;
-            this.uploadText.textContent = `✔ ${file.name} (Ready)`;
+            this.uploadText.textContent = this.app.i18n.t('wizardUploadAreaHasFile', {filename: file.name});
             this.nextBtn.disabled = false;
         } catch (error) {
-            this.uploadText.textContent = `✖ Upload Failed`;
-            // apiCall helper shows the status bar error
+            this.uploadText.textContent = this.app.i18n.t('wizardUploadFailed');
         }
     }
 
@@ -308,7 +304,7 @@ export class ImportWizard {
             classification: classification,
         };
         try {
-            statusEl.textContent = 'Saving...';
+            statusEl.textContent = this.app.i18n.t('imageSaveStatusSaving');
             const url = `/api/knowledge/review-images/${this.knowledgeBaseName}/${current.filename}`;
             const opts = {
                 method: 'PUT',
@@ -318,10 +314,10 @@ export class ImportWizard {
             await apiCall(url, opts);
             current.metadata.description = payload.description;
             current.metadata.classification = payload.classification;
-            statusEl.textContent = 'Saved!';
+            statusEl.textContent = this.app.i18n.t('imageSaveStatusSaved');
             setTimeout(() => statusEl.textContent = '', 2000);
         } catch(error) {
-            statusEl.textContent = `Error!`;
+            statusEl.textContent = this.app.i18n.t('imageSaveStatusError');
         }
     }
 
@@ -344,7 +340,8 @@ export class ImportWizard {
         const finalizeBtn = this.modal.querySelector('#finalize-btn');
         if (finalizeBtn) {
             finalizeBtn.disabled = true;
-            finalizeBtn.textContent = 'Finalizing...';
+            finalizeBtn.setAttribute('data-i18n-key', 'wizardFinalizing');
+            finalizeBtn.textContent = this.app.i18n.t('wizardFinalizing');
         }
 
         try {
@@ -356,7 +353,11 @@ export class ImportWizard {
             status.setText("Knowledge base with images created successfully.");
             this.close();
         } catch (error) {
-            if (finalizeBtn) finalizeBtn.disabled = false;
+            if (finalizeBtn) {
+                 finalizeBtn.disabled = false;
+                 finalizeBtn.setAttribute('data-i18n-key', 'wizardFinalize');
+                 finalizeBtn.textContent = this.app.i18n.t('wizardFinalize');
+            }
         }
     }
 
