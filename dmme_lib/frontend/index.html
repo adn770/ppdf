@@ -183,46 +183,55 @@
         </div>
         <div class="modal-body">
             <div class="wizard-pane active" id="wizard-pane-0">
-                <div class="wizard-section" id="wizard-section-upload">
-                    <h3 data-i18n-key="wizardPane1Title">Step 1: Upload File</h3>
-                    <div id="wizard-upload-area" class="upload-area">
-                        <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
-                            Drag & Drop a PDF or Markdown file here, or click to select
-                        </p>
-                        <input type="file" id="wizard-upload-input"
-                            style="display: none;" accept=".pdf,.md">
-                    </div>
-                </div>
-                <hr class="wizard-divider">
-                <div class="wizard-section" id="wizard-section-details">
-                    <h3 data-i18n-key="wizardPane2Title">Step 2: Add Details</h3>
-                    <div class="form-row">
-                        <div class="form-group form-group-wide">
-                            <label for="kb-name" data-i18n-key="formName">Name</label>
-                            <input type="text" id="kb-name" autocomplete="off"
-                                data-i18n-key="formNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Core Rules v5.1">
+                <div class="wizard-step1-container">
+                    <div class="wizard-section" id="wizard-section-upload">
+                        <h3 data-i18n-key="wizardPane1Title">Step 1: Upload File</h3>
+                        <div id="wizard-upload-area" class="upload-area">
+                            <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
+                                Drag & Drop a PDF or Markdown file here, or click to select
+                            </p>
+                            <input type="file" id="wizard-upload-input"
+                                style="display: none;" accept=".pdf,.md">
                         </div>
-                        <div class="form-group">
-                            <label for="kb-type" data-i18n-key="formType">Type</label>
-                            <select id="kb-type" name="kb-type">
-                                <option value="module" data-i18n-key="formTypeModule" selected>Module</option>
-                                <option value="setting" data-i18n-key="formTypeSetting">Setting</option>
-                                <option value="rules" data-i18n-key="formTypeRules">Rules</option>
-                                <option value="adapter" data-i18n-key="formTypeAdapter">Adapter</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="kb-lang" data-i18n-key="formLanguage">Language</label>
-                            <select id="kb-lang" name="kb-lang">
-                                <option value="en" data-i18n-key="formLangEn" selected>English</option>
-                                <option value="es" data-i18n-key="formLangEs">Spanish</option>
-                                <option value="ca" data-i18n-key="formLangCa">Catalan</option>
-                            </select>
+                        <div class="form-group" id="pdf-pages-group">
+                            <label for="pdf-pages-input" data-i18n-key="pdfPagesLabel">Pages to Ingest</label>
+                            <input type="text" id="pdf-pages-input" autocomplete="off"
+                                data-i18n-key="pdfPagesPlaceholder" data-i18n-target="placeholder" placeholder="e.g., all, 1, 5, 8-12" disabled>
                         </div>
                     </div>
-                    <div class="form-group form-group-fill">
-                        <textarea id="kb-desc" data-i18n-key="formDescriptionPlaceholder" data-i18n-target="placeholder" placeholder="Description (Optional)"
-                            autocomplete="off"></textarea>
+                    <hr class="wizard-divider-vertical">
+                    <div class="wizard-section" id="wizard-section-details">
+                        <h3 data-i18n-key="wizardPane2Title">Step 2: Add Details</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="kb-name" data-i18n-key="formName">Name</label>
+                                <input type="text" id="kb-name" autocomplete="off"
+                                    data-i18n-key="formNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Core Rules v5.1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="kb-type" data-i18n-key="formType">Type</label>
+                                <select id="kb-type" name="kb-type">
+                                    <option value="module" data-i18n-key="formTypeModule" selected>Module</option>
+                                    <option value="setting" data-i18n-key="formTypeSetting">Setting</option>
+                                    <option value="rules" data-i18n-key="formTypeRules">Rules</option>
+                                    <option value="adapter" data-i18n-key="formTypeAdapter">Adapter</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="kb-lang" data-i18n-key="formLanguage">Language</label>
+                                <select id="kb-lang" name="kb-lang">
+                                    <option value="en" data-i18n-key="formLangEn" selected>English</option>
+                                    <option value="es" data-i18n-key="formLangEs">Spanish</option>
+                                    <option value="ca" data-i18n-key="formLangCa">Catalan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group form-group-fill">
+                            <textarea id="kb-desc" data-i18n-key="formDescriptionPlaceholder" data-i18n-target="placeholder" placeholder="Description (Optional)"
+                                autocomplete="off"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>

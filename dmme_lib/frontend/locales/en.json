@@ -32,6 +32,8 @@
     "wizardUploadAreaHasFile": "✔ {{filename}} (Ready)",
     "wizardUploading": "Uploading {{filename}}...",
     "wizardUploadFailed": "✖ Upload Failed",
+    "pdfPagesLabel": "Pages to Ingest",
+    "pdfPagesPlaceholder": "e.g., all, 1, 5, 8-12",
     "wizardPane2Title": "Step 2: Add Details",
     "formName": "Name",
     "formNamePlaceholder": "e.g., Core Rules v5.1",

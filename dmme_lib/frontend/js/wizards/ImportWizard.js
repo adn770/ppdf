@@ -26,6 +26,8 @@ export class ImportWizard {
         this.uploadArea = document.getElementById('wizard-upload-area');
         this.uploadInput = document.getElementById('wizard-upload-input');
         this.uploadText = document.getElementById('wizard-upload-text');
+        this.pdfPagesGroup = document.getElementById('pdf-pages-group');
+        this.pdfPagesInput = document.getElementById('pdf-pages-input');
         this.reviewImage = document.getElementById('review-image');
         this.reviewCounter = document.getElementById('image-review-counter');
         this.imgDesc = document.getElementById('image-description');
@@ -103,6 +105,8 @@ export class ImportWizard {
         this.uploadInput.value = '';
         document.getElementById('kb-name').value = '';
         document.getElementById('kb-desc').value = '';
+        this.pdfPagesInput.value = 'all';
+        this.pdfPagesInput.disabled = true;
         this.unhighlight();
         this.progressLog = null;
         this.isProcessing = false;
@@ -190,8 +194,10 @@ export class ImportWizard {
         try {
             this.isProcessing = true;
             this.spinner.style.display = 'block';
+            const pagesValue = this.pdfPagesInput.value.trim();
             const payload = {
                 temp_file_path: this.serverTempFilePath,
+                pages: pagesValue || 'all',
                 metadata: {
                     kb_name: this.knowledgeBaseName,
                     kb_type: document.getElementById('kb-type').value,
@@ -379,6 +385,8 @@ export class ImportWizard {
     handleFileSelect(files) {
         if (files.length > 0) {
             this.selectedFile = files[0];
+            const isPdf = this.selectedFile.name.toLowerCase().endsWith('.pdf');
+            this.pdfPagesInput.disabled = !isPdf;
             this._uploadFile(this.selectedFile);
         }
     }

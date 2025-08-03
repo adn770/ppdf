@@ -16,6 +16,25 @@ from core.llm_utils import get_semantic_label
 log = logging.getLogger("ppdf.api")
 
 
+def _parse_page_selection(pages_str: str) -> set | None:
+    """Parses a page selection string (e.g., '1,3,5-7') into a set of integers."""
+    if pages_str.lower() == "all":
+        return None
+    pages = set()
+    try:
+        for p in pages_str.split(","):
+            part = p.strip()
+            if "-" in part:
+                s, e = map(int, part.split("-"))
+                pages.update(range(s, e + 1))
+            else:
+                pages.add(int(part))
+        return pages
+    except ValueError:
+        log.error("Invalid page selection format: %s. Defaulting to 'all'.", pages_str)
+        return None
+
+
 def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, model: str) -> str:
     """Sends a prompt and a single image to an Ollama multimodal model."""
     if not image_bytes:
@@ -46,7 +65,12 @@ def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, mode
 
 
 def process_pdf_text(
-    pdf_path: str, options: dict, ollama_url: str, model: str, apply_labeling=False
+    pdf_path: str,
+    options: dict,
+    ollama_url: str,
+    model: str,
+    apply_labeling=False,
+    pages_str: str = "all",
 ) -> tuple[list[Section], list]:
     """
     Processes a PDF file to extract and reconstruct structured text.
@@ -60,7 +84,8 @@ def process_pdf_text(
         rm_footers=options.get("rm_footers", True),
         style=options.get("style", False),
     )
-    sections = extractor.extract_sections()
+    pages_to_process = _parse_page_selection(pages_str)
+    sections = extractor.extract_sections(pages_to_process=pages_to_process)
 
     # Note: Semantic labeling is now handled by the dmme IngestionService,
     # which has access to the internationalized prompts.
@@ -76,6 +101,7 @@ def process_pdf_images(
     model: str,
     describe_prompt: str,
     classify_prompt: str,
+    pages_str: str = "all",
 ):
     """
     Processes a PDF, extracts images, and yields progress messages.
@@ -94,14 +120,18 @@ def process_pdf_images(
                 yield from find_images_recursively(child)
 
     image_count = 0
-    pages = list(extract_pages(pdf_path))
-    total_pages = pages[-1].pageid if pages else 0
+    pages_to_process = _parse_page_selection(pages_str)
+    # pdfminer uses 0-indexed page numbers
+    page_numbers = [p - 1 for p in pages_to_process] if pages_to_process else None
+
+    pages = list(extract_pages(pdf_path, page_numbers=page_numbers))
+    total_pages = len(list(extract_pages(pdf_path)))  # Get total for classification heuristic
     message = f"Found {len(pages)} pages to scan for images."
     log.info(message)
     yield message
 
     for i, page_layout in enumerate(pages):
-        message = f"Scanning page {i + 1}/{len(pages)}..."
+        message = f"Scanning page {page_layout.pageid} ({i + 1}/{len(pages)})..."
         log.info(message)
         yield message
         for element in find_images_recursively(page_layout):

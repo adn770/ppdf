@@ -99,12 +99,8 @@ export class GameplayHandler {
     _updateKnowledgePanel() {
         const i18n = this.app.i18n;
         let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
-        if (this.gameConfig.mode === 'module') {
-            kbHtml += ` |
- <span>${i18n.t('kbDisplayModule')}: <strong>${this.gameConfig.module}</strong></span>`;
-        } else {
-            kbHtml += ` |
- <span>${i18n.t('kbDisplaySetting')}: <strong>${this.gameConfig.setting}</strong></span>`;
+        if (this.gameConfig.llm_model) {
+            kbHtml += ` | <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
         }
         this.kbDisplay.innerHTML = kbHtml;
     }

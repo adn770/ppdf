@@ -76,16 +76,18 @@ class IngestionService:
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
 
-    def ingest_pdf_text(self, pdf_path: str, metadata: dict):
+    def ingest_pdf_text(self, pdf_path: str, metadata: dict, pages_str: str = "all"):
         """Processes and ingests a PDF file's text content, yielding progress."""
         kb_name = metadata.get("kb_name")
         lang = metadata.get("language", "en")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        yield f"Analyzing PDF structure for '{kb_name}'..."
+        yield f"Analyzing PDF structure for '{kb_name}' (Pages: {pages_str})..."
         extraction_options = {"num_cols": "auto", "rm_footers": True, "style": False}
-        sections, _ = process_pdf_text(pdf_path, extraction_options, "", "", False)
+        sections, _ = process_pdf_text(
+            pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
+        )
         yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
 
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
@@ -133,11 +135,13 @@ class IngestionService:
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
 
-    def process_and_extract_images(self, pdf_path: str, assets_path: str, metadata: dict):
+    def process_and_extract_images(
+        self, pdf_path: str, assets_path: str, metadata: dict, pages_str: str = "all"
+    ):
         """Extracts images from a PDF and processes them using language-aware prompts."""
         kb_name = metadata.get("kb_name")
         lang = metadata.get("language", "en")
-        yield f"Starting image extraction for '{kb_name}'..."
+        yield f"Starting image extraction for '{kb_name}' (Pages: {pages_str})..."
 
         review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
         if os.path.exists(review_dir):
@@ -148,7 +152,13 @@ class IngestionService:
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
 
         yield from process_pdf_images(
-            pdf_path, review_dir, self.ollama_url, self.model, describe_prompt, classify_prompt
+            pdf_path,
+            review_dir,
+            self.ollama_url,
+            self.model,
+            describe_prompt,
+            classify_prompt,
+            pages_str=pages_str,
         )
 
     def ingest_images(self, kb_name: str, assets_path: str):

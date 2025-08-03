@@ -81,6 +81,7 @@ def ingest_document():
     data = request.get_json()
     metadata = data.get("metadata")
     tmp_path = data.get("temp_file_path")
+    pages_str = data.get("pages", "all")
 
     if not metadata or not tmp_path:
         return jsonify({"error": "Missing metadata or temp_file_path"}), 400
@@ -105,7 +106,9 @@ def ingest_document():
                     for msg in ingestion_service.ingest_markdown(content, metadata):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
                 elif is_pdf:
-                    for msg in ingestion_service.ingest_pdf_text(tmp_path, metadata):
+                    for msg in ingestion_service.ingest_pdf_text(
+                        tmp_path, metadata, pages_str
+                    ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
 
                 # --- Image Extraction (for PDFs only) ---
