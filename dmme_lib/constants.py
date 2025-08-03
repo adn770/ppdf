@@ -269,17 +269,20 @@ PROMPT_REGISTRY = {
     },
     "DESCRIBE_IMAGE": {
         "en": (
-            "You are a visual analysis assistant. Describe the image in a single, "
-            "objective sentence for use as alt-text. Your response MUST be in English."
+            "You are a visual analysis assistant for a tabletop role-playing game (TTRPG). "
+            "Describe the image in a single, objective sentence, as if you were describing "
+            "it to players during a game. Your response MUST be in English."
         ),
         "es": (
-            "Eres un asistente de análisis visual. Describe la imagen en una única "
-            "frase objetiva para usar como texto alternativo. Tu respuesta DEBE ser "
+            "Eres un asistente de análisis visual para un juego de rol de mesa (TTRPG). "
+            "Describe la imagen en una única frase objetiva, como si se la estuvieras "
+            "describiendo a los jugadores durante una partida. Tu respuesta DEBE ser "
             "en español."
         ),
         "ca": (
-            "Ets un assistent d'anàlisi visual. Descriu la imatge en una única frase "
-            "objectiva per a usar com a text alternatiu. La teva resposta HA DE ser "
+            "Ets un assistent d'anàlisi visual per a un joc de rol de taula (TTRPG). "
+            "Descriu la imatge en una única frase objectiva, com si l'estiguessis "
+            "descrivint als jugadors durant una partida. La teva resposta HA DE ser "
             "en català."
         ),
     },
