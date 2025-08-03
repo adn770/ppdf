@@ -2,17 +2,18 @@
 import { showGameSpinner, hideGameSpinner } from './ui.js';
 
 export class GameplayHandler {
-    constructor(appInstance) {
+    constructor(appInstance, dmInsightInstance) {
         this.app = appInstance;
+        this.dmInsight = dmInsightInstance;
         this.gameConfig = null;
         this.narrativeView = document.getElementById('narrative-view');
         this.playerInput = document.getElementById('player-input');
         this.sendCommandBtn = document.getElementById('send-command-btn');
         this.kbDisplay = document.getElementById('kb-display');
-        this.dmInsight = '';
         this.autosaveInterval = null;
         this.showVisualAids = false;
         this.showAsciiScene = false;
+        this.lastInsightContent = '';
 
         // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
@@ -20,6 +21,7 @@ export class GameplayHandler {
         this.lineHeightSlider = document.getElementById('line-height-slider');
         this.toggleVisualAidsBtn = document.getElementById('toggle-visual-aids-btn');
         this.toggleAsciiSceneBtn = document.getElementById('toggle-ascii-scene-btn');
+        this.insightToolbarBtn = document.getElementById('dm-insight-btn-toolbar');
 
         this._addEventListeners();
     }
@@ -53,12 +55,14 @@ export class GameplayHandler {
         this.lineHeightSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.toggleVisualAidsBtn.addEventListener('click', () => this._toggleVisualAids());
         this.toggleAsciiSceneBtn.addEventListener('click', () => this._toggleAsciiScene());
+        this.insightToolbarBtn.addEventListener('click', () => this._showLastInsight());
     }
 
     _applyInitialStyles() {
         this.narrativeView.style.fontSize = `${this.fontSizeSlider.value}rem`;
         this.narrativeView.style.lineHeight = this.lineHeightSlider.value;
         this.quickThemeSelector.value = ""; // Reset quick theme selector
+        this.insightToolbarBtn.disabled = true;
     }
 
     _updateToolbarState() {
@@ -110,7 +114,9 @@ export class GameplayHandler {
         this.sendCommandBtn.disabled = true;
         this.narrativeView.innerHTML = ''; // Clear view for new game
         showGameSpinner();
+
         const { entry, paragraph } = this._createAiResponseEntry();
+
         try {
             const response = await fetch('/api/game/start', {
                 method: 'POST',
@@ -127,6 +133,9 @@ export class GameplayHandler {
             this.sendCommandBtn.disabled = false;
             this.playerInput.focus();
             hideGameSpinner();
+            if (this.lastInsightContent) {
+                this.insightToolbarBtn.disabled = false;
+            }
         }
     }
 
@@ -154,8 +163,8 @@ export class GameplayHandler {
             show_visual_aids: this.showVisualAids,
             show_ascii_scene: this.showAsciiScene,
         };
-
         const { entry, paragraph } = this._createAiResponseEntry();
+
         try {
             const response = await fetch('/api/game/command', {
                 method: 'POST',
@@ -172,6 +181,9 @@ export class GameplayHandler {
             this.sendCommandBtn.disabled = false;
             this.playerInput.focus();
             hideGameSpinner();
+            if (this.lastInsightContent) {
+                this.insightToolbarBtn.disabled = false;
+            }
         }
     }
 
@@ -191,6 +203,12 @@ export class GameplayHandler {
         entry.appendChild(p);
         this.narrativeView.appendChild(entry);
         return { entry, paragraph: p };
+    }
+
+    _showLastInsight() {
+        if (this.lastInsightContent) {
+            this.dmInsight.open(this.lastInsightContent);
+        }
     }
 
     _renderVisualAid(chunk) {
@@ -225,6 +243,7 @@ export class GameplayHandler {
         let buffer = '';
         let currentParagraph = initialParagraph;
         let currentParagraphMarkdown = '';
+        this.lastInsightContent = ''; // Reset for this turn
 
         while (true) {
             const { value, done } = await reader.read();
@@ -232,14 +251,15 @@ export class GameplayHandler {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep the potentially incomplete last line
+            buffer = lines.pop();
+            // Keep the potentially incomplete last line
 
             for (const line of lines) {
                 if (!line.trim()) continue;
                 try {
                     const chunk = JSON.parse(line);
                     if (chunk.type === 'insight') {
-                        this.dmInsight = chunk.content;
+                        this.lastInsightContent = chunk.content;
                     } else if (chunk.type === 'narrative_chunk') {
                         let content = chunk.content;
                         if (content.includes('\n\n')) {

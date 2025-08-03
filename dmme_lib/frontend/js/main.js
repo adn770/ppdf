@@ -6,6 +6,7 @@ import { LoadCampaignWizard } from './wizards/LoadCampaignWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
 import { SettingsManager } from './SettingsManager.js';
 import { DiceRoller } from './components/DiceRoller.js';
+import { DMInsight } from './components/DMInsight.js';
 import { status } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
@@ -20,10 +21,12 @@ class App {
             (gameConfig) => this.startGame(gameConfig)
         );
         this.loadCampaignWizard = new LoadCampaignWizard(this);
-        this.gameplayHandler = new GameplayHandler(this);
+        this.dmInsight = new DMInsight(this);
+        this.gameplayHandler = new GameplayHandler(this, this.dmInsight);
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.settings = null;
-        this.i18n = i18n; // Make i18n service available to other components
+        this.i18n = i18n;
+        // Make i18n service available to other components
     }
 
     async init() {
@@ -34,7 +37,8 @@ class App {
 
         // Initialize i18n before setting up event listeners
         await this.i18n.init(this.settings.Appearance.language);
-        this.populateQuickThemeSelector(); // Must be after i18n init
+        this.populateQuickThemeSelector();
+        // Must be after i18n init
         document.getElementById('import-knowledge-btn').addEventListener('click',
             () => this.importWizard.open()
         );
@@ -90,7 +94,6 @@ class App {
         console.log("Switching to game view with config:", gameConfig);
         // End any previous game session before starting a new one
         this.gameplayHandler.endGame();
-
         document.getElementById('welcome-view').style.display = 'none';
         const gameView = document.getElementById('game-view');
         gameView.style.display = 'flex';
@@ -105,7 +108,6 @@ class App {
         if (mainSelector && quickSelector) {
             // Clear the quick selector first
             quickSelector.innerHTML = '';
-
             // Add the placeholder option that reverts to the main setting
             const placeholderOption = document.createElement('option');
             placeholderOption.value = "";
@@ -119,7 +121,6 @@ class App {
                     quickSelector.appendChild(option.cloneNode(true));
                 }
             });
-
             quickSelector.value = ""; // Start with the placeholder selected
         }
     }
