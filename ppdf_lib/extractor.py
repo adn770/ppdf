@@ -11,6 +11,7 @@ high-level logical elements like `Section` and `Paragraph`.
 import logging
 import os
 import re
+import statistics
 from collections import Counter, defaultdict
 
 from pdfminer.high_level import extract_pages
@@ -302,7 +303,7 @@ class PDFTextExtractor:
                         parts.append(f"*{text}*")
                     else:
                         parts.append(text)
-                    buf = []
+                buf = []
             style["bold"], style["italic"] = is_b, is_i
             buf.append(ctext)
         if buf:
@@ -348,21 +349,7 @@ class PDFTextExtractor:
         if not 1 <= n <= 3999:
             return str(n)
         val = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-        sym = [
-            "M",
-            "CM",
-            "D",
-            "CD",
-            "C",
-            "XC",
-            "L",
-            "XL",
-            "X",
-            "IX",
-            "V",
-            "IV",
-            "I",
-        ]
+        sym = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
         roman_num, i = "", 0
         while n > 0:
             for _ in range(n // val[i]):
@@ -382,10 +369,48 @@ class PDFTextExtractor:
             log_prescan.info("  - Not enough pages for reliable analysis. Skipping.")
             return
 
-        total_pages = pages_to_scan[-1].pageid if pages_to_scan else 0
+        total_pages = all_pages[-1].pageid if all_pages else 0
+        self._build_page_manifest(pages_to_scan, total_pages)
+        self._apply_font_size_heuristic()
 
-        # Step 1: Create Page Manifest
-        candidate_lines = []
+        content_page_ids = {
+            pid for pid, data in self.page_manifest.items() if data["type"] == "content"
+        }
+        if len(content_page_ids) < 3:
+            log_prescan.info("  - Not enough content pages for analysis. Skipping.")
+            return
+
+        candidate_lines, _ = self._gather_candidates_and_dividers(pages_to_scan)
+        clusters = self._cluster_margin_lines(candidate_lines, all_pages[0])
+
+        best_header, best_footer = self._find_best_clusters_by_score(
+            clusters, content_page_ids, all_pages[0].height
+        )
+
+        if best_header:
+            self.header_cutoff = min(line.y0 for line in best_header["lines"])
+            log_prescan.info("  - Header detector: Found at y < %.2f", self.header_cutoff)
+        else:
+            log_prescan.info("  - Header detector: No consistent headers found.")
+
+        if best_footer:
+            self.footer_cutoff = max(line.y1 for line in best_footer["lines"])
+            log_prescan.info("  - Footer detector: Found at y > %.2f", self.footer_cutoff)
+        else:
+            log_prescan.info("  - Footer detector: No consistent footers found.")
+
+        if self.header_cutoff <= self.footer_cutoff:
+            log_prescan.warning(
+                "  - Illogical margins detected (header %.2f <= footer %.2f). "
+                "Discarding global margins.",
+                self.header_cutoff,
+                self.footer_cutoff,
+            )
+            self.header_cutoff = float("inf")
+            self.footer_cutoff = 0
+
+    def _build_page_manifest(self, pages_to_scan, total_pages):
+        """Builds a manifest of page types and font statistics."""
         for page_layout in pages_to_scan:
             lines = self._find_elements_by_type(page_layout, LTTextLine)
             images = self._find_elements_by_type(page_layout, LTImage)
@@ -403,99 +428,128 @@ class PDFTextExtractor:
                 "size_sum": size_sum,
             }
 
-            if page_type != "content":
+    def _gather_candidates_and_dividers(self, pages_to_scan):
+        """Gathers candidate lines and divider rects from pages."""
+        candidate_lines, dividers = [], defaultdict(list)
+        for page_layout in pages_to_scan:
+            lines = self._find_elements_by_type(page_layout, LTTextLine)
+            rects = self._find_elements_by_type(page_layout, LTRect)
+            page_dividers = [
+                r for r in rects if r.height < 5 and r.width > page_layout.width * 0.2
+            ]
+            dividers[page_layout.pageid].extend(page_dividers)
+
+            if self.page_manifest[page_layout.pageid]["type"] != "content":
                 continue
 
-            # HEURISTIC: Limit candidates to top/bottom 3 lines
             sorted_by_y = sorted(lines, key=lambda l: -l.y1)
             top_lines = sorted_by_y[:3]
             bottom_lines = sorted_by_y[-3:]
             for line in top_lines + bottom_lines:
-                candidate_lines.append((page_layout.pageid, line))
-
-        self._apply_font_size_heuristic()
-
-        content_page_ids = {
-            pid for pid, data in self.page_manifest.items() if data["type"] == "content"
-        }
-        if len(content_page_ids) < 3:
-            log_prescan.info("  - Not enough content pages for reliable analysis. Skipping.")
-            return
-
-        # Step 2: Cluster candidates by string similarity
-        clusters = self._cluster_margin_lines(candidate_lines)
-        header_lines, footer_lines = self._find_consistent_clusters(
-            clusters, content_page_ids, pages_to_scan[0].height
+                has_divider = any(
+                    abs(line.y0 - r.y1) < 10 or abs(line.y1 - r.y0) < 10 for r in page_dividers
+                )
+                candidate_lines.append(
+                    {"line": line, "page_id": page_layout.pageid, "has_divider": has_divider}
+                )
+        log_prescan.debug(
+            "Found %d candidate lines and %d pages with dividers.",
+            len(candidate_lines),
+            len(dividers),
         )
+        return candidate_lines, dividers
 
-        # Step 3: Find Consistent Lines and Define Cutoffs
-        if header_lines:
-            self.header_cutoff = min(line.y0 for line in header_lines)
-            log_prescan.info("  - Header detector: Found at y < %.2f", self.header_cutoff)
-        else:
-            log_prescan.info("  - Header detector: No consistent headers found.")
+    def _get_horizontal_alignment(self, line, page_layout):
+        """Categorizes a line's horizontal alignment."""
+        line_center = (line.x0 + line.x1) / 2
+        page_center = (page_layout.x0 + page_layout.x1) / 2
+        leeway = page_layout.width * 0.15
+        if abs(line_center - page_center) < leeway:
+            return "center"
+        elif line_center < page_center:
+            return "left"
+        return "right"
 
-        if footer_lines:
-            self.footer_cutoff = max(line.y1 for line in footer_lines)
-            log_prescan.info("  - Footer detector: Found at y > %.2f", self.footer_cutoff)
-        else:
-            log_prescan.info("  - Footer detector: No consistent footers found.")
-
-        # Sanity check for illogical cutoffs
-        if self.header_cutoff <= self.footer_cutoff:
-            log_prescan.warning(
-                "  - Illogical margins detected (header %.2f <= footer %.2f). "
-                "Discarding global margins and using fallback.",
-                self.header_cutoff,
-                self.footer_cutoff,
-            )
-            self.header_cutoff = float("inf")
-            self.footer_cutoff = 0
-
-    def _cluster_margin_lines(self, candidate_lines):
-        """Groups margin lines into clusters based on text similarity."""
-        clusters = {"even": [], "odd": []}
-        for page_id, line in candidate_lines:
+    def _cluster_margin_lines(self, candidate_lines, page_layout):
+        """Groups margin lines into clusters based on a composite key."""
+        clusters = {}
+        for cand in candidate_lines:
+            line = cand["line"]
             text = re.sub(r"\d+", "#", line.get_text().strip())
             if not text:
                 continue
 
-            page_type = "even" if page_id % 2 == 0 else "odd"
-            best_match = None
-            min_dist = float("inf")
+            key = (
+                text,
+                round(self._get_font_size(line)),
+                self._get_horizontal_alignment(line, page_layout),
+            )
 
-            for i, cluster in enumerate(clusters[page_type]):
-                dist = self._levenshtein_distance(text, cluster["representative"])
-                threshold = max(2, int(len(cluster["representative"]) * 0.2))
-                if dist < threshold and dist < min_dist:
-                    min_dist = dist
-                    best_match = i
+            if key not in clusters:
+                clusters[key] = {
+                    "lines": [],
+                    "pages": set(),
+                    "dividers": 0,
+                    "key": key,
+                }
+            clusters[key]["lines"].append(line)
+            clusters[key]["pages"].add(cand["page_id"])
+            if cand["has_divider"]:
+                clusters[key]["dividers"] += 1
 
-            if best_match is not None:
-                clusters[page_type][best_match]["lines"].append(line)
-                clusters[page_type][best_match]["pages"].add(page_id)
-            else:
-                clusters[page_type].append(
-                    {
-                        "representative": text,
-                        "lines": [line],
-                        "pages": {page_id},
-                    }
-                )
-        return clusters
+        log_prescan.debug("Found %d unique clusters for margin text.", len(clusters))
+        return list(clusters.values())
 
-    def _find_consistent_clusters(self, clusters, content_page_ids, page_height):
-        """Finds clusters that are consistent across enough pages."""
-        header_lines, footer_lines = [], []
-        consistency_threshold = 0.7 * len(content_page_ids)
+    def _find_best_clusters_by_score(self, clusters, content_page_ids, page_height):
+        """Finds the best header and footer clusters using a confidence score."""
+        best_header, best_footer = None, None
+        max_header_score, max_footer_score = -1, -1
 
-        for page_type in ["even", "odd"]:
-            for cluster in clusters[page_type]:
-                if len(cluster["pages"]) >= consistency_threshold / 2:
-                    is_header = cluster["lines"][0].y0 > page_height * 0.5
-                    target_list = header_lines if is_header else footer_lines
-                    target_list.extend(cluster["lines"])
-        return header_lines, footer_lines
+        for cluster in clusters:
+            num_pages = len(cluster["pages"])
+            if num_pages < 2:
+                continue
+
+            frequency = num_pages / len(content_page_ids)
+            y_coords = [line.y0 for line in cluster["lines"]]
+            y_stddev = statistics.stdev(y_coords) if len(y_coords) > 1 else 0
+            pos_stability = 1 - min(1, y_stddev / (page_height * 0.05))
+            divider_bonus = 1.25 if cluster["dividers"] / num_pages > 0.5 else 1.0
+
+            score = (frequency * 0.5 + pos_stability * 0.5) * divider_bonus
+            is_header = cluster["lines"][0].y0 > page_height * 0.5
+
+            log_prescan.debug(
+                "Cluster '%s' (align: %s) on %d pages. Score: %.2f (freq: %.2f, stab: %.2f, div: %.2f)",
+                cluster["key"][0],
+                cluster["key"][2],
+                num_pages,
+                score,
+                frequency,
+                pos_stability,
+                divider_bonus,
+            )
+
+            if is_header and score > max_header_score:
+                max_header_score = score
+                best_header = cluster
+            elif not is_header and score > max_footer_score:
+                max_footer_score = score
+                best_footer = cluster
+
+        if best_header:
+            log_prescan.debug(
+                "WINNER (Header): '%s' with score %.2f",
+                best_header["key"][0],
+                max_header_score,
+            )
+        if best_footer:
+            log_prescan.debug(
+                "WINNER (Footer): '%s' with score %.2f",
+                best_footer["key"][0],
+                max_footer_score,
+            )
+        return best_header, best_footer
 
     def _apply_font_size_heuristic(self):
         """
@@ -707,7 +761,12 @@ class PDFTextExtractor:
 
         rect_breaks = {r.y0 for r in page.rects if r.width > layout.width * 0.7}
         rect_breaks.update(r.y1 for r in page.rects if r.width > layout.width * 0.7)
-        breakpoints = {layout.y0, layout.y1, *rect_breaks}
+
+        # Use the determined cutoffs as the main content boundaries
+        top_boundary = self.header_cutoff if self.header_cutoff != float("inf") else layout.y1
+        bottom_boundary = self.footer_cutoff if self.footer_cutoff > 0 else layout.y0
+        breakpoints = {bottom_boundary, top_boundary, *rect_breaks}
+
         sorted_breaks = sorted(list(breakpoints), reverse=True)
 
         for i in range(len(sorted_breaks) - 1):
