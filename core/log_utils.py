@@ -10,7 +10,7 @@ This module contains:
 import logging
 
 PROJECT_TOPICS = {
-    "ppdf": {"layout", "structure", "reconstruct", "llm", "tts", "tables", "api"},
+    "ppdf": {"layout", "structure", "reconstruct", "llm", "tts", "tables", "api", "prescan"},
     "dmme": {"api", "rag", "ingest", "storage", "config"},
 }
 
@@ -36,10 +36,14 @@ def setup_logging(
     root_logger.addHandler(console_handler)
     root_logger.setLevel(level)
 
-    # Set the main level for included projects as well
+    # Configure included projects to use the same handlers and level
     if include_projects:
         for proj in include_projects:
-            logging.getLogger(proj).setLevel(level)
+            proj_logger = logging.getLogger(proj)
+            proj_logger.setLevel(level)
+            proj_logger.handlers = root_logger.handlers
+            # Disable propagation to prevent duplicate messages from the root logger
+            proj_logger.propagate = False
 
     # File Handler (optional)
     if log_file:
@@ -141,7 +145,10 @@ class RichLogFormatter(logging.Formatter):
 
         # Use the part of the logger name after the project name as the topic
         name_parts = record.name.split(".")
-        topic = name_parts[1][:6] if len(name_parts) > 1 else record.name[:6]
+        if len(name_parts) > 1:
+            topic = name_parts[1][:6]  # e.g., "dmme.api" -> "api"
+        else:
+            topic = name_parts[0][:6]  # e.g., "ppdf" -> "ppdf"
 
         has_ctx = hasattr(record, "context") and record.context
         context_str = f"[{getattr(record, 'context', '')}]" if has_ctx else ""

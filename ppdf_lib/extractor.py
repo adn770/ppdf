@@ -11,7 +11,7 @@ high-level logical elements like `Section` and `Paragraph`.
 import logging
 import os
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTChar, LTImage, LTRect, LTTextLine
@@ -20,6 +20,7 @@ from pdfminer.layout import LTChar, LTImage, LTRect, LTTextLine
 log_layout = logging.getLogger("ppdf.layout")
 log_structure = logging.getLogger("ppdf.structure")
 log_reconstruct = logging.getLogger("ppdf.reconstruct")
+log_prescan = logging.getLogger("ppdf.prescan")
 
 
 # --- DOCUMENT MODEL CLASSES (LOGICAL HIERARCHY) ---
@@ -238,6 +239,9 @@ class PDFTextExtractor:
         self.remove_footers = rm_footers
         self.keep_style = style
         self.page_models = []
+        self.header_cutoff = float("inf")  # Default: no header cutoff
+        self.footer_cutoff = 0  # Default: no footer cutoff
+        self.page_manifest = {}  # Stores prescan results for each page
         if not os.path.exists(self.pdf_path):
             raise FileNotFoundError(f"PDF file not found: {self.pdf_path}")
 
@@ -316,6 +320,8 @@ class PDFTextExtractor:
 
     def extract_sections(self, pages_to_process=None):
         """Main method to perform all analysis and reconstruction."""
+        if self.remove_footers:
+            self._prescan(pages_to_process)
         self._analyze_page_layouts(pages_to_process)
         return self._build_sections_from_models()
 
@@ -346,6 +352,71 @@ class PDFTextExtractor:
                 n -= val[i]
             i += 1
         return roman_num
+
+    def _prescan(self, pages_to_process=None):
+        """[PRESCAN STAGE] Analyzes all pages to define exclusion zones."""
+        log_prescan.info("--- Prescan: Detecting Page Types & Margins ---")
+        all_pages = list(extract_pages(self.pdf_path))
+        pages_to_scan = [
+            p for p in all_pages if not pages_to_process or p.pageid in pages_to_process
+        ]
+        if len(pages_to_scan) < 3:
+            log_prescan.info("  - Not enough pages for reliable analysis. Skipping.")
+            return
+
+        # Step 1: Create Page Manifest
+        margin_lines = defaultdict(list)
+        for page_layout in pages_to_scan:
+            lines = self._find_elements_by_type(page_layout, LTTextLine)
+            images = self._find_elements_by_type(page_layout, LTImage)
+            page_type = self._classify_page_type(page_layout, lines, images)
+            self.page_manifest[page_layout.pageid] = {"type": page_type}
+            if page_type != "content":
+                continue
+
+            h = page_layout.height
+            header_zone_y, footer_zone_y = h * 0.85, h * 0.15
+            for line in lines:
+                if line.y1 >= header_zone_y or line.y0 <= footer_zone_y:
+                    margin_lines[page_layout.pageid].append(line)
+
+        # Step 2: Analyze Margin Lines from Content Pages
+        content_page_ids = {
+            pid for pid, data in self.page_manifest.items() if data["type"] == "content"
+        }
+        if len(content_page_ids) < 3:
+            log_prescan.info("  - Not enough content pages for reliable analysis. Skipping.")
+            return
+
+        line_groups = defaultdict(lambda: {"even": [], "odd": []})
+        for page_id in content_page_ids:
+            page_type = "even" if page_id % 2 == 0 else "odd"
+            for line in margin_lines.get(page_id, []):
+                text = re.sub(r"\d+", "#", line.get_text().strip())
+                if text:
+                    line_groups[text][page_type].append(line)
+
+        # Step 3: Find Consistent Lines and Define Cutoffs
+        header_lines, footer_lines = [], []
+        consistency_threshold = 0.7 * len(content_page_ids)
+        for text, page_groups in line_groups.items():
+            for page_type in ["even", "odd"]:
+                if len(page_groups[page_type]) >= consistency_threshold / 2:
+                    is_header = page_groups[page_type][0].y0 > pages_to_scan[0].height * 0.5
+                    target_list = header_lines if is_header else footer_lines
+                    target_list.extend(page_groups[page_type])
+
+        if header_lines:
+            self.header_cutoff = min(line.y0 for line in header_lines)
+            log_prescan.info("  - Header detector: Found at y < %.2f", self.header_cutoff)
+        else:
+            log_prescan.info("  - Header detector: No consistent headers found.")
+
+        if footer_lines:
+            self.footer_cutoff = max(line.y1 for line in footer_lines)
+            log_prescan.info("  - Footer detector: Found at y > %.2f", self.footer_cutoff)
+        else:
+            log_prescan.info("  - Footer detector: No consistent footers found.")
 
     def _analyze_page_layouts(self, pages_to_process=None):
         """Performs Stage 1 (layout) and Stage 2 (content) analysis."""
@@ -381,41 +452,54 @@ class PDFTextExtractor:
                     )
 
     def _classify_page_type(self, layout, lines, images):
-        """Classifies a page as 'cover', 'credits', 'art', or 'content'."""
-        log_layout.debug("--- Page Classification ---")
+        """Classifies a page as non-content or content."""
+        log_prescan.debug("--- Page Classification ---")
         num_lines, num_images = len(lines), len(images)
-        log_layout.debug("  - Total lines: %d, Total images: %d", num_lines, num_images)
+        log_prescan.debug("  - Total lines: %d, Total images: %d", num_lines, num_images)
         if num_images > 0:
             page_area = layout.width * layout.height
             image_area = sum(img.width * img.height for img in images)
             if page_area > 0 and (image_area / page_area) > 0.7:
-                log_layout.debug(
+                log_prescan.debug(
                     "  - Decision: Large image coverage (%.2f%%). -> 'art'",
                     (image_area / page_area) * 100,
                 )
                 return "art"
         if num_lines == 0:
-            log_layout.debug("  - Decision: No lines found. -> 'art'")
+            log_prescan.debug("  - Decision: No lines found. -> 'art'")
             return "art"
         if num_lines < 5:
-            log_layout.debug("  - Decision: Very few lines (%d). -> 'cover'", num_lines)
+            log_prescan.debug("  - Decision: Very few lines (%d). -> 'cover'", num_lines)
             return "cover"
+
         full_text = " ".join(line.get_text() for line in lines).lower()
+        # Check for Open Game License first, as it's very specific
+        if "open game license" in full_text:
+            log_prescan.debug("  - Decision: Found 'Open Game License'. -> 'legal'")
+            return "legal"
+
+        # Check for Table of Contents patterns
+        toc_pattern = re.compile(r"(\. ?){5,}\s*\d+\s*$")
+        toc_lines = sum(1 for line in lines if toc_pattern.search(line.get_text()))
+        if lines and (toc_lines / len(lines)) > 0.3:
+            log_prescan.debug("  - Decision: High ratio of ToC patterns. -> 'toc'")
+            return "toc"
+
+        # Check for Index patterns
+        index_pattern = re.compile(r"^[A-Z][a-zA-Z\s]+,(\s*\d+)+$")
+        index_lines = sum(1 for line in lines if index_pattern.search(line.get_text()))
+        if lines and (index_lines / len(lines)) > 0.3:
+            log_prescan.debug("  - Decision: High ratio of Index patterns. -> 'index'")
+            return "index"
+
+        # Check for credits keywords
         credit_kw = [
-            "créditos",
-            "copyright",
-            "editor",
-            "traducción",
-            "maquetación",
-            "cartógrafos",
-            "ilustración",
-            "isbn",
-            "depósito legal",
+            "créditos", "copyright", "editor", "traducción", "maquetación",
+            "cartógrafos", "ilustración", "isbn", "depósito legal",
         ]
         found_kw = [kw for kw in credit_kw if kw in full_text]
-        log_layout.debug("  - Keyword check: Found %d hits.", len(found_kw))
         if len(found_kw) >= 3:
-            log_layout.debug("  - Decision: Found %d keywords. -> 'credits'", len(found_kw))
+            log_prescan.debug("  - Decision: Found %d keywords. -> 'credits'", len(found_kw))
             return "credits"
 
         body_font_size = self._get_page_body_font_size(lines, default_on_fail=False)
@@ -424,41 +508,58 @@ class PDFTextExtractor:
                 1 for line in lines if self._get_font_size(line) > body_font_size * 1.2
             )
             title_ratio = title_like / num_lines if num_lines > 0 else 0
-            log_layout.debug("  - Title-like line ratio: %.2f", title_ratio)
+            log_prescan.debug("  - Title-like line ratio: %.2f", title_ratio)
             if title_ratio > 0.5:
-                log_layout.debug("  - Decision: High ratio of titles. -> 'cover'")
+                log_prescan.debug("  - Decision: High ratio of titles. -> 'cover'")
                 return "cover"
 
-        log_layout.debug("  - Decision: No special type detected. -> 'content'")
+        log_prescan.debug("  - Decision: No special type detected. -> 'content'")
         return "content"
 
     def _analyze_single_page_layout(self, layout):
         """Analyzes a single page's layout to produce a PageModel."""
         page = PageModel(layout)
         logging.getLogger("ppdf").info("Analyzing Page Layout %d...", page.page_num)
-        all_lines = sorted(
+        all_lines_raw = sorted(
             self._find_elements_by_type(layout, LTTextLine),
             key=lambda x: (-x.y1, x.x0),
         )
-        images = self._find_elements_by_type(layout, LTImage)
-        all_rects = self._find_elements_by_type(layout, LTRect)
-        page.rects = [
-            r for r in all_rects if r.linewidth > 0 and r.width > 10 and r.height > 10
-        ]
-        page.page_type = self._classify_page_type(layout, all_lines, images)
+
+        # Use the manifest if available, otherwise classify on the fly
+        page.page_type = self.page_manifest.get(page.page_num, {}).get("type")
+        if not page.page_type:
+            images = self._find_elements_by_type(layout, LTImage)
+            page.page_type = self._classify_page_type(layout, all_lines_raw, images)
+
         logging.getLogger("ppdf").info(
             "Page %d classified as: %s", page.page_num, page.page_type
         )
-        if page.page_type != "content" or not all_lines:
+        if page.page_type != "content":
+            return page
+
+        # Apply pre-scan exclusion zones first
+        all_lines = [
+            line
+            for line in all_lines_raw
+            if line.y1 < self.header_cutoff and line.y0 > self.footer_cutoff
+        ]
+        page.rects = [
+            r
+            for r in self._find_elements_by_type(layout, LTRect)
+            if r.linewidth > 0 and r.width > 10 and r.height > 10
+        ]
+        if not all_lines:
             return page
 
         page.body_font_size = self._get_page_body_font_size(all_lines)
-        footer_thresh = self._get_footer_threshold_dynamic(
-            all_lines, layout, page.body_font_size
-        )
-        content_lines = [line for line in all_lines if line.y0 > footer_thresh]
-        if not self.remove_footers:
-            content_lines = list(all_lines)
+        # Use dynamic footer detection as a fallback if prescan found nothing
+        if self.remove_footers and self.footer_cutoff == 0:
+            footer_thresh = self._get_footer_threshold_dynamic(
+                all_lines, layout, page.body_font_size
+            )
+            content_lines = [line for line in all_lines if line.y0 > footer_thresh]
+        else:
+            content_lines = all_lines
 
         page_level_cols = self._detect_page_level_column_count(content_lines, layout)
 
