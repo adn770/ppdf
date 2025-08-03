@@ -49,6 +49,7 @@
     "wizardPane4Title": "Step 4: Review Images",
     "imageDescription": "Description",
     "imageClassification": "Classification",
+    "imgClassCover": "Cover",
     "imgClassArt": "Art",
     "imgClassMap": "Map",
     "imgClassHandout": "Handout",

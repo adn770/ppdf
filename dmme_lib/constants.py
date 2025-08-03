@@ -286,19 +286,19 @@ PROMPT_REGISTRY = {
     "CLASSIFY_IMAGE": {
         "en": (
             "You are a visual classification assistant for a TTRPG tool. Classify "
-            "the image as one of the following: `art`, `map`, `decoration`. Your "
-            "response must be ONLY one of these three words and nothing else."
+            "the image as one of the following: `cover`, `art`, `map`, `decoration`. "
+            "Your response must be ONLY one of these words and nothing else."
         ),
         "es": (
             "Eres un asistente de clasificación visual para una herramienta de TTRPG. "
-            "Clasifica la imagen como una de las siguientes: `art`, `map`, "
-            "`decoration`. Tu respuesta debe ser ÚNICAMENTE una de estas tres "
+            "Clasifica la imagen como una de las siguientes: `cover`, `art`, `map`, "
+            "`decoration`. Tu respuesta debe ser ÚNICAMENTE una de estas "
             "palabras y nada más."
         ),
         "ca": (
             "Ets un assistent de classificació visual per a una eina de TTRPG. "
-            "Classifica la imatge com una de les següents: `art`, `map`, "
-            "`decoration`. La teva resposta ha de ser ÚNICAMENT una d'aquestes tres "
+            "Classifica la imatge com una de les següents: `cover`, `art`, `map`, "
+            "`decoration`. La teva resposta ha de ser ÚNICAMENT una d'aquestes "
             "paraules i res més."
         ),
     },

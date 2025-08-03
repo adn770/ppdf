@@ -364,12 +364,14 @@ class PDFTextExtractor:
             log_prescan.info("  - Not enough pages for reliable analysis. Skipping.")
             return
 
+        total_pages = pages_to_scan[-1].pageid if pages_to_scan else 0
+
         # Step 1: Create Page Manifest
         margin_lines = defaultdict(list)
         for page_layout in pages_to_scan:
             lines = self._find_elements_by_type(page_layout, LTTextLine)
             images = self._find_elements_by_type(page_layout, LTImage)
-            page_type = self._classify_page_type(page_layout, lines, images)
+            page_type = self._classify_page_type(page_layout, lines, images, total_pages)
             self.page_manifest[page_layout.pageid] = {"type": page_type}
             if page_type != "content":
                 continue
@@ -422,13 +424,14 @@ class PDFTextExtractor:
         """Performs Stage 1 (layout) and Stage 2 (content) analysis."""
         self.page_models = []
         all_pdf_pages = list(extract_pages(self.pdf_path))
+        total_pages = all_pdf_pages[-1].pageid if all_pdf_pages else 0
         content_pages_to_structure = []
 
         logging.getLogger("ppdf").info("--- Stage 1: Analyzing Page Layouts ---")
         for page_layout in all_pdf_pages:
             if pages_to_process and page_layout.pageid not in pages_to_process:
                 continue
-            page_model = self._analyze_single_page_layout(page_layout)
+            page_model = self._analyze_single_page_layout(page_layout, total_pages)
             self.page_models.append(page_model)
             if page_model.page_type == "content":
                 content_pages_to_structure.append(page_model)
@@ -451,25 +454,42 @@ class PDFTextExtractor:
                         page_model.rects,
                     )
 
-    def _classify_page_type(self, layout, lines, images):
+    def _classify_page_type(self, layout, lines, images, total_pages):
         """Classifies a page as non-content or content."""
         log_prescan.debug("--- Page Classification ---")
         num_lines, num_images = len(lines), len(images)
         log_prescan.debug("  - Total lines: %d, Total images: %d", num_lines, num_images)
+
+        # Positional Heuristic for Covers
+        is_first_page = layout.pageid == 1
+        is_last_page = layout.pageid == total_pages
         if num_images > 0:
             page_area = layout.width * layout.height
             image_area = sum(img.width * img.height for img in images)
-            if page_area > 0 and (image_area / page_area) > 0.7:
+            image_coverage = (image_area / page_area) if page_area > 0 else 0
+
+            if (is_first_page or is_last_page) and image_coverage > 0.7:
+                log_prescan.debug(
+                    "  - Decision: Positional cover (Page %d, Coverage %.2f%%). -> 'cover'",
+                    layout.pageid,
+                    image_coverage * 100,
+                )
+                return "cover"
+            if image_coverage > 0.7:
                 log_prescan.debug(
                     "  - Decision: Large image coverage (%.2f%%). -> 'art'",
-                    (image_area / page_area) * 100,
+                    image_coverage * 100,
                 )
                 return "art"
+
         if num_lines == 0:
             log_prescan.debug("  - Decision: No lines found. -> 'art'")
             return "art"
-        if num_lines < 5:
-            log_prescan.debug("  - Decision: Very few lines (%d). -> 'cover'", num_lines)
+        if num_lines < 5 and not is_first_page:
+            log_prescan.debug("  - Decision: Very few lines (%d). -> 'art'", num_lines)
+            return "art"
+        if num_lines < 5 and is_first_page:
+            log_prescan.debug("  - Decision: Very few lines on first page. -> 'cover'")
             return "cover"
 
         full_text = " ".join(line.get_text() for line in lines).lower()
@@ -494,8 +514,15 @@ class PDFTextExtractor:
 
         # Check for credits keywords
         credit_kw = [
-            "créditos", "copyright", "editor", "traducción", "maquetación",
-            "cartógrafos", "ilustración", "isbn", "depósito legal",
+            "créditos",
+            "copyright",
+            "editor",
+            "traducción",
+            "maquetación",
+            "cartógrafos",
+            "ilustración",
+            "isbn",
+            "depósito legal",
         ]
         found_kw = [kw for kw in credit_kw if kw in full_text]
         if len(found_kw) >= 3:
@@ -516,7 +543,7 @@ class PDFTextExtractor:
         log_prescan.debug("  - Decision: No special type detected. -> 'content'")
         return "content"
 
-    def _analyze_single_page_layout(self, layout):
+    def _analyze_single_page_layout(self, layout, total_pages):
         """Analyzes a single page's layout to produce a PageModel."""
         page = PageModel(layout)
         logging.getLogger("ppdf").info("Analyzing Page Layout %d...", page.page_num)
@@ -529,7 +556,9 @@ class PDFTextExtractor:
         page.page_type = self.page_manifest.get(page.page_num, {}).get("type")
         if not page.page_type:
             images = self._find_elements_by_type(layout, LTImage)
-            page.page_type = self._classify_page_type(layout, all_lines_raw, images)
+            page.page_type = self._classify_page_type(
+                layout, all_lines_raw, images, total_pages
+            )
 
         logging.getLogger("ppdf").info(
             "Page %d classified as: %s", page.page_num, page.page_type

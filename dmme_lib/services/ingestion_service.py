@@ -23,6 +23,14 @@ class IngestionService:
         """Safely retrieves a prompt from the registry, falling back to English."""
         return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
 
+    def _format_text_for_log(self, text: str) -> str:
+        """Formats a long text block into a concise, single-line summary for logging."""
+        # Replace newlines and multiple spaces with a single space
+        single_line_text = re.sub(r"\s+", " ", text).strip()
+        if len(single_line_text) > 100:
+            return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
+        return f'"{single_line_text}"'
+
     def ingest_markdown(self, file_content: str, metadata: dict):
         """Processes and ingests a Markdown file's content, yielding progress."""
         kb_name = metadata.get("kb_name")
@@ -41,7 +49,14 @@ class IngestionService:
                 continue
 
             yield f"  -> Applying semantic label to chunk {i + 1}/{len(chunks)}..."
+            log.debug(
+                "Labeling chunk %d/%d: %s",
+                i + 1,
+                len(chunks),
+                self._format_text_for_log(chunk),
+            )
             label = get_semantic_label(chunk, labeler_prompt, self.ollama_url, self.model)
+            log.debug("  -> LLM assigned label: '%s'", label)
 
             documents.append(chunk)
             metadatas.append(
@@ -81,17 +96,25 @@ class IngestionService:
         yield f"Applying semantic labels to {total_paras} paragraphs..."
         for s_idx, section in enumerate(sections):
             for p_idx, para in enumerate(section.paragraphs):
-                if para.is_table or len(para.get_text()) < 50:
+                para_text = para.get_text()
+                if para.is_table or len(para_text) < 50:
                     continue
 
-                label = get_semantic_label(
-                    para.get_text(), labeler_prompt, self.ollama_url, self.model
+                log.debug(
+                    "Labeling paragraph in section '%s': %s",
+                    section.title or "Untitled",
+                    self._format_text_for_log(para_text),
                 )
+                label = get_semantic_label(
+                    para_text, labeler_prompt, self.ollama_url, self.model
+                )
+                log.debug("  -> LLM assigned label: '%s'", label)
+
                 if p_idx == 0:
                     msg = f"  -> Labeling section {s_idx + 1}/{len(sections)} ('{section.title or '...'}')"
                     yield msg
 
-                documents.append(para.get_text())
+                documents.append(para_text)
                 metadatas.append(
                     {
                         "source_file": metadata.get("filename", "unknown.pdf"),

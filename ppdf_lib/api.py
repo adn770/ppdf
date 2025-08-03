@@ -84,6 +84,8 @@ def process_pdf_images(
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
     os.makedirs(output_dir, exist_ok=True)
 
+    extractor = PDFTextExtractor(pdf_path)
+
     def find_images_recursively(layout_obj):
         if isinstance(layout_obj, LTImage):
             yield layout_obj
@@ -93,11 +95,20 @@ def process_pdf_images(
 
     image_count = 0
     pages = list(extract_pages(pdf_path))
-    yield f"Found {len(pages)} pages to scan for images."
+    total_pages = pages[-1].pageid if pages else 0
+    message = f"Found {len(pages)} pages to scan for images."
+    log.info(message)
+    yield message
 
     for i, page_layout in enumerate(pages):
-        yield f"Scanning page {i + 1}/{len(pages)}..."
+        message = f"Scanning page {i + 1}/{len(pages)}..."
+        log.info(message)
+        yield message
         for element in find_images_recursively(page_layout):
+            if element.width < 50 or element.height < 50:
+                log.debug("Skipping small image on page %d.", page_layout.pageid)
+                continue
+
             image_count += 1
             img_id = f"image_{image_count:03d}"
             image_filename = os.path.join(output_dir, f"{img_id}.png")
@@ -112,7 +123,9 @@ def process_pdf_images(
                 if img.mode in ("RGBA", "P"):
                     img = img.convert("RGB")
                 img.save(image_filename, "PNG")
-                yield f"Saved image {image_count} from page {page_layout.pageid}."
+                message = f"Saved image {image_count} from page {page_layout.pageid}."
+                log.info(message)
+                yield message
             except Exception as e:
                 log.error("Could not save image %s: %s.", image_filename, e)
                 continue
@@ -123,13 +136,26 @@ def process_pdf_images(
             description = _query_multimodal_llm(
                 describe_prompt, saved_image_bytes, ollama_url, model
             )
-            classification = _query_multimodal_llm(
-                classify_prompt, saved_image_bytes, ollama_url, model
-            )
-            valid_cats = {"art", "map", "decoration"}
+
+            # Intelligent Classification
+            page_type = extractor._classify_page_type(page_layout, [], [element], total_pages)
+            if page_type in ["cover", "art"]:
+                classification = page_type
+                log.debug(
+                    "Pre-classifying image on page %d as '%s'", page_layout.pageid, page_type
+                )
+            else:
+                classification = _query_multimodal_llm(
+                    classify_prompt, saved_image_bytes, ollama_url, model
+                )
+
+            valid_cats = {"cover", "art", "map", "decoration"}
             if classification.lower().strip() not in valid_cats:
-                classification = "art"
-            yield f"Generated AI metadata for image {image_count}."
+                classification = "art"  # Default fallback
+
+            message = f"Generated AI metadata for image {image_count}."
+            log.info(message)
+            yield message
 
             metadata = {
                 "image_id": image_count,

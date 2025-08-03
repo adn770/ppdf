@@ -282,11 +282,10 @@ export class ImportWizard {
         this.reviewCounter.textContent = count;
         this.imgDesc.value = current.metadata.description;
 
-        const selector = `input[name="image-classification"][value="${current.metadata.classification}"]`;
-        const radioToSelect = this.modal.querySelector(selector);
-        if (radioToSelect) {
-            radioToSelect.checked = true;
-        }
+        // Explicitly set the checked state for all radio buttons
+        this.classificationRadios.forEach(radio => {
+            radio.checked = radio.value === current.metadata.classification;
+        });
 
         this.prevImgBtn.disabled = this.currentReviewIndex === 0;
         this.nextImgBtn.disabled = this.currentReviewIndex === this.reviewImages.length - 1;
