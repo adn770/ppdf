@@ -10,7 +10,8 @@ from io import BytesIO
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTImage
 
-from .extractor import PDFTextExtractor, Section
+from .extractor import PDFTextExtractor
+from .models import Section
 from core.llm_utils import get_semantic_label
 
 log = logging.getLogger("ppdf.api")
