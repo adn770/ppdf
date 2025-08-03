@@ -5,7 +5,7 @@ import os
 import json
 import shutil
 from .vector_store_service import VectorStoreService
-from core.llm_utils import get_semantic_label
+from core.llm_utils import get_semantic_label, query_text_llm
 from ppdf_lib.api import process_pdf_text, process_pdf_images
 from dmme_lib.constants import PROMPT_REGISTRY
 
@@ -85,19 +85,67 @@ class IngestionService:
 
         yield f"Analyzing PDF structure for '{kb_name}' (Pages: {pages_str})..."
         extraction_options = {"num_cols": "auto", "rm_footers": True, "style": False}
-        sections, _ = process_pdf_text(
+        sections, page_models = process_pdf_text(
             pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
         )
         yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
 
+        # --- Section-level Classification and Filtering ---
+        page_type_map = {pm.page_num: pm.page_type for pm in page_models}
+        content_sections = []
+        classifier_prompt = self._get_prompt("SECTION_CLASSIFIER", lang)
+        valid_section_tags = {"content", "appendix"}
+        valid_llm_tags = valid_section_tags.union(
+            {"preface", "table_of_contents", "legal", "credits", "index"}
+        )
+
+        yield f"Classifying {len(sections)} sections..."
+        for i, section in enumerate(sections):
+            if not section.paragraphs:
+                continue
+
+            hint_tag = page_type_map.get(section.page_start, "content")
+            representative_text = (
+                f"Title: {section.title}\n\n"
+                f"Opening Text: {section.paragraphs[0].get_text()}"
+            )
+
+            # Use a more capable model for classification if available
+            classification_model = "llama3.1"
+            final_tag = query_text_llm(
+                classifier_prompt,
+                representative_text,
+                self.ollama_url,
+                classification_model,
+                temperature=0.1,
+            ).strip()
+
+            if final_tag not in valid_llm_tags:
+                final_tag = "content"  # Default to content on ambiguous response
+
+            log.debug(
+                "Section '%s': Hint=%s, Final Tag=%s",
+                section.title or f"Untitled (Page {section.page_start})",
+                hint_tag,
+                final_tag,
+            )
+
+            if final_tag in valid_section_tags:
+                content_sections.append(section)
+            else:
+                yield f"  -> Skipping section '{section.title}' (classified as '{final_tag}')"
+
+        # --- Paragraph-level Semantic Labeling on Filtered Sections ---
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
         documents, metadatas = [], []
         chunk_id = 0
-        total_paras = sum(len(s.paragraphs) for s in sections)
+        total_paras = sum(len(s.paragraphs) for s in content_sections)
 
-        yield f"Applying semantic labels to {total_paras} paragraphs..."
-        for s_idx, section in enumerate(sections):
-            for p_idx, para in enumerate(section.paragraphs):
+        yield f"Applying semantic labels to {total_paras} paragraphs from content sections..."
+        para_count = 0
+        for section in content_sections:
+            for para in section.paragraphs:
+                para_count += 1
                 para_text = para.get_text()
                 if para.is_table or len(para_text) < 50:
                     continue
@@ -112,9 +160,8 @@ class IngestionService:
                 )
                 log.debug("  -> LLM assigned label: '%s'", label)
 
-                if p_idx == 0:
-                    msg = f"  -> Labeling section {s_idx + 1}/{len(sections)} ('{section.title or '...'}')"
-                    yield msg
+                if (para_count) % 25 == 0 or para_count == 1:
+                    yield f"  -> Labeling paragraph {para_count}/{total_paras}..."
 
                 documents.append(para_text)
                 metadatas.append(

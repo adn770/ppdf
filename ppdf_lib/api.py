@@ -36,7 +36,9 @@ def _parse_page_selection(pages_str: str) -> set | None:
         return None
 
 
-def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, model: str) -> str:
+def _query_multimodal_llm(
+    prompt: str, image_bytes: bytes, ollama_url: str, model: str, temperature: float = None
+) -> str:
     """Sends a prompt and a single image to an Ollama multimodal model."""
     if not image_bytes:
         log.error("No image bytes provided for multimodal query.")
@@ -46,14 +48,21 @@ def _query_multimodal_llm(prompt: str, image_bytes: bytes, ollama_url: str, mode
 
     try:
         log.debug("Querying multimodal LLM '%s'...", model)
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "images": [encoded_image],
+            "stream": False,
+        }
+        options = {}
+        if temperature is not None:
+            options["temperature"] = temperature
+        if options:
+            payload["options"] = options
+
         response = requests.post(
             f"{ollama_url}/api/generate",
-            json={
-                "model": model,
-                "prompt": prompt,
-                "images": [encoded_image],
-                "stream": False,
-            },
+            json=payload,
             timeout=90,
         )
         response.raise_for_status()
@@ -145,6 +154,7 @@ def process_pdf_images(
             image_filename = os.path.join(output_dir, f"{img_id}.png")
             json_filename = os.path.join(output_dir, f"{img_id}.json")
 
+            image_data = None
             try:
                 image_data = element.stream.get_data()
                 if not image_data:
@@ -159,10 +169,81 @@ def process_pdf_images(
                 yield message
             except UnidentifiedImageError:
                 log.warning(
-                    "Could not identify image format for an image on page %d. Skipping.",
+                    "Could not identify image format for an image on page %d. Attempting raw reconstruction.",
                     page_layout.pageid,
                 )
-                continue
+                if image_data:
+                    first_32_bytes = image_data[:32]
+                    hexdump = " ".join(f"{byte:02x}" for byte in first_32_bytes)
+                    stream_attrs = element.stream.attrs if hasattr(element, "stream") else {}
+                    log.debug(
+                        (
+                            "Unidentified image details:\n"
+                            "  - Name: %s\n"
+                            "  - Dimensions: %dx%d\n"
+                            "  - Stream Attrs: %s\n"
+                            "  - Data Length: %d bytes\n"
+                            "  - First 32 bytes: %s"
+                        ),
+                        element.name,
+                        element.width,
+                        element.height,
+                        stream_attrs,
+                        len(image_data),
+                        hexdump,
+                    )
+                    # --- Fallback logic for raw image data ---
+                    try:
+                        width = stream_attrs.get("Width")
+                        height = stream_attrs.get("Height")
+                        if not (width and height):
+                            log.warning("Stream Attrs missing Width/Height. Skipping.")
+                            continue
+
+                        size = (width, height)
+                        data_len = len(image_data)
+                        mode = None
+
+                        # Determine mode from stream attrs first
+                        bpc = stream_attrs.get("BitsPerComponent")
+                        cs = stream_attrs.get("ColorSpace")
+
+                        if bpc == 1:
+                            mode = "1"
+                        elif bpc == 8:
+                            if cs == "/DeviceGray":
+                                mode = "L"
+                            elif cs == "/DeviceRGB" or isinstance(cs, list):
+                                mode = "RGB"
+
+                        # If mode is still unknown, fallback to data length heuristic
+                        if not mode:
+                            if data_len == size[0] * size[1]:
+                                mode = "L"
+                            elif data_len == size[0] * size[1] * 3:
+                                mode = "RGB"
+                            elif data_len == size[0] * size[1] * 4:
+                                mode = "RGBA"
+
+                        if mode:
+                            log.debug(
+                                "Attempting reconstruction with mode '%s' and true dimensions %s",
+                                mode,
+                                size,
+                            )
+                            img = Image.frombytes(mode, size, image_data)
+                            img.save(image_filename, "PNG")
+                            message = f"Successfully reconstructed and saved raw image {image_count}."
+                            log.info(message)
+                            yield message
+                        else:
+                            log.warning("Could not determine raw image mode. Skipping.")
+                            continue
+                    except Exception as recon_e:
+                        log.error("Raw image reconstruction failed: %s", recon_e)
+                        continue
+                else:
+                    continue
             except Exception as e:
                 log.error("Could not save image %s: %s.", image_filename, e)
                 continue
@@ -183,10 +264,10 @@ def process_pdf_images(
                 )
             else:
                 classification = _query_multimodal_llm(
-                    classify_prompt, saved_image_bytes, ollama_url, model
+                    classify_prompt, saved_image_bytes, ollama_url, model, temperature=0.1
                 )
 
-            valid_cats = {"cover", "art", "map", "decoration"}
+            valid_cats = {"cover", "art", "map", "handout", "decoration", "other"}
             if classification.lower().strip() not in valid_cats:
                 classification = "art"  # Default fallback
 

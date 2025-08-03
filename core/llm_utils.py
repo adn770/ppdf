@@ -7,7 +7,12 @@ log = logging.getLogger("dmme.llm_utils")
 
 
 def query_text_llm(
-    prompt: str, user_content: str, ollama_url: str, model: str, stream: bool = False
+    prompt: str,
+    user_content: str,
+    ollama_url: str,
+    model: str,
+    stream: bool = False,
+    temperature: float = None,
 ):
     """
     Sends a standard text prompt to an Ollama model.
@@ -21,6 +26,12 @@ def query_text_llm(
             "prompt": user_content,
             "stream": stream,
         }
+        options = {}
+        if temperature is not None:
+            options["temperature"] = temperature
+        if options:
+            payload["options"] = options
+
         response = requests.post(
             f"{ollama_url}/api/generate", json=payload, stream=stream, timeout=60
         )
@@ -80,7 +91,7 @@ def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> 
         "dialogue",
         "prose",
     ]
-    label = query_text_llm(prompt, chunk, ollama_url, model)
+    label = query_text_llm(prompt, chunk, ollama_url, model, temperature=0.1)
     if label in valid_labels:
         return label
     return "prose"  # Default fallback

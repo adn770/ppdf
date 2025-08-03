@@ -81,7 +81,7 @@ PROMPT_REGISTRY = {
             "    cares grunyint i les seves armes afilades. En lloc de dir 'podríeu "
             "    trobar un tresor', descriu 'una espurna d'or d'un cofre proper'.\n"
             "3.  **Sigues Concís i Directe**: Mantingues les teves descripcions centrades "
-            "    en la situació immediata. Fes avançar la història basant-te en "
+            "    en la situació inmediata. Fes avançar la història basant-te en "
             "    l'[ACCIÓ DEL JUGADOR] i el [CONTEXT] proporcionat.\n"
             "4.  **Acaba amb una Pregunta**: Sempre conclou la teva resposta amb una "
             "    pregunta directa als jugadors, com ara 'Què feu?'\n\n"
@@ -267,6 +267,29 @@ PROMPT_REGISTRY = {
             "ÚNICAMENT l'etiqueta escollida i res més."
         ),
     },
+    "SECTION_CLASSIFIER": {
+        "en": (
+            "You are a document structure analysis engine. Analyze the provided "
+            "section title and opening text to classify the section's primary purpose. "
+            "Respond with ONE label from this list: `content`, `preface`, "
+            "`table_of_contents`, `legal`, `credits`, `index`, `appendix`. Your response "
+            "must be ONLY the chosen label and nothing else."
+        ),
+        "es": (
+            "Eres un motor de análisis de estructura de documentos. Analiza el título "
+            "de la sección y el texto de apertura para clasificar el propósito principal "
+            "de la sección. Responde con UNA etiqueta de esta lista: `content`, `preface`, "
+            "`table_of_contents`, `legal`, `credits`, `index`, `appendix`. Tu "
+            "respuesta debe ser ÚNICAMENTE la etiqueta elegida y nada más."
+        ),
+        "ca": (
+            "Ets un motor d'anàlisi d'estructura de documents. Analitza el títol de la "
+            "secció i el text d'obertura per a classificar el propòsit principal de la "
+            "secció. Respon amb UNA etiqueta d'aquesta llista: `content`, `preface`, "
+            "`table_of_contents`, `legal`, `credits`, `index`, `appendix`. La teva "
+            "resposta ha de ser ÚNICAMENT l'etiqueta escollida i res més."
+        ),
+    },
     "DESCRIBE_IMAGE": {
         "en": (
             "You are a visual analysis assistant for a tabletop role-playing game (TTRPG). "
@@ -289,20 +312,21 @@ PROMPT_REGISTRY = {
     "CLASSIFY_IMAGE": {
         "en": (
             "You are a visual classification assistant for a TTRPG tool. Classify "
-            "the image as one of the following: `cover`, `art`, `map`, `decoration`. "
-            "Your response must be ONLY one of these words and nothing else."
+            "the image as one of the following: `cover`, `art`, `map`, `handout`, "
+            "`decoration`, `other`. Your response must be ONLY one of these words "
+            "and nothing else."
         ),
         "es": (
             "Eres un asistente de clasificación visual para una herramienta de TTRPG. "
             "Clasifica la imagen como una de las siguientes: `cover`, `art`, `map`, "
-            "`decoration`. Tu respuesta debe ser ÚNICAMENTE una de estas "
-            "palabras y nada más."
+            "`handout`, `decoration`, `other`. Tu respuesta debe ser ÚNICAMENTE una de "
+            "estas palabras y nada más."
         ),
         "ca": (
             "Ets un assistent de classificació visual per a una eina de TTRPG. "
             "Classifica la imatge com una de les següents: `cover`, `art`, `map`, "
-            "`decoration`. La teva resposta ha de ser ÚNICAMENT una d'aquestes "
-            "paraules i res més."
+            "`handout`, `decoration`, `other`. La teva resposta ha de ser ÚNICAMENT "
+            "una d'aquestes paraules i res més."
         ),
     },
 }
