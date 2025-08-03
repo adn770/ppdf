@@ -260,6 +260,24 @@ class PDFTextExtractor:
             max(line.y1 for line in lines),
         )
 
+    @staticmethod
+    def _levenshtein_distance(s1, s2):
+        """Calculates the Levenshtein distance between two strings."""
+        if len(s1) < len(s2):
+            return PDFTextExtractor._levenshtein_distance(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
     def format_line_with_style(self, line):
         """Formats a line, optionally preserving bold/italic markdown."""
         if not self.keep_style or not hasattr(line, "_objs"):
@@ -367,22 +385,36 @@ class PDFTextExtractor:
         total_pages = pages_to_scan[-1].pageid if pages_to_scan else 0
 
         # Step 1: Create Page Manifest
-        margin_lines = defaultdict(list)
+        candidate_lines = []
         for page_layout in pages_to_scan:
             lines = self._find_elements_by_type(page_layout, LTTextLine)
             images = self._find_elements_by_type(page_layout, LTImage)
             page_type = self._classify_page_type(page_layout, lines, images, total_pages)
-            self.page_manifest[page_layout.pageid] = {"type": page_type}
+
+            total_chars, size_sum = 0, 0
+            for line in lines:
+                for char in line:
+                    if isinstance(char, LTChar) and hasattr(char, "size"):
+                        size_sum += char.size
+                        total_chars += 1
+            self.page_manifest[page_layout.pageid] = {
+                "type": page_type,
+                "total_chars": total_chars,
+                "size_sum": size_sum,
+            }
+
             if page_type != "content":
                 continue
 
-            h = page_layout.height
-            header_zone_y, footer_zone_y = h * 0.85, h * 0.15
-            for line in lines:
-                if line.y1 >= header_zone_y or line.y0 <= footer_zone_y:
-                    margin_lines[page_layout.pageid].append(line)
+            # HEURISTIC: Limit candidates to top/bottom 3 lines
+            sorted_by_y = sorted(lines, key=lambda l: -l.y1)
+            top_lines = sorted_by_y[:3]
+            bottom_lines = sorted_by_y[-3:]
+            for line in top_lines + bottom_lines:
+                candidate_lines.append((page_layout.pageid, line))
 
-        # Step 2: Analyze Margin Lines from Content Pages
+        self._apply_font_size_heuristic()
+
         content_page_ids = {
             pid for pid, data in self.page_manifest.items() if data["type"] == "content"
         }
@@ -390,24 +422,13 @@ class PDFTextExtractor:
             log_prescan.info("  - Not enough content pages for reliable analysis. Skipping.")
             return
 
-        line_groups = defaultdict(lambda: {"even": [], "odd": []})
-        for page_id in content_page_ids:
-            page_type = "even" if page_id % 2 == 0 else "odd"
-            for line in margin_lines.get(page_id, []):
-                text = re.sub(r"\d+", "#", line.get_text().strip())
-                if text:
-                    line_groups[text][page_type].append(line)
+        # Step 2: Cluster candidates by string similarity
+        clusters = self._cluster_margin_lines(candidate_lines)
+        header_lines, footer_lines = self._find_consistent_clusters(
+            clusters, content_page_ids, pages_to_scan[0].height
+        )
 
         # Step 3: Find Consistent Lines and Define Cutoffs
-        header_lines, footer_lines = [], []
-        consistency_threshold = 0.7 * len(content_page_ids)
-        for text, page_groups in line_groups.items():
-            for page_type in ["even", "odd"]:
-                if len(page_groups[page_type]) >= consistency_threshold / 2:
-                    is_header = page_groups[page_type][0].y0 > pages_to_scan[0].height * 0.5
-                    target_list = header_lines if is_header else footer_lines
-                    target_list.extend(page_groups[page_type])
-
         if header_lines:
             self.header_cutoff = min(line.y0 for line in header_lines)
             log_prescan.info("  - Header detector: Found at y < %.2f", self.header_cutoff)
@@ -419,6 +440,93 @@ class PDFTextExtractor:
             log_prescan.info("  - Footer detector: Found at y > %.2f", self.footer_cutoff)
         else:
             log_prescan.info("  - Footer detector: No consistent footers found.")
+
+        # Sanity check for illogical cutoffs
+        if self.header_cutoff <= self.footer_cutoff:
+            log_prescan.warning(
+                "  - Illogical margins detected (header %.2f <= footer %.2f). "
+                "Discarding global margins and using fallback.",
+                self.header_cutoff,
+                self.footer_cutoff,
+            )
+            self.header_cutoff = float("inf")
+            self.footer_cutoff = 0
+
+    def _cluster_margin_lines(self, candidate_lines):
+        """Groups margin lines into clusters based on text similarity."""
+        clusters = {"even": [], "odd": []}
+        for page_id, line in candidate_lines:
+            text = re.sub(r"\d+", "#", line.get_text().strip())
+            if not text:
+                continue
+
+            page_type = "even" if page_id % 2 == 0 else "odd"
+            best_match = None
+            min_dist = float("inf")
+
+            for i, cluster in enumerate(clusters[page_type]):
+                dist = self._levenshtein_distance(text, cluster["representative"])
+                threshold = max(2, int(len(cluster["representative"]) * 0.2))
+                if dist < threshold and dist < min_dist:
+                    min_dist = dist
+                    best_match = i
+
+            if best_match is not None:
+                clusters[page_type][best_match]["lines"].append(line)
+                clusters[page_type][best_match]["pages"].add(page_id)
+            else:
+                clusters[page_type].append(
+                    {
+                        "representative": text,
+                        "lines": [line],
+                        "pages": {page_id},
+                    }
+                )
+        return clusters
+
+    def _find_consistent_clusters(self, clusters, content_page_ids, page_height):
+        """Finds clusters that are consistent across enough pages."""
+        header_lines, footer_lines = [], []
+        consistency_threshold = 0.7 * len(content_page_ids)
+
+        for page_type in ["even", "odd"]:
+            for cluster in clusters[page_type]:
+                if len(cluster["pages"]) >= consistency_threshold / 2:
+                    is_header = cluster["lines"][0].y0 > page_height * 0.5
+                    target_list = header_lines if is_header else footer_lines
+                    target_list.extend(cluster["lines"])
+        return header_lines, footer_lines
+
+    def _apply_font_size_heuristic(self):
+        """
+        Applies a font-size heuristic to reclassify the first page as a cover
+        if its average font size is significantly larger than the document's.
+        """
+        # Calculate document-wide average font size from 'content' pages
+        total_chars, total_size_sum = 0, 0
+        for data in self.page_manifest.values():
+            if data["type"] == "content":
+                total_chars += data["total_chars"]
+                total_size_sum += data["size_sum"]
+        doc_avg_size = (total_size_sum / total_chars) if total_chars > 0 else 0
+
+        # Check first page
+        first_page_data = self.page_manifest.get(1)
+        if (
+            first_page_data
+            and first_page_data["type"] == "content"
+            and first_page_data["total_chars"] > 0
+            and doc_avg_size > 0
+        ):
+            first_page_avg_size = first_page_data["size_sum"] / first_page_data["total_chars"]
+            if first_page_avg_size > (doc_avg_size * 1.5):
+                log_prescan.info(
+                    "  - Re-classifying Page 1 as 'cover' due to font size heuristic "
+                    "(Page Avg: %.2f, Doc Avg: %.2f)",
+                    first_page_avg_size,
+                    doc_avg_size,
+                )
+                self.page_manifest[1]["type"] = "cover"
 
     def _analyze_page_layouts(self, pages_to_process=None):
         """Performs Stage 1 (layout) and Stage 2 (content) analysis."""

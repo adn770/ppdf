@@ -4,7 +4,7 @@ import json
 import base64
 import logging
 import requests
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 
 from pdfminer.high_level import extract_pages
@@ -126,6 +126,12 @@ def process_pdf_images(
                 message = f"Saved image {image_count} from page {page_layout.pageid}."
                 log.info(message)
                 yield message
+            except UnidentifiedImageError:
+                log.warning(
+                    "Could not identify image format for an image on page %d. Skipping.",
+                    page_layout.pageid,
+                )
+                continue
             except Exception as e:
                 log.error("Could not save image %s: %s.", image_filename, e)
                 continue
