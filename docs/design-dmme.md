@@ -87,11 +87,14 @@ The RAG system is built upon four types of knowledge bases:
         natural language descriptions.
     -   **Interactive Gameplay UI**: A two-column interface featuring a narrative log,
         player input, a party status panel, and a dice roller.
+        -   Inline visual aids rendered as size-constrained, clickable thumbnails
+            that open in a full-size lightbox view.
     -   **Advanced RAG System**: A sophisticated Retrieval-Augmented Generation
         system that leverages semantically labeled text chunks for precise,
         context-aware responses.
     -   **Multiple Game Modes**: Support for both pre-defined `Module` play and
         LLM-generated `Freestyle` play.
+        -   Visually engaging "Cover Mosaic" kickoff for Adventure Module Mode.
     -   **Optional Game Aids**: User-selectable aids including an "AI Art Historian" for
         inline visual aids and an "ASCII Scene Renderer" for rogue-like maps.
 
@@ -107,7 +110,7 @@ application data besides the vector stores.
 ├── assets/
 │   └── images/
 │       └── <collection_name>/
-│           └── ... (*Extracted image files & JSON metadata*)
+│           └── ... (*Extracted image files, thumbnails, & JSON metadata*)
 ├── chroma/
 │   └── ... (*ChromaDB persistent vector storage*)
 ├── dmme.db         (*SQLite database for campaigns, sessions, parties, etc.*)
@@ -238,7 +241,8 @@ The main interface will be a **two-column layout**:
     -   **Knowledge Source Panel:** A horizontal panel displaying the active
         knowledge bases for the current session.
     -   **Narrative View:** The main log displaying the game's story, which can
-        render text, inline images, and pre-formatted ASCII maps.
+        render text, inline images, and pre-formatted ASCII maps. At the start of an
+        Adventure Module, this view will first display a "Cover Mosaic" of art.
     -   **Input Panel:** The text area for user commands.
 
 #### 4.3. Modals and Wizards
@@ -254,6 +258,8 @@ The main interface will be a **two-column layout**:
     characters, including an interface for the LLM-powered character generator.
 -   **DM's Insight Modal**: Triggered by an inline '🔍' button on an AI response, this
     modal displays the raw RAG context used for that specific generation.
+-   **Image Lightbox Modal**: A simple, reusable modal overlay that displays a
+    full-resolution image when a thumbnail in the narrative view is clicked.
 -   **Settings Panel:** A multi-pane modal for application configuration, including a
     toggle for optional game aids like the **ASCII Scene Renderer** and **Visual Aids**.
 
@@ -616,6 +622,48 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: When enabled, a rogue-like ASCII map of the scene appears in the
         narrative log after the descriptive text for a turn.
 
+### Phase 8: UI/UX Refinements
+
+-   **Milestone 29: Refine Visual Aids with Thumbnails and Lightbox**
+    -   **Goal**: Improve the visual aids feature by generating thumbnails to keep the
+        narrative log tidy and adding a "lightbox" modal to view full-size images.
+    -   **Description**: This refactors the visual aids implementation. The ingestion
+        process will generate a smaller JPEG thumbnail for each image, saved with a
+        `thumb_` prefix. The gameplay API will provide URLs for both. The frontend
+        will display the thumbnail and allow the user to click it to view the full
+        image in a modal.
+    -   **Key Tasks**:
+        -   **Backend**: Modify `ppdf_lib/api.py` to generate and save a prefixed JPEG
+            thumbnail during image extraction. Update `ingestion_service.py` to include
+            the thumbnail path in the vector store metadata. Modify `rag_service.py` to
+            stream a `visual_aid` object containing both `thumb_url` and `full_url`.
+        -   **Frontend**: Add a new `Image Lightbox` modal to `index.html`. Update
+            `GameplayHandler.js` to render thumbnails using `thumb_url`, making them
+            clickable to open the `full_url` in the lightbox. Add CSS to constrain
+            thumbnail size and style the lightbox.
+    -   **Outcome**: Visual aids appear as clean, clickable thumbnails in the log.
+        Clicking a thumbnail opens the full-resolution image in a modal overlay,
+        improving usability and reducing initial load.
+
+-   **Milestone 30: Implement Cover Mosaic Kickoff**
+    -   **Goal**: Create a more immersive start for Adventure Modules by displaying a
+        mosaic of cover art before the initial narration.
+    -   **Description**: This feature enhances the start of "Adventure Module" games. The
+        backend will find the first four images classified as 'cover' and send their
+        thumbnail URLs to the frontend. The UI will display these in a responsive,
+        horizontal row before the first narrative text appears.
+    -   **Key Tasks**:
+        -   **Backend**: Modify the `/api/game/start` endpoint. Add logic to the
+            `RAGService` to query the module's KB for the first four `cover` images.
+            Stream a new `cover_mosaic` JSON object containing an array of image URLs
+            before streaming the narrative text.
+        -   **Frontend**: Update `GameplayHandler.js` to handle the new `cover_mosaic`
+            stream type. Implement a new UI component to render the images in a
+            responsive horizontal row at the top of the narrative view.
+    -   **Outcome**: Users playing an Adventure Module are greeted with a visually
+        striking mosaic of cover art, creating a strong thematic opening for the game
+        session.
+
 ---
 
 ## 7. AI Assistant Procedures
@@ -657,6 +705,26 @@ assistant.
     Tasks`, and `Outcome`.
 -   **Copy-Friendly Markdown**: Documents in Markdown must be delivered as a raw
     markdown code block.
+
+### 7.6. Session Initialization & Code Review
+-   **Step 1: Context Upload**: At the start of a session, the developer will first
+    upload the latest `design-dmme.md` document, followed by the complete and current
+    source code.
+-   **Step 2: AI Acknowledgment**: The assistant will confirm receipt of both the
+    design document and the source code files.
+-   **Step 3: Automated Analysis**: The assistant's first action is to perform a
+    comprehensive analysis, comparing the provided source code against the design
+    document.
+-   **Step 4: Report Generation**: The assistant will produce a concise report
+    detailing its findings on the following points:
+    -   **Alignment**: How well the current code structure, features, and logic
+        match the design document.
+    -   **Completeness**: Which planned milestones from the design are fully or
+        partially implemented, and which are not yet started.
+    -   **Deviations**: Any significant discrepancies where the code does not follow
+        the design.
+-   **Step 5: Proceed with Task**: After presenting the analysis, the assistant will
+    signal its readiness to proceed with the developer's next instruction.
 
 ---
 
