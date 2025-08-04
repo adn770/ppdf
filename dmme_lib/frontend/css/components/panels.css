@@ -19,7 +19,6 @@
 .right-panel {
     flex: 3;
     padding: 24px;
-    overflow-y: auto;
 }
 
 .placeholder-pane {
@@ -55,5 +54,5 @@
 .hub-right-panel {
     flex-grow: 1;
     padding: 24px;
-    overflow-y: auto;
+    min-width: 0; /* Prevents flexbox overflow */
 }

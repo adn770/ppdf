@@ -421,7 +421,7 @@ class IngestionService:
         self._create_asset_manifest(assets_dir)
         log.info("Successfully added custom asset '%s' to KB '%s'", image_filename, kb_name)
         return {
-            "url": doc_meta["thumbnail_url"],
+            "url": f"/assets/{doc_meta['thumbnail_url']}",
             "caption": description,
             "classification": classification,
         }

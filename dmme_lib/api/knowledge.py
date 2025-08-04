@@ -62,7 +62,7 @@ def explore_knowledge_base(kb_name):
                         if thumb_path:
                             assets.append(
                                 {
-                                    "url": f"assets/images/{kb_name}/{thumb_path}",
+                                    "url": f"/assets/images/{kb_name}/{thumb_path}",
                                     "caption": meta.get("description", "No caption"),
                                     "classification": meta.get("classification", "other"),
                                 }

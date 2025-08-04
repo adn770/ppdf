@@ -1,6 +1,6 @@
 // dmme_lib/frontend/js/hubs/LibraryHub.js
 import { apiCall } from '../wizards/ApiHelper.js';
-import { status } from '../ui.js';
+import { status, confirmationModal } from '../ui.js';
 
 export class LibraryHub {
     constructor(appInstance) {
@@ -27,6 +27,7 @@ export class LibraryHub {
             tab.addEventListener('click', () => this.switchTab(tab.dataset.pane));
         });
         this._addDragDropListeners();
+        this.listEl.addEventListener('click', (e) => this._handleKbDelete(e));
         this.isInitialized = true;
     }
 
@@ -41,15 +42,12 @@ export class LibraryHub {
             this.dropzone.addEventListener(eventName, this._preventDefaults, false);
             document.body.addEventListener(eventName, this._preventDefaults, false);
         });
-
         ['dragenter', 'dragover'].forEach(eventName => {
             this.dropzone.addEventListener(eventName, () => this.dropzone.classList.add('drag-over'), false);
         });
-
         ['dragleave', 'drop'].forEach(eventName => {
             this.dropzone.addEventListener(eventName, () => this.dropzone.classList.remove('drag-over'), false);
         });
-
         this.dropzone.addEventListener('drop', (e) => this._handleFileDrop(e), false);
     }
 
@@ -78,14 +76,15 @@ export class LibraryHub {
             const lang = metadata.language || 'N/A';
 
             li.innerHTML = `
-                <div>
+                <div class="item-main-content">
                     <span>${kb.name}</span>
                     <div class="item-details">
                         ${type.toUpperCase()} | ${lang.toUpperCase()} | ${kb.count} docs
                     </div>
                 </div>
+                <button class="delete-icon-btn" data-kb-name="${kb.name}">🗑️</button>
             `;
-            li.addEventListener('click', () => this.showKbDetails(kb));
+            li.querySelector('.item-main-content').addEventListener('click', () => this.showKbDetails(kb));
             this.listEl.appendChild(li);
         });
     }
@@ -96,23 +95,24 @@ export class LibraryHub {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
         this.placeholder.style.display = 'none';
-        this.content.style.display = 'block';
-        this.textView.innerHTML = `<div class="spinner"></div>`;
+        this.content.style.display = 'flex';
+        this.textView.querySelector('.hub-pane-wrapper').innerHTML = `<div class="spinner"></div>`;
         this.assetGrid.innerHTML = `<div class="spinner"></div>`;
         try {
             const data = await apiCall(`/api/knowledge/explore/${kb.name}`);
             this.renderTextView(data.documents);
             this.renderAssetView(data.assets);
         } catch (error) {
-            this.textView.innerHTML = `<p class="error">Failed to load content.</p>`;
+            this.textView.querySelector('.hub-pane-wrapper').innerHTML = `<p class="error">Failed to load content.</p>`;
             this.assetGrid.innerHTML = `<p class="error">Failed to load assets.</p>`;
         }
     }
 
     renderTextView(documents) {
-        this.textView.innerHTML = '';
+        const wrapper = this.textView.querySelector('.hub-pane-wrapper');
+        wrapper.innerHTML = '';
         if (!documents || documents.length === 0) {
-            this.textView.innerHTML = `<p>No text documents found in this knowledge base.</p>`;
+            wrapper.innerHTML = `<p>No text documents found in this knowledge base.</p>`;
             return;
         }
 
@@ -120,15 +120,13 @@ export class LibraryHub {
             const card = document.createElement('div');
             card.className = 'text-chunk-card';
             card.innerHTML = `
+                <div class="text-chunk-content">${doc.document}</div>
                 <div class="text-chunk-header">
                     <span class="text-chunk-label">${doc.label || 'PROSE'}</span>
                     <span>Source: ${doc.source_file}</span>
                 </div>
-                <div class="text-chunk-content">
-                    ${doc.document}
-                </div>
             `;
-            this.textView.appendChild(card);
+            wrapper.appendChild(card);
         });
     }
 
@@ -143,7 +141,6 @@ export class LibraryHub {
     }
 
     _addAssetToGrid(asset, isNew = true) {
-        // If it's the first asset, clear the placeholder text
         if (isNew && this.assetGrid.querySelector('p')) {
             this.assetGrid.innerHTML = '';
         }
@@ -151,7 +148,7 @@ export class LibraryHub {
         const card = document.createElement('div');
         card.className = 'asset-card';
         card.innerHTML = `
-            <img src="/${asset.url}" alt="${asset.caption}" title="${asset.caption}">
+            <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
             <p>${asset.classification}</p>
         `;
         this.assetGrid.appendChild(card);
@@ -177,13 +174,11 @@ export class LibraryHub {
 
         const formData = new FormData();
         formData.append('file', file);
-
         try {
             const response = await fetch(`/api/knowledge/${this.selectedKb.name}/upload-asset`, {
                 method: 'POST',
                 body: formData,
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -201,12 +196,38 @@ export class LibraryHub {
         }
     }
 
+    async _handleKbDelete(event) {
+        const deleteBtn = event.target.closest('.delete-icon-btn');
+        if (!deleteBtn) return;
+
+        const kbName = deleteBtn.dataset.kbName;
+        const confirmed = await confirmationModal.confirm(
+            'deleteKbTitle',
+            'deleteKbMsg',
+            { name: kbName }
+        );
+        if (confirmed) {
+            await apiCall(`/api/knowledge/${kbName}`, { method: 'DELETE' });
+            status.setText('deleteKbSuccess', false, { name: kbName });
+            if (this.selectedKb && this.selectedKb.name === kbName) {
+                this.placeholder.style.display = 'flex';
+                this.content.style.display = 'none';
+                this.selectedKb = null;
+            }
+            await this.loadKnowledgeBases();
+        }
+    }
+
     switchTab(paneName) {
         this.tabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.pane === paneName);
         });
         this.inspector.querySelectorAll('.hub-tab-pane').forEach(pane => {
-            pane.classList.toggle('active', pane.id.includes(paneName));
+            // BUG FIX: The asset pane ID is singular, but the data-pane value is plural.
+            // This ensures the correct ID is targeted.
+            const targetPane = paneName === 'assets' ? 'asset' : paneName;
+            const paneId = `library-${targetPane}-view`;
+            pane.classList.toggle('active', pane.id === paneId);
         });
     }
 }

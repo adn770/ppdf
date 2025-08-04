@@ -16,6 +16,7 @@ export class ImportWizard {
         this.reviewListenersAttached = false;
         this.progressLog = null;
         this.isProcessing = false;
+        this.importCompleted = false;
         this.autosaveDebounceTimer = null;
 
         this.modal = document.getElementById('import-wizard-modal');
@@ -92,6 +93,9 @@ export class ImportWizard {
 
     close() {
         if (this.isProcessing) return;
+        if (this.importCompleted) {
+            this.app.libraryHub.loadKnowledgeBases();
+        }
         this.overlay.style.display = 'none';
         this.modal.style.display = 'none';
     }
@@ -113,6 +117,7 @@ export class ImportWizard {
         this.unhighlight();
         this.progressLog = null;
         this.isProcessing = false;
+        this.importCompleted = false;
         this.updateView();
     }
 
@@ -303,10 +308,12 @@ export class ImportWizard {
                     this.logProgress("No images found for review.");
                     this.logProgress("✔ Knowledge base created successfully.");
                     this.logProgress("All processes finished. You may now close this window.");
+                    this.importCompleted = true;
                 }
             } else {
                 this.logProgress("✔ Knowledge base created successfully.");
                 this.logProgress("All processes finished. You may now close this window.");
+                this.importCompleted = true;
             }
         } catch (error) {
             this.logProgress(`✖ ERROR: ${error.message}`);
@@ -445,6 +452,7 @@ export class ImportWizard {
                 body: JSON.stringify({ kb_name: this.knowledgeBaseName })
             });
             status.setText("Knowledge base with images created successfully.");
+            this.importCompleted = true;
             this.close();
         } catch (error) {
             if (finalizeBtn) {

@@ -138,13 +138,17 @@
                                 <button class="hub-tab-btn" data-pane="assets" data-i18n-key="assetView">Assets</button>
                             </div>
                             <div class="hub-tab-content">
-                                <div id="library-text-view" class="hub-tab-pane active"></div>
+                                <div id="library-text-view" class="hub-tab-pane active">
+                                    <div class="hub-pane-wrapper"></div>
+                                </div>
                                 <div id="library-asset-view" class="hub-tab-pane">
-                                    <div id="asset-upload-dropzone" class="asset-dropzone">
-                                        <p data-i18n-key="dropzoneText">Drag & drop an image here to upload</p>
-                                    </div>
-                                    <div id="asset-grid-container" class="asset-grid">
+                                    <div class="hub-pane-wrapper">
+                                        <div id="asset-upload-dropzone" class="asset-dropzone">
+                                            <p data-i18n-key="dropzoneText">Drag & drop an image here to upload</p>
                                         </div>
+                                        <div id="asset-grid-container" class="asset-grid">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
