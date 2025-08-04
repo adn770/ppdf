@@ -6,7 +6,7 @@ export class ImportWizard {
     constructor(appInstance) {
         this.app = appInstance;
         this.currentStep = 0;
-        this.totalSteps = 4; // 0:Details, 1:Review, 2:Processing, 3:Review
+        this.totalSteps = 4; // 0:Details, 1:Review, 2:Processing, 3:ImageReview
         this.selectedFile = null;
         this.serverTempFilePath = null;
         this.knowledgeBaseName = '';
@@ -33,6 +33,8 @@ export class ImportWizard {
         this.imgDesc = document.getElementById('image-description');
         this.spinner = this.modal.querySelector('#wizard-pane-2 .spinner');
         this.sectionListEl = document.getElementById('wizard-section-list');
+        this.selectAllBtn = document.getElementById('wizard-select-all-sections');
+        this.deselectAllBtn = document.getElementById('wizard-deselect-all-sections');
 
         this._addEventListeners();
     }
@@ -58,6 +60,9 @@ export class ImportWizard {
             this.uploadArea.addEventListener(eName, () => this.unhighlight(), false);
         });
         this.uploadArea.addEventListener('drop', e => this.handleFileDrop(e), false);
+        this.selectAllBtn.addEventListener('click', () => this._toggleAllSections(true));
+        this.deselectAllBtn.addEventListener('click', () => this._toggleAllSections(false));
+        this.sectionListEl.addEventListener('change', () => this._updateNextButtonState());
     }
 
     _initReviewListeners() {
@@ -129,15 +134,6 @@ export class ImportWizard {
             'block' : 'none';
         this.nextBtn.style.display = this.currentStep < 2 ? 'block' : 'none';
 
-        // Disable next button on step 0 if no file, or on step 1 if no sections selected
-        if (this.currentStep === 0) {
-            this.nextBtn.disabled = !this.serverTempFilePath;
-        } else if (this.currentStep === 1) {
-            // Placeholder for future logic
-            this.nextBtn.disabled = false;
-        }
-
-
         if (this.currentStep === 3) { // Image review pane
             if (!finalizeBtn) {
                 const btnHTML =
@@ -155,9 +151,25 @@ export class ImportWizard {
         const name = this.knowledgeBaseName;
         const titleKey = name ? 'importWizardTitleWithName' : 'importWizardTitle';
         title.textContent = i18n.t(titleKey, { name });
+        this._updateNextButtonState();
     }
 
-    // THIS IS A PLACEHOLDER FOR NOW
+    _updateNextButtonState() {
+        if (this.currentStep === 0) {
+            this.nextBtn.disabled = !this.serverTempFilePath;
+        } else if (this.currentStep === 1) {
+            const selectedCount = this.sectionListEl.querySelectorAll('input:checked').length;
+            this.nextBtn.disabled = selectedCount === 0;
+        }
+    }
+
+    _toggleAllSections(checkedState) {
+        this.sectionListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = checkedState;
+        });
+        this._updateNextButtonState();
+    }
+
     _renderSectionList(sections = []) {
         this.sectionListEl.innerHTML = '';
         if (sections.length === 0) {
@@ -168,13 +180,14 @@ export class ImportWizard {
         sections.forEach((section, index) => {
             const item = document.createElement('div');
             item.className = 'section-item';
+            const sectionTitle = section.title || 'Untitled Section';
             item.innerHTML = `
-                <input type="checkbox" id="section-${index}" checked>
+                <input type="checkbox" id="section-${index}" data-section-title="${sectionTitle}" checked>
                 <label for="section-${index}" class="section-item-label">
-                    <span class="section-item-title">${section.title}</span>
+                    <span class="section-item-title">${sectionTitle}</span>
                     <span class="section-item-details">Pages: ${section.page_start}-${section.page_end}</span>
                 </label>
-                <span class="section-item-stats">${section.char_count.toLocaleString()} chars</span>
+                <span class="section-item-stats">${(section.char_count || 0).toLocaleString()} chars</span>
             `;
             this.sectionListEl.appendChild(item);
         });
@@ -194,16 +207,41 @@ export class ImportWizard {
             if (!this.knowledgeBaseName) return status.setText('errorKbName', true);
             if (!this.serverTempFilePath) return status.setText('errorFile', true);
 
-            // TODO: In next milestone, call /analyze endpoint here
-            this._renderSectionList([
-                {title: 'Chapter 1: A Fateful Encounter', page_start: 3, page_end: 15, char_count: 25000},
-                {title: 'Appendix A: Monsters', page_start: 16, page_end: 20, char_count: 8000},
-            ]); // Placeholder
-            this.navigate(1);
+            const isPdf = this.selectedFile.name.toLowerCase().endsWith('.pdf');
+            if (!isPdf) {
+                // For non-PDFs, skip analysis and go straight to processing.
+                this.navigate(2);
+                await this.runFullIngestionProcess();
+                return;
+            }
+
+            this.sectionListEl.innerHTML = '<div class="spinner spinner-lg"></div>';
+            this.navigate(1); // Move to review pane
+
+            try {
+                const payload = {
+                    temp_file_path: this.serverTempFilePath,
+                    pages: this.pdfPagesInput.value.trim() || 'all'
+                };
+                const sections = await apiCall('/api/knowledge/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                this._renderSectionList(sections);
+            } catch (error) {
+                this.sectionListEl.innerHTML = `<p class="error">Failed to analyze document.</p>`;
+            } finally {
+                this._updateNextButtonState();
+            }
 
         } else if (this.currentStep === 1) {
-            this.navigate(1);
-            await this.runFullIngestionProcess();
+            const sectionsToInclude = Array.from(
+                this.sectionListEl.querySelectorAll('input:checked')
+            ).map(cb => cb.dataset.sectionTitle);
+
+            this.navigate(1); // Move to processing pane (now step 2)
+            await this.runFullIngestionProcess(sectionsToInclude);
         }
     }
 
@@ -228,7 +266,7 @@ export class ImportWizard {
         }
     }
 
-    async runFullIngestionProcess() {
+    async runFullIngestionProcess(sectionsToInclude = null) {
         this.progressLog = document.getElementById('wizard-progress-log');
         this.progressLog.textContent = ''; // Clear log
         try {
@@ -238,6 +276,7 @@ export class ImportWizard {
             const payload = {
                 temp_file_path: this.serverTempFilePath,
                 pages: pagesValue || 'all',
+                sections_to_include: sectionsToInclude,
                 metadata: {
                     kb_name: this.knowledgeBaseName,
                     kb_type: document.getElementById('kb-type').value,
@@ -259,7 +298,7 @@ export class ImportWizard {
                 if (this.reviewImages.length > 0) {
                     const msg = `✔ Found ${this.reviewImages.length} images to review.`;
                     this.logProgress(msg);
-                    this.navigate(1); // Move to step 3 (review)
+                    this.navigate(1); // Move to step 3 (image review)
                 } else {
                     this.logProgress("No images found for review.");
                     this.logProgress("✔ Knowledge base created successfully.");
