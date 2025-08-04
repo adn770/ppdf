@@ -143,7 +143,7 @@ class App {
             quickSelector.innerHTML = '';
             const placeholderOption = document.createElement('option');
             placeholderOption.value = "";
-            placeholderOption.textContent = this.app.i18n.t('themeDefault');
+            placeholderOption.textContent = this.i18n.t('themeDefault');
             quickSelector.appendChild(placeholderOption);
             mainSelector.querySelectorAll('option').forEach(option => {
                 if (option.value !== 'default') {

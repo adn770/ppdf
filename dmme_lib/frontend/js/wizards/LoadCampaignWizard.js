@@ -11,17 +11,14 @@ export class LoadCampaignWizard {
         this.loadModal = document.getElementById('load-campaign-modal');
         this.recapModal = document.getElementById('session-recap-modal');
         this.overlay = document.getElementById('modal-overlay');
-
         // Load Modal Elements
         this.campaignListEl = document.getElementById('campaign-list');
         this.detailsContentEl = document.getElementById('campaign-details-content');
         this.loadConfirmBtn = document.getElementById('load-campaign-btn-confirm');
-
         // Recap Modal Elements
         this.recapHeaderEl = document.getElementById('recap-header');
         this.recapContentEl = document.getElementById('recap-content');
         this.recapContinueBtn = document.getElementById('recap-continue-btn');
-
         this._addEventListeners();
     }
 
@@ -78,12 +75,10 @@ export class LoadCampaignWizard {
     _selectCampaign(campaign) {
         this.selectedCampaign = campaign;
         this.loadConfirmBtn.disabled = false;
-
         // Highlight selection
         this.campaignListEl.querySelectorAll('li').forEach(li => {
             li.classList.toggle('selected', li.dataset.campaignId == campaign.id);
         });
-
         // Show details
         this.detailsContentEl.classList.remove('placeholder');
         const formattedDate = new Date(campaign.updated_at).toLocaleString();
@@ -96,7 +91,6 @@ export class LoadCampaignWizard {
 
     async _handleLoadCampaign() {
         if (!this.selectedCampaign) return;
-
         try {
             const url = `/api/campaigns/${this.selectedCampaign.id}/latest-session`;
             const session = await apiCall(url);
@@ -121,13 +115,20 @@ export class LoadCampaignWizard {
         });
         this.recapContentEl.textContent = session.journal_recap;
 
-        this.recapContinueBtn.onclick = () => {
-            // This part of the logic is a placeholder for now.
-            // Loading a game requires reconstructing the gameConfig from the campaign.
-            // This will be fully wired up in a future milestone.
-            status.setText('Continue Campaign feature not yet implemented.');
-            console.log("TODO: Implement continue campaign from recap.", this.selectedCampaign);
-            this.close();
+        this.recapContinueBtn.onclick = async () => {
+            try {
+                const state = await apiCall(`/api/campaigns/${this.selectedCampaign.id}/state`);
+                if (state && state.game_config) {
+                    const recoveredState = { narrativeHTML: state.narrative_log };
+                    this.app.startGame(state.game_config, recoveredState);
+                    this.close();
+                } else {
+                    throw new Error("Received invalid state from server.");
+                }
+            } catch (error) {
+                // The apiCall helper will show a status bar error
+                console.error("Failed to get campaign state:", error);
+            }
         };
     }
 }

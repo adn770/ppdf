@@ -78,7 +78,7 @@ def summarize_session():
     """Summarizes a session log and saves it as a journal recap."""
     data = request.get_json()
     campaign_id = data.get("campaign_id")
-    narrative_log = data.get("session_log") # The full HTML log
+    narrative_log = data.get("session_log")  # The full HTML log
     language = data.get("language", "en")
 
     if not campaign_id or not narrative_log:
