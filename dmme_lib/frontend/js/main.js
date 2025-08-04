@@ -7,6 +7,8 @@ import { GameplayHandler } from './GameplayHandler.js';
 import { SettingsManager } from './SettingsManager.js';
 import { DiceRoller } from './components/DiceRoller.js';
 import { DMInsight } from './components/DMInsight.js';
+import { LibraryHub } from './hubs/LibraryHub.js';
+import { PartyHub } from './hubs/PartyHub.js';
 import { status } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
@@ -23,6 +25,8 @@ class App {
         this.dmInsight = new DMInsight(this);
         this.gameplayHandler = new GameplayHandler(this, this.dmInsight);
         this.diceRoller = new DiceRoller(this.gameplayHandler);
+        this.libraryHub = new LibraryHub(this);
+        this.partyHub = new PartyHub(this);
         this.settings = null;
         this.i18n = i18n;
         this.currentView = 'game';
@@ -56,6 +60,13 @@ class App {
         });
 
         this.updateHeader(viewName);
+
+        // Initialize hubs when they are first viewed
+        if (viewName === 'library') {
+            this.libraryHub.init();
+        } else if (viewName === 'party') {
+            this.partyHub.init();
+        }
     }
 
     updateHeader(viewName) {
@@ -75,9 +86,10 @@ class App {
             container.appendChild(createButton('new-game-btn', 'newGameBtn', () => this.newGameWizard.open()));
             container.appendChild(createButton('load-game-btn', 'loadGameBtn', () => this.loadCampaignWizard.open()));
         } else if (viewName === 'library') {
-            container.appendChild(createButton('import-knowledge-btn', 'importKnowledgeBtn', () => this.importWizard.open()));
+            const key = 'newKbBtn';
+            container.appendChild(createButton('import-knowledge-btn', key, () => this.importWizard.open()));
         } else if (viewName === 'party') {
-            container.appendChild(createButton('party-manager-btn', 'partyManagerBtn', () => this.partyWizard.open()));
+            container.appendChild(createButton('party-manager-btn', 'newPartyBtn', () => this.partyWizard.open()));
         }
 
         // Settings button is common to all views but added here for consistency

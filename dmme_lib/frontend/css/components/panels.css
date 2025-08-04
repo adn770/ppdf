@@ -32,3 +32,28 @@
     height: 100%;
     border-radius: 4px;
 }
+
+/* --- New Hub Styles --- */
+.hub-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.hub-left-panel {
+    width: 300px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.hub-right-panel {
+    flex-grow: 1;
+    padding: 24px;
+    overflow-y: auto;
+}

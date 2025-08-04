@@ -36,3 +36,10 @@ li:hover > .delete-icon-btn,
 li.selected > .delete-icon-btn {
     opacity: 1;
 }
+
+/* --- New Hub List Styles --- */
+.hub-item-list .item-details {
+    font-size: 0.8em;
+    color: #999;
+    margin-top: 4px;
+}
