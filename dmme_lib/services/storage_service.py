@@ -60,6 +60,7 @@ class StorageService:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 description TEXT,
+                game_config_json TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -106,6 +107,7 @@ class StorageService:
                 start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 end_time TIMESTAMP,
                 journal_recap TEXT,
+                narrative_log TEXT,
                 FOREIGN KEY (campaign_id) REFERENCES campaigns (id) ON DELETE CASCADE
             );
             """
@@ -134,10 +136,14 @@ class StorageService:
                 (campaign_id,),
             ).fetchone()
 
-    def create_campaign(self, name: str, description: str = ""):
+    def create_campaign(
+        self, name: str, description: str = "", game_config: dict | None = None
+    ):
+        config_json = json.dumps(game_config) if game_config else None
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "INSERT INTO campaigns (name, description) VALUES (?, ?);", (name, description)
+                "INSERT INTO campaigns (name, description, game_config_json) VALUES (?, ?, ?);",
+                (name, description, config_json),
             )
             return cursor.lastrowid
 
@@ -244,12 +250,33 @@ class StorageService:
             conn.commit()
             return cursor.lastrowid
 
-    def save_journal_recap(self, session_id: int, recap_text: str):
-        """Saves the journal recap and sets the end time for a given session."""
+    def save_session_end_data(self, session_id: int, recap_text: str, narrative_log: str):
+        """Saves the recap, full log, and end time for a given session."""
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "UPDATE sessions SET journal_recap = ?, end_time = ? WHERE id = ?;",
-                (recap_text, now, session_id),
+                "UPDATE sessions SET journal_recap = ?, narrative_log = ?, end_time = ? WHERE id = ?;",
+                (recap_text, narrative_log, now, session_id),
             )
             return cursor.rowcount > 0
+
+    def get_campaign_state(self, campaign_id: int):
+        """Retrieves the full state required to resume a campaign."""
+        with self._get_connection() as conn:
+            campaign = self.get_campaign(campaign_id)
+            if not campaign:
+                return None
+
+            latest_session = conn.execute(
+                "SELECT narrative_log FROM sessions WHERE campaign_id = ? ORDER BY session_number DESC LIMIT 1;",
+                (campaign_id,),
+            ).fetchone()
+
+            game_config = (
+                json.loads(campaign["game_config_json"])
+                if campaign["game_config_json"]
+                else {}
+            )
+            narrative_log = latest_session["narrative_log"] if latest_session else ""
+
+            return {"game_config": game_config, "narrative_log": narrative_log}

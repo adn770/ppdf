@@ -38,7 +38,8 @@ def create_campaign():
 
     name = data["name"]
     desc = data.get("description", "")
-    campaign_id = current_app.storage.create_campaign(name, desc)
+    game_config = data.get("game_config")
+    campaign_id = current_app.storage.create_campaign(name, desc, game_config)
 
     new_campaign = current_app.storage.get_campaign(campaign_id)
     return jsonify(dict(new_campaign)), 201
@@ -67,3 +68,12 @@ def delete_campaign(campaign_id):
     if not current_app.storage.delete_campaign(campaign_id):
         return jsonify({"error": "Campaign not found"}), 404
     return "", 204
+
+
+@bp.route("/<int:campaign_id>/state", methods=["GET"])
+def get_campaign_state(campaign_id):
+    """Gets all data needed to resume a campaign."""
+    state = current_app.storage.get_campaign_state(campaign_id)
+    if state is None:
+        return jsonify({"error": "Campaign not found or has no sessions"}), 404
+    return jsonify(state)

@@ -78,10 +78,10 @@ def summarize_session():
     """Summarizes a session log and saves it as a journal recap."""
     data = request.get_json()
     campaign_id = data.get("campaign_id")
-    session_log = data.get("session_log")
+    narrative_log = data.get("session_log") # The full HTML log
     language = data.get("language", "en")
 
-    if not campaign_id or not session_log:
+    if not campaign_id or not narrative_log:
         return jsonify({"error": "Missing campaign_id or session_log"}), 400
 
     try:
@@ -92,13 +92,13 @@ def summarize_session():
         )
 
         # Step 2: Use the RAG service to generate the summary
-        summary = current_app.rag_service.generate_journal_recap(session_log, language)
+        summary = current_app.rag_service.generate_journal_recap(narrative_log, language)
         if not summary:
             raise Exception("LLM failed to generate a summary.")
 
-        # Step 3: Save the summary to the new session record
-        current_app.storage.save_journal_recap(session_id, summary)
-        log.info("Saved journal recap for session %d.", session_id)
+        # Step 3: Save the summary and the full log to the new session record
+        current_app.storage.save_session_end_data(session_id, summary, narrative_log)
+        log.info("Saved journal recap and narrative log for session %d.", session_id)
 
         return jsonify({"session_id": session_id, "recap": summary}), 201
 
