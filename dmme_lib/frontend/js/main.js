@@ -54,7 +54,6 @@ class App {
         document.getElementById('settings-btn').addEventListener('click',
             () => this.settingsManager.open()
         );
-        this.initAccordions();
 
         // Check for a recoverable session before showing the welcome screen
         await this.checkForRecovery();
@@ -123,22 +122,6 @@ class App {
             });
             quickSelector.value = ""; // Start with the placeholder selected
         }
-    }
-
-    initAccordions() {
-        document.querySelectorAll('.accordion-header').forEach(button => {
-            button.addEventListener('click', () => {
-                const accordionBody = button.nextElementSibling;
-                const icon = button.querySelector('.accordion-icon');
-                if (accordionBody.classList.contains('active')) {
-                    accordionBody.classList.remove('active');
-                    if (icon) icon.textContent = '+';
-                } else {
-                    accordionBody.classList.add('active');
-                    if (icon) icon.textContent = '-';
-                }
-            });
-        });
     }
 }
 

@@ -24,30 +24,66 @@
     min-width: 0; /* Prevents flexbox overflow */
 }
 
+.party-status-panel {
+    flex-grow: 1; /* Allow this panel to take up all available space */
+    min-height: 0; /* Prevent panel from overflowing its container */
+    display: flex;
+    flex-direction: column;
+}
+
+#party-accordion-container {
+    overflow-y: auto; /* Make only the character list scrollable */
+}
+
 .party-status-panel .accordion-item {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     margin-bottom: 8px;
     overflow: hidden;
+    background-color: var(--panel-bg);
 }
 
 .party-status-panel .accordion-header {
     width: 100%;
-    background-color: var(--panel-bg);
+    background-color: transparent;
+    border: none;
     text-align: left;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.party-status-panel .accordion-icon {
+    font-size: 1.2em;
+    font-weight: bold;
 }
 
 .party-status-panel .accordion-body {
-    padding: 12px;
+    padding: 0 12px 12px 12px;
     font-size: 0.9em;
-    background-color: #333;
+    background-color: var(--bg-color);
     display: none;
 }
 
 .party-status-panel .accordion-body.active { display: block; }
-.party-status-panel .accordion-body p { margin: 4px 0; }
+.party-status-panel .accordion-body p { margin: 4px 0 8px 0; }
+.party-status-panel .char-stats {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.dice-roller {
+    flex-shrink: 0; /* Prevent the dice roller from shrinking */
+}
 
 .dice-roller .dice-display {
     background-color: var(--bg-color);

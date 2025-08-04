@@ -1,5 +1,7 @@
 // dmme_lib/frontend/js/GameplayHandler.js
 import { showGameSpinner, hideGameSpinner } from './ui.js';
+import { apiCall } from './wizards/ApiHelper.js';
+
 export class GameplayHandler {
     constructor(appInstance, dmInsightInstance) {
         this.app = appInstance;
@@ -9,6 +11,7 @@ export class GameplayHandler {
         this.playerInput = document.getElementById('player-input');
         this.sendCommandBtn = document.getElementById('send-command-btn');
         this.kbDisplay = document.getElementById('kb-display');
+        this.partyAccordionContainer = document.getElementById('party-accordion-container');
         this.autosaveInterval = null;
         this.showVisualAids = false;
         this.showAsciiScene = false;
@@ -28,13 +31,14 @@ export class GameplayHandler {
         this._addEventListeners();
     }
 
-    init(gameConfig, recoveredState = null) {
+    async init(gameConfig, recoveredState = null) {
         this.gameConfig = gameConfig;
         console.log("GameplayHandler initialized with config:", this.gameConfig);
 
         this._updateKnowledgePanel();
         this._applyInitialStyles();
         this._updateToolbarState();
+        await this._populatePartyStatusPanel();
 
         if (recoveredState) {
             this.loadState(recoveredState);
@@ -66,6 +70,59 @@ export class GameplayHandler {
         this.narrativeView.style.lineHeight = this.lineHeightSlider.value;
         this.quickThemeSelector.value = ""; // Reset quick theme selector
         this.insightToolbarBtn.disabled = true;
+    }
+
+    async _populatePartyStatusPanel() {
+        if (!this.gameConfig || !this.gameConfig.party) return;
+        this.partyAccordionContainer.innerHTML = ''; // Clear existing content
+
+        const characters = await apiCall(`/api/parties/${this.gameConfig.party}/characters`);
+
+        characters.forEach(char => {
+            const item = document.createElement('div');
+            item.className = 'accordion-item';
+
+            const header = document.createElement('button');
+            header.className = 'accordion-header';
+            header.innerHTML = `
+                <span>${char.name} - Lvl ${char.level} ${char.class}</span>
+                <span class="accordion-icon">+</span>
+            `;
+
+            const body = document.createElement('div');
+            body.className = 'accordion-body';
+            const stats = Object.keys(char.stats).length > 0
+                ? JSON.stringify(char.stats, null, 2)
+                : 'No stats provided.';
+            body.innerHTML = `
+                <p>${char.description || 'No description.'}</p>
+                <pre class="char-stats">${stats}</pre>
+            `;
+
+            item.appendChild(header);
+            item.appendChild(body);
+            this.partyAccordionContainer.appendChild(item);
+        });
+
+        // Add event listeners to the newly created headers
+        this.partyAccordionContainer.querySelectorAll('.accordion-header').forEach(button => {
+            button.addEventListener('click', () => {
+                const accordionBody = button.nextElementSibling;
+                const icon = button.querySelector('.accordion-icon');
+                const isActive = accordionBody.classList.contains('active');
+
+                // Optional: Close all other accordions
+                this.partyAccordionContainer.querySelectorAll('.accordion-body').forEach(b => {
+                    b.classList.remove('active');
+                    b.previousElementSibling.querySelector('.accordion-icon').textContent = '+';
+                });
+
+                if (!isActive) {
+                    accordionBody.classList.add('active');
+                    if (icon) icon.textContent = '-';
+                }
+            });
+        });
     }
 
     _updateToolbarState() {
