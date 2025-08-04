@@ -1,11 +1,14 @@
 // dmme_lib/frontend/js/hubs/PartyHub.js
 import { apiCall } from '../wizards/ApiHelper.js';
+import { status, confirmationModal } from '../ui.js';
+
 export class PartyHub {
     constructor(appInstance) {
         this.app = appInstance;
         this.isInitialized = false;
         this.selectedPartyId = null;
 
+        // Main containers
         this.view = document.getElementById('party-view');
         this.listEl = document.getElementById('party-list-hub');
         this.inspectorPlaceholder = document.getElementById('party-inspector-placeholder');
@@ -14,12 +17,23 @@ export class PartyHub {
         this.editorView = document.getElementById('character-editor-hub');
         this.characterListEl = document.getElementById('character-list-hub');
         this.showAddCharacterBtn = document.getElementById('show-add-character-hub-btn');
+
+        // Editor form inputs
+        this.charNameInput = document.getElementById('char-name-hub');
+        this.charClassInput = document.getElementById('char-class-hub');
+        this.charLevelInput = document.getElementById('char-level-hub');
+        this.aiDescInput = document.getElementById('ai-char-desc-hub');
+        this.addManualBtn = document.getElementById('add-char-manual-hub-btn');
+        this.aiGenerateBtn = document.getElementById('ai-char-generate-hub-btn');
     }
 
     init() {
         if (this.isInitialized) return;
         this.loadParties();
         this.showAddCharacterBtn.addEventListener('click', () => this.showEditorPanel());
+        this.addManualBtn.addEventListener('click', () => this.addCharacter(false));
+        this.aiGenerateBtn.addEventListener('click', () => this.addCharacter(true));
+        this.characterListEl.addEventListener('click', (e) => this._handleCharacterDelete(e));
         this.isInitialized = true;
     }
 
@@ -60,8 +74,7 @@ export class PartyHub {
 
     showEditorPanel() {
         if (!this.selectedPartyId) {
-            // This could be enhanced to prompt party creation if none is selected
-            console.warn("Cannot add a character without a selected party.");
+            status.setText('errorSelectPartyToAddChar', true);
             return;
         }
         this.showPanel(this.editorView);
@@ -101,6 +114,73 @@ export class PartyHub {
             });
         } catch (error) {
             this.characterListEl.innerHTML = `<li class="error">Failed to load characters.</li>`;
+        }
+    }
+
+    async addCharacter(useAI = false) {
+        let charData;
+        if (useAI) {
+            const description = this.aiDescInput.value.trim();
+            if (!description) return status.setText("errorCharDesc", true);
+
+            const rules = this.app.settings?.Game?.default_ruleset;
+            if (!rules) return status.setText("errorDefaultRules", true);
+
+            this.aiGenerateBtn.disabled = true;
+            status.setText('generatingChar', false, { rules: rules });
+            try {
+                const payload = {
+                    description: description,
+                    rules_kb: rules,
+                    language: this.app.settings.Appearance.language || 'en'
+                };
+                charData = await apiCall('/api/game/generate-character', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                status.setText('generatedChar', false, {name: charData.name, class: charData.class});
+            } catch (error) {
+                return; // apiCall helper shows status
+            } finally {
+                this.aiGenerateBtn.disabled = false;
+                this.aiDescInput.value = '';
+            }
+        } else {
+            const name = this.charNameInput.value.trim();
+            const charClass = this.charClassInput.value.trim();
+            const level = parseInt(this.charLevelInput.value, 10);
+            if (!name || !charClass) return status.setText("errorCharNameClass", true);
+            charData = { name, class: charClass, level, description: '', stats: {} };
+        }
+
+        const url = `/api/parties/${this.selectedPartyId}/characters`;
+        await apiCall(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(charData),
+        });
+        this.charNameInput.value = '';
+        this.charClassInput.value = '';
+        this.charLevelInput.value = 1;
+        await this.selectParty(this.selectedPartyId); // Reselect to show roster and refresh
+    }
+
+    async _handleCharacterDelete(event) {
+        const deleteBtn = event.target.closest('.delete-icon-btn');
+        if (!deleteBtn) return;
+        event.stopPropagation();
+
+        const characterId = deleteBtn.dataset.charId;
+        const characterName = deleteBtn.dataset.charName;
+
+        const confirmed = await confirmationModal.confirm(
+            'deleteCharTitle', 'deleteCharMsg', { name: characterName }
+        );
+        if (confirmed) {
+            await apiCall(`/api/characters/${characterId}`, { method: 'DELETE' });
+            await this._loadAndRenderCharacters(this.selectedPartyId);
+            status.setText('deleteCharSuccess', false, { name: characterName });
         }
     }
 }

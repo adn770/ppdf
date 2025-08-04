@@ -12,7 +12,6 @@ import { PartyHub } from './hubs/PartyHub.js';
 import { status } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
-
 class App {
     constructor() {
         this.settingsManager = new SettingsManager(this);
@@ -36,14 +35,12 @@ class App {
         status.setText('initializing');
         this.settings = await this.settingsManager.loadSettings();
         this.settingsManager.applyTheme(this.settings.Appearance.theme);
-
         await this.i18n.init(this.settings.Appearance.language);
         this.populateQuickThemeSelector();
 
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => this.switchView(btn.dataset.view));
         });
-
         this.updateHeader(this.currentView);
         await this.checkForRecovery();
     }
@@ -58,7 +55,6 @@ class App {
         document.querySelectorAll('.nav-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.view === viewName);
         });
-
         this.updateHeader(viewName);
 
         // Initialize hubs when they are first viewed
@@ -89,7 +85,7 @@ class App {
             const key = 'newKbBtn';
             container.appendChild(createButton('import-knowledge-btn', key, () => this.importWizard.open()));
         } else if (viewName === 'party') {
-            container.appendChild(createButton('party-manager-btn', 'newPartyBtn', () => this.partyWizard.open()));
+            container.appendChild(createButton('new-party-btn', 'newPartyBtn', () => this.partyWizard.open()));
         }
 
         // Settings button is common to all views but added here for consistency
@@ -102,7 +98,6 @@ class App {
         const welcomeView = document.getElementById('welcome-view');
         const recoveryView = document.getElementById('recovery-view');
         const gameViewContent = document.getElementById('game-view-content');
-
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
             gameViewContent.style.display = 'none';
@@ -148,9 +143,8 @@ class App {
             quickSelector.innerHTML = '';
             const placeholderOption = document.createElement('option');
             placeholderOption.value = "";
-            placeholderOption.textContent = this.i18n.t('themeDefault');
+            placeholderOption.textContent = this.app.i18n.t('themeDefault');
             quickSelector.appendChild(placeholderOption);
-
             mainSelector.querySelectorAll('option').forEach(option => {
                 if (option.value !== 'default') {
                     quickSelector.appendChild(option.cloneNode(true));
