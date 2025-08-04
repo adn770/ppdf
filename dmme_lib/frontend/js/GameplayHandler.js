@@ -202,8 +202,43 @@ export class GameplayHandler {
     }
 
     _showLastInsight() {
-        if (this.lastInsightContent) {
-            this.dmInsight.open(this.lastInsightContent);
+        if (!this.lastInsightContent) return;
+
+        const contentBox = this.dmInsight.contentEl;
+        contentBox.innerHTML = ''; // Clear previous content
+
+        try {
+            const insights = JSON.parse(this.lastInsightContent);
+
+            if (insights.length === 0) {
+                const emptyMsg = document.createElement('p');
+                emptyMsg.className = 'dm-insight-empty';
+                emptyMsg.textContent = this.app.i18n.t('dmInsightEmpty');
+                contentBox.appendChild(emptyMsg);
+            } else {
+                insights.forEach(item => {
+                    const chunkDiv = document.createElement('div');
+                    chunkDiv.className = 'dm-insight-chunk';
+
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'dm-insight-label';
+                    labelSpan.textContent = item.label || 'prose';
+                    chunkDiv.appendChild(labelSpan);
+
+                    const textPre = document.createElement('pre');
+                    textPre.className = 'dm-insight-text';
+                    textPre.textContent = item.text;
+                    chunkDiv.appendChild(textPre);
+
+                    contentBox.appendChild(chunkDiv);
+                });
+            }
+            this.dmInsight.open();
+        } catch (e) {
+            console.error("Failed to parse insight JSON:", e);
+            // Fallback for non-JSON or malformed content
+            contentBox.textContent = this.lastInsightContent;
+            this.dmInsight.open();
         }
     }
 

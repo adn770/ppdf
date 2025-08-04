@@ -4,8 +4,9 @@ import re
 import os
 import json
 import shutil
+from flask import current_app
 from .vector_store_service import VectorStoreService
-from core.llm_utils import get_semantic_label, query_text_llm
+from core.llm_utils import get_semantic_label, query_text_llm, get_model_details
 from ppdf_lib.api import process_pdf_text, process_pdf_images
 from dmme_lib.constants import PROMPT_REGISTRY
 
@@ -19,13 +20,16 @@ class IngestionService:
         self.model = model
         log.info("IngestionService initialized.")
 
+    def _get_classification_model(self):
+        """Gets the classification model from the app's config service."""
+        return current_app.config_service.get_settings()["Ollama"]["classification_model"]
+
     def _get_prompt(self, key: str, lang: str) -> str:
         """Safely retrieves a prompt from the registry, falling back to English."""
         return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
 
     def _format_text_for_log(self, text: str) -> str:
         """Formats a long text block into a concise, single-line summary for logging."""
-        # Replace newlines and multiple spaces with a single space
         single_line_text = re.sub(r"\s+", " ", text).strip()
         if len(single_line_text) > 100:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
@@ -43,20 +47,22 @@ class IngestionService:
         yield f"Splitting file into {len(chunks)} raw chunks."
 
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
+        classification_model = self._get_classification_model()
         documents, metadatas = [], []
         for i, chunk in enumerate(chunks):
             if len(chunk) < 50:
                 continue
 
             yield f"  -> Applying semantic label to chunk {i + 1}/{len(chunks)}..."
-            log.debug(
-                "Labeling chunk %d/%d: %s",
-                i + 1,
-                len(chunks),
-                self._format_text_for_log(chunk),
+            label = get_semantic_label(
+                chunk, labeler_prompt, self.ollama_url, classification_model
             )
-            label = get_semantic_label(chunk, labeler_prompt, self.ollama_url, self.model)
-            log.debug("  -> LLM assigned label: '%s'", label)
+            log.debug(
+                "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
+                classification_model,
+                self._format_text_for_log(chunk),
+                label,
+            )
 
             documents.append(chunk)
             metadatas.append(
@@ -94,24 +100,42 @@ class IngestionService:
         page_type_map = {pm.page_num: pm.page_type for pm in page_models}
         content_sections = []
         classifier_prompt = self._get_prompt("SECTION_CLASSIFIER", lang)
+        classification_model = self._get_classification_model()
         valid_section_tags = {"content", "appendix"}
         valid_llm_tags = valid_section_tags.union(
             {"preface", "table_of_contents", "legal", "credits", "index"}
         )
 
-        yield f"Classifying {len(sections)} sections..."
+        model_details = get_model_details(self.ollama_url, classification_model)
+        ctx = model_details.get("context_length", 4096)  # Default to 4k if lookup fails
+        target_chars = int(ctx * 0.8)
+        yield (
+            f"Classifying {len(sections)} sections using '{classification_model}' "
+            f"(context: {target_chars} chars)..."
+        )
+
         for i, section in enumerate(sections):
             if not section.paragraphs:
                 continue
 
-            hint_tag = page_type_map.get(section.page_start, "content")
-            representative_text = (
-                f"Title: {section.title}\n\n"
-                f"Opening Text: {section.paragraphs[0].get_text()}"
-            )
+            # Build a rich context for classification
+            context_parts = []
+            current_chars = 0
+            if section.title:
+                title_text = f"Title: {section.title}\n\n"
+                context_parts.append(title_text)
+                current_chars += len(title_text)
 
-            # Use a more capable model for classification if available
-            classification_model = "llama3.1"
+            for para in section.paragraphs:
+                para_text = para.get_text()
+                if current_chars + len(para_text) > target_chars:
+                    break
+                context_parts.append(para_text)
+                current_chars += len(para_text) + 2  # Account for newlines
+
+            representative_text = "\n\n".join(context_parts)
+            hint_tag = page_type_map.get(section.page_start, "content")
+
             final_tag = query_text_llm(
                 classifier_prompt,
                 representative_text,
@@ -124,10 +148,18 @@ class IngestionService:
                 final_tag = "content"  # Default to content on ambiguous response
 
             log.debug(
-                "Section '%s': Hint=%s, Final Tag=%s",
-                section.title or f"Untitled (Page {section.page_start})",
+                "Section Classification:\n"
+                "  - Model: %s\n"
+                "  - Title: '%s'\n"
+                "  - Hint: %s -> Final Tag: %s\n"
+                "  - Prompt: %s\n"
+                "  - Input: %s",
+                classification_model,
+                section.title or "Untitled",
                 hint_tag,
                 final_tag,
+                classifier_prompt.replace("\n", " "),
+                self._format_text_for_log(representative_text),
             )
 
             if final_tag in valid_section_tags:
@@ -141,7 +173,7 @@ class IngestionService:
         chunk_id = 0
         total_paras = sum(len(s.paragraphs) for s in content_sections)
 
-        yield f"Applying semantic labels to {total_paras} paragraphs from content sections..."
+        yield f"Applying semantic labels to {total_paras} paragraphs..."
         para_count = 0
         for section in content_sections:
             for para in section.paragraphs:
@@ -150,15 +182,16 @@ class IngestionService:
                 if para.is_table or len(para_text) < 50:
                     continue
 
-                log.debug(
-                    "Labeling paragraph in section '%s': %s",
-                    section.title or "Untitled",
-                    self._format_text_for_log(para_text),
-                )
                 label = get_semantic_label(
-                    para_text, labeler_prompt, self.ollama_url, self.model
+                    para_text, labeler_prompt, self.ollama_url, classification_model
                 )
-                log.debug("  -> LLM assigned label: '%s'", label)
+
+                log.debug(
+                    "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
+                    classification_model,
+                    self._format_text_for_log(para_text),
+                    label,
+                )
 
                 if (para_count) % 25 == 0 or para_count == 1:
                     yield f"  -> Labeling paragraph {para_count}/{total_paras}..."

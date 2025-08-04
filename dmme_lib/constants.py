@@ -101,33 +101,7 @@ PROMPT_REGISTRY = {
             "- Use `e` for enemies, `c` for friendly characters.\n"
             "- Use `*` for important items.\n\n"
             "Your output MUST be ONLY the ASCII map, enclosed in a single Markdown code block."
-        ),
-        "es": (
-            "Eres un generador de mapas ASCII para un TTRPG. Tu tarea es crear un mapa "
-            "simple, cenital y estilo rogue-like basado en la descripción de una escena. "
-            "Máximo 60 caracteres de ancho.\n\n"
-            "LEYENDA:\n"
-            "- Usa `#` para muros.\n"
-            "- Usa `.` para suelos.\n"
-            "- Usa `+` para puertas.\n"
-            "- Usa `@` para los personajes jugadores (muestra uno para el grupo).\n"
-            "- Usa `e` para enemigos, `c` para personajes amistosos.\n"
-            "- Usa `*` para objetos importantes.\n\n"
-            "Tu salida DEBE ser ÚNICAMENTE el mapa ASCII, dentro de un único bloque de código Markdown."
-        ),
-        "ca": (
-            "Ets un generador de mapes ASCII per a un TTRPG. La teva tasca és crear un mapa "
-            "simple, zenital i d'estil rogue-like basat en la descripció d'una escena. "
-            "Màxim 60 caràcters d'amplada.\n\n"
-            "LLEGENDA:\n"
-            "- Fes servir `#` per a murs.\n"
-            "- Fes servir `.` per a terres.\n"
-            "- Fes servir `+` per a portes.\n"
-            "- Fes servir `@` per als personatges jugadors (ensenya'n un per al grup).\n"
-            "- Fes servir `e` per a enemics, `c` per a personatges amistosos.\n"
-            "- Fes servir `*` per a objectes importants.\n\n"
-            "La teva sortida HA DE SER ÚNICAMENT el mapa ASCII, dins d'un únic bloc de codi Markdown."
-        ),
+        )
     },
     "KICKOFF_ADVENTURE": {
         "en": (
@@ -251,44 +225,29 @@ PROMPT_REGISTRY = {
             "`read_aloud_text`, `item_description`, `location_description`, "
             "`mechanics`, `lore`, `dialogue`, `prose`. Your response must be ONLY "
             "the chosen label and nothing else."
-        ),
-        "es": (
-            "Eres un motor de análisis semántico. Analiza el fragmento de texto y "
-            "asigna UNA etiqueta de categoría principal de la lista: `stat_block`, "
-            "`read_aloud_text`, `item_description`, `location_description`, "
-            "`mechanics`, `lore`, `dialogue`, `prose`. Tu respuesta debe ser "
-            "ÚNICAMENTE la etiqueta elegida y nada más."
-        ),
-        "ca": (
-            "Ets un motor d'anàlisi semàntica. Analitza el fragment de text i "
-            "assigna UNA etiqueta de categoria principal de la llista: `stat_block`, "
-            "`read_aloud_text`, `item_description`, `location_description`, "
-            "`mechanics`, `lore`, `dialogue`, `prose`. La teva resposta ha de ser "
-            "ÚNICAMENT l'etiqueta escollida i res més."
-        ),
+        )
     },
     "SECTION_CLASSIFIER": {
         "en": (
-            "You are a document structure analysis engine. Analyze the provided "
-            "section title and opening text to classify the section's primary purpose. "
-            "Respond with ONE label from this list: `content`, `preface`, "
-            "`table_of_contents`, `legal`, `credits`, `index`, `appendix`. Your response "
-            "must be ONLY the chosen label and nothing else."
-        ),
-        "es": (
-            "Eres un motor de análisis de estructura de documentos. Analiza el título "
-            "de la sección y el texto de apertura para clasificar el propósito principal "
-            "de la sección. Responde con UNA etiqueta de esta lista: `content`, `preface`, "
-            "`table_of_contents`, `legal`, `credits`, `index`, `appendix`. Tu "
-            "respuesta debe ser ÚNICAMENTE la etiqueta elegida y nada más."
-        ),
-        "ca": (
-            "Ets un motor d'anàlisi d'estructura de documents. Analitza el títol de la "
-            "secció i el text d'obertura per a classificar el propòsit principal de la "
-            "secció. Respon amb UNA etiqueta d'aquesta llista: `content`, `preface`, "
-            "`table_of_contents`, `legal`, `credits`, `index`, `appendix`. La teva "
-            "resposta ha de ser ÚNICAMENT l'etiqueta escollida i res més."
-        ),
+            "You are a lead technical writer specializing in structuring manuals and rulebooks. "
+            "Your task is to classify a section of a document based on its role in "
+            "organizing information for the reader.\n\n"
+            "GUIDING PRINCIPLES:\n"
+            "1.  **Evaluate Function**: Evaluate the text to determine its primary function: "
+            "Is it setting the stage for the reader (preface), presenting the adventure's "
+            "world and rules (content), providing supplementary data (appendix), helping "
+            "with navigation (table_of_contents, index), or handling administrative "
+            "details (legal, credits)?\n"
+            "2.  **Clarify Distinction**: A `preface` talks *about the book* itself "
+            "(e.g., \"how to use this supplement,\" author's notes). In contrast, `content` "
+            "is the adventure itself, including **background lore**, world history, "
+            "location descriptions, and game mechanics.\n"
+            "3.  **Focus on Content**: Base your classification on the substance and "
+            "meaning of the text provided.\n\n"
+            "Respond with ONE label from this list: `table_of_contents`, `index`, "
+            "`credits`, `legal`, `preface`, `appendix`, `content`.\n\n"
+            "Your response must be ONLY the chosen label and nothing else."
+        )
     },
     "DESCRIBE_IMAGE": {
         "en": (
@@ -312,21 +271,9 @@ PROMPT_REGISTRY = {
     "CLASSIFY_IMAGE": {
         "en": (
             "You are a visual classification assistant for a TTRPG tool. Classify "
-            "the image as one of the following: `cover`, `art`, `map`, `handout`, "
+            "the image as one of the following: `cover`, `map`, `handout`, `art`, "
             "`decoration`, `other`. Your response must be ONLY one of these words "
             "and nothing else."
-        ),
-        "es": (
-            "Eres un asistente de clasificación visual para una herramienta de TTRPG. "
-            "Clasifica la imagen como una de las siguientes: `cover`, `art`, `map`, "
-            "`handout`, `decoration`, `other`. Tu respuesta debe ser ÚNICAMENTE una de "
-            "estas palabras y nada más."
-        ),
-        "ca": (
-            "Ets un assistent de classificació visual per a una eina de TTRPG. "
-            "Classifica la imatge com una de les següents: `cover`, `art`, `map`, "
-            "`handout`, `decoration`, `other`. La teva resposta ha de ser ÚNICAMENT "
-            "una d'aquestes paraules i res més."
-        ),
+        )
     },
 }

@@ -1,6 +1,8 @@
 # --- dmme_lib/services/rag_service.py ---
 import logging
 import re
+import json
+from flask import current_app
 from .vector_store_service import VectorStoreService
 from core.llm_utils import query_text_llm
 from dmme_lib.constants import PROMPT_REGISTRY
@@ -19,6 +21,13 @@ class RAGService:
         """Safely retrieves a prompt from the registry, falling back to English."""
         return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
 
+    def _format_text_for_log(self, text: str) -> str:
+        """Formats a long text block into a concise, single-line summary for logging."""
+        single_line_text = re.sub(r"\s+", " ", text).strip()
+        if len(single_line_text) > 100:
+            return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
+        return f'"{single_line_text}"'
+
     def generate_kickoff_narration(self, game_config: dict, recap: str = None):
         """
         Generates the initial narration for a new game or session.
@@ -31,15 +40,16 @@ class RAGService:
             raise ValueError("A module or setting knowledge base is required for kickoff.")
 
         query = "adventure introduction, summary, or starting location"
-        intro_docs, _ = self.vector_store.query(module_kb, query, n_results=5)
+        intro_docs, intro_metas = self.vector_store.query(module_kb, query, n_results=5)
         intro_context = "\n\n".join(intro_docs) or "No introductory text found."
 
-        guarded_context = (
-            f"[CONTEXT FROM KNOWLEDGE_BASE '{module_kb}' - {lang.upper()}]\n"
-            f"{intro_context}"
-        )
+        insight_data = [
+            {"label": meta.get("label", "prose"), "text": doc}
+            for doc, meta in zip(intro_docs, intro_metas)
+        ]
+        guarded_context = f"[CONTEXT FROM KNOWLEDGE_BASE '{module_kb}']\n{intro_context}"
         log.debug("Kickoff RAG context retrieved:\n%s", guarded_context)
-        yield {"type": "insight", "content": guarded_context}
+        yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
         prompt_content = f"[ADVENTURE INTRODUCTION]\n{intro_context}"
         if recap:
@@ -61,31 +71,90 @@ class RAGService:
         lang = game_config.get("language", "en")
         log.info("Generating RAG stream for command: '%s' in '%s'", player_command, lang)
 
-        kb_sources = {
-            "rules": game_config.get("rules"),
-            "module": (
-                game_config.get("module")
-                if game_config.get("mode") == "module"
-                else game_config.get("setting")
-            ),
-        }
-        kb_names_to_query = [name for name in kb_sources.values() if name]
+        module_kb = (
+            game_config.get("module")
+            if game_config.get("mode") == "module"
+            else game_config.get("setting")
+        )
+        rules_kb = game_config.get("rules")
 
-        context_blocks = []
-        for name in kb_names_to_query:
+        # Define priority for sorting descriptive chunks first
+        label_priority = [
+            "location_description",
+            "read_aloud_text",
+            "lore",
+            "prose",
+            "item_description",
+            "dialogue",
+            "mechanics",
+            "stat_block",
+        ]
+        priority_map = {label: i for i, label in enumerate(label_priority)}
+
+        # 1. Get and sort Module/Setting chunks
+        sorted_module_chunks = []
+        if module_kb:
             try:
-                docs, metas = self.vector_store.query(name, player_command, n_results=4)
-                if docs:
-                    source_lang = metas[0].get("language", "en").upper()
-                    block_content = "\n\n---\n\n".join(docs)
-                    context_blocks.append(
-                        f"[CONTEXT FROM KNOWLEDGE_BASE '{name}' - {source_lang}]\n{block_content}"
-                    )
+                docs, metas = self.vector_store.query(module_kb, player_command, n_results=4)
+                module_chunks = [
+                    {"text": doc, "label": meta.get("label", "prose")}
+                    for doc, meta in zip(docs, metas)
+                ]
+                sorted_module_chunks = sorted(
+                    module_chunks, key=lambda x: priority_map.get(x["label"], 99)
+                )
+                if sorted_module_chunks:
+                    log_msg = [
+                        f"Retrieved & sorted {len(sorted_module_chunks)} chunks from '{module_kb}':"
+                    ]
+                    for c in sorted_module_chunks:
+                        log_msg.append(
+                            f"  - Label: {c['label']:<20} | "
+                            f"Text: {self._format_text_for_log(c['text'])}"
+                        )
+                    log.debug("\n".join(log_msg))
             except Exception:
-                log.warning("Could not query or find collection '%s'.", name)
+                log.warning("Could not query or find module/setting KB '%s'.", module_kb)
+
+        # 2. Get Rules chunks
+        rules_chunks = []
+        if rules_kb:
+            try:
+                docs, metas = self.vector_store.query(rules_kb, player_command, n_results=2)
+                rules_chunks = [
+                    {"text": doc, "label": meta.get("label", "mechanics")}
+                    for doc, meta in zip(docs, metas)
+                ]
+                if rules_chunks:
+                    log_msg = [f"Retrieved {len(rules_chunks)} chunks from '{rules_kb}':"]
+                    for c in rules_chunks:
+                        log_msg.append(
+                            f"  - Label: {c['label']:<20} | "
+                            f"Text: {self._format_text_for_log(c['text'])}"
+                        )
+                    log.debug("\n".join(log_msg))
+            except Exception:
+                log.warning("Could not query or find rules KB '%s'.", rules_kb)
+
+        # 3. Build final context string and insight data
+        context_blocks = []
+        insight_data = []
+
+        if sorted_module_chunks:
+            context_blocks.append(
+                f"[CONTEXT FROM '{module_kb.upper()}']\n"
+                + "\n\n---\n\n".join(c["text"] for c in sorted_module_chunks)
+            )
+            insight_data.extend(sorted_module_chunks)
+        if rules_chunks:
+            context_blocks.append(
+                f"[CONTEXT FROM '{rules_kb.upper()}']\n"
+                + "\n\n---\n\n".join(c["text"] for c in rules_chunks)
+            )
+            insight_data.extend(rules_chunks)
 
         context_str = "\n\n".join(context_blocks) or "No specific context was found."
-        yield {"type": "insight", "content": context_str}
+        yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
         history_str = "\n".join([f"{t['role'].title()}: {t['content']}" for t in history])
         user_prompt = (
@@ -108,10 +177,10 @@ class RAGService:
         show_visuals = game_config.get("show_visual_aids", False)
         show_ascii = game_config.get("show_ascii_scene", False)
 
-        if full_narrative and kb_sources["module"]:
+        if full_narrative and module_kb:
             if show_visuals:
                 yield from self._find_and_yield_visual_aid(
-                    player_command, full_narrative, kb_sources["module"]
+                    player_command, full_narrative, module_kb
                 )
             if show_ascii:
                 yield from self._find_and_yield_ascii_map(full_narrative, game_config)
@@ -146,9 +215,13 @@ class RAGService:
         log.debug("Generating ASCII map for narrative.")
         try:
             lang = game_config.get("language", "en")
-            session_model = game_config.get("llm_model", self.model)
+            classification_model = current_app.config_service.get_settings()["Ollama"][
+                "classification_model"
+            ]
             prompt = self._get_prompt("ASCII_MAP_GENERATOR", lang)
-            map_response = query_text_llm(prompt, narrative, self.ollama_url, session_model)
+            map_response = query_text_llm(
+                prompt, narrative, self.ollama_url, classification_model
+            )
             if map_response:
                 # Clean the response to remove markdown code block delimiters
                 cleaned_map = re.sub(r"```(text|ascii)?\n?|\n?```", "", map_response).strip()

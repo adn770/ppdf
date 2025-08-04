@@ -19,15 +19,16 @@ export class DMInsight {
         });
     }
 
-    open(context) {
-        this.contentEl.textContent = context;
+    open() {
         this.overlay.style.display = 'block';
         this.modal.style.display = 'flex';
     }
 
     close() {
         // Only hide the overlay if no other modals are active
-        const isAnotherModalActive = document.querySelector('.modal[style*="display: flex"]:not(#dm-insight-modal)');
+        const isAnotherModalActive = document.querySelector(
+            '.modal[style*="display: flex"]:not(#dm-insight-modal)'
+        );
         if (!isAnotherModalActive) {
             this.overlay.style.display = 'none';
         }

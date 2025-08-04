@@ -6,6 +6,39 @@ import json
 log = logging.getLogger("dmme.llm_utils")
 
 
+def get_model_details(ollama_url: str, model: str) -> dict:
+    """Queries the Ollama /api/show endpoint for model details."""
+    log.info("Querying details for model: %s...", model)
+    try:
+        response = requests.post(f"{ollama_url}/api/show", json={"name": model}, timeout=10)
+        if response.status_code == 404:
+            log.error("Model '%s' not found.", model)
+            return {}  # Return empty dict on not found
+        response.raise_for_status()
+        model_info = response.json()
+        details = model_info.get("details", {})
+        context_length = 0
+        for line in model_info.get("modelfile", "").split("\n"):
+            if "num_ctx" in line.lower():
+                try:
+                    context_length = int(line.split()[1])
+                    break
+                except (ValueError, IndexError):
+                    continue
+
+        result = {
+            "family": details.get("family", "N/A"),
+            "parameter_size": details.get("parameter_size", "N/A"),
+            "quantization_level": details.get("quantization_level", "N/A"),
+            "context_length": context_length,
+        }
+        log.info("Model details retrieved: %s", result)
+        return result
+    except requests.exceptions.RequestException as e:
+        log.error("Could not connect to Ollama at %s: %s", ollama_url, e)
+        return {}
+
+
 def query_text_llm(
     prompt: str,
     user_content: str,

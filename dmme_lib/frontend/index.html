@@ -495,6 +495,11 @@
                                     data-section="Ollama" data-key="main_model" autocomplete="off">
                             </div>
                             <div class="form-group">
+                                <label for="ollama-classification-model" data-i18n-key="ollamaClassificationModel">Classification Model</label>
+                                <input type="text" id="ollama-classification-model" list="ollama-models-list"
+                                    data-section="Ollama" data-key="classification_model" autocomplete="off">
+                            </div>
+                            <div class="form-group">
                                 <label for="ollama-vision-model" data-i18n-key="ollamaVisionModel">Image Analysis Model</label>
                                 <input type="text" id="ollama-vision-model" list="ollama-models-list"
                                     data-section="Ollama" data-key="vision_model" autocomplete="off">
@@ -536,7 +541,7 @@
                 This is the raw context retrieved from the knowledge bases that
                 the AI used to generate its last response.
             </p>
-            <pre id="dm-insight-content" class="dm-insight-content-box"></pre>
+            <div id="dm-insight-content" class="dm-insight-content-box"></div>
         </div>
     </div>
 

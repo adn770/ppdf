@@ -7,9 +7,42 @@
     padding: 12px;
     height: 100%;
     overflow-y: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
     font-family: var(--font-family-mono);
     font-size: 0.9em;
     color: #ccc;
+}
+
+.dm-insight-chunk {
+    border-bottom: 1px dashed var(--border-color);
+    padding: 12px 0;
+    margin-bottom: 12px;
+}
+
+.dm-insight-chunk:first-child {
+    padding-top: 0;
+}
+
+.dm-insight-chunk:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.dm-insight-label {
+    display: inline-block;
+    background-color: var(--border-color);
+    color: var(--bg-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.dm-insight-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    padding: 0;
 }

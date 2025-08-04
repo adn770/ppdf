@@ -6,15 +6,23 @@ import logging
 import requests
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
+from flask import current_app
 
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTImage
 
 from .extractor import PDFTextExtractor
 from .models import Section
-from core.llm_utils import get_semantic_label
 
 log = logging.getLogger("ppdf.api")
+
+
+def _get_classification_model():
+    """Gets the classification model from the app's config service."""
+    # This check is needed because ppdf.py can run standalone without a Flask app context
+    if not current_app:
+        return "llama3:latest"  # Fallback for standalone mode
+    return current_app.config_service.get_settings()["Ollama"]["classification_model"]
 
 
 def _parse_page_selection(pages_str: str) -> set | None:
@@ -131,17 +139,22 @@ def process_pdf_images(
 
     image_count = 0
     pages_to_process = _parse_page_selection(pages_str)
-    # pdfminer uses 0-indexed page numbers
-    page_numbers = [p - 1 for p in pages_to_process] if pages_to_process else None
 
-    pages = list(extract_pages(pdf_path, page_numbers=page_numbers))
-    total_pages = len(list(extract_pages(pdf_path)))  # Get total for classification heuristic
-    message = f"Found {len(pages)} pages to scan for images."
+    # Parse all pages once to be efficient
+    all_page_layouts = list(extract_pages(pdf_path))
+    total_pages = len(all_page_layouts)
+
+    # Filter pages in memory based on user selection
+    pages_to_scan = [
+        p for p in all_page_layouts if not pages_to_process or p.pageid in pages_to_process
+    ]
+
+    message = f"Found {len(pages_to_scan)} pages to scan for images."
     log.info(message)
     yield message
 
-    for i, page_layout in enumerate(pages):
-        message = f"Scanning page {page_layout.pageid} ({i + 1}/{len(pages)})..."
+    for i, page_layout in enumerate(pages_to_scan):
+        message = f"Scanning page {page_layout.pageid} ({i + 1}/{len(pages_to_scan)})..."
         log.info(message)
         yield message
         for element in find_images_recursively(page_layout):
@@ -211,9 +224,9 @@ def process_pdf_images(
                         if bpc == 1:
                             mode = "1"
                         elif bpc == 8:
-                            if cs == "/DeviceGray":
+                            if cs == b"/DeviceGray":
                                 mode = "L"
-                            elif cs == "/DeviceRGB" or isinstance(cs, list):
+                            elif cs == b"/DeviceRGB" or isinstance(cs, list):
                                 mode = "RGB"
 
                         # If mode is still unknown, fallback to data length heuristic
@@ -256,6 +269,7 @@ def process_pdf_images(
             )
 
             # Intelligent Classification
+            classification_model = _get_classification_model()
             page_type = extractor._classify_page_type(page_layout, [], [element], total_pages)
             if page_type in ["cover", "art"]:
                 classification = page_type
@@ -264,7 +278,20 @@ def process_pdf_images(
                 )
             else:
                 classification = _query_multimodal_llm(
-                    classify_prompt, saved_image_bytes, ollama_url, model, temperature=0.1
+                    classify_prompt,
+                    saved_image_bytes,
+                    ollama_url,
+                    classification_model,
+                    temperature=0.1,
+                )
+                log.debug(
+                    "Image Classification:\n"
+                    "  - Model: %s\n"
+                    "  - Prompt: %s\n"
+                    "  - Classification: %s",
+                    classification_model,
+                    classify_prompt.replace("\n", " "),
+                    classification,
                 )
 
             valid_cats = {"cover", "art", "map", "handout", "decoration", "other"}

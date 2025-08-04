@@ -133,7 +133,6 @@ export class SettingsManager {
         const headers = [
             i18n.t('kbHeaderName'), ...sortedMetaKeys.map(k => i18n.t(`kbHeader${k.charAt(0).toUpperCase() + k.slice(1).replace('kb_','')}`)), i18n.t('kbHeaderDocs')
         ];
-        
         const table = document.createElement('table');
         table.className = 'info-table';
         const thead = document.createElement('thead');
@@ -153,6 +152,7 @@ export class SettingsManager {
             row.innerHTML = cells;
             tbody.appendChild(row);
         });
+
         table.appendChild(thead);
         table.appendChild(tbody);
         this.ragStatusContainer.innerHTML = '';
@@ -169,6 +169,7 @@ export class SettingsManager {
             'deleteKbMsg',
             { name: kbName }
         );
+
         if (confirmed) {
             try {
                 await apiCall(`/api/knowledge/${kbName}`, { method: 'DELETE' });
@@ -187,6 +188,7 @@ export class SettingsManager {
             Ollama: {},
             Game: {}
         };
+
         this.inputs.forEach(input => {
             const section = input.dataset.section;
             const key = input.dataset.key;
@@ -195,11 +197,13 @@ export class SettingsManager {
             }
             newSettings[section][key] = input.value;
         });
+
         await apiCall('/api/settings/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newSettings),
         });
+
         this.app.settings = newSettings; // Update the global app settings
         this.applyTheme(this.app.settings.Appearance.theme);
         this.app.i18n.setLanguage(this.app.settings.Appearance.language);

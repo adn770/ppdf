@@ -115,7 +115,7 @@ def ingest_document():
                 if is_pdf:
                     assets_path = app.config["ASSETS_PATH"]
                     for msg in ingestion_service.process_and_extract_images(
-                        tmp_path, assets_path, metadata
+                        tmp_path, assets_path, metadata, pages_str=pages_str
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
 
