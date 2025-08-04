@@ -82,7 +82,13 @@ class IngestionService:
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
 
-    def ingest_pdf_text(self, pdf_path: str, metadata: dict, pages_str: str = "all"):
+    def ingest_pdf_text(
+        self,
+        pdf_path: str,
+        metadata: dict,
+        pages_str: str = "all",
+        sections_to_include: list[str] | None = None,
+    ):
         """Processes and ingests a PDF file's text content, yielding progress."""
         kb_name = metadata.get("kb_name")
         lang = metadata.get("language", "en")
@@ -95,6 +101,15 @@ class IngestionService:
             pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
         )
         yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
+
+        # --- Section Filtering based on user selection (if provided) ---
+        if sections_to_include:
+            original_count = len(sections)
+            sections = [s for s in sections if s.title in sections_to_include]
+            yield (
+                f"✔ Filtered to {len(sections)} user-selected sections "
+                f"(out of {original_count})."
+            )
 
         # --- Section-level Classification and Filtering ---
         page_type_map = {pm.page_num: pm.page_type for pm in page_models}
@@ -216,7 +231,7 @@ class IngestionService:
         yield "✔ Saved to vector store."
 
     def process_and_extract_images(
-        self, pdf_path: str, assets_path: str, metadata: dict, pages_str: str = "all"
+        self, assets_path: str, metadata: dict, pages_str: str = "all"
     ):
         """Extracts images from a PDF and processes them using language-aware prompts."""
         kb_name = metadata.get("kb_name")
