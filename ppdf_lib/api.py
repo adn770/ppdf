@@ -112,6 +112,31 @@ def process_pdf_text(
     return sections, extractor.page_models
 
 
+def analyze_pdf_structure(pdf_path: str, pages_str: str = "all") -> list[dict]:
+    """
+    Performs a read-only analysis of a PDF to get its logical section structure.
+    """
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+
+    # Use default extractor settings for analysis
+    extractor = PDFTextExtractor(pdf_path)
+    pages_to_process = _parse_page_selection(pages_str)
+    sections = extractor.extract_sections(pages_to_process=pages_to_process)
+
+    # Convert Section objects to a JSON-serializable list of dictionaries
+    section_list = [
+        {
+            "title": s.title or "Untitled Section",
+            "page_start": s.page_start,
+            "page_end": s.page_end,
+            "char_count": len(s.get_text()),
+        }
+        for s in sections
+    ]
+    return section_list
+
+
 def process_pdf_images(
     pdf_path: str,
     output_dir: str,

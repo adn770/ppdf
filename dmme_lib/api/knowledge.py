@@ -5,6 +5,7 @@ import shutil
 import logging
 import uuid
 from flask import Blueprint, request, jsonify, current_app, Response
+from ppdf_lib.api import analyze_pdf_structure
 
 bp = Blueprint("knowledge", __name__)
 log = logging.getLogger("dmme.api")
@@ -115,6 +116,32 @@ def upload_temp_file():
     except Exception as e:
         log.error("Failed to save temporary file: %s", e, exc_info=True)
         return jsonify({"error": "Failed to save temporary file"}), 500
+
+
+@bp.route("/analyze", methods=["POST"])
+def analyze_document():
+    """Analyzes a document's structure without performing full ingestion."""
+    data = request.get_json()
+    tmp_path = data.get("temp_file_path")
+    pages_str = data.get("pages", "all")
+
+    if not tmp_path or not os.path.exists(tmp_path) or not tmp_path.startswith(TEMP_DIR):
+        log.warning("Invalid or non-existent temp_file_path for analysis: %s", tmp_path)
+        return jsonify({"error": "A valid temporary file path is required"}), 400
+
+    try:
+        # Analysis is currently only supported for PDF files
+        if not tmp_path.lower().endswith(".pdf"):
+            log.info("Analysis requested for non-PDF file, returning empty structure.")
+            return jsonify([])
+
+        log.info("Starting structural analysis for: %s", tmp_path)
+        sections = analyze_pdf_structure(tmp_path, pages_str)
+        log.info("Analysis complete, found %d sections.", len(sections))
+        return jsonify(sections)
+    except Exception as e:
+        log.error("Document analysis failed for '%s': %s", tmp_path, e, exc_info=True)
+        return jsonify({"error": "Failed to analyze document structure."}), 500
 
 
 @bp.route("/ingest-document", methods=["POST"])
