@@ -165,6 +165,7 @@ def process_pdf_images(
             image_count += 1
             img_id = f"image_{image_count:03d}"
             image_filename = os.path.join(output_dir, f"{img_id}.png")
+            thumb_filename = os.path.join(output_dir, f"thumb_{img_id}.jpg")
             json_filename = os.path.join(output_dir, f"{img_id}.json")
 
             image_data = None
@@ -180,9 +181,16 @@ def process_pdf_images(
                 message = f"Saved image {image_count} from page {page_layout.pageid}."
                 log.info(message)
                 yield message
+
+                # --- Create and save thumbnail ---
+                img.thumbnail((256, 256))
+                img.save(thumb_filename, "JPEG", quality=85)
+                yield f"  -> Created thumbnail for image {image_count}."
+
             except UnidentifiedImageError:
                 log.warning(
-                    "Could not identify image format for an image on page %d. Attempting raw reconstruction.",
+                    "Could not identify image format for an image on page %d. "
+                    "Attempting raw reconstruction.",
                     page_layout.pageid,
                 )
                 if image_data:
@@ -240,13 +248,17 @@ def process_pdf_images(
 
                         if mode:
                             log.debug(
-                                "Attempting reconstruction with mode '%s' and true dimensions %s",
+                                "Attempting reconstruction with mode '%s' and true "
+                                "dimensions %s",
                                 mode,
                                 size,
                             )
                             img = Image.frombytes(mode, size, image_data)
                             img.save(image_filename, "PNG")
-                            message = f"Successfully reconstructed and saved raw image {image_count}."
+                            message = (
+                                "Successfully reconstructed and saved raw image "
+                                f"{image_count}."
+                            )
                             log.info(message)
                             yield message
                         else:
@@ -308,6 +320,7 @@ def process_pdf_images(
                 "bbox": [element.x0, element.y0, element.x1, element.y1],
                 "description": description or "Description generation failed.",
                 "classification": classification,
+                "thumbnail_filename": os.path.basename(thumb_filename),
             }
             with open(json_filename, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=4)

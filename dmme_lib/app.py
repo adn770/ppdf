@@ -53,7 +53,10 @@ def create_app(config_overrides=None):
             app.vector_store, app.config["OLLAMA_URL"], app.config["OLLAMA_MODEL"]
         )
         app.rag_service = RAGService(
-            app.vector_store, app.config["OLLAMA_URL"], app.config["OLLAMA_MODEL"]
+            app.vector_store,
+            app.config["OLLAMA_URL"],
+            app.config["OLLAMA_MODEL"],
+            app.config["ASSETS_PATH"],
         )
         with app.app_context():
             app.storage.init_db()

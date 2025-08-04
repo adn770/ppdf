@@ -1,0 +1,38 @@
+/* dmme_lib/frontend/css/components/lightbox.css */
+
+.modal-lightbox {
+    display: none;
+    position: fixed;
+    z-index: 1003; /* Higher than modal overlay */
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 90vh;
+}
+
+.lightbox-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.lightbox-close-btn:hover,
+.lightbox-close-btn:focus {
+    color: #bbb;
+    text-decoration: none;
+}

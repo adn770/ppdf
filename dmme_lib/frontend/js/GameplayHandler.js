@@ -1,6 +1,5 @@
 // dmme_lib/frontend/js/GameplayHandler.js
 import { showGameSpinner, hideGameSpinner } from './ui.js';
-
 export class GameplayHandler {
     constructor(appInstance, dmInsightInstance) {
         this.app = appInstance;
@@ -14,7 +13,6 @@ export class GameplayHandler {
         this.showVisualAids = false;
         this.showAsciiScene = false;
         this.lastInsightContent = '';
-
         // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
         this.fontSizeSlider = document.getElementById('font-size-slider');
@@ -22,6 +20,10 @@ export class GameplayHandler {
         this.toggleVisualAidsBtn = document.getElementById('toggle-visual-aids-btn');
         this.toggleAsciiSceneBtn = document.getElementById('toggle-ascii-scene-btn');
         this.insightToolbarBtn = document.getElementById('dm-insight-btn-toolbar');
+        // Image Lightbox elements
+        this.lightboxModal = document.getElementById('image-lightbox-modal');
+        this.lightboxImage = document.getElementById('image-lightbox-content');
+        this.lightboxClose = document.getElementById('image-lightbox-close');
 
         this._addEventListeners();
     }
@@ -56,6 +58,7 @@ export class GameplayHandler {
         this.toggleVisualAidsBtn.addEventListener('click', () => this._toggleVisualAids());
         this.toggleAsciiSceneBtn.addEventListener('click', () => this._toggleAsciiScene());
         this.insightToolbarBtn.addEventListener('click', () => this._showLastInsight());
+        this.lightboxClose.addEventListener('click', () => this._closeLightbox());
     }
 
     _applyInitialStyles() {
@@ -100,7 +103,8 @@ export class GameplayHandler {
         const i18n = this.app.i18n;
         let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
         if (this.gameConfig.llm_model) {
-            kbHtml += ` | <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
+            kbHtml += ` |
+                <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
         }
         this.kbDisplay.innerHTML = kbHtml;
     }
@@ -110,7 +114,6 @@ export class GameplayHandler {
         this.sendCommandBtn.disabled = true;
         this.narrativeView.innerHTML = ''; // Clear view for new game
         showGameSpinner();
-
         const { entry, paragraph } = this._createAiResponseEntry();
 
         try {
@@ -209,7 +212,6 @@ export class GameplayHandler {
 
         try {
             const insights = JSON.parse(this.lastInsightContent);
-
             if (insights.length === 0) {
                 const emptyMsg = document.createElement('p');
                 emptyMsg.className = 'dm-insight-empty';
@@ -242,12 +244,24 @@ export class GameplayHandler {
         }
     }
 
+    _renderCoverMosaic(chunk) {
+        const container = document.createElement('div');
+        container.className = 'cover-mosaic-container';
+        chunk.image_urls.forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            container.appendChild(img);
+        });
+        this.narrativeView.prepend(container);
+    }
+
     _renderVisualAid(chunk) {
         const figure = document.createElement('figure');
         figure.className = 'narrative-entry visual-aid-container';
+        figure.addEventListener('click', () => this._openLightbox(chunk.full_url));
 
         const img = document.createElement('img');
-        img.src = chunk.image_url;
+        img.src = chunk.thumb_url;
         img.alt = chunk.caption;
         img.title = chunk.caption;
         const figcaption = document.createElement('figcaption');
@@ -258,6 +272,16 @@ export class GameplayHandler {
 
         this.narrativeView.appendChild(figure);
         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
+    }
+
+    _openLightbox(src) {
+        this.lightboxImage.src = src;
+        this.lightboxModal.style.display = 'block';
+    }
+
+    _closeLightbox() {
+        this.lightboxModal.style.display = 'none';
+        this.lightboxImage.src = '';
     }
 
     _renderAsciiMap(chunk) {
@@ -282,8 +306,7 @@ export class GameplayHandler {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop();
-            // Keep the potentially incomplete last line
+            buffer = lines.pop(); // Keep the potentially incomplete last line
 
             for (const line of lines) {
                 if (!line.trim()) continue;
@@ -291,6 +314,8 @@ export class GameplayHandler {
                     const chunk = JSON.parse(line);
                     if (chunk.type === 'insight') {
                         this.lastInsightContent = chunk.content;
+                    } else if (chunk.type === 'cover_mosaic') {
+                        this._renderCoverMosaic(chunk);
                     } else if (chunk.type === 'narrative_chunk') {
                         let content = chunk.content;
                         if (content.includes('\n\n')) {

@@ -241,6 +241,32 @@ class IngestionService:
             pages_str=pages_str,
         )
 
+    def _create_asset_manifest(self, final_dir: str):
+        """Creates an assets.json manifest file in the final asset directory."""
+        manifest = {}
+        try:
+            for filename in sorted(os.listdir(final_dir)):
+                if not filename.endswith(".json") or filename == "assets.json":
+                    continue
+                with open(os.path.join(final_dir, filename), "r") as f:
+                    data = json.load(f)
+
+                classification = data.get("classification")
+                thumb_filename = data.get("thumbnail_filename")
+                if classification and thumb_filename:
+                    cat_key = f"{classification}s"
+                    if cat_key not in manifest:
+                        manifest[cat_key] = []
+                    thumb_path = os.path.join(os.path.basename(final_dir), thumb_filename)
+                    manifest[cat_key].append(thumb_path)
+
+            manifest_path = os.path.join(final_dir, "assets.json")
+            with open(manifest_path, "w") as f:
+                json.dump(manifest, f, indent=4)
+            log.info("Created asset manifest at %s", manifest_path)
+        except Exception as e:
+            log.error("Failed to create asset manifest: %s", e)
+
     def ingest_images(self, kb_name: str, assets_path: str):
         """Finalizes image ingestion from a review directory."""
         review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
@@ -265,14 +291,17 @@ class IngestionService:
             )
             documents.append(doc_text)
 
-            image_filename = json_file.replace(".png", ".json")
+            image_filename = json_file.replace(".json", ".png")
+            thumb_filename = data.get("thumbnail_filename", "")
             final_image_path = os.path.join("images", kb_name, image_filename)
+            final_thumb_path = os.path.join("images", kb_name, thumb_filename)
             metadatas.append(
                 {
                     "source_file": "PDF Images",
                     "label": "image_description",
                     "classification": data["classification"],
                     "image_url": final_image_path,
+                    "thumbnail_url": final_thumb_path,
                 }
             )
         log.info("Prepared %d images for vector store ingestion.", len(documents))
@@ -284,6 +313,10 @@ class IngestionService:
         if os.path.exists(final_dir):
             shutil.rmtree(final_dir)
         os.rename(review_dir, final_dir)
+
+        # Create the asset manifest after the final directory is in place
+        self._create_asset_manifest(final_dir)
+
         log.info(
             "Image ingestion for '%s' finalized. Review dir promoted to: %s",
             kb_name,

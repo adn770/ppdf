@@ -42,9 +42,18 @@ def list_knowledge_bases():
 
 @bp.route("/<kb_name>", methods=["DELETE"])
 def delete_knowledge_base(kb_name):
-    """Deletes a knowledge base."""
+    """Deletes a knowledge base and its associated assets."""
     try:
+        # Delete the ChromaDB collection
         current_app.vector_store.delete_kb(kb_name)
+
+        # Delete the associated asset directory
+        assets_path = current_app.config["ASSETS_PATH"]
+        kb_asset_dir = os.path.join(assets_path, "images", kb_name)
+        if os.path.isdir(kb_asset_dir):
+            shutil.rmtree(kb_asset_dir)
+            log.info("Deleted asset directory: %s", kb_asset_dir)
+
         return jsonify({"success": True, "message": f"Knowledge base '{kb_name}' deleted."})
     except Exception as e:
         log.error("Failed to delete knowledge base '%s': %s", kb_name, e, exc_info=True)

@@ -2,6 +2,7 @@
 import logging
 import re
 import json
+import os
 from flask import current_app
 from .vector_store_service import VectorStoreService
 from core.llm_utils import query_text_llm
@@ -11,10 +12,13 @@ log = logging.getLogger("dmme.rag")
 
 
 class RAGService:
-    def __init__(self, vector_store: VectorStoreService, ollama_url: str, model: str):
+    def __init__(
+        self, vector_store: VectorStoreService, ollama_url: str, model: str, assets_path: str
+    ):
         self.vector_store = vector_store
         self.ollama_url = ollama_url
         self.model = model
+        self.assets_path = assets_path
         log.info("RAGService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
@@ -55,9 +59,16 @@ class RAGService:
         """
         lang = game_config.get("language", "en")
         log.info("Generating kickoff narration for game in '%s'.", lang)
-        module_kb = game_config.get("module") or game_config.get("setting")
-        if not module_kb:
+        module_kb = game_config.get("module")
+        setting_kb = game_config.get("setting")
+        active_kb = module_kb or setting_kb
+
+        if not active_kb:
             raise ValueError("A module or setting knowledge base is required for kickoff.")
+
+        # --- Yield Cover Mosaic for Module Mode ---
+        if game_config.get("mode") == "module" and module_kb:
+            yield from self._find_and_yield_cover_mosaic(module_kb)
 
         priority_labels = ["read_aloud_kickoff", "adventure_hook"]
         found_docs, found_metas = [], []
@@ -66,24 +77,24 @@ class RAGService:
         for label in priority_labels:
             log.debug("Searching for kickoff content with priority label: '%s'", label)
             docs, metas = self.vector_store.query(
-                module_kb,
+                active_kb,
                 query_text=f"Text for starting an adventure, like a {label.replace('_', ' ')}",
                 n_results=1,
                 where_filter={"label": label},
             )
             if docs:
                 log.info("Found high-priority kickoff content with label '%s'.", label)
-                found_docs, found_metas = self._get_full_section(module_kb, metas[0])
+                found_docs, found_metas = self._get_full_section(active_kb, metas[0])
                 break
 
         # Fallback: General search if no priority content was found
         if not found_docs:
             log.debug("No high-priority content found. Falling back to general search.")
             docs, metas = self.vector_store.query(
-                module_kb, "adventure introduction, summary, or starting location", n_results=1
+                active_kb, "adventure introduction, summary, or starting location", n_results=1
             )
             if docs:
-                found_docs, found_metas = self._get_full_section(module_kb, metas[0])
+                found_docs, found_metas = self._get_full_section(active_kb, metas[0])
 
         if not found_docs:
             found_docs = ["No introductory text was found in the knowledge base."]
@@ -151,7 +162,8 @@ class RAGService:
                 )
                 if sorted_module_chunks:
                     log_msg = [
-                        f"Retrieved & sorted {len(sorted_module_chunks)} chunks from '{module_kb}':"
+                        f"Retrieved & sorted {len(sorted_module_chunks)} chunks from "
+                        f"'{module_kb}':"
                     ]
                     for c in sorted_module_chunks:
                         log_msg.append(
@@ -231,6 +243,28 @@ class RAGService:
             if show_ascii:
                 yield from self._find_and_yield_ascii_map(full_narrative, game_config)
 
+    def _find_and_yield_cover_mosaic(self, kb_name: str):
+        """Finds up to 4 cover images from the manifest and yields them as a mosaic."""
+        log.debug("Searching for asset manifest in '%s' for mosaic.", kb_name)
+        try:
+            manifest_path = os.path.join(self.assets_path, "images", kb_name, "assets.json")
+
+            if os.path.exists(manifest_path):
+                with open(manifest_path, "r") as f:
+                    manifest = json.load(f)
+                cover_urls = manifest.get("covers", [])[:4]
+                if len(cover_urls) > 1:
+                    last_image = cover_urls.pop()
+                    cover_urls.insert(0, last_image)
+                if cover_urls:
+                    log.info("Found %d cover images in manifest for mosaic.", len(cover_urls))
+                    yield {
+                        "type": "cover_mosaic",
+                        "image_urls": [f"/assets/images/{url}" for url in cover_urls],
+                    }
+        except Exception as e:
+            log.error("Failed during cover mosaic manifest processing: %s", e)
+
     def _find_and_yield_visual_aid(self, command, narrative, kb_name):
         """Queries for a relevant image and yields a visual_aid chunk if found."""
         log.debug("Searching for relevant visual aid in '%s'.", kb_name)
@@ -245,12 +279,14 @@ class RAGService:
             if docs and metas:
                 image_doc = docs[0]
                 image_meta = metas[0]
-                image_path = image_meta.get("image_url")
-                if image_path:
-                    log.info("Found relevant visual aid: %s", image_path)
+                full_url = image_meta.get("image_url")
+                thumb_url = image_meta.get("thumbnail_url")
+                if full_url and thumb_url:
+                    log.info("Found relevant visual aid: %s", full_url)
                     yield {
                         "type": "visual_aid",
-                        "image_url": f"/assets/{image_path}",
+                        "full_url": f"/assets/{full_url}",
+                        "thumb_url": f"/assets/{thumb_url}",
                         "caption": image_doc,
                     }
         except Exception as e:

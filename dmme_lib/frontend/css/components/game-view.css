@@ -231,6 +231,23 @@
     transition: font-size 0.1s, line-height 0.1s;
 }
 
+.cover-mosaic-container {
+    display: flex;
+    gap: 0;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 0;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cover-mosaic-container img {
+    height: 240px;
+    border-radius: 0;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
 .narrative-view .narrative-entry {
     margin: 1em 1.5rem;
     position: relative;
@@ -248,10 +265,19 @@
 
 .visual-aid-container {
     margin: 1em 0;
+    display: inline-block;
+    max-width: 256px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     padding: 8px;
     background-color: var(--bg-color);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.visual-aid-container:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 8px var(--focus-color);
 }
 
 .visual-aid-container img {
