@@ -82,9 +82,35 @@
 }
 
 #library-asset-view {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.asset-dropzone {
+    flex-shrink: 0;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.asset-dropzone.drag-over {
+    border-color: var(--accent-color);
+    background-color: rgba(0, 122, 204, 0.1);
+    color: var(--accent-hover);
+}
+
+.asset-grid {
+    flex-grow: 1;
+    overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 16px;
+    padding-right: 8px; /* For scrollbar */
 }
 
 .asset-card {

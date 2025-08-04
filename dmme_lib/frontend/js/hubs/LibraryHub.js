@@ -1,6 +1,5 @@
 // dmme_lib/frontend/js/hubs/LibraryHub.js
 import { apiCall } from '../wizards/ApiHelper.js';
-
 export class LibraryHub {
     constructor(appInstance) {
         this.app = appInstance;
@@ -14,17 +13,16 @@ export class LibraryHub {
         this.content = document.getElementById('library-inspector-content');
         this.textView = document.getElementById('library-text-view');
         this.assetView = document.getElementById('library-asset-view');
+        this.assetGrid = document.getElementById('asset-grid-container');
         this.tabs = this.inspector.querySelectorAll('.hub-tab-btn');
     }
 
     init() {
         if (this.isInitialized) return;
         this.loadKnowledgeBases();
-
         this.tabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchTab(tab.dataset.pane));
         });
-
         this.isInitialized = true;
     }
 
@@ -70,19 +68,17 @@ export class LibraryHub {
         this.listEl.querySelectorAll('li').forEach(li => {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
-
         this.placeholder.style.display = 'none';
         this.content.style.display = 'block';
         this.textView.innerHTML = `<div class="spinner"></div>`;
-        this.assetView.innerHTML = `<div class="spinner"></div>`;
-
+        this.assetGrid.innerHTML = `<div class="spinner"></div>`;
         try {
             const data = await apiCall(`/api/knowledge/explore/${kb.name}`);
             this.renderTextView(data.documents);
             this.renderAssetView(data.assets);
         } catch (error) {
             this.textView.innerHTML = `<p class="error">Failed to load content.</p>`;
-            this.assetView.innerHTML = `<p class="error">Failed to load assets.</p>`;
+            this.assetGrid.innerHTML = `<p class="error">Failed to load assets.</p>`;
         }
     }
 
@@ -110,9 +106,9 @@ export class LibraryHub {
     }
 
     renderAssetView(assets) {
-        this.assetView.innerHTML = '';
+        this.assetGrid.innerHTML = '';
         if (!assets || assets.length === 0) {
-            this.assetView.innerHTML = `<p>No assets found in this knowledge base.</p>`;
+            this.assetGrid.innerHTML = `<p>${this.app.i18n.t('noAssetsFound')}</p>`;
             return;
         }
 
@@ -123,7 +119,7 @@ export class LibraryHub {
                 <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
                 <p>${asset.classification}</p>
             `;
-            this.assetView.appendChild(card);
+            this.assetGrid.appendChild(card);
         });
     }
 
