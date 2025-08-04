@@ -605,15 +605,25 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The backend can generate and persist narrative summaries of gameplay
         sessions.
 
--   **Milestone 24: Implement Campaign Load and Recap UI**
-    -   **Goal**: Build the user interface for loading a campaign and displaying the
-        latest session recap.
-    -   **Description**: This milestone creates the workflow for returning to a saved game.
-    -   **Key Tasks**: Build the "Load Campaign" modal, populated by calling `GET
-        /api/campaigns`. When a user loads a campaign, fetch the latest session recap
-        and display it in a prominent modal before gameplay begins.
-    -   **Outcome**: A user can load a saved campaign and is immediately presented with a
-        summary of their last session.
+### Phase 6 (Refined): Campaign Continuation
+
+-   **Milestone 24.1: Enhance Campaign Persistence**
+    -   **Goal:** Enhance the backend to save the initial `gameConfig` when a campaign is created.
+    -   **Description:** To properly resume a game, the system needs to know which knowledge bases and settings were used to start it. This milestone adds the necessary persistence logic.
+    -   **Key Tasks:** Add a `game_config_json` TEXT column to the `campaigns` table in `storage_service.py`. Modify the `create_campaign` API and service method to accept and store the JSON representation of the `gameConfig`.
+    -   **Outcome:** New campaigns saved in the database now include the configuration required to restart them.
+
+-   **Milestone 24.2: Implement Campaign State API**
+    -   **Goal:** Create a backend endpoint to retrieve all data needed to resume a campaign.
+    -   **Description:** This API will provide the frontend with the saved `gameConfig` and the full narrative history from the last session.
+    -   **Key Tasks:** Create a new endpoint, `GET /api/campaigns/<id>/state`. The service logic will fetch the campaign's `game_config_json` and combine it with the narrative log of the most recent session.
+    -   **Outcome:** A functional API endpoint that the frontend can call to get all necessary data to reconstruct and continue a saved game.
+
+-   **Milestone 24.3: Implement Frontend Campaign Continuation**
+    -   **Goal:** Wire the "Continue Campaign" button to fully load and resume a saved game.
+    -   **Description:** This completes the user-facing feature by replacing the placeholder logic with a call to the new state API and initializing the game view.
+    -   **Key Tasks:** In `LoadCampaignWizard.js`, modify the `recapContinueBtn`'s event listener. It should now call the `/api/campaigns/<id>/state` endpoint. On success, it will call the main application's `startGame()` method, passing in the retrieved game config and the historical narrative log.
+    -   **Outcome:** A user can load a saved campaign, view the recap, and click "Continue" to seamlessly resume their adventure exactly where they left off.
 
 ### Phase 7: Optional Game Aids
 
@@ -724,7 +734,7 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome:** The Library and Party hubs are visually complete and display
         existing KBs and Parties.
 
-### Phase 10: Advanced Ingestion & Management
+### Phase 10 (Refined): Advanced Ingestion Workflow
 
 -   **Milestone 33: Implement Content Explorer**
     -   **Goal:** Allow users to view the indexed content of a Knowledge Base.
@@ -734,37 +744,67 @@ This implementation plan details the incremental steps to build the `dmme` appli
             "Asset View" in the Library Hub.
     -   **Outcome:** A user can select a KB and browse all of its indexed content.
 
--   **Milestone 34: Refactor Ingestion for Sectional Control**
-    -   **Goal:** Overhaul the ingestion workflow to support the new review step.
-    -   **Key Tasks:**
-        -   Create a new API endpoint `POST /api/knowledge/analyze` that returns a
-            list of sections from a file.
-        -   Modify the main ingestion endpoint to accept a user-configured list of
-            sections.
-        -   Integrate this two-stage process into the Import Wizard now located
-            inside the Library Hub.
-    -   **Outcome:** A user can upload a file, review its sections, apply cues or
-        exclusions, and then finalize the ingestion.
+-   **Milestone 34.1: Backend - Create Analysis Endpoint**
+    -   **Goal:** Create a backend API that analyzes a document's structure without full ingestion.
+    -   **Description:** This is the first stage of the two-stage ingestion process. This endpoint will invoke `ppdf` to get a high-level structural overview (list of sections) of a document.
+    -   **Key Tasks:** Implement `POST /api/knowledge/analyze`. This should call a refactored `ppdf_lib` function that returns a JSON list of logical sections (e.g., `[{title: "Chapter 1", page_start: 5}, ...]`).
+    -   **Outcome:** A functional API endpoint that returns a document's structure for review.
 
-### Phase 11: Character & Asset Management
+-   **Milestone 34.2: Frontend - Build Section Review UI**
+    -   **Goal:** Create the user interface for the new "Section Review" step in the Import Wizard.
+    -   **Description:** This new UI pane will display the list of sections returned by the analysis endpoint, allowing the user to select which ones to include or exclude.
+    -   **Key Tasks:** Add a new pane to the Import Wizard in `index.html`. Write the JavaScript in `ImportWizard.js` to display the section list with checkboxes.
+    -   **Outcome:** A user can upload a document and see a list of its logical sections in a new wizard step.
 
--   **Milestone 35: Implement Character Creator in Party Hub**
-    -   **Goal:** Move all character creation and management functionality into the
-        new Party Hub.
-    -   **Key Tasks:**
-        -   Integrate the existing character editor and AI generator UI into the
-            right-hand panel of the Party Hub.
-        -   Ensure all backend API calls for creating/deleting characters work
-            correctly from this new view.
-    -   **Outcome:** The Party Hub is a fully functional interface for managing all
-        parties and characters.
+-   **Milestone 34.3: Backend - Refactor Ingestion Endpoint**
+    -   **Goal:** Modify the final ingestion endpoint to accept user configurations.
+    -   **Description:** The main ingestion service will be updated to process only the sections specified by the user in the new review step.
+    -   **Key Tasks:** Update the `/api/knowledge/ingest-document` endpoint. It will now accept an additional parameter: a list of section configurations (e.g., which titles to include/exclude). The service logic must be updated to respect these configurations.
+    -   **Outcome:** The backend can now perform a targeted ingestion based on user-provided section selections.
 
--   **Milestone 36: Implement Custom Asset Upload**
-    -   **Goal:** Allow users to add their own images to a KB's asset collection.
-    -   **Key Tasks:**
-        -   Create a new API endpoint `POST /api/knowledge/<kb_name>/upload-asset`.
-        -   Implement the drag-and-drop UI in the Library Hub's "Asset View".
-    -   **Outcome:** A user can add custom images to any Knowledge Base at any time.
+-   **Milestone 34.4: Frontend - Integrate Two-Stage Workflow**
+    -   **Goal:** Connect the new Section Review UI to the backend, completing the workflow.
+    -   **Description:** This milestone wires the frontend and backend together for the advanced ingestion feature.
+    -   **Key Tasks:** In `ImportWizard.js`, on the "Next" click from the file upload step, call the new `/analyze` endpoint. Populate the review UI with the response. On the "Next" click from the review step, call the modified `/ingest-document` endpoint, passing the user's section selections.
+    -   **Outcome:** A user can upload a file, review its sections, deselect unwanted parts, and then finalize the ingestion process.
+
+### Phase 11 (Refined): Character & Asset Management Hubs
+
+-   **Milestone 35.1: UI - Migrate Character Editor to Party Hub**
+    -   **Goal:** Move the character creation and editing UI from the modal into the main Party Hub view.
+    -   **Description:** This refactors the UI to match the hub-based design paradigm, making character management a more integrated experience.
+    -   **Key Tasks:** Copy the HTML form structure for adding a character (manual and AI) from the `party-wizard-modal` into the right-hand panel of the `party-view` in `index.html`.
+    -   **Outcome:** The character editor form is now visually present within the Party Hub's main interface.
+
+-   **Milestone 35.2: Frontend - Implement Party Hub State Management**
+    -   **Goal:** Make the Party Hub's right panel dynamic, showing either a character list, an editor, or a welcome message.
+    -   **Description:** This adds the necessary JavaScript logic to manage the state of the Party Hub's inspector panel.
+    -   **Key Tasks:** In `PartyHub.js`, add logic to handle clicks on parties in the left-hand list. On selection, display that party's character roster in the right panel. Add logic for a "+ New Character" button that shows the character editor form.
+    -   **Outcome:** The Party Hub is now interactive. Users can select a party to view its members and can switch to a form for adding a new character.
+
+-   **Milestone 35.3: Frontend - Port Character Management Logic**
+    -   **Goal:** Move all character-related business logic from the old modal to the new hub.
+    -   **Description:** This finalizes the feature migration by moving the JavaScript that calls the backend APIs into the `PartyHub.js` module.
+    -   **Key Tasks:** Move the functions for creating (manual and AI) and deleting characters from `PartyWizard.js` to `PartyHub.js`. Ensure they correctly interact with the new UI and call the existing backend APIs. Deprecate the old modal.
+    -   **Outcome:** The Party Hub is a fully self-contained and functional interface for creating, viewing, and managing all parties and characters.
+
+-   **Milestone 36.1: Backend - Create Asset Upload Endpoint**
+    -   **Goal:** Create a backend API to allow users to upload their own images to a Knowledge Base.
+    -   **Description:** This endpoint will handle file storage, thumbnail generation, and LLM-powered metadata creation for user-provided images.
+    -   **Key Tasks:** Implement a new `POST /api/knowledge/<kb_name>/upload-asset` endpoint. The logic should save the uploaded file to the correct assets directory, create a thumbnail, call a multimodal LLM to generate a description and classification, and save the metadata to a corresponding `.json` file.
+    -   **Outcome:** A functional API endpoint that can add a new, fully processed image asset to an existing Knowledge Base.
+
+-   **Milestone 36.2: Frontend - Build Drag-and-Drop UI**
+    -   **Goal:** Create the user interface for uploading custom assets in the Library Hub.
+    -   **Description:** This will add a clear, interactive area in the Library Hub's "Asset View" where users can drop their image files.
+    -   **Key Tasks:** In `index.html`, add an "Upload Asset" dropzone element to the Library Hub's asset view. Add CSS to style it, including visual feedback for when a user is dragging a file over it.
+    -   **Outcome:** A visible and styled drag-and-drop area is present in the Library Hub.
+
+-   **Milestone 36.3: Frontend - Implement Upload Logic**
+    -   **Goal:** Connect the new UI to the backend, completing the custom asset upload feature.
+    -   **Description:** This milestone implements the client-side logic to handle the file upload process and refresh the UI upon completion.
+    -   **Key Tasks:** In `LibraryHub.js`, add event listeners for drag-and-drop events on the new UI element. When a file is dropped, use the Fetch API to send it to the `/upload-asset` endpoint. Upon a successful response, automatically refresh the asset view to show the newly added image.
+    -   **Outcome:** A user can drag and drop an image file onto the Library Hub to add it to the selected Knowledge Base.
 
 ---
 
