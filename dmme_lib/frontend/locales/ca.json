@@ -130,6 +130,8 @@
     "assetView": "Recursos",
     "dropzoneText": "Arrossega i deixa anar una imatge aquí per pujar-la",
     "noAssetsFound": "No s'han trobat recursos. Arrossega i deixa anar una imatge per afegir-ne una.",
+    "assetUploadSuccess": "S'ha pujat {{filename}} correctament.",
+    "errorSelectKbForUpload": "Si us plau, selecciona una Base de Coneixement abans de pujar un recurs.",
     "libraryWelcome": "Selecciona un element per veure'n els detalls.",
     "kbHeaderName": "Nom",
     "kbHeaderType": "Tipus",

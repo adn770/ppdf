@@ -1,5 +1,7 @@
 // dmme_lib/frontend/js/hubs/LibraryHub.js
 import { apiCall } from '../wizards/ApiHelper.js';
+import { status } from '../ui.js';
+
 export class LibraryHub {
     constructor(appInstance) {
         this.app = appInstance;
@@ -14,6 +16,7 @@ export class LibraryHub {
         this.textView = document.getElementById('library-text-view');
         this.assetView = document.getElementById('library-asset-view');
         this.assetGrid = document.getElementById('asset-grid-container');
+        this.dropzone = document.getElementById('asset-upload-dropzone');
         this.tabs = this.inspector.querySelectorAll('.hub-tab-btn');
     }
 
@@ -23,7 +26,31 @@ export class LibraryHub {
         this.tabs.forEach(tab => {
             tab.addEventListener('click', () => this.switchTab(tab.dataset.pane));
         });
+        this._addDragDropListeners();
         this.isInitialized = true;
+    }
+
+    _preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    _addDragDropListeners() {
+        const events = ['dragenter', 'dragover', 'dragleave', 'drop'];
+        events.forEach(eventName => {
+            this.dropzone.addEventListener(eventName, this._preventDefaults, false);
+            document.body.addEventListener(eventName, this._preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            this.dropzone.addEventListener(eventName, () => this.dropzone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            this.dropzone.addEventListener(eventName, () => this.dropzone.classList.remove('drag-over'), false);
+        });
+
+        this.dropzone.addEventListener('drop', (e) => this._handleFileDrop(e), false);
     }
 
     async loadKnowledgeBases() {
@@ -112,15 +139,66 @@ export class LibraryHub {
             return;
         }
 
-        assets.forEach(asset => {
-            const card = document.createElement('div');
-            card.className = 'asset-card';
-            card.innerHTML = `
-                <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
-                <p>${asset.classification}</p>
-            `;
-            this.assetGrid.appendChild(card);
-        });
+        assets.forEach(asset => this._addAssetToGrid(asset, false));
+    }
+
+    _addAssetToGrid(asset, isNew = true) {
+        // If it's the first asset, clear the placeholder text
+        if (isNew && this.assetGrid.querySelector('p')) {
+            this.assetGrid.innerHTML = '';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'asset-card';
+        card.innerHTML = `
+            <img src="/${asset.url}" alt="${asset.caption}" title="${asset.caption}">
+            <p>${asset.classification}</p>
+        `;
+        this.assetGrid.appendChild(card);
+    }
+
+    _handleFileDrop(e) {
+        if (!this.selectedKb) {
+            status.setText('errorSelectKbForUpload', true);
+            return;
+        }
+
+        const files = e.dataTransfer.files;
+        for (const file of files) {
+            if (file.type.startsWith('image/')) {
+                this._uploadFile(file);
+            }
+        }
+    }
+
+    async _uploadFile(file) {
+        const dropzoneText = this.dropzone.querySelector('p');
+        dropzoneText.textContent = `Uploading ${file.name}...`;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch(`/api/knowledge/${this.selectedKb.name}/upload-asset`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const newAsset = await response.json();
+            this._addAssetToGrid(newAsset, true);
+            status.setText('assetUploadSuccess', false, { filename: file.name });
+        } catch (error) {
+            status.setText(`Error: ${error.message}`, true);
+        } finally {
+            setTimeout(() => {
+                dropzoneText.textContent = this.app.i18n.t('dropzoneText');
+            }, 3000);
+        }
     }
 
     switchTab(paneName) {

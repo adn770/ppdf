@@ -130,6 +130,8 @@
     "assetView": "Assets",
     "dropzoneText": "Drag & drop an image here to upload",
     "noAssetsFound": "No assets found. Drag and drop an image to add one.",
+    "assetUploadSuccess": "Successfully uploaded {{filename}}.",
+    "errorSelectKbForUpload": "Please select a Knowledge Base before uploading an asset.",
     "libraryWelcome": "Select an item to see details.",
     "kbHeaderName": "Name",
     "kbHeaderType": "Type",

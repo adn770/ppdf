@@ -130,6 +130,8 @@
     "assetView": "Recursos",
     "dropzoneText": "Arrastra y suelta una imagen aquí para subirla",
     "noAssetsFound": "No se encontraron recursos. Arrastra y suelta una imagen para añadir una.",
+    "assetUploadSuccess": "Se ha subido {{filename}} correctamente.",
+    "errorSelectKbForUpload": "Por favor, selecciona una Base de Conocimiento antes de subir un recurso.",
     "libraryWelcome": "Selecciona un elemento para ver sus detalles.",
     "kbHeaderName": "Nombre",
     "kbHeaderType": "Tipo",
