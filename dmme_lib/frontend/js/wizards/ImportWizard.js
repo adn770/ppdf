@@ -6,7 +6,7 @@ export class ImportWizard {
     constructor(appInstance) {
         this.app = appInstance;
         this.currentStep = 0;
-        this.totalSteps = 3; // 0:Details, 1:Processing, 2:Review
+        this.totalSteps = 4; // 0:Details, 1:Review, 2:Processing, 3:Review
         this.selectedFile = null;
         this.serverTempFilePath = null;
         this.knowledgeBaseName = '';
@@ -31,7 +31,8 @@ export class ImportWizard {
         this.reviewImage = document.getElementById('review-image');
         this.reviewCounter = document.getElementById('image-review-counter');
         this.imgDesc = document.getElementById('image-description');
-        this.spinner = this.modal.querySelector('.progress-container .spinner');
+        this.spinner = this.modal.querySelector('#wizard-pane-2 .spinner');
+        this.sectionListEl = document.getElementById('wizard-section-list');
 
         this._addEventListeners();
     }
@@ -66,17 +67,14 @@ export class ImportWizard {
         this.discardImgBtn = document.getElementById('discard-image-btn');
         this.classificationRadios =
             this.modal.querySelectorAll('input[name="image-classification"]');
-
         this.prevImgBtn.addEventListener('click', () => this.navigateReviewImage(-1));
         this.nextImgBtn.addEventListener('click', () => this.navigateReviewImage(1));
         this.discardImgBtn.addEventListener('click', () => this.discardCurrentImage());
-
         // Autosave listeners
         this.imgDesc.addEventListener('input', () => this.debouncedSaveImageChanges());
         this.classificationRadios.forEach(radio => {
             radio.addEventListener('change', () => this.saveImageChanges());
         });
-
         this.reviewListenersAttached = true;
     }
 
@@ -127,11 +125,20 @@ export class ImportWizard {
         const finalizeContainer = this.modal.querySelector('.modal-footer');
         let finalizeBtn = this.modal.querySelector('#finalize-btn');
 
-        this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 1) ?
+        this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 2) ?
             'block' : 'none';
-        this.nextBtn.style.display = this.currentStep < 1 ? 'block' : 'none';
-        this.nextBtn.disabled = !this.serverTempFilePath;
-        if (this.currentStep === 2) {
+        this.nextBtn.style.display = this.currentStep < 2 ? 'block' : 'none';
+
+        // Disable next button on step 0 if no file, or on step 1 if no sections selected
+        if (this.currentStep === 0) {
+            this.nextBtn.disabled = !this.serverTempFilePath;
+        } else if (this.currentStep === 1) {
+            // Placeholder for future logic
+            this.nextBtn.disabled = false;
+        }
+
+
+        if (this.currentStep === 3) { // Image review pane
             if (!finalizeBtn) {
                 const btnHTML =
                     `<button id="finalize-btn" class="accent-btn" data-i18n-key="wizardFinalize">Finalize Ingestion</button>`;
@@ -150,6 +157,30 @@ export class ImportWizard {
         title.textContent = i18n.t(titleKey, { name });
     }
 
+    // THIS IS A PLACEHOLDER FOR NOW
+    _renderSectionList(sections = []) {
+        this.sectionListEl.innerHTML = '';
+        if (sections.length === 0) {
+            this.sectionListEl.innerHTML = `<p>No sections found for review.</p>`;
+            return;
+        }
+
+        sections.forEach((section, index) => {
+            const item = document.createElement('div');
+            item.className = 'section-item';
+            item.innerHTML = `
+                <input type="checkbox" id="section-${index}" checked>
+                <label for="section-${index}" class="section-item-label">
+                    <span class="section-item-title">${section.title}</span>
+                    <span class="section-item-details">Pages: ${section.page_start}-${section.page_end}</span>
+                </label>
+                <span class="section-item-stats">${section.char_count.toLocaleString()} chars</span>
+            `;
+            this.sectionListEl.appendChild(item);
+        });
+    }
+
+
     logProgress(message) {
         if (!this.progressLog) return;
         const timestamp = new Date().toLocaleTimeString();
@@ -162,6 +193,15 @@ export class ImportWizard {
             this.knowledgeBaseName = document.getElementById('kb-name').value.trim();
             if (!this.knowledgeBaseName) return status.setText('errorKbName', true);
             if (!this.serverTempFilePath) return status.setText('errorFile', true);
+
+            // TODO: In next milestone, call /analyze endpoint here
+            this._renderSectionList([
+                {title: 'Chapter 1: A Fateful Encounter', page_start: 3, page_end: 15, char_count: 25000},
+                {title: 'Appendix A: Monsters', page_start: 16, page_end: 20, char_count: 8000},
+            ]); // Placeholder
+            this.navigate(1);
+
+        } else if (this.currentStep === 1) {
             this.navigate(1);
             await this.runFullIngestionProcess();
         }
@@ -219,7 +259,7 @@ export class ImportWizard {
                 if (this.reviewImages.length > 0) {
                     const msg = `✔ Found ${this.reviewImages.length} images to review.`;
                     this.logProgress(msg);
-                    this.navigate(1); // Move to step 2 (review)
+                    this.navigate(1); // Move to step 3 (review)
                 } else {
                     this.logProgress("No images found for review.");
                     this.logProgress("✔ Knowledge base created successfully.");
@@ -292,7 +332,6 @@ export class ImportWizard {
         this.classificationRadios.forEach(radio => {
             radio.checked = radio.value === current.metadata.classification;
         });
-
         this.prevImgBtn.disabled = this.currentReviewIndex === 0;
         this.nextImgBtn.disabled = this.currentReviewIndex === this.reviewImages.length - 1;
     }

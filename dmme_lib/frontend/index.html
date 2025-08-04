@@ -265,15 +265,26 @@
             </div>
             <div class="wizard-pane" id="wizard-pane-1">
                 <div class="wizard-pane-header">
-                    <h3 data-i18n-key="wizardPane3Title">Step 3: Processing...</h3>
+                    <h3 data-i18n-key="wizardPaneReviewTitle">Step 2: Review Document Sections</h3>
+                    <div class="section-review-controls">
+                        <button id="wizard-select-all-sections" class="secondary-btn" data-i18n-key="selectAll">Select All</button>
+                        <button id="wizard-deselect-all-sections" class="secondary-btn" data-i18n-key="deselectAll">Deselect All</button>
+                    </div>
+                </div>
+                <div id="wizard-section-list" class="section-review-list">
+                    </div>
+            </div>
+            <div class="wizard-pane" id="wizard-pane-2">
+                <div class="wizard-pane-header">
+                    <h3 data-i18n-key="wizardPaneProcessingTitle">Step 3: Processing...</h3>
                 </div>
                 <div class="progress-container">
                     <div class="spinner spinner-lg"></div>
                     <pre id="wizard-progress-log" class="progress-log"></pre>
                 </div>
             </div>
-            <div class="wizard-pane" id="wizard-pane-2">
-                <h3 data-i18n-key="wizardPane4Title">Step 4: Review Images</h3>
+            <div class="wizard-pane" id="wizard-pane-3">
+                <h3 data-i18n-key="wizardPaneImageReviewTitle">Step 4: Review Images</h3>
                 <div class="image-review-container">
                     <div class="image-display-area">
                         <img id="review-image" src="" alt="Review Image" />
