@@ -13,7 +13,6 @@ import { apiCall } from './wizards/ApiHelper.js';
 
 class App {
     constructor() {
-        // Pass a reference to the app instance for cross-component communication
         this.settingsManager = new SettingsManager(this);
         this.importWizard = new ImportWizard(this);
         this.partyWizard = new PartyWizard(this);
@@ -26,48 +25,75 @@ class App {
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.settings = null;
         this.i18n = i18n;
-        // Make i18n service available to other components
+        this.currentView = 'game';
     }
 
     async init() {
         status.setText('initializing');
-        // Load settings first, as other components depend on them
         this.settings = await this.settingsManager.loadSettings();
         this.settingsManager.applyTheme(this.settings.Appearance.theme);
 
-        // Initialize i18n before setting up event listeners
         await this.i18n.init(this.settings.Appearance.language);
         this.populateQuickThemeSelector();
-        // Must be after i18n init
-        document.getElementById('import-knowledge-btn').addEventListener('click',
-            () => this.importWizard.open()
-        );
-        document.getElementById('party-manager-btn').addEventListener('click',
-            () => this.partyWizard.open()
-        );
-        document.getElementById('new-game-btn').addEventListener('click',
-            () => this.newGameWizard.open()
-        );
-        document.getElementById('load-game-btn').addEventListener('click',
-            () => this.loadCampaignWizard.open()
-        );
-        document.getElementById('settings-btn').addEventListener('click',
-            () => this.settingsManager.open()
-        );
 
-        // Check for a recoverable session before showing the welcome screen
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.switchView(btn.dataset.view));
+        });
+
+        this.updateHeader(this.currentView);
         await this.checkForRecovery();
     }
+
+    switchView(viewName) {
+        if (this.currentView === viewName) return;
+        this.currentView = viewName;
+
+        document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+        document.getElementById(`${viewName}-view`).classList.add('active');
+
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === viewName);
+        });
+
+        this.updateHeader(viewName);
+    }
+
+    updateHeader(viewName) {
+        const container = document.getElementById('contextual-header-controls');
+        container.innerHTML = ''; // Clear existing buttons
+
+        const createButton = (id, i18nKey, onClick) => {
+            const button = document.createElement('button');
+            button.id = id;
+            button.dataset.i18nKey = i18nKey;
+            button.textContent = this.i18n.t(i18nKey);
+            button.addEventListener('click', onClick);
+            return button;
+        };
+
+        if (viewName === 'game') {
+            container.appendChild(createButton('new-game-btn', 'newGameBtn', () => this.newGameWizard.open()));
+            container.appendChild(createButton('load-game-btn', 'loadGameBtn', () => this.loadCampaignWizard.open()));
+        } else if (viewName === 'library') {
+            container.appendChild(createButton('import-knowledge-btn', 'importKnowledgeBtn', () => this.importWizard.open()));
+        } else if (viewName === 'party') {
+            container.appendChild(createButton('party-manager-btn', 'partyManagerBtn', () => this.partyWizard.open()));
+        }
+
+        // Settings button is common to all views but added here for consistency
+        container.appendChild(createButton('settings-btn', 'settingsBtn', () => this.settingsManager.open()));
+    }
+
 
     async checkForRecovery() {
         const recoveredState = await apiCall('/api/session/recover');
         const welcomeView = document.getElementById('welcome-view');
         const recoveryView = document.getElementById('recovery-view');
+        const gameViewContent = document.getElementById('game-view-content');
 
-        // Check if the recovered state object is not empty
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
-            // Translate the page content BEFORE showing the panel to prevent flicker
+            gameViewContent.style.display = 'none';
             this.i18n.translatePage();
             recoveryView.style.display = 'flex';
 
@@ -76,7 +102,6 @@ class App {
                 this.startGame(recoveredState.config, recoveredState);
             };
             document.getElementById('recover-discard-btn').onclick = async () => {
-                // Clear the autosave file on the backend
                 await apiCall('/api/session/autosave', { method: 'DELETE' });
                 recoveryView.style.display = 'none';
                 welcomeView.style.display = 'block';
@@ -84,6 +109,7 @@ class App {
             };
         } else {
             welcomeView.style.display = 'block';
+            gameViewContent.style.display = 'none';
             recoveryView.style.display = 'none';
             status.setText('statusBarReady');
         }
@@ -91,12 +117,14 @@ class App {
 
     startGame(gameConfig, recoveredState = null) {
         console.log("Switching to game view with config:", gameConfig);
-        // End any previous game session before starting a new one
         this.gameplayHandler.endGame();
+
+        this.switchView('game');
         document.getElementById('welcome-view').style.display = 'none';
-        const gameView = document.getElementById('game-view');
-        gameView.style.display = 'flex';
-        gameView.classList.add('active');
+        document.getElementById('recovery-view').style.display = 'none';
+        const gameViewContent = document.getElementById('game-view-content');
+        gameViewContent.style.display = 'flex';
+        gameViewContent.classList.add('active');
 
         this.gameplayHandler.init(gameConfig, recoveredState);
     }
@@ -105,22 +133,18 @@ class App {
         const mainSelector = document.getElementById('theme-selector');
         const quickSelector = document.getElementById('quick-theme-selector');
         if (mainSelector && quickSelector) {
-            // Clear the quick selector first
             quickSelector.innerHTML = '';
-            // Add the placeholder option that reverts to the main setting
             const placeholderOption = document.createElement('option');
             placeholderOption.value = "";
             placeholderOption.textContent = this.i18n.t('themeDefault');
             quickSelector.appendChild(placeholderOption);
 
-            // Copy all other themes from the main settings selector
             mainSelector.querySelectorAll('option').forEach(option => {
-                // Exclude the original 'default' value to prevent duplication
                 if (option.value !== 'default') {
                     quickSelector.appendChild(option.cloneNode(true));
                 }
             });
-            quickSelector.value = ""; // Start with the placeholder selected
+            quickSelector.value = "";
         }
     }
 }

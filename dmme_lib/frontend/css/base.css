@@ -100,22 +100,15 @@ body.theme-cyberpunk {
 }
 
 /* --- Custom Scrollbar --- */
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
-::-webkit-scrollbar-track {
-    background: transparent;
-}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
     background-color: var(--accent-color);
     border-radius: 5px;
     border: 2px solid var(--panel-bg);
     background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--accent-hover);
-}
+::-webkit-scrollbar-thumb:hover { background-color: var(--accent-hover); }
 
 
 /* --- Global Styles --- */
@@ -144,16 +137,46 @@ body, html {
     padding: 12px 24px;
     border-bottom: 1px solid var(--border-color);
     background-color: var(--panel-bg);
+    flex-shrink: 0;
 }
 
 .app-header h1 { margin: 0; font-size: 1.5em; }
-.global-controls { display: flex; gap: 12px; }
+.contextual-controls { display: flex; gap: 12px; }
 
 .main-content {
     flex-grow: 1;
-    padding: 24px 4px 24px 24px;
-    height: calc(100vh - 100px); /* Full height minus header and status bar */
+    position: relative;
+    display: flex;
+    min-height: 0;
+}
+
+.view-container {
+    display: none; /* Hidden by default */
+    width: 100%;
+    height: 100%;
+    padding: 24px 24px 24px 24px;
     box-sizing: border-box;
+    flex-direction: column;
+}
+
+.view-container.active {
+    display: flex; /* Shown when active */
+}
+
+/* Make game view content take up full space inside its view container */
+#game-view-content {
+    display: none;
+    height: 100%;
+    width: 100%;
+}
+#game-view-content.active {
+    display: flex;
+}
+
+
+#welcome-view, #recovery-view {
+    width: 100%;
+    height: 100%;
 }
 
 .welcome-message { text-align: center; color: #888; }

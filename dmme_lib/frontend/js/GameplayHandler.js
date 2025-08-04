@@ -40,6 +40,9 @@ export class GameplayHandler {
         this._updateToolbarState();
         await this._populatePartyStatusPanel();
 
+        // Make the main game content visible
+        document.getElementById('game-view-content').style.display = 'flex';
+
         if (recoveredState) {
             this.loadState(recoveredState);
         } else {
@@ -77,7 +80,6 @@ export class GameplayHandler {
         this.partyAccordionContainer.innerHTML = ''; // Clear existing content
 
         const characters = await apiCall(`/api/parties/${this.gameConfig.party}/characters`);
-
         characters.forEach(char => {
             const item = document.createElement('div');
             item.className = 'accordion-item';
@@ -103,7 +105,6 @@ export class GameplayHandler {
             item.appendChild(body);
             this.partyAccordionContainer.appendChild(item);
         });
-
         // Add event listeners to the newly created headers
         this.partyAccordionContainer.querySelectorAll('.accordion-header').forEach(button => {
             button.addEventListener('click', () => {
@@ -161,7 +162,7 @@ export class GameplayHandler {
         let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
         if (this.gameConfig.llm_model) {
             kbHtml += ` |
-                <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
+ <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
         }
         this.kbDisplay.innerHTML = kbHtml;
     }
@@ -355,7 +356,8 @@ export class GameplayHandler {
         let buffer = '';
         let currentParagraph = initialParagraph;
         let currentParagraphMarkdown = '';
-        this.lastInsightContent = ''; // Reset for this turn
+        this.lastInsightContent = '';
+        // Reset for this turn
 
         while (true) {
             const { value, done } = await reader.read();
@@ -363,7 +365,8 @@ export class GameplayHandler {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep the potentially incomplete last line
+            buffer = lines.pop();
+            // Keep the potentially incomplete last line
 
             for (const line of lines) {
                 if (!line.trim()) continue;

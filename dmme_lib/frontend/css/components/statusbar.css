@@ -1,12 +1,46 @@
 /* dmme_lib/frontend/css/components/statusbar.css */
 
 .status-bar {
-    padding: 8px 24px;
+    padding: 4px 24px;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
     color: #aaa;
     font-size: 0.9em;
     flex-shrink: 0;
-    height: 18px; /* Fixed height for stability */
-    line-height: 18px;
+    height: 32px;
+    line-height: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-bar-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: #888;
+    font-size: 1.5em;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+    padding: 0;
+    line-height: 1;
+}
+
+.nav-btn:hover {
+    color: var(--text-color);
+    background-color: var(--panel-bg);
+}
+
+.nav-btn.active {
+    color: var(--accent-color);
 }

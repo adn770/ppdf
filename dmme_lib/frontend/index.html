@@ -11,129 +11,128 @@
     <div class="app-container">
         <header class="app-header">
             <h1>DMme</h1>
-            <div class="global-controls">
-                <button id="new-game-btn" data-i18n-key="newGameBtn">New Game</button>
-                <button id="load-game-btn" data-i18n-key="loadGameBtn">Load Game</button>
-                <button id="party-manager-btn" data-i18n-key="partyManagerBtn">Party Manager</button>
-                <button id="import-knowledge-btn" data-i18n-key="importKnowledgeBtn">Import Knowledge Base</button>
-                <button id="settings-btn" data-i18n-key="settingsBtn">Settings</button>
-            </div>
+            <div id="contextual-header-controls" class="contextual-controls">
+                </div>
         </header>
 
         <main id="main-content" class="main-content">
-            <div id="recovery-view">
-                <div class="recovery-box">
-                    <h2 data-i18n-key="recoverTitle">Welcome Back!</h2>
-                    <p data-i18n-key="recoverMsg">
-                        You have an unfinished session. Would you like to continue where you left off?
-                    </p>
-                    <div class="recovery-actions">
-                        <button id="recover-continue-btn" class="accent-btn" data-i18n-key="recoverContinue">Continue Session</button>
-                        <button id="recover-discard-btn" class="danger-btn" data-i18n-key="recoverDiscard">Discard & Start New</button>
-                    </div>
-                </div>
-            </div>
-            <div id="welcome-view">
-                <div class="welcome-message">
-                    <h2 data-i18n-key="welcomeTitle">Welcome to DMme</h2>
-                    <p data-i18n-key="welcomeMsg">
-                        Click "New Game" to begin an adventure, or
-                        "Import Knowledge Base" to expand your library.
-                    </p>
-                </div>
-            </div>
-            <div id="game-view" class="game-view-container">
-                <div class="left-panel-game">
-                    <div class="party-status-panel">
-                        <h4 data-i18n-key="partyStatusTitle">Party Status</h4>
-                        <div id="party-accordion-container">
-                        </div>
-                    </div>
-                    <div id="dice-roller" class="dice-roller">
-                        <h4 data-i18n-key="diceRollerTitle">Dice Roller</h4>
-                        <div id="dice-display" class="dice-display">0</div>
-                        <div class="dice-special-grid">
-                            <button data-action="d2">d2</button>
-                            <button data-action="d3">d3</button>
-                            <button data-action="d5">d5</button>
-                            <button data-action="d7">d7</button>
-                            <button data-action="d14">d14</button>
-                            <button data-action="d16">d16</button>
-                            <button data-action="d24">d24</button>
-                            <button data-action="d30">d30</button>
-                            <button data-action="d32">d32</button>
-                            <button data-action="d100">d100</button>
-                        </div>
-                        <div class="dice-main-grid">
-                            <button data-action="d4">d4</button>
-                            <button data-action="d6" class="dice-divider">d6</button>
-                            <button data-action="7">7</button>
-                            <button data-action="8">8</button>
-                            <button data-action="9">9</button>
-                            <button data-action="d8">d8</button>
-                            <button data-action="d10" class="dice-divider">d10</button>
-                            <button data-action="4">4</button>
-                            <button data-action="5">5</button>
-                            <button data-action="6">6</button>
-                            <button data-action="d12">d12</button>
-                            <button data-action="d20" class="dice-divider">d20</button>
-                            <button data-action="1">1</button>
-                            <button data-action="2">2</button>
-                            <button data-action="3">3</button>
-                            <button data-action="-">-</button>
-                            <button data-action="+" class="dice-divider">+</button>
-                            <button data-action="clear">C</button>
-                            <button data-action="0">0</button>
-                            <button data-action="backspace">⌫</button>
-                        </div>
-                        <div class="dice-roll-row">
-                            <button data-action="roll" class="accent-btn">Roll</button>
+            <div id="game-view" class="view-container active">
+                <div id="recovery-view">
+                    <div class="recovery-box">
+                        <h2 data-i18n-key="recoverTitle">Welcome Back!</h2>
+                        <p data-i18n-key="recoverMsg">
+                            You have an unfinished session. Would you like to continue where you left off?
+                        </p>
+                        <div class="recovery-actions">
+                            <button id="recover-continue-btn" class="accent-btn" data-i18n-key="recoverContinue">Continue Session</button>
+                            <button id="recover-discard-btn" class="danger-btn" data-i18n-key="recoverDiscard">Discard & Start New</button>
                         </div>
                     </div>
                 </div>
-                <div class="right-panel-game">
-                    <div id="knowledge-panel" class="knowledge-panel">
-                        <div id="kb-display">
+                <div id="welcome-view">
+                    <div class="welcome-message">
+                        <h2 data-i18n-key="welcomeTitle">Welcome to DMme</h2>
+                        <p data-i18n-key="welcomeMsg">
+                            Click "New Game" to begin an adventure, or switch to the Library to expand your collection.
+                        </p>
+                    </div>
+                </div>
+                <div id="game-view-content" class="game-view-container">
+                    <div class="left-panel-game">
+                        <div class="party-status-panel">
+                            <h4 data-i18n-key="partyStatusTitle">Party Status</h4>
+                            <div id="party-accordion-container"></div>
                         </div>
-                        <div class="game-controls-container">
-                            <div class="style-controls">
-                                <div class="style-control-group">
-                                    <label for="quick-theme-selector" class="icon-label" data-i18n-key="sessionThemeTitle" data-i18n-target="title" title="Session Theme">🎨</label>
-                                    <select id="quick-theme-selector" class="style-control-select">
-                                    </select>
-                                </div>
-                                <div class="style-control-group">
-                                    <label for="font-size-slider" class="icon-label" data-i18n-key="fontSizeTitle" data-i18n-target="title" title="Font Size">🇦</label>
-                                    <input type="range" id="font-size-slider" class="style-control-slider" min="0.8" max="1.5" step="0.05" value="1">
-                                </div>
-                                <div class="style-control-group">
-                                    <label for="line-height-slider" class="icon-label" data-i18n-key="lineSpacingTitle" data-i18n-target="title" title="Line Spacing">↕️</label>
-                                    <input type="range" id="line-height-slider" class="style-control-slider" min="1.2" max="2.2" step="0.1" value="1.6">
-                                </div>
+                        <div id="dice-roller" class="dice-roller">
+                            <h4 data-i18n-key="diceRollerTitle">Dice Roller</h4>
+                            <div id="dice-display" class="dice-display">0</div>
+                            <div class="dice-special-grid">
+                                <button data-action="d2">d2</button>
+                                <button data-action="d3">d3</button>
+                                <button data-action="d5">d5</button>
+                                <button data-action="d7">d7</button>
+                                <button data-action="d14">d14</button>
+                                <button data-action="d16">d16</button>
+                                <button data-action="d24">d24</button>
+                                <button data-action="d30">d30</button>
+                                <button data-action="d32">d32</button>
+                                <button data-action="d100">d100</button>
                             </div>
-                            <button id="toggle-visual-aids-btn" class="icon-btn"
-                                data-i18n-key="toggleVisualAids"
-                                data-i18n-target="title" title="Toggle Visual Aids">🏞️</button>
-                            <button id="toggle-ascii-scene-btn" class="icon-btn"
-                                data-i18n-key="toggleAsciiScene" data-i18n-target="title" title="Toggle ASCII Scene">#</button>
-                            <button id="dm-insight-btn-toolbar" class="icon-btn"
-                                data-i18n-key="dmInsightTitle" data-i18n-target="title" title="DM's Insight">🔍</button>
-                            <div id="game-spinner" class="spinner-container" style="display: none;">
-                                <div class="spinner spinner-sm"></div>
+                            <div class="dice-main-grid">
+                                <button data-action="d4">d4</button>
+                                <button data-action="d6" class="dice-divider">d6</button>
+                                <button data-action="7">7</button>
+                                <button data-action="8">8</button>
+                                <button data-action="9">9</button>
+                                <button data-action="d8">d8</button>
+                                <button data-action="d10" class="dice-divider">d10</button>
+                                <button data-action="4">4</button>
+                                <button data-action="5">5</button>
+                                <button data-action="6">6</button>
+                                <button data-action="d12">d12</button>
+                                <button data-action="d20" class="dice-divider">d20</button>
+                                <button data-action="1">1</button>
+                                <button data-action="2">2</button>
+                                <button data-action="3">3</button>
+                                <button data-action="-">-</button>
+                                <button data-action="+" class="dice-divider">+</button>
+                                <button data-action="clear">C</button>
+                                <button data-action="0">0</button>
+                                <button data-action="backspace">⌫</button>
+                            </div>
+                            <div class="dice-roll-row">
+                                <button data-action="roll" class="accent-btn">Roll</button>
                             </div>
                         </div>
                     </div>
-                    <div id="narrative-view" class="narrative-view">
-                    </div>
-                    <div class="input-panel">
-                        <textarea id="player-input" autocomplete="off"
-                            data-i18n-key="playerInputPlaceholder" data-i18n-target="placeholder" placeholder="What do you do?"></textarea>
-                        <button id="send-command-btn" data-i18n-key="sendCommand">Send</button>
+                    <div class="right-panel-game">
+                        <div id="knowledge-panel" class="knowledge-panel">
+                            <div id="kb-display"></div>
+                            <div class="game-controls-container">
+                                <div class="style-controls">
+                                    <div class="style-control-group">
+                                        <label for="quick-theme-selector" class="icon-label" data-i18n-key="sessionThemeTitle" data-i18n-target="title" title="Session Theme">🎨</label>
+                                        <select id="quick-theme-selector" class="style-control-select"></select>
+                                    </div>
+                                    <div class="style-control-group">
+                                        <label for="font-size-slider" class="icon-label" data-i18n-key="fontSizeTitle" data-i18n-target="title" title="Font Size">🇦</label>
+                                        <input type="range" id="font-size-slider" class="style-control-slider" min="0.8" max="1.5" step="0.05" value="1">
+                                    </div>
+                                    <div class="style-control-group">
+                                        <label for="line-height-slider" class="icon-label" data-i18n-key="lineSpacingTitle" data-i18n-target="title" title="Line Spacing">↕️</label>
+                                        <input type="range" id="line-height-slider" class="style-control-slider" min="1.2" max="2.2" step="0.1" value="1.6">
+                                    </div>
+                                </div>
+                                <button id="toggle-visual-aids-btn" class="icon-btn" data-i18n-key="toggleVisualAids" data-i18n-target="title" title="Toggle Visual Aids">🏞️</button>
+                                <button id="toggle-ascii-scene-btn" class="icon-btn" data-i18n-key="toggleAsciiScene" data-i18n-target="title" title="Toggle ASCII Scene">#</button>
+                                <button id="dm-insight-btn-toolbar" class="icon-btn" data-i18n-key="dmInsightTitle" data-i18n-target="title" title="DM's Insight">🔍</button>
+                                <div id="game-spinner" class="spinner-container" style="display: none;">
+                                    <div class="spinner spinner-sm"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="narrative-view" class="narrative-view"></div>
+                        <div class="input-panel">
+                            <textarea id="player-input" autocomplete="off" data-i18n-key="playerInputPlaceholder" data-i18n-target="placeholder" placeholder="What do you do?"></textarea>
+                            <button id="send-command-btn" data-i18n-key="sendCommand">Send</button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <div id="library-view" class="view-container">
+                </div>
+
+            <div id="party-view" class="view-container">
+                </div>
         </main>
+        
         <footer class="status-bar">
+            <div class="status-bar-nav">
+                <button class="nav-btn active" data-view="game" title="Game View">🎮</button>
+                <button class="nav-btn" data-view="library" title="Library View">📚</button>
+                <button class="nav-btn" data-view="party" title="Party View">👥</button>
+            </div>
             <span id="status-text" data-i18n-key="statusBarReady">Ready.</span>
         </footer>
     </div>
@@ -160,7 +159,6 @@
             <button id="load-campaign-btn-confirm" class="accent-btn" data-i18n-key="loadBtn" disabled>Load</button>
         </div>
     </div>
-
     <div id="session-recap-modal" class="modal modal-md">
         <div class="modal-header">
             <h2 data-i18n-key="sessionRecapTitle">Session Recap</h2>
@@ -174,8 +172,6 @@
             <button id="recap-continue-btn" class="accent-btn" data-i18n-key="continueCampaign">Continue Campaign</button>
         </div>
     </div>
-
-
     <div id="import-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
             <h2 id="import-wizard-title" data-i18n-key="importWizardTitle">Import Knowledge Wizard</h2>
@@ -190,13 +186,11 @@
                             <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
                                 Drag & Drop a PDF or Markdown file here, or click to select
                             </p>
-                            <input type="file" id="wizard-upload-input"
-                                style="display: none;" accept=".pdf,.md">
+                            <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md">
                         </div>
                         <div class="form-group" id="pdf-pages-group">
                             <label for="pdf-pages-input" data-i18n-key="pdfPagesLabel">Pages to Ingest</label>
-                            <input type="text" id="pdf-pages-input" autocomplete="off"
-                                data-i18n-key="pdfPagesPlaceholder" data-i18n-target="placeholder" placeholder="e.g., all, 1, 5, 8-12" disabled>
+                            <input type="text" id="pdf-pages-input" autocomplete="off" data-i18n-key="pdfPagesPlaceholder" data-i18n-target="placeholder" placeholder="e.g., all, 1, 5, 8-12" disabled>
                         </div>
                     </div>
                     <hr class="wizard-divider-vertical">
@@ -205,8 +199,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="kb-name" data-i18n-key="formName">Name</label>
-                                <input type="text" id="kb-name" autocomplete="off"
-                                    data-i18n-key="formNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Core Rules v5.1">
+                                <input type="text" id="kb-name" autocomplete="off" data-i18n-key="formNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Core Rules v5.1">
                             </div>
                         </div>
                         <div class="form-row">
@@ -229,8 +222,7 @@
                             </div>
                         </div>
                         <div class="form-group form-group-fill">
-                            <textarea id="kb-desc" data-i18n-key="formDescriptionPlaceholder" data-i18n-target="placeholder" placeholder="Description (Optional)"
-                                autocomplete="off"></textarea>
+                            <textarea id="kb-desc" data-i18n-key="formDescriptionPlaceholder" data-i18n-target="placeholder" placeholder="Description (Optional)" autocomplete="off"></textarea>
                         </div>
                     </div>
                 </div>
@@ -252,8 +244,7 @@
                         <button id="image-prev-btn" class="image-nav-btn prev">&lt;</button>
                         <button id="image-next-btn" class="image-nav-btn next">&gt;</button>
                         <p id="image-review-counter"></p>
-                        <button id="discard-image-btn" class="discard-btn"
-                            data-i18n-key="discardImage" data-i18n-target="title" title="Discard Image">
+                        <button id="discard-image-btn" class="discard-btn" data-i18n-key="discardImage" data-i18n-target="title" title="Discard Image">
                             🗑️
                         </button>
                     </div>
@@ -265,30 +256,12 @@
                         <div class="form-group">
                             <label data-i18n-key="imageClassification">Classification</label>
                             <div class="radio-group image-classification-group">
-                                <label>
-                                    <input type="radio" name="image-classification"
-                                        value="cover"> <span data-i18n-key="imgClassCover">Cover</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="image-classification"
-                                        value="art" checked> <span data-i18n-key="imgClassArt">Art</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="image-classification"
-                                        value="handout"> <span data-i18n-key="imgClassHandout">Handout</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="image-classification"
-                                        value="map"> <span data-i18n-key="imgClassMap">Map</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="image-classification"
-                                        value="decoration"> <span data-i18n-key="imgClassDecoration">Decoration</span>
-                                </label>
-                                <label>
-                                    <input type="radio" name="image-classification"
-                                        value="other"> <span data-i18n-key="imgClassOther">Other</span>
-                                </label>
+                                <label><input type="radio" name="image-classification" value="cover"> <span data-i18n-key="imgClassCover">Cover</span></label>
+                                <label><input type="radio" name="image-classification" value="art" checked> <span data-i18n-key="imgClassArt">Art</span></label>
+                                <label><input type="radio" name="image-classification" value="handout"> <span data-i18n-key="imgClassHandout">Handout</span></label>
+                                <label><input type="radio" name="image-classification" value="map"> <span data-i18n-key="imgClassMap">Map</span></label>
+                                <label><input type="radio" name="image-classification" value="decoration"> <span data-i18n-key="imgClassDecoration">Decoration</span></label>
+                                <label><input type="radio" name="image-classification" value="other"> <span data-i18n-key="imgClassOther">Other</span></label>
                             </div>
                         </div>
                     </div>
@@ -300,7 +273,6 @@
             <button id="import-wizard-next-btn" class="accent-btn" data-i18n-key="wizardNext">Next</button>
         </div>
     </div>
-
     <div id="party-wizard-modal" class="modal modal-lg">
         <div class="modal-header">
             <h2 data-i18n-key="partyManagerTitle">Party Manager</h2>
@@ -312,9 +284,7 @@
                     <div class="party-selection-area">
                         <div class="panel-header">
                             <h4 data-i18n-key="partiesTitle">Parties</h4>
-                            <button id="show-create-party-panel-btn"
-                                class="accent-btn icon-btn" data-i18n-key="newParty" data-i18n-target="title" title="Create New Party">+
-                            </button>
+                            <button id="show-create-party-panel-btn" class="accent-btn icon-btn" data-i18n-key="newParty" data-i18n-target="title" title="Create New Party">+</button>
                         </div>
                         <ul id="party-list" class="item-list"></ul>
                     </div>
@@ -332,16 +302,14 @@
                         <h3 data-i18n-key="partyCreatorTitle">Create New Party</h3>
                         <div class="form-group">
                             <label for="new-party-name-input" data-i18n-key="partyNameLabel">Party Name</label>
-                            <input type="text" id="new-party-name-input" autocomplete="off"
-                                data-i18n-key="partyNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., The Brightswords">
+                            <input type="text" id="new-party-name-input" autocomplete="off" data-i18n-key="partyNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., The Brightswords">
                         </div>
                         <button id="create-party-btn" class="accent-btn" data-i18n-key="saveParty">Save Party</button>
                     </div>
                     <div id="character-editor-panel" style="display: none;">
                         <div class="panel-header">
                             <h4 data-i18n-key="addCharacterTitle">Add New Character</h4>
-                            <button id="add-char-manual-btn" class="accent-btn icon-btn"
-                                data-i18n-key="addCharManual" data-i18n-target="title" title="Add Manually">+</button>
+                            <button id="add-char-manual-btn" class="accent-btn icon-btn" data-i18n-key="addCharManual" data-i18n-target="title" title="Add Manually">+</button>
                         </div>
                         <div class="form-group">
                             <label for="char-name" data-i18n-key="formName">Name</label>
@@ -374,10 +342,8 @@
                         <div class="ai-generator">
                             <h5 data-i18n-key="aiCharGenerator">AI Character Generator</h5>
                             <div class="form-group form-group-stretch ai-input-container">
-                                <textarea id="ai-char-desc" rows="4" autocomplete="off"
-                                    data-i18n-key="aiCharDescPlaceholder" data-i18n-target="placeholder" placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
-                                <button id="ai-char-generate-btn"
-                                    class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
+                                <textarea id="ai-char-desc" rows="4" autocomplete="off" data-i18n-key="aiCharDescPlaceholder" data-i18n-target="placeholder" placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
+                                <button id="ai-char-generate-btn" class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
                             </div>
                         </div>
                     </div>
@@ -385,7 +351,6 @@
             </div>
         </div>
     </div>
-
     <div id="new-game-wizard-modal" class="modal modal-md">
         <div class="modal-header">
             <h2 data-i18n-key="newGameWizardTitle">New Game Setup</h2>
@@ -395,14 +360,8 @@
             <div class="form-group">
                 <label data-i18n-key="gameMode">Game Mode</label>
                 <div class="radio-group">
-                    <label>
-                        <input type="radio" name="game-mode" value="module" checked>
-                        <span data-i18n-key="gameModeModule">Adventure Module</span>
-                    </label>
-                    <label>
-                        <input type="radio" name="game-mode" value="freestyle">
-                        <span data-i18n-key="gameModeFreestyle">Freestyle</span>
-                    </label>
+                    <label><input type="radio" name="game-mode" value="module" checked> <span data-i18n-key="gameModeModule">Adventure Module</span></label>
+                    <label><input type="radio" name="game-mode" value="freestyle"> <span data-i18n-key="gameModeFreestyle">Freestyle</span></label>
                 </div>
             </div>
             <div class="form-group">
@@ -430,7 +389,6 @@
             <button id="start-game-btn" class="accent-btn" data-i18n-key="startGame">Start Game</button>
         </div>
     </div>
-
     <div id="settings-modal" class="modal modal-lg">
         <div class="modal-header">
             <h2 data-i18n-key="settingsTitle">Settings</h2>
@@ -473,42 +431,34 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="game-default-ruleset" data-i18n-key="defaultRuleset">Default Preferred Ruleset</label>
-                                <input type="text" id="game-default-ruleset" list="kb-list"
-                                    data-section="Game" data-key="default_ruleset" autocomplete="off">
+                                <input type="text" id="game-default-ruleset" list="kb-list" data-section="Game" data-key="default_ruleset" autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="game-default-setting" data-i18n-key="defaultSetting">Default Preferred Setting</label>
-                                <input type="text" id="game-default-setting" list="kb-list"
-                                    data-section="Game" data-key="default_setting" autocomplete="off">
+                                <input type="text" id="game-default-setting" list="kb-list" data-section="Game" data-key="default_setting" autocomplete="off">
                             </div>
                         </div>
                         <h3 data-i18n-key="ollamaConfigTitle">Ollama Configuration</h3>
                         <div class="form-group">
                             <label for="ollama-url" data-i18n-key="ollamaUrl">Server URL</label>
-                            <input type="text" id="ollama-url" data-section="Ollama" autocomplete="off"
-                                data-key="url" data-i18n-key="ollamaUrlPlaceholder" data-i18n-target="placeholder" placeholder="http://localhost:11434">
+                            <input type="text" id="ollama-url" data-section="Ollama" autocomplete="off" data-key="url" data-i18n-key="ollamaUrlPlaceholder" data-i18n-target="placeholder" placeholder="http://localhost:11434">
                         </div>
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="ollama-main-model" data-i18n-key="ollamaMainModel">Main Gameplay Model</label>
-                                <input type="text" id="ollama-main-model" list="ollama-models-list"
-                                    data-section="Ollama" data-key="main_model" autocomplete="off">
+                                <input type="text" id="ollama-main-model" list="ollama-models-list" data-section="Ollama" data-key="main_model" autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="ollama-classification-model" data-i18n-key="ollamaClassificationModel">Classification Model</label>
-                                <input type="text" id="ollama-classification-model" list="ollama-models-list"
-                                    data-section="Ollama" data-key="classification_model" autocomplete="off">
+                                <input type="text" id="ollama-classification-model" list="ollama-models-list" data-section="Ollama" data-key="classification_model" autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="ollama-vision-model" data-i18n-key="ollamaVisionModel">Image Analysis Model</label>
-                                <input type="text" id="ollama-vision-model" list="ollama-models-list"
-                                    data-section="Ollama" data-key="vision_model" autocomplete="off">
+                                <input type="text" id="ollama-vision-model" list="ollama-models-list" data-section="Ollama" data-key="vision_model" autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="ollama-embedding-model" data-i18n-key="ollamaEmbeddingModel">Embedding Model</label>
-                                <input type="text" id="ollama-embedding-model" autocomplete="off"
-                                    list="ollama-models-list" data-section="Ollama"
-                                    data-key="embedding_model">
+                                <input type="text" id="ollama-embedding-model" autocomplete="off" list="ollama-models-list" data-section="Ollama" data-key="embedding_model">
                             </div>
                         </div>
                         <datalist id="ollama-models-list"></datalist>
@@ -516,8 +466,7 @@
                     </div>
                     <div class="settings-pane" id="pane-rag">
                         <h3 data-i18n-key="kbMgmtTitle">Knowledge Base Management</h3>
-                        <div id="rag-status-container">
-                            </div>
+                        <div id="rag-status-container"></div>
                     </div>
                 </div>
             </div>
@@ -529,7 +478,6 @@
             <button id="settings-save-btn" class="accent-btn" data-i18n-key="settingsSave">Save Changes</button>
         </div>
     </div>
-
     <div id="dm-insight-modal" class="modal modal-lg">
         <div class="modal-header">
             <h2 data-i18n-key="dmInsightTitle">DM's Insight</h2>
@@ -538,18 +486,15 @@
         <div class="modal-body wizard-body">
             <h3 data-i18n-key="dmInsightHeader">RAG Context</h3>
             <p data-i18n-key="dmInsightMsg">
-                This is the raw context retrieved from the knowledge bases that
-                the AI used to generate its last response.
+                This is the raw context retrieved from the knowledge bases that the AI used to generate its last response.
             </p>
             <div id="dm-insight-content" class="dm-insight-content-box"></div>
         </div>
     </div>
-
     <div id="image-lightbox-modal" class="modal-lightbox">
         <span id="image-lightbox-close" class="lightbox-close-btn">&times;</span>
         <img id="image-lightbox-content" class="lightbox-content">
     </div>
-
     <div id="confirmation-modal" class="modal modal-md">
         <div class="modal-header">
             <h2 id="confirmation-title" data-i18n-key="confirmTitle">Confirm</h2>
