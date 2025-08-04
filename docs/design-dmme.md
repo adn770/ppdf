@@ -13,7 +13,12 @@ The system uses a Retrieval-Augmented Generation (RAG) approach, drawing from
 four distinct types of knowledge sources to ground the Large Language Model (LLM).
 All components are designed to run locally using Ollama.
 
-#### 1.1. Knowledge Source Types
+The application is architected around three distinct, top-level views: **Game**,
+**Library**, and **Party**. This organizes management tasks into dedicated hubs,
+streamlines workflows, and creates a more professional, application-like user
+experience.
+
+### 1.1. Knowledge Source Types
 
 The RAG system is built upon four types of knowledge bases:
 
@@ -25,7 +30,7 @@ The RAG system is built upon four types of knowledge bases:
 4.  **Adapter:** A reusable knowledge base that translates mechanics from a source
     rule system to a target rule system (e.g., D&D 5e to Pathfinder 2e).
 
-#### 1.2. Game Modes
+### 1.2. Game Modes
 
 `dmme` supports two primary modes of play, selectable via a "New Game" wizard:
 
@@ -36,7 +41,7 @@ The RAG system is built upon four types of knowledge bases:
     `Setting` for context and potentially drawing inspiration from the entire
     corpus of available modules.
 
-#### 1.3. Campaign and Session Structure
+### 1.3. Campaign and Session Structure
 
 -   **Campaign**: This is the primary, persistent save object. A campaign encompasses
     the party, their inventory, and the entire history of their adventure. Users
@@ -47,7 +52,7 @@ The RAG system is built upon four types of knowledge bases:
     When a campaign is loaded, the recap of the *previous* session will be
     displayed to remind players of what happened.
 
-#### 1.4. `ppdf` Feature Set
+### 1.4. `ppdf` Feature Set
 
 -   **Implemented Features (Standalone Tool)**:
     -   **Advanced PDF Parsing**: A multi-stage pipeline that analyzes page layouts,
@@ -75,28 +80,34 @@ The RAG system is built upon four types of knowledge bases:
         uses an LLM to add semantic labels (e.g., `is_stat_block`,
         `is_read_aloud_text`) to text chunks before ingestion.
 
-#### 1.5. `dmme` Feature Set
+### 1.5. `dmme` Feature Set
 
--   **Planned Features**:
-    -   **Knowledge Ingestion Wizard**: A web UI for creating knowledge bases from
-        Markdown or PDF files, including a "human-in-the-loop" review and approval
-        step for extracted images.
+-   **Implemented Features**:
     -   **Campaign & Party Management**: Full CRUD functionality for creating, saving,
         and loading persistent campaigns and parties of characters.
-    -   **LLM-Powered Character Creator**: A wizard to generate TTRPG characters from
-        natural language descriptions.
     -   **Interactive Gameplay UI**: A two-column interface featuring a narrative log,
-        player input, a party status panel, and a dice roller.
-        -   Inline visual aids rendered as size-constrained, clickable thumbnails
-            that open in a full-size lightbox view.
+        player input, a dynamically populated party status panel, and a dice roller.
     -   **Advanced RAG System**: A sophisticated Retrieval-Augmented Generation
         system that leverages semantically labeled text chunks for precise,
         context-aware responses.
     -   **Multiple Game Modes**: Support for both pre-defined `Module` play and
         LLM-generated `Freestyle` play.
-        -   Visually engaging "Cover Mosaic" kickoff for Adventure Module Mode.
     -   **Optional Game Aids**: User-selectable aids including an "AI Art Historian" for
-        inline visual aids and an "ASCII Scene Renderer" for rogue-like maps.
+        inline visual aids (with thumbnails and lightbox) and an "ASCII Scene Renderer"
+        for rogue-like maps.
+
+-   **Planned Features (Hub Paradigm)**:
+    -   **Library Hub**: A dedicated hub for all Knowledge Base (KB) management,
+        replacing the former "Import" modal. It will feature a KB list, a
+        content/asset explorer, and an integrated, multi-step **Ingestion Wizard**.
+    -   **Party Hub**: A dedicated hub for creating and managing all parties and their
+        characters, replacing the former "Party Manager" modal. It will include an
+        **LLM-Powered Character Creator**.
+    -   **Advanced Ingestion Workflow**: An enhanced workflow that allows for
+        section-level review of a document *before* ingestion, including the
+        ability to exclude sections and apply high-level content "cues".
+    -   **Custom Asset Upload**: A feature within the Library Hub's asset explorer
+        allowing users to add their own images to a KB via drag-and-drop.
 
 ---
 
@@ -110,7 +121,9 @@ application data besides the vector stores.
 ├── assets/
 │   └── images/
 │       └── <collection_name>/
-│           └── ... (*Extracted image files, thumbnails, & JSON metadata*)
+│           ├── assets.json      (*Asset manifest*)
+│           ├── ... (*Extracted image files*)
+│           └── ... (*Extracted thumbnail files*)
 ├── chroma/
 │   └── ... (*ChromaDB persistent vector storage*)
 ├── dmme.db         (*SQLite database for campaigns, sessions, parties, etc.*)
@@ -180,17 +193,18 @@ game state, and interacts with the LLM.
 -   **Data Persistence**: All application data is stored in a unified **SQLite
     database** (`dmme.db`) with tables for `campaigns`, `sessions`, `parties`, and
     `characters`.
--   **Knowledge Ingestion**: Provides an API to support the frontend's **Import
-    Knowledge Wizard**. It will programmatically invoke the enhanced `ppdf` library
-    to handle PDF processing for both content and images.
+-   **Knowledge Ingestion**: Provides an API to support the frontend's **Library
+    Hub**. It will invoke `ppdf` for a two-stage process: first to
+    `analyze` a document's structure, and second to perform the final `ingestion` based
+    on user-provided section configurations.
 -   **RAG & LLM Logic**: The core RAG service will query the ChromaDB collections,
     leveraging semantic labels for precision. It will also contain the logic for
     generating Journal Recaps and ASCII Scene Maps.
 -   **REST API**:
-    -   **Campaigns**: Full CRUD APIs for managing campaigns (e.g., `GET /api/campaigns`).
+    -   **Campaigns**: Full CRUD APIs for managing campaigns.
     -   **Parties**: Full CRUD APIs for managing saved parties.
-    -   **Knowledge**: APIs to orchestrate the multi-step ingestion process for text
-        and images.
+    -   **Knowledge**: APIs to orchestrate the multi-step ingestion process,
+        including `POST /api/knowledge/analyze` and `POST /api/knowledge/<kb_name>/upload-asset`.
     -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
         images, and maps).
 
@@ -202,7 +216,7 @@ The `dmme` frontend will be a single-page application built using a modern, modu
 **ES6 JavaScript** structure. It will feature a modern, component-based design with
 a dark, themeable interface.
 
-#### 4.1. Detailed Style Guide
+### 4.1. Detailed Style Guide
 
 To ensure a consistent and professional look and feel, the UI will adhere to the
 following style guide.
@@ -227,41 +241,65 @@ following style guide.
     -   Vibrant Focus
     -   High Contrast
 
-#### 4.2. Core Layout
+### 4.2. UI/UX Paradigm
 
-The main interface will be a **two-column layout**:
+The application is organized around three distinct views, a contextual header, and
+status bar navigation.
+
+-   **Main Views:**
+    1.  **Game View:** The immersive environment for active gameplay.
+    2.  **Library View:** A dedicated hub for all Knowledge Base (KB) management.
+    3.  **Party View:** A dedicated hub for creating and managing all parties and
+        characters.
+
+-   **Status Bar Navigation:** The primary method for switching between views will be
+    a set of icons on the left side of the bottom status bar.
+
+-   **Contextual Header:** The main header buttons will change based on the active view.
+    -   **Game View Header:** `New Game` | `Load Game` | `Settings`
+    -   **Library View Header:** `+ New Knowledge Base` | `Settings`
+    -   **Party View Header:** `+ New Party` | `Settings`
+
+### 4.3. Core Layouts
+
+#### 4.3.1. Game View
+
+The main gameplay interface will be a **two-column layout**:
 
 -   **Left Panel (approx. 1/4 width):** A fixed-width side panel containing:
-    -   **Party Status Panel:** An accordion view displaying the current party's
-        characters and stats. It will integrate a **"+" button** to launch a new
-        "Party Creation Wizard."
-    -   **Dice Roller:** A UI component for making common dice rolls (d4, d6, d20, etc.).
-
+    -   An upper, scrollable **Party Status Panel** with an accordion view for character details.
+    -   A lower, fixed **Dice Roller** component anchored to the bottom.
 -   **Right Panel (approx. 3/4 width):** The main interaction area containing:
-    -   **Knowledge Source Panel:** A horizontal panel displaying the active
-        knowledge bases for the current session.
-    -   **Narrative View:** The main log displaying the game's story, which can
-        render text, inline images, and pre-formatted ASCII maps. At the start of an
-        Adventure Module, this view will first display a "Cover Mosaic" of art.
+    -   **Knowledge Source Panel:** Displays active KBs for the session.
+    -   **Narrative View:** The main log displaying the game's story.
     -   **Input Panel:** The text area for user commands.
 
-#### 4.3. Modals and Wizards
+#### 4.3.2. Library Hub
 
--   **Import Knowledge Wizard**: A multi-step modal for creating knowledge bases. It
-    will handle PDF/Markdown uploads, knowledge type classification, metadata entry,
-    and the new "human-in-the-loop" **Image Review** step (with a slideshow and
-    editing tools).
--   **New Game Wizard:** A modal that guides the user through selecting a Game Mode
-    and the required knowledge bases. It will include a step to select a saved
-    party or launch the Party Creation Wizard.
--   **Party Creation Wizard**: A dedicated wizard for creating a new party and its
-    characters, including an interface for the LLM-powered character generator.
+A two-panel layout for all KB-related tasks.
+
+-   **Left Panel:** A searchable list of all created KBs.
+-   **Right Panel (KB Inspector):** A tabbed interface for the selected KB, also
+    containing the integrated **Ingestion Wizard**.
+
+#### 4.3.3. Party Hub
+
+A two-panel layout for all party and character management.
+
+-   **Left Panel:** A searchable list of all created Parties.
+-   **Right Panel (Party Inspector):** Displays the selected party's character
+    roster and contains all UI for adding and editing characters.
+
+### 4.4. Modals and Wizards
+
+-   **New Game Wizard:** A modal launched from the Game View to guide the user
+    through selecting a Game Mode and the required knowledge bases.
 -   **DM's Insight Modal**: Triggered by an inline '🔍' button on an AI response, this
     modal displays the raw RAG context used for that specific generation.
 -   **Image Lightbox Modal**: A simple, reusable modal overlay that displays a
     full-resolution image when a thumbnail in the narrative view is clicked.
--   **Settings Panel:** A multi-pane modal for application configuration, including a
-    toggle for optional game aids like the **ASCII Scene Renderer** and **Visual Aids**.
+-   **Settings Panel:** A multi-pane modal for application configuration. The RAG
+    management pane will be removed in favor of the Library Hub.
 
 ---
 
@@ -294,8 +332,7 @@ root, a shared `core` library, and dedicated libraries for each application.
 
 ## 6. Implementation Plan
 
-This implementation plan starts from the existing state of the `ppdf` codebase and
-details the incremental steps to build the `dmme` application.
+This implementation plan details the incremental steps to build the `dmme` application.
 
 ### Phase 1: Foundational `ppdf` Enhancements
 
@@ -663,6 +700,71 @@ details the incremental steps to build the `dmme` application.
     -   **Outcome**: Users playing an Adventure Module are greeted with a visually
         striking mosaic of cover art, creating a strong thematic opening for the game
         session.
+
+### Phase 9: Core UI & Hub Foundations
+
+-   **Milestone 31: Implement Multi-View Architecture**
+    -   **Goal:** Refactor the core UI to support the new multi-view paradigm.
+    -   **Key Tasks:**
+        -   Create the main containers for the Game, Library, and Party views.
+        -   Implement the status bar with icons to switch between the three views.
+        -   Implement the logic for the contextual header, showing different
+            buttons based on the active view.
+    -   **Outcome:** A functional application shell where the user can navigate
+        between three distinct (but still empty) views.
+
+-   **Milestone 32: Build Library & Party Hub UIs**
+    -   **Goal:** Create the static two-panel layouts for the new management hubs.
+    -   **Key Tasks:**
+        -   Build the Library Hub's layout: KB list on the left, tabbed inspector
+            panel on the right.
+        -   Build the Party Hub's layout: Party list on the left, character roster/
+            editor panel on the right.
+        -   Populate the lists by fetching data from the existing backend APIs.
+    -   **Outcome:** The Library and Party hubs are visually complete and display
+        existing KBs and Parties.
+
+### Phase 10: Advanced Ingestion & Management
+
+-   **Milestone 33: Implement Content Explorer**
+    -   **Goal:** Allow users to view the indexed content of a Knowledge Base.
+    -   **Key Tasks:**
+        -   Create a new backend endpoint `GET /api/knowledge/<kb_name>/explore`.
+        -   Implement the frontend logic to fetch and render the "Text View" and
+            "Asset View" in the Library Hub.
+    -   **Outcome:** A user can select a KB and browse all of its indexed content.
+
+-   **Milestone 34: Refactor Ingestion for Sectional Control**
+    -   **Goal:** Overhaul the ingestion workflow to support the new review step.
+    -   **Key Tasks:**
+        -   Create a new API endpoint `POST /api/knowledge/analyze` that returns a
+            list of sections from a file.
+        -   Modify the main ingestion endpoint to accept a user-configured list of
+            sections.
+        -   Integrate this two-stage process into the Import Wizard now located
+            inside the Library Hub.
+    -   **Outcome:** A user can upload a file, review its sections, apply cues or
+        exclusions, and then finalize the ingestion.
+
+### Phase 11: Character & Asset Management
+
+-   **Milestone 35: Implement Character Creator in Party Hub**
+    -   **Goal:** Move all character creation and management functionality into the
+        new Party Hub.
+    -   **Key Tasks:**
+        -   Integrate the existing character editor and AI generator UI into the
+            right-hand panel of the Party Hub.
+        -   Ensure all backend API calls for creating/deleting characters work
+            correctly from this new view.
+    -   **Outcome:** The Party Hub is a fully functional interface for managing all
+        parties and characters.
+
+-   **Milestone 36: Implement Custom Asset Upload**
+    -   **Goal:** Allow users to add their own images to a KB's asset collection.
+    -   **Key Tasks:**
+        -   Create a new API endpoint `POST /api/knowledge/<kb_name>/upload-asset`.
+        -   Implement the drag-and-drop UI in the Library Hub's "Asset View".
+    -   **Outcome:** A user can add custom images to any Knowledge Base at any time.
 
 ---
 
