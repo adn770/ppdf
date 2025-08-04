@@ -4,9 +4,17 @@ import re
 import os
 import json
 import shutil
+import uuid
+from PIL import Image
+from io import BytesIO
 from flask import current_app
 from .vector_store_service import VectorStoreService
-from core.llm_utils import get_semantic_label, query_text_llm, get_model_details
+from core.llm_utils import (
+    get_semantic_label,
+    query_text_llm,
+    get_model_details,
+    query_multimodal_llm,
+)
 from ppdf_lib.api import process_pdf_text, process_pdf_images
 from dmme_lib.constants import PROMPT_REGISTRY
 
@@ -23,6 +31,10 @@ class IngestionService:
     def _get_classification_model(self):
         """Gets the classification model from the app's config service."""
         return current_app.config_service.get_settings()["Ollama"]["classification_model"]
+
+    def _get_vision_model(self):
+        """Gets the vision model from the app's config service."""
+        return current_app.config_service.get_settings()["Ollama"]["vision_model"]
 
     def _get_prompt(self, key: str, lang: str) -> str:
         """Safely retrieves a prompt from the registry, falling back to English."""
@@ -231,7 +243,7 @@ class IngestionService:
         yield "✔ Saved to vector store."
 
     def process_and_extract_images(
-        self, assets_path: str, metadata: dict, pages_str: str = "all"
+        self, pdf_path: str, assets_path: str, metadata: dict, pages_str: str = "all"
     ):
         """Extracts images from a PDF and processes them using language-aware prompts."""
         kb_name = metadata.get("kb_name")
@@ -245,12 +257,13 @@ class IngestionService:
 
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
+        vision_model = self._get_vision_model()
 
         yield from process_pdf_images(
             pdf_path,
             review_dir,
             self.ollama_url,
-            self.model,
+            vision_model,
             describe_prompt,
             classify_prompt,
             pages_str=pages_str,
@@ -337,3 +350,78 @@ class IngestionService:
             kb_name,
             final_dir,
         )
+
+    def add_custom_asset(self, kb_name: str, file_storage):
+        """Processes a user-uploaded image and adds it to an existing KB."""
+        assets_dir = os.path.join(current_app.config["ASSETS_PATH"], "images", kb_name)
+        os.makedirs(assets_dir, exist_ok=True)
+
+        # 1. Save files with unique names
+        file_ext = os.path.splitext(file_storage.filename)[1]
+        asset_id = uuid.uuid4().hex
+        image_filename = f"custom_{asset_id}{file_ext}"
+        thumb_filename = f"thumb_custom_{asset_id}.jpg"
+        json_filename = f"custom_{asset_id}.json"
+        image_path = os.path.join(assets_dir, image_filename)
+        thumb_path = os.path.join(assets_dir, thumb_filename)
+        json_path = os.path.join(assets_dir, json_filename)
+
+        file_storage.save(image_path)
+
+        # 2. Generate thumbnail
+        with Image.open(image_path) as img:
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            img.thumbnail((256, 256))
+            img.save(thumb_path, "JPEG", quality=85)
+
+        # 3. Generate metadata with LLM
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+
+        kb_metadata = self.vector_store.get_kb_metadata(kb_name)
+        lang = kb_metadata.get("language", "en")
+        vision_model = self._get_vision_model()
+        classification_model = self._get_classification_model()
+
+        describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
+        description = query_multimodal_llm(
+            describe_prompt, image_bytes, self.ollama_url, vision_model
+        )
+        classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
+        classification = query_multimodal_llm(
+            classify_prompt, image_bytes, self.ollama_url, classification_model, 0.1
+        ).strip()
+        if classification not in {"cover", "art", "map", "handout", "decoration", "other"}:
+            classification = "art"
+
+        # 4. Save metadata JSON
+        metadata = {
+            "description": description or "No description generated.",
+            "classification": classification,
+            "source": "user_upload",
+            "original_filename": file_storage.filename,
+            "thumbnail_filename": thumb_filename,
+        }
+        with open(json_path, "w") as f:
+            json.dump(metadata, f, indent=4)
+
+        # 5. Add to vector store
+        doc_text = f"An image of type '{classification}' depicting: {description}"
+        doc_meta = {
+            "source_file": "User Uploads",
+            "label": "image_description",
+            "classification": classification,
+            "image_url": os.path.join("images", kb_name, image_filename),
+            "thumbnail_url": os.path.join("images", kb_name, thumb_filename),
+        }
+        self.vector_store.add_to_kb(kb_name, [doc_text], [doc_meta])
+
+        # 6. Update manifest
+        self._create_asset_manifest(assets_dir)
+        log.info("Successfully added custom asset '%s' to KB '%s'", image_filename, kb_name)
+        return {
+            "url": doc_meta["thumbnail_url"],
+            "caption": description,
+            "classification": classification,
+        }

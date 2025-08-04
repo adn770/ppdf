@@ -1,9 +1,7 @@
 # --- ppdf_lib/api.py ---
 import os
 import json
-import base64
 import logging
-import requests
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 from flask import current_app
@@ -13,6 +11,7 @@ from pdfminer.layout import LTImage
 
 from .extractor import PDFTextExtractor
 from .models import Section
+from core.llm_utils import query_multimodal_llm
 
 log = logging.getLogger("ppdf.api")
 
@@ -42,44 +41,6 @@ def _parse_page_selection(pages_str: str) -> set | None:
     except ValueError:
         log.error("Invalid page selection format: %s. Defaulting to 'all'.", pages_str)
         return None
-
-
-def _query_multimodal_llm(
-    prompt: str, image_bytes: bytes, ollama_url: str, model: str, temperature: float = None
-) -> str:
-    """Sends a prompt and a single image to an Ollama multimodal model."""
-    if not image_bytes:
-        log.error("No image bytes provided for multimodal query.")
-        return ""
-
-    encoded_image = base64.b64encode(image_bytes).decode("utf-8")
-
-    try:
-        log.debug("Querying multimodal LLM '%s'...", model)
-        payload = {
-            "model": model,
-            "prompt": prompt,
-            "images": [encoded_image],
-            "stream": False,
-        }
-        options = {}
-        if temperature is not None:
-            options["temperature"] = temperature
-        if options:
-            payload["options"] = options
-
-        response = requests.post(
-            f"{ollama_url}/api/generate",
-            json=payload,
-            timeout=90,
-        )
-        response.raise_for_status()
-        data = response.json()
-        log.debug("LLM response received: %s", data.get("response", "").strip())
-        return data.get("response", "").strip()
-    except requests.exceptions.RequestException as e:
-        log.error("Failed to query multimodal LLM: %s", e)
-        return ""
 
 
 def process_pdf_text(
@@ -301,7 +262,7 @@ def process_pdf_images(
             with open(image_filename, "rb") as f:
                 saved_image_bytes = f.read()
 
-            description = _query_multimodal_llm(
+            description = query_multimodal_llm(
                 describe_prompt, saved_image_bytes, ollama_url, model
             )
 
@@ -314,7 +275,7 @@ def process_pdf_images(
                     "Pre-classifying image on page %d as '%s'", page_layout.pageid, page_type
                 )
             else:
-                classification = _query_multimodal_llm(
+                classification = query_multimodal_llm(
                     classify_prompt,
                     saved_image_bytes,
                     ollama_url,

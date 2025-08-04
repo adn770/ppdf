@@ -118,6 +118,23 @@ def upload_temp_file():
         return jsonify({"error": "Failed to save temporary file"}), 500
 
 
+@bp.route("/<kb_name>/upload-asset", methods=["POST"])
+def upload_asset(kb_name):
+    """Uploads a single image asset directly to a knowledge base."""
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    try:
+        new_asset = current_app.ingestion_service.add_custom_asset(kb_name, file)
+        return jsonify(new_asset), 201
+    except Exception as e:
+        log.error("Failed to upload custom asset to KB '%s': %s", kb_name, e, exc_info=True)
+        return jsonify({"error": "Failed to upload asset"}), 500
+
+
 @bp.route("/analyze", methods=["POST"])
 def analyze_document():
     """Analyzes a document's structure without performing full ingestion."""

@@ -2,6 +2,7 @@
 import logging
 import requests
 import json
+import base64
 
 log = logging.getLogger("dmme.llm_utils")
 
@@ -88,6 +89,44 @@ def query_text_llm(
         log.error("Failed to query text LLM: %s", e)
         if stream:
             return iter([])  # Return an empty iterator on error
+        return ""
+
+
+def query_multimodal_llm(
+    prompt: str, image_bytes: bytes, ollama_url: str, model: str, temperature: float = None
+) -> str:
+    """Sends a prompt and a single image to an Ollama multimodal model."""
+    if not image_bytes:
+        log.error("No image bytes provided for multimodal query.")
+        return ""
+
+    encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+
+    try:
+        log.debug("Querying multimodal LLM '%s'...", model)
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "images": [encoded_image],
+            "stream": False,
+        }
+        options = {}
+        if temperature is not None:
+            options["temperature"] = temperature
+        if options:
+            payload["options"] = options
+
+        response = requests.post(
+            f"{ollama_url}/api/generate",
+            json=payload,
+            timeout=90,
+        )
+        response.raise_for_status()
+        data = response.json()
+        log.debug("LLM response received: %s", data.get("response", "").strip())
+        return data.get("response", "").strip()
+    except requests.exceptions.RequestException as e:
+        log.error("Failed to query multimodal LLM: %s", e)
         return ""
 
 
