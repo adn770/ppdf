@@ -171,7 +171,7 @@ PROMPT_REGISTRY = {
             "d'un usuari i un sistema de regles específic.\n"
             "DESCRIPCIÓ DE L'USUARI:\n{description}\n\n"
             "CONTEXT DEL SISTEMA DE REGLES:\n{rules_context}\n\n"
-            "La teva resposta HA DE SER un únic objecte JSON vàlid i res més. "
+            "La teva resposta HA DE SER un único objecte JSON vàlid i res més. "
             "El JSON ha de tenir claus per a 'name', 'class', 'level', 'description', "
             "i 'stats'. El text de la descripció HA D'ESTAR escrit en català."
         ),
@@ -221,10 +221,19 @@ PROMPT_REGISTRY = {
     "SEMANTIC_LABELER": {
         "en": (
             "You are a semantic analysis engine. Analyze the text chunk and assign "
-            "ONE primary category label from the list: `stat_block`, "
-            "`read_aloud_text`, `item_description`, `location_description`, "
-            "`mechanics`, `lore`, `dialogue`, `prose`. Your response must be ONLY "
-            "the chosen label and nothing else."
+            "ONE primary category label from the list. Prioritize special labels if they apply.\n\n"
+            "LABEL DEFINITIONS:\n"
+            "- `read_aloud_kickoff`: Text meant to be read to players to start the adventure.\n"
+            "- `adventure_hook`: A plot hook, rumor, or mission for players.\n"
+            "- `stat_block`: A creature's or character's statistics.\n"
+            "- `read_aloud_text`: General descriptive text to be read to players.\n"
+            "- `item_description`: Description of an item.\n"
+            "- `location_description`: Description of a place.\n"
+            "- `mechanics`: Rules or game mechanics.\n"
+            "- `lore`: Background history or world-building information.\n"
+            "- `dialogue`: Spoken words from a character.\n"
+            "- `prose`: General narrative text that doesn't fit other categories.\n\n"
+            "Respond with ONLY the chosen label and nothing else."
         )
     },
     "SECTION_CLASSIFIER": {
@@ -239,7 +248,7 @@ PROMPT_REGISTRY = {
             "with navigation (table_of_contents, index), or handling administrative "
             "details (legal, credits)?\n"
             "2.  **Clarify Distinction**: A `preface` talks *about the book* itself "
-            "(e.g., \"how to use this supplement,\" author's notes). In contrast, `content` "
+            '(e.g., "how to use this supplement," author\'s notes). In contrast, `content` '
             "is the adventure itself, including **background lore**, world history, "
             "location descriptions, and game mechanics.\n"
             "3.  **Focus on Content**: Base your classification on the substance and "

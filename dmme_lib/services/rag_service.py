@@ -28,6 +28,26 @@ class RAGService:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
         return f'"{single_line_text}"'
 
+    def _get_full_section(
+        self, kb_name: str, chunk_meta: dict
+    ) -> tuple[list[str], list[dict]]:
+        """Retrieves all chunks belonging to the same section as the given chunk."""
+        section_title = chunk_meta.get("section_title")
+        if not section_title:
+            log.warning("Cannot defragment chunk; missing 'section_title' metadata.")
+            return [], []
+
+        log.debug("Defragmenting RAG context for section: '%s'", section_title)
+        # Query with the title itself. The where filter provides the precision.
+        # We ask for a high number of results to ensure we get all chunks in a section.
+        docs, metas = self.vector_store.query(
+            kb_name,
+            query_text=section_title,
+            n_results=100,
+            where_filter={"section_title": section_title},
+        )
+        return docs, metas
+
     def generate_kickoff_narration(self, game_config: dict, recap: str = None):
         """
         Generates the initial narration for a new game or session.
@@ -39,16 +59,42 @@ class RAGService:
         if not module_kb:
             raise ValueError("A module or setting knowledge base is required for kickoff.")
 
-        query = "adventure introduction, summary, or starting location"
-        intro_docs, intro_metas = self.vector_store.query(module_kb, query, n_results=5)
-        intro_context = "\n\n".join(intro_docs) or "No introductory text found."
+        priority_labels = ["read_aloud_kickoff", "adventure_hook"]
+        found_docs, found_metas = [], []
 
+        # Priority 1 & 2: Search for specific labels
+        for label in priority_labels:
+            log.debug("Searching for kickoff content with priority label: '%s'", label)
+            docs, metas = self.vector_store.query(
+                module_kb,
+                query_text=f"Text for starting an adventure, like a {label.replace('_', ' ')}",
+                n_results=1,
+                where_filter={"label": label},
+            )
+            if docs:
+                log.info("Found high-priority kickoff content with label '%s'.", label)
+                found_docs, found_metas = self._get_full_section(module_kb, metas[0])
+                break
+
+        # Fallback: General search if no priority content was found
+        if not found_docs:
+            log.debug("No high-priority content found. Falling back to general search.")
+            docs, metas = self.vector_store.query(
+                module_kb, "adventure introduction, summary, or starting location", n_results=1
+            )
+            if docs:
+                found_docs, found_metas = self._get_full_section(module_kb, metas[0])
+
+        if not found_docs:
+            found_docs = ["No introductory text was found in the knowledge base."]
+            found_metas = [{"label": "prose"}]
+
+        intro_context = "\n\n".join(found_docs)
         insight_data = [
             {"label": meta.get("label", "prose"), "text": doc}
-            for doc, meta in zip(intro_docs, intro_metas)
+            for doc, meta in zip(found_docs, found_metas)
         ]
-        guarded_context = f"[CONTEXT FROM KNOWLEDGE_BASE '{module_kb}']\n{intro_context}"
-        log.debug("Kickoff RAG context retrieved:\n%s", guarded_context)
+        log.debug("Final kickoff RAG context retrieved:\n%s", intro_context)
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
         prompt_content = f"[ADVENTURE INTRODUCTION]\n{intro_context}"

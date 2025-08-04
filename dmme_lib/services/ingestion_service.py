@@ -200,7 +200,7 @@ class IngestionService:
                 metadatas.append(
                     {
                         "source_file": metadata.get("filename", "unknown.pdf"),
-                        "section": section.title or "Untitled",
+                        "section_title": section.title or "Untitled",
                         "chunk_id": chunk_id,
                         "label": label if label else "prose",
                     }
@@ -265,7 +265,7 @@ class IngestionService:
             )
             documents.append(doc_text)
 
-            image_filename = json_file.replace(".json", ".png")
+            image_filename = json_file.replace(".png", ".json")
             final_image_path = os.path.join("images", kb_name, image_filename)
             metadatas.append(
                 {
