@@ -128,9 +128,19 @@
                         </div>
                         <ul id="kb-list-hub" class="item-list hub-item-list"></ul>
                     </div>
-                    <div class="hub-right-panel">
+                    <div id="library-inspector" class="hub-right-panel">
                         <div id="library-inspector-placeholder" class="placeholder-pane">
                             <p data-i18n-key="libraryWelcome">Select an item to see details.</p>
+                        </div>
+                        <div id="library-inspector-content" style="display: none;">
+                            <div class="hub-tabs">
+                                <button class="hub-tab-btn active" data-pane="text" data-i18n-key="textView">Text</button>
+                                <button class="hub-tab-btn" data-pane="assets" data-i18n-key="assetView">Assets</button>
+                            </div>
+                            <div class="hub-tab-content">
+                                <div id="library-text-view" class="hub-tab-pane active"></div>
+                                <div id="library-asset-view" class="hub-tab-pane"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -80,6 +80,26 @@ class VectorStoreService:
             log.error("Failed to query knowledge base '%s': %s", kb_name, e)
             raise
 
+    def get_all_from_kb(self, kb_name: str) -> list[dict]:
+        """Retrieves all documents and their metadata from a knowledge base."""
+        try:
+            log.debug("Retrieving all documents from KB '%s'", kb_name)
+            collection = self.client.get_collection(name=kb_name)
+            if collection.count() == 0:
+                return []
+
+            results = collection.get(include=["metadatas", "documents"])
+
+            # Combine documents and metadatas into a single list of dicts
+            combined = [
+                {**meta, "document": doc}
+                for doc, meta in zip(results["documents"], results["metadatas"])
+            ]
+            return combined
+        except Exception as e:
+            log.error("Failed to retrieve all documents from KB '%s': %s", kb_name, e)
+            raise
+
     def delete_kb(self, kb_name: str):
         """Deletes an entire knowledge base (collection)."""
         try:

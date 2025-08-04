@@ -40,6 +40,41 @@ def list_knowledge_bases():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/explore/<kb_name>", methods=["GET"])
+def explore_knowledge_base(kb_name):
+    """Retrieves all documents and assets for a given knowledge base."""
+    try:
+        # 1. Get all text documents from the vector store
+        documents = current_app.vector_store.get_all_from_kb(kb_name)
+
+        # 2. Get all assets from the filesystem
+        assets = []
+        assets_path = current_app.config["ASSETS_PATH"]
+        kb_asset_dir = os.path.join(assets_path, "images", kb_name)
+        if os.path.isdir(kb_asset_dir):
+            for filename in sorted(os.listdir(kb_asset_dir)):
+                if filename.endswith(".json") and filename != "assets.json":
+                    try:
+                        with open(os.path.join(kb_asset_dir, filename), "r") as f:
+                            meta = json.load(f)
+                        thumb_path = meta.get("thumbnail_filename")
+                        if thumb_path:
+                            assets.append(
+                                {
+                                    "url": f"assets/images/{kb_name}/{thumb_path}",
+                                    "caption": meta.get("description", "No caption"),
+                                    "classification": meta.get("classification", "other"),
+                                }
+                            )
+                    except (IOError, json.JSONDecodeError) as e:
+                        log.warning("Could not read asset metadata %s: %s", filename, e)
+
+        return jsonify({"documents": documents, "assets": assets})
+    except Exception as e:
+        log.error("Failed to explore knowledge base '%s': %s", kb_name, e, exc_info=True)
+        return jsonify({"error": f"Could not explore knowledge base: {e}"}), 500
+
+
 @bp.route("/<kb_name>", methods=["DELETE"])
 def delete_knowledge_base(kb_name):
     """Deletes a knowledge base and its associated assets."""
