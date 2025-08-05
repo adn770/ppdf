@@ -304,9 +304,11 @@ export class GameplayHandler {
     _renderCoverMosaic(chunk) {
         const container = document.createElement('div');
         container.className = 'cover-mosaic-container';
-        chunk.image_urls.forEach(url => {
+        chunk.assets.forEach(asset => {
             const img = document.createElement('img');
-            img.src = url;
+            img.src = asset.thumb_url;
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', () => this.lightbox.open(asset.full_url));
             container.appendChild(img);
         });
         this.narrativeView.prepend(container);
