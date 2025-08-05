@@ -9,10 +9,72 @@ import tempfile
 import shutil
 import json
 from datetime import datetime
+import statistics
 
 from core.log_utils import setup_logging
 from ppdf_lib.api import process_pdf_images
 from dmme_lib.constants import PROMPT_REGISTRY
+from core.llm_utils import query_text_llm
+
+# --- CONSTANTS ---
+PROMPT_LLM_AS_JUDGE = """
+You are a meticulous evaluation assistant. Your task is to assess the quality
+of an AI-generated response based on a given system prompt and user input.
+
+You MUST provide your evaluation in a single, valid JSON object with two keys:
+1. "score": An integer from 1 to 5, where 1 is poor and 5 is excellent.
+2. "critique": A brief, constructive critique (2-3 sentences) explaining your
+   score. Focus on how well the response adhered to the system prompt's rules.
+
+Be objective and harsh in your scoring.
+
+[SYSTEM PROMPT BEING EVALUATED]
+{system_prompt}
+
+[USER INPUT]
+{user_input}
+
+[GENERATED RESPONSE TO EVALUATE]
+{response}
+"""
+
+
+class PromptTestSuite:
+    """Loads and manages the files for a single prompt evaluation suite."""
+
+    def __init__(self, suite_path):
+        self.path = suite_path
+        self.name = os.path.basename(suite_path.rstrip("/"))
+        self.prompt = ""
+        self.config = {}
+        self.scenarios = {}
+
+    def load(self):
+        """Loads all necessary files from the suite directory."""
+        log = logging.getLogger("dmme_eval.prompt")
+        log.info("Loading test suite from: %s", self.path)
+        try:
+            with open(os.path.join(self.path, "prompt.txt"), "r") as f:
+                self.prompt = f.read()
+            with open(os.path.join(self.path, "config.json"), "r") as f:
+                self.config = json.load(f)
+
+            scenarios_dir = os.path.join(self.path, "scenarios")
+            for filename in os.listdir(scenarios_dir):
+                if filename.endswith(".txt"):
+                    name = os.path.splitext(filename)[0]
+                    with open(os.path.join(scenarios_dir, filename), "r") as f:
+                        self.scenarios[name] = f.read()
+            if not self.scenarios:
+                raise FileNotFoundError("No scenario files found in 'scenarios/' subdir.")
+            log.info("Successfully loaded prompt, config, and %d scenarios.", len(self.scenarios))
+            return True
+        except FileNotFoundError as e:
+            log.error("Failed to load test suite '%s': %s", self.name, e)
+            return False
+        except json.JSONDecodeError as e:
+            log.error("Failed to parse config.json in '%s': %s", self.name, e)
+            return False
 
 
 def handle_ingest_command(args):
@@ -104,14 +166,82 @@ def handle_prompt_command(args):
         log.warning("Prompt comparison logic is not yet implemented.")
     else:
         log.info("Running Single Prompt Evaluation...")
-        log.info("  - Suite: %s", args.test_suite_dirs[0])
-        #
-        # --- Implementation for Milestone 42 will go here ---
-        #
-        log.warning("Single prompt evaluation logic is not yet implemented.")
+        suite = PromptTestSuite(args.test_suite_dirs[0])
+        if not suite.load():
+            return
 
-    log.info("  - DM Model: %s", args.dm_model)
-    log.info("  - Utility Model: %s", args.utility_model)
+        results = []
+        for name, user_input in suite.scenarios.items():
+            log.info("  - Running scenario: '%s'...", name)
+            # 1. Get main response
+            resp_data = query_text_llm(
+                prompt=suite.prompt,
+                user_content=user_input,
+                ollama_url=args.url,
+                model=suite.config.get("model", args.dm_model),
+                temperature=suite.config.get("temperature"),
+            )
+            response_text = resp_data.get("response", "").strip()
+
+            # 2. Get judge's critique
+            judge_input = PROMPT_LLM_AS_JUDGE.format(
+                system_prompt=suite.prompt, user_input=user_input, response=response_text
+            )
+            critique_data = query_text_llm(
+                prompt="",  # The whole thing is the user content for the judge
+                user_content=judge_input,
+                ollama_url=args.url,
+                model=args.utility_model,
+            )
+            critique_text = critique_data.get("response", "").strip()
+            score, critique = 0, "Evaluation failed."
+            try:
+                # Clean markdown code block delimiters before parsing
+                clean_critique = critique_text.replace("```json", "").replace("```", "")
+                critique_json = json.loads(clean_critique)
+                score = critique_json.get("score", 0)
+                critique = critique_json.get("critique", "Invalid JSON from judge.")
+            except json.JSONDecodeError:
+                log.warning("Failed to parse judge's JSON response: %s", critique_text)
+                critique = f"LLM returned invalid JSON:\n{critique_text}"
+
+            results.append({
+                "name": name, "score": score, "critique": critique,
+                "input": user_input, "output": response_text
+            })
+
+        # 3. Generate report
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_filename = f"report_prompt_{suite.name}_{ts}.md"
+        report_path = os.path.join(args.output_dir, report_filename)
+        os.makedirs(args.output_dir, exist_ok=True)
+
+        scores = [r["score"] for r in results if r["score"] > 0]
+        avg_score = statistics.mean(scores) if scores else 0
+
+        report = [f"# Prompt Evaluation Report: `{suite.name}`", "---"]
+        report.append(f"## 📊 Summary")
+        report.append(f"- **Average Score:** {avg_score:.2f} / 5.0")
+        report.append(f"- **Scenarios Tested:** {len(results)}")
+        report.append(f"- **DM Model:** `{args.dm_model}`")
+        report.append(f"- **Utility Model:** `{args.utility_model}`")
+        report.append("\n---\n")
+        report.append("## 📝 Scenario Details\n")
+
+        for r in results:
+            report.append(f"### Scenario: `{r['name']}`\n")
+            report.append(f"**Score:** {r['score']}/5\n")
+            report.append(f"**Critique:** {r['critique']}\n")
+            report.append("<details>")
+            report.append("<summary>Click to see Input/Output</summary>\n")
+            report.append("#### User Input\n```text\n" + r["input"] + "\n```\n")
+            report.append("#### Generated Response\n```markdown\n" + r["output"] + "\n```\n")
+            report.append("</details>\n")
+            report.append("\n---\n")
+
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(report))
+        log.info("Evaluation complete. Report saved to: %s", report_path)
 
 
 def parse_arguments(args=None):
@@ -192,6 +322,12 @@ def parse_arguments(args=None):
         nargs="+",
         metavar="TEST_SUITE_DIR",
         help="Path to one or two prompt test suite directories.",
+    )
+    p_prompt.add_argument(
+        "-o",
+        "--output-dir",
+        default="./eval_reports",
+        help="Directory to save the output report.",
     )
     p_prompt.add_argument(
         "--dm-model", default="llama3.1:latest", help="Main model for generating responses."
