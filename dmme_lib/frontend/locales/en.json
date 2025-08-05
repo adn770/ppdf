@@ -141,6 +141,7 @@
     "confirmMsg": "Are you sure?",
     "confirmCancel": "Cancel",
     "confirmConfirm": "Confirm",
+    "deleteBtn": "Delete",
     "errorKbName": "Please provide a name for the knowledge base.",
     "errorFile": "Please upload a file first.",
     "errorPartyName": "Please enter a party name.",

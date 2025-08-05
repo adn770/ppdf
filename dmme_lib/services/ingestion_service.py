@@ -73,10 +73,7 @@ class IngestionService:
                 chunk, labeler_prompt, self.ollama_url, classification_model
             )
             log.debug(
-                "Semantic Labeling:\n"
-                "  - Model: %s\n"
-                "  - Input: %s\n"
-                "  - Label: %s",
+                "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
                 classification_model,
                 self._format_text_for_log(chunk),
                 label,
@@ -504,8 +501,13 @@ class IngestionService:
         thumb_path = os.path.join(assets_dir, thumb_filename)
         image_path = os.path.join(assets_dir, image_filename)
 
-        log.info("Deleting asset files for %s: %s, %s, %s",
-                 kb_name, image_filename, thumb_filename, json_filename)
+        log.info(
+            "Deleting asset files for %s: %s, %s, %s",
+            kb_name,
+            image_filename,
+            thumb_filename,
+            json_filename,
+        )
 
         # Delete the files, ignoring errors if they're already gone
         for path in [image_path, thumb_path, json_path]:

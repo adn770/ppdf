@@ -1,7 +1,7 @@
-# --- dmme_lib/api/game.py ---
+# dmme_lib/api/game.py
 import json
 import logging
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response
 from core.llm_utils import generate_character_json
 
 bp = Blueprint("game", __name__)
@@ -98,7 +98,6 @@ def generate_character():
         rules_context = "\n\n".join(rules_docs)
         if not rules_context:
             rules_context = f"No specific rules found. Use general knowledge for '{rules_kb}'."
-
         char_data = generate_character_json(
             description=description,
             rules_context=rules_context,

@@ -141,6 +141,7 @@
     "confirmMsg": "N'estàs segur?",
     "confirmCancel": "Cancel·la",
     "confirmConfirm": "Confirma",
+    "deleteBtn": "Elimina",
     "errorKbName": "Si us plau, introdueix un nom per a la base de coneixement.",
     "errorFile": "Si us plau, puja un arxiu primer.",
     "errorPartyName": "Si us plau, introdueix un nom per al grup.",

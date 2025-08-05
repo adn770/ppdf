@@ -1,3 +1,4 @@
+
 /* dmme_lib/frontend/css/components/library-hub.css */
 
 #library-inspector-content {
@@ -111,7 +112,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 24px;
-    padding-right: 8px; /* For scrollbar */
+    padding-right: 8px;
+    grid-auto-rows: min-content; /* ADDED: This is the fix for stacking */
 }
 
 .asset-card {
@@ -122,9 +124,10 @@
     text-align: center;
     position: relative;
     transition: box-shadow 0.2s ease-in-out;
-    aspect-ratio: 1 / 1.41; /* A4-like aspect ratio */
+    aspect-ratio: 1 / 1.41; /* RE-ADDED: This restores the A4 shape */
     display: grid;
     grid-template-rows: 1fr auto;
+    overflow: hidden;
 }
 
 .asset-card:hover {
@@ -133,31 +136,38 @@
 
 .asset-card:hover .delete-asset-btn {
     opacity: 1;
+    transform: translateY(0);
 }
 
 .delete-asset-btn {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 1px solid var(--bg-color);
-    background-color: rgba(229, 57, 53, 0.8); /* --danger-color with alpha */
+    bottom: 16px;
+    right: 16px;
+    background-color: var(--danger-color);
     color: white;
-    font-size: 18px;
-    line-height: 32px;
-    text-align: center;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s, transform 0.2s, background-color 0.2s;
+    transform: translateY(20px);
+    transition: all 0.2s ease-out;
     z-index: 2;
-    padding: 0;
+}
+
+.delete-asset-btn .icon {
+    font-size: 20px;
+    line-height: 1;
+    font-weight: bold;
 }
 
 .delete-asset-btn:hover {
     background-color: var(--danger-hover);
-    transform: scale(1.1);
 }
 
 .asset-card img {
@@ -166,6 +176,7 @@
     object-fit: cover;
     border-radius: 4px;
     margin-bottom: 8px;
+    min-height: 0;
 }
 
 .asset-card p {

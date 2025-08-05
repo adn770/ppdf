@@ -66,7 +66,6 @@ export class PartyHub {
     showPanel(panelToShow) {
         this.inspectorPlaceholder.style.display = 'none';
         this.inspectorContent.style.display = 'block';
-
         [this.rosterView, this.editorView].forEach(p => {
             p.style.display = p === panelToShow ? 'block' : 'none';
         });
@@ -82,11 +81,9 @@ export class PartyHub {
 
     async selectParty(partyId) {
         this.selectedPartyId = partyId;
-
         this.listEl.querySelectorAll('li').forEach(li => {
             li.classList.toggle('selected', li.dataset.partyId === String(partyId));
         });
-
         this.showPanel(this.rosterView);
         await this._loadAndRenderCharacters(partyId);
     }
@@ -108,7 +105,10 @@ export class PartyHub {
                         <span class="char-info">${char.name}</span>
                         <span class="char-details">Lvl ${char.level} ${char.class}</span>
                     </div>
-                    <button class="delete-icon-btn" data-char-id="${char.id}" data-char-name="${char.name}">🗑️</button>
+                    <button class="delete-icon-btn" data-char-id="${char.id}" data-char-name="${char.name}">
+                        <span class="icon">&times;</span>
+                        <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
+                    </button>
                 `;
                 this.characterListEl.appendChild(li);
             });
@@ -163,7 +163,8 @@ export class PartyHub {
         this.charNameInput.value = '';
         this.charClassInput.value = '';
         this.charLevelInput.value = 1;
-        await this.selectParty(this.selectedPartyId); // Reselect to show roster and refresh
+        await this.selectParty(this.selectedPartyId);
+        // Reselect to show roster and refresh
     }
 
     async _handleCharacterDelete(event) {
@@ -173,7 +174,6 @@ export class PartyHub {
 
         const characterId = deleteBtn.dataset.charId;
         const characterName = deleteBtn.dataset.charName;
-
         const confirmed = await confirmationModal.confirm(
             'deleteCharTitle', 'deleteCharMsg', { name: characterName }
         );

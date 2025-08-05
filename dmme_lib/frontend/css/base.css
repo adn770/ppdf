@@ -10,6 +10,9 @@
     --accent-hover: #0099ff;
     --danger-color: #e53935;
     --danger-hover: #c62828;
+    --danger-pastel-color: #F08080;
+    --danger-pastel-hover: #D96C6C;
+    --button-inverted-bg: #ffffff;
     --focus-color: rgba(0, 122, 204, 0.3);
     --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
         Arial, sans-serif;
@@ -160,7 +163,8 @@ body, html {
 }
 
 .view-container.active {
-    display: flex; /* Shown when active */
+    display: flex;
+    /* Shown when active */
 }
 
 /* Make game view content take up full space inside its view container */

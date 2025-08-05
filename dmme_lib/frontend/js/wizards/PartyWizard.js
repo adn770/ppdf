@@ -69,8 +69,12 @@ export class PartyWizard {
             const li = document.createElement('li');
             li.dataset.partyId = party.id;
             li.dataset.partyName = party.name;
-            const btnHTML =
-                `<button class="delete-icon-btn" data-party-id="${party.id}">🗑️</button>`;
+            const btnHTML = `
+                <button class="delete-icon-btn" data-party-id="${party.id}">
+                    <span class="icon">&times;</span>
+                    <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
+                </button>
+            `;
             li.innerHTML = `<span>${party.name}</span> ${btnHTML}`;
             
             li.querySelector('.delete-icon-btn').addEventListener('click', (e) => {

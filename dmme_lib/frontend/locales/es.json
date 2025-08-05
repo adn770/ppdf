@@ -141,6 +141,7 @@
     "confirmMsg": "¿Estás seguro?",
     "confirmCancel": "Cancelar",
     "confirmConfirm": "Confirmar",
+    "deleteBtn": "Eliminar",
     "errorKbName": "Por favor, introduce un nombre para la base de conocimiento.",
     "errorFile": "Por favor, sube un archivo primero.",
     "errorPartyName": "Por favor, introduce un nombre para el grupo.",

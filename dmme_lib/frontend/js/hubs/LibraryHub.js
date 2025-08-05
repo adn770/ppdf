@@ -83,7 +83,10 @@ export class LibraryHub {
                         ${type.toUpperCase()} | ${lang.toUpperCase()} | ${kb.count} docs
                     </div>
                 </div>
-                <button class="delete-icon-btn" data-kb-name="${kb.name}">🗑️</button>
+                <button class="delete-icon-btn" data-kb-name="${kb.name}">
+                    <span class="icon">&times;</span>
+                    <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
+                </button>
             `;
             li.querySelector('.item-main-content').addEventListener('click', () => this.showKbDetails(kb));
             this.listEl.appendChild(li);
@@ -151,7 +154,10 @@ export class LibraryHub {
         card.innerHTML = `
             <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
             <p>${asset.classification}</p>
-            <button class="delete-asset-btn" data-filename="${asset.thumb_filename}" title="Delete Asset">🗑️</button>
+            <button class="delete-asset-btn" data-filename="${asset.thumb_filename}">
+                <span class="icon">&times;</span>
+                <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
+            </button>
         `;
         this.assetGrid.appendChild(card);
     }
@@ -230,7 +236,6 @@ export class LibraryHub {
             'deleteAssetMsg',
             { filename: thumbFilename }
         );
-
         if (confirmed) {
             try {
                 const response = await fetch(`/api/knowledge/${this.selectedKb.name}/asset/${thumbFilename}`, {

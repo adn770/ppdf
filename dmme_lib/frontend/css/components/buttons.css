@@ -50,23 +50,31 @@ button.icon-btn {
 }
 
 .delete-icon-btn {
-    background: none;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    background-color: var(--danger-color);
+    color: white;
     border: none;
-    color: #888;
-    cursor: pointer;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    padding: 0;
+    gap: 6px;
+    cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+    transform: translateY(-50%) translateX(20px);
+    transition: all 0.2s ease-out;
+}
+
+.delete-icon-btn .icon {
+    font-size: 20px;
+    line-height: 1;
+    font-weight: bold;
 }
 
 .delete-icon-btn:hover {
-    background-color: var(--danger-color);
-    color: white;
+    background-color: var(--danger-hover);
 }

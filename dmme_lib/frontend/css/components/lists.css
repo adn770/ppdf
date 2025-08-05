@@ -17,6 +17,8 @@
     border: 1px solid transparent;
     border-left: 3px solid transparent;
     transition: background-color 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
 }
 
 .item-list li:hover {
@@ -32,13 +34,9 @@
 .item-list li .char-info { font-weight: bold; }
 .item-list li .char-details { font-size: 0.9em; color: #aaa; margin-left: 8px; }
 
-.item-list li .delete-icon-btn {
-    opacity: 0;
-}
-
-li:hover > .delete-icon-btn,
-li.selected > .delete-icon-btn {
+.item-list li:hover > .delete-icon-btn {
     opacity: 1;
+    transform: translateY(-50%) translateX(0);
 }
 
 /* --- New Hub List Styles --- */
