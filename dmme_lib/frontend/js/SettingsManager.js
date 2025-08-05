@@ -24,7 +24,6 @@ export class SettingsManager {
         this.inputs = this.modal.querySelectorAll('[data-section][data-key]');
         this.modelsDatalist = document.getElementById('ollama-models-list');
         this.kbDatalist = document.getElementById('kb-list');
-        this.ragStatusContainer = document.getElementById('rag-status-container');
     }
 
     _addEventListeners() {
@@ -34,7 +33,6 @@ export class SettingsManager {
         this.tabs.forEach(tab => {
             tab.addEventListener('click', (e) => this._switchPane(e));
         });
-        this.ragStatusContainer.addEventListener('click', (e) => this._handleRagActions(e));
     }
 
     async open() {
@@ -43,7 +41,6 @@ export class SettingsManager {
         await this.loadSettings();
         await this._populateModelSuggestions();
         await this._populateKbSuggestions();
-        await this._loadRagStatus();
     }
 
     close() {
@@ -103,84 +100,6 @@ export class SettingsManager {
         }
     }
 
-    async _loadRagStatus() {
-        this.ragStatusContainer.innerHTML = `<p>${this.app.i18n.t('kbMgmtLoading')}</p>`;
-        try {
-            const kbs = await apiCall('/api/knowledge/');
-            this._renderRagStatus(kbs);
-        } catch (error) {
-            this.ragStatusContainer.innerHTML =
-                `<p class="error">${this.app.i18n.t('kbMgmtFailed')}</p>`;
-        }
-    }
-
-    _renderRagStatus(kbs) {
-        if (kbs.length === 0) {
-            this.ragStatusContainer.innerHTML = `<p>${this.app.i18n.t('kbMgmtEmpty')}</p>`;
-            return;
-        }
-
-        const i18n = this.app.i18n;
-        const allMetaKeys = new Set();
-        kbs.forEach(kb => Object.keys(kb.metadata).forEach(key => allMetaKeys.add(key)));
-        const preferredOrder = ['kb_type', 'language', 'filename'];
-        const sortedMetaKeys = preferredOrder.filter(k => allMetaKeys.has(k));
-        allMetaKeys.forEach(k => {
-            if (!preferredOrder.includes(k) && k !== 'description') {
-                sortedMetaKeys.push(k);
-            }
-        });
-        const headers = [
-            i18n.t('kbHeaderName'), ...sortedMetaKeys.map(k => i18n.t(`kbHeader${k.charAt(0).toUpperCase() + k.slice(1).replace('kb_','')}`)), i18n.t('kbHeaderDocs')
-        ];
-        const table = document.createElement('table');
-        table.className = 'info-table';
-        const thead = document.createElement('thead');
-        thead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}<th></th></tr>`;
-        
-        const tbody = document.createElement('tbody');
-        kbs.forEach(kb => {
-            const row = document.createElement('tr');
-            row.title = kb.metadata?.description || i18n.t('kbNoDesc');
-
-            let cells = `<td>${kb.name}</td>`;
-            sortedMetaKeys.forEach(key => {
-                cells += `<td>${kb.metadata[key] || 'N/A'}</td>`;
-            });
-            cells += `<td>${kb.count}</td>`;
-            cells += `<td class="actions-cell"><button class="delete-icon-btn" data-kb-name="${kb.name}">🗑️</button></td>`;
-            row.innerHTML = cells;
-            tbody.appendChild(row);
-        });
-
-        table.appendChild(thead);
-        table.appendChild(tbody);
-        this.ragStatusContainer.innerHTML = '';
-        this.ragStatusContainer.appendChild(table);
-    }
-
-    async _handleRagActions(event) {
-        const deleteBtn = event.target.closest('.delete-icon-btn');
-        if (!deleteBtn) return;
-
-        const kbName = deleteBtn.dataset.kbName;
-        const confirmed = await confirmationModal.confirm(
-            'deleteKbTitle',
-            'deleteKbMsg',
-            { name: kbName }
-        );
-
-        if (confirmed) {
-            try {
-                await apiCall(`/api/knowledge/${kbName}`, { method: 'DELETE' });
-                status.setText('deleteKbSuccess', false, { name: kbName });
-                await this._loadRagStatus(); // Refresh the list
-            } catch (error) {
-                // The apiCall helper already shows a status bar error
-            }
-        }
-    }
-
     async saveSettings() {
         this.statusEl.textContent = this.app.i18n.t('imageSaveStatusSaving');
         const newSettings = {
@@ -188,7 +107,6 @@ export class SettingsManager {
             Ollama: {},
             Game: {}
         };
-
         this.inputs.forEach(input => {
             const section = input.dataset.section;
             const key = input.dataset.key;
@@ -197,13 +115,11 @@ export class SettingsManager {
             }
             newSettings[section][key] = input.value;
         });
-
         await apiCall('/api/settings/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newSettings),
         });
-
         this.app.settings = newSettings; // Update the global app settings
         this.applyTheme(this.app.settings.Appearance.theme);
         this.app.i18n.setLanguage(this.app.settings.Appearance.language);
