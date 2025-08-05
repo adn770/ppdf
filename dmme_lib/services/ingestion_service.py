@@ -15,7 +15,7 @@ from core.llm_utils import (
     get_model_details,
     query_multimodal_llm,
 )
-from ppdf_lib.api import process_pdf_text, process_pdf_images, reformat_section_with_llm
+from ppdf_lib.api import process_pdf_text, reformat_section_with_llm
 from ppdf_lib.models import Section
 from dmme_lib.constants import PROMPT_REGISTRY
 from ppdf_lib.constants import PROMPT_STRICT
@@ -111,56 +111,53 @@ class IngestionService:
         log.info(msg)
         yield msg
 
-    def _recover_paragraphs(self, section: Section, formatted_text: str) -> list[str]:
+    def _chunk_reformatted_section(self, section: Section, formatted_text: str):
         """
-        Uses the original paragraphs as a map to recover the formatted versions
-        from the fully formatted section text.
+        Applies heuristics to chunk a reformatted section into contextually-rich documents.
         """
-        recovered_chunks = []
-        search_text = formatted_text
+        # Heuristic 1: Ingest small sections as a single chunk.
+        if len(formatted_text) < 1500:
+            log.debug("Applying 'small section' heuristic to '%s'.", section.title)
+            yield formatted_text
+            return
+
+        # Heuristic 2: Ingest sections with only a table as a single chunk.
+        if len(section.paragraphs) == 1 and section.paragraphs[0].is_table:
+            log.debug("Applying 'table-only section' heuristic to '%s'.", section.title)
+            yield formatted_text
+            return
+
+        # Heuristic 3: Chunk based on original paragraph boundaries.
+        log.debug("Applying 'paragraph boundary' chunking to '%s'.", section.title)
+        para_starts = []
+        search_offset = 0
         for para in section.paragraphs:
-            if not para.lines:
+            if not para.lines or not para.lines[0].strip():
                 continue
 
-            first_line = para.lines[0].strip()
-            # Create a search pattern by removing potential trailing hyphens
-            start_pattern = first_line[:-1] if first_line.endswith("-") else first_line
+            # Use the start of the first line (first 30 chars) as a unique anchor.
+            anchor = para.lines[0].strip()[:30]
+            try:
+                # Find this anchor in the formatted text.
+                pos = formatted_text.index(anchor, search_offset)
+                para_starts.append(pos)
+                search_offset = pos + 1
+            except ValueError:
+                log.debug("Could not find anchor for a paragraph in '%s'.", section.title)
 
-            # For single-line paragraphs, just search for the start
-            if len(para.lines) == 1:
-                start_match = re.search(re.escape(start_pattern), search_text, re.IGNORECASE)
-                if not start_match:
-                    continue  # Skip if not found
+        if not para_starts:
+            log.warning(
+                "Could not find any paragraph boundaries in '%s'. Yielding as one chunk.",
+                section.title,
+            )
+            yield formatted_text
+            return
 
-                # Find the next paragraph break or end of text
-                end_match = re.search(r"\n\s*\n", search_text[start_match.end() :])
-                if end_match:
-                    chunk = search_text[
-                        start_match.start() : start_match.end() + end_match.start()
-                    ]
-                else:
-                    chunk = search_text[start_match.start() :]
-            else:
-                last_line = para.lines[-1].strip()
-                start_match = re.search(re.escape(start_pattern), search_text, re.IGNORECASE)
-                if not start_match:
-                    continue
-
-                end_match = re.search(
-                    re.escape(last_line), search_text[start_match.end() :], re.IGNORECASE
-                )
-                if not end_match:
-                    chunk = search_text[start_match.start() :]  # Fallback
-                else:
-                    chunk = search_text[
-                        start_match.start() : start_match.end() + end_match.end()
-                    ]
-
-            recovered_chunks.append(chunk.strip())
-            # Reduce the search space for the next paragraph
-            search_text = search_text[start_match.end() :]
-
-        return recovered_chunks
+        for i, start_index in enumerate(para_starts):
+            end_index = para_starts[i + 1] if i + 1 < len(para_starts) else len(formatted_text)
+            chunk = formatted_text[start_index:end_index].strip()
+            if chunk:
+                yield chunk
 
     def ingest_pdf_text(
         self,
@@ -286,14 +283,11 @@ class IngestionService:
             )
             formatted_section_text = "".join(list(stream))
 
-            msg = "  -> Recovering paragraphs from formatted text..."
+            msg = "  -> Chunking and labeling reformatted text..."
             log.info(msg)
             yield msg
-            recovered_chunks = self._recover_paragraphs(section, formatted_section_text)
+            recovered_chunks = self._chunk_reformatted_section(section, formatted_section_text)
 
-            msg = f"  -> Labeling {len(recovered_chunks)} recovered chunks..."
-            log.info(msg)
-            yield msg
             for chunk in recovered_chunks:
                 label = get_semantic_label(
                     chunk, labeler_prompt, self.ollama_url, self.utility_model
