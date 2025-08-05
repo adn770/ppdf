@@ -23,7 +23,7 @@ def _get_classification_model():
     """Gets the classification model from the app's config service."""
     # This check is needed because ppdf.py can run standalone without a Flask app context
     if not current_app:
-        return "llama3:latest"  # Fallback for standalone mode
+        return "llama3.1:latest"  # Fallback for standalone mode
     return current_app.config_service.get_settings()["Ollama"]["utility_model"]
 
 

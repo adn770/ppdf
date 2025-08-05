@@ -19,7 +19,7 @@ class ConfigService:
                 "url": "http://localhost:11434",
                 "dm_model": "llama3.1:latest",
                 "vision_model": "llava:latest",
-                "utility_model": "llama3:latest",
+                "utility_model": "llama3.1:latest",
                 "embedding_model": "mxbai-embed-large",
             },
             "Game": {
