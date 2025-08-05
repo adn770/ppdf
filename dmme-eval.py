@@ -67,7 +67,9 @@ class PromptTestSuite:
                         self.scenarios[name] = f.read()
             if not self.scenarios:
                 raise FileNotFoundError("No scenario files found in 'scenarios/' subdir.")
-            log.info("Successfully loaded prompt, config, and %d scenarios.", len(self.scenarios))
+            log.info(
+                "Successfully loaded prompt, config, and %d scenarios.", len(self.scenarios)
+            )
             return True
         except FileNotFoundError as e:
             log.error("Failed to load test suite '%s': %s", self.name, e)
@@ -241,7 +243,9 @@ def handle_prompt_command(args):
         if not suite_a.load() or not suite_b.load():
             return
 
-        common_scenarios = sorted(list(set(suite_a.scenarios.keys()) & set(suite_b.scenarios.keys())))
+        common_scenarios = sorted(
+            list(set(suite_a.scenarios.keys()) & set(suite_b.scenarios.keys()))
+        )
         if not common_scenarios:
             log.error("No common scenarios found between the two suites. Cannot compare.")
             return
@@ -272,14 +276,30 @@ def handle_prompt_command(args):
         for name in common_scenarios:
             res = results[name]
             report.append(f"### Scenario: `{name}`\n")
-            report.append(f"| Metric | Suite A: `{suite_a.name}` | Suite B: `{suite_b.name}` |")
+            report.append(
+                f"| Metric | Suite A: `{suite_a.name}` | Suite B: `{suite_b.name}` |"
+            )
             report.append(f"| :--- | :--- | :--- |")
-            report.append(f"| **Score** | **{res['A']['score']}/5** | **{res['B']['score']}/5** |")
-            report.append(f"| **Critique** | {res['A']['critique']} | {res['B']['critique']} |")
+            report.append(
+                f"| **Score** | **{res['A']['score']}/5** | **{res['B']['score']}/5** |"
+            )
+            report.append(
+                f"| **Critique** | {res['A']['critique']} | {res['B']['critique']} |"
+            )
             report.append("<table><tr><td>\n")
-            report.append("<details><summary>Suite A Output</summary>\n\n" + "````markdown\n" + res["A"]["output"] + "\n````\n\n</details>")
+            report.append(
+                "<details><summary>Suite A Output</summary>\n\n"
+                + "````markdown\n"
+                + res["A"]["output"]
+                + "\n````\n\n</details>"
+            )
             report.append("</td><td>\n")
-            report.append("<details><summary>Suite B Output</summary>\n\n" + "````markdown\n" + res["B"]["output"] + "\n````\n\n</details>")
+            report.append(
+                "<details><summary>Suite B Output</summary>\n\n"
+                + "````markdown\n"
+                + res["B"]["output"]
+                + "\n````\n\n</details>"
+            )
             report.append("</td></tr></table>\n\n---\n")
 
         with open(report_path, "w", encoding="utf-8") as f:

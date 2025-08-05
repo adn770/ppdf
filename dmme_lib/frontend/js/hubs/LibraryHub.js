@@ -83,7 +83,7 @@ export class LibraryHub {
                         ${type.toUpperCase()} | ${lang.toUpperCase()} | ${kb.count} docs
                     </div>
                 </div>
-                <button class="delete-icon-btn" data-kb-name="${kb.name}">
+                <button class="contextual-delete-btn slide-in-right" data-kb-name="${kb.name}">
                     <span class="icon">&times;</span>
                     <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
                 </button>
@@ -154,7 +154,7 @@ export class LibraryHub {
         card.innerHTML = `
             <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
             <p>${asset.classification}</p>
-            <button class="delete-asset-btn" data-filename="${asset.thumb_filename}">
+            <button class="contextual-delete-btn slide-in-bottom" data-filename="${asset.thumb_filename}">
                 <span class="icon">&times;</span>
                 <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
             </button>
@@ -205,7 +205,7 @@ export class LibraryHub {
     }
 
     async _handleKbDelete(event) {
-        const deleteBtn = event.target.closest('.delete-icon-btn');
+        const deleteBtn = event.target.closest('.contextual-delete-btn');
         if (!deleteBtn) return;
 
         const kbName = deleteBtn.dataset.kbName;
@@ -227,7 +227,7 @@ export class LibraryHub {
     }
 
     async _handleAssetDelete(event) {
-        const deleteBtn = event.target.closest('.delete-asset-btn');
+        const deleteBtn = event.target.closest('.contextual-delete-btn');
         if (!deleteBtn) return;
 
         const thumbFilename = deleteBtn.dataset.filename;

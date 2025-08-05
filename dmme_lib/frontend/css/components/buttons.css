@@ -49,10 +49,9 @@ button.icon-btn {
     flex-shrink: 0;
 }
 
-.delete-icon-btn {
+/* --- NEW: Standardized Contextual Delete Button --- */
+.contextual-delete-btn {
     position: absolute;
-    right: 12px;
-    top: 50%;
     background-color: var(--danger-color);
     color: white;
     border: none;
@@ -65,16 +64,30 @@ button.icon-btn {
     gap: 6px;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(-50%) translateX(20px);
     transition: all 0.2s ease-out;
+    z-index: 2;
 }
 
-.delete-icon-btn .icon {
+.contextual-delete-btn:hover {
+    background-color: var(--danger-hover);
+}
+
+.contextual-delete-btn .icon {
     font-size: 20px;
     line-height: 1;
     font-weight: bold;
 }
 
-.delete-icon-btn:hover {
-    background-color: var(--danger-hover);
+/* Modifier for list-item slide-in */
+.contextual-delete-btn.slide-in-right {
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%) translateX(20px);
+}
+
+/* Modifier for boxed-content slide-in */
+.contextual-delete-btn.slide-in-bottom {
+    bottom: 16px;
+    right: 16px;
+    transform: translateY(20px);
 }

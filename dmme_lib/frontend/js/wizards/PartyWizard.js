@@ -70,14 +70,14 @@ export class PartyWizard {
             li.dataset.partyId = party.id;
             li.dataset.partyName = party.name;
             const btnHTML = `
-                <button class="delete-icon-btn" data-party-id="${party.id}">
+                <button class="contextual-delete-btn slide-in-right" data-party-id="${party.id}">
                     <span class="icon">&times;</span>
                     <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
                 </button>
             `;
             li.innerHTML = `<span>${party.name}</span> ${btnHTML}`;
             
-            li.querySelector('.delete-icon-btn').addEventListener('click', (e) => {
+            li.querySelector('.contextual-delete-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.deleteParty(party.id, party.name);
             });

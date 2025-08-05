@@ -1072,6 +1072,61 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: A user can easily compare two different prompts to see which one
         performs better on a given set of test cases.
 
+### Phase 14: Enhanced Image Interactivity
+
+-   **Milestone 44: Refactor Lightbox into a Reusable Component**
+    -   **Goal**: Decouple the lightbox logic from `GameplayHandler.js` into a
+        standalone, reusable component.
+    -   **Description**: This architectural improvement will make the lightbox
+        available to any part of the application, reducing code duplication. It
+        is a prerequisite for implementing the feature in new areas.
+    -   **Key Tasks**: Create a new `dmme_lib/frontend/js/components/Lightbox.js`
+        file. Migrate all lightbox-related DOM selectors, methods, and event
+        listeners from `GameplayHandler.js` into the new `Lightbox` class.
+        Refactor `GameplayHandler.js` to import and use the new component.
+    -   **Outcome**: A self-contained `Lightbox.js` module exists and is used by
+        the Game View, with no loss of the original functionality.
+
+-   **Milestone 45: Update RAG Service for Mosaic URLs**
+    -   **Goal**: Modify the backend to provide full-resolution image URLs for the
+        kickoff cover mosaic.
+    -   **Description**: The frontend requires both thumbnail and full-size URLs to
+        implement the lightbox. This task updates the RAG service to provide
+        this necessary data structure.
+    -   **Key Tasks**: In `dmme_lib/services/rag_service.py`, modify the
+        `_find_and_yield_cover_mosaic` function. Change the yielded object's
+        payload from an array of strings to an array of objects, where each
+        object contains `thumb_url` and `full_url`.
+    -   **Outcome**: The `/api/game/start` endpoint streams all data required for the
+        frontend to render the kickoff mosaic with lightbox functionality.
+
+-   **Milestone 46: Implement Kickoff Mosaic Lightbox**
+    -   **Goal**: Make the cover images in the kickoff mosaic clickable, opening them
+        in the lightbox.
+    -   **Description**: This task connects the newly refactored `Lightbox`
+        component to the cover mosaic UI, completing the user-facing feature
+        for Adventure Module kickoffs.
+    -   **Key Tasks**: In `GameplayHandler.js`, update the `_renderCoverMosaic`
+        function to handle the new data from the backend. Add a click event
+        listener to each rendered mosaic image that calls `lightbox.open()` with
+        the corresponding `full_url`.
+    -   **Outcome**: A user can click any cover image at the start of an adventure to
+        view the full-size version in a modal overlay.
+
+-   **Milestone 47: Implement Library Hub Lightbox**
+    -   **Goal**: Make asset thumbnails in the Library Hub's asset grid clickable
+        to open in a lightbox.
+    -   **Description**: This task implements the lightbox feature in the asset
+        explorer, allowing users to easily view their uploaded or extracted
+        images at full resolution.
+    -   **Key Tasks**: In `dmme_lib/frontend/js/hubs/LibraryHub.js`, import and
+        instantiate the new `Lightbox` component. In the `_addAssetToGrid`
+        function, add a click listener to each asset card that opens the
+        asset's `full_url` in the lightbox. This will require ensuring the
+        full asset object is passed to the function.
+    -   **Outcome**: A user can click any asset in the Library Hub's asset viewer to
+        see the full-resolution image in the lightbox modal.
+
 ---
 
 ## 7. Potential Future Extensions

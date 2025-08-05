@@ -105,7 +105,7 @@ export class PartyHub {
                         <span class="char-info">${char.name}</span>
                         <span class="char-details">Lvl ${char.level} ${char.class}</span>
                     </div>
-                    <button class="delete-icon-btn" data-char-id="${char.id}" data-char-name="${char.name}">
+                    <button class="contextual-delete-btn slide-in-right" data-char-id="${char.id}" data-char-name="${char.name}">
                         <span class="icon">&times;</span>
                         <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
                     </button>
@@ -163,12 +163,11 @@ export class PartyHub {
         this.charNameInput.value = '';
         this.charClassInput.value = '';
         this.charLevelInput.value = 1;
-        await this.selectParty(this.selectedPartyId);
-        // Reselect to show roster and refresh
+        await this.selectParty(this.selectedPartyId); // Reselect to show roster and refresh
     }
 
     async _handleCharacterDelete(event) {
-        const deleteBtn = event.target.closest('.delete-icon-btn');
+        const deleteBtn = event.target.closest('.contextual-delete-btn');
         if (!deleteBtn) return;
         event.stopPropagation();
 
