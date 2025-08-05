@@ -39,7 +39,7 @@ class RAGService:
         return f'"{single_line_text}"'
 
     def _get_full_section(
-        self, kb_name: str, chunk_meta: dict
+        self, kb_name: str, chunk_meta: dict, where_filter: dict | None = None
     ) -> tuple[list[str], list[dict]]:
         """Retrieves all chunks belonging to the same section as the given chunk."""
         section_title = chunk_meta.get("section_title")
@@ -48,13 +48,16 @@ class RAGService:
             return [], []
 
         log.debug("Defragmenting RAG context for section: '%s'", section_title)
-        # Query with the title itself. The where filter provides the precision.
-        # We ask for a high number of results to ensure we get all chunks in a section.
+        base_where = {"section_title": section_title}
+        final_where = (
+            {"$and": [base_where, where_filter]} if where_filter else base_where
+        )
+
         docs, metas = self.vector_store.query(
             kb_name,
             query_text=section_title,
             n_results=100,
-            where_filter={"section_title": section_title},
+            where_filter=final_where,
         )
         return docs, metas
 
@@ -128,7 +131,7 @@ class RAGService:
 
     def generate_response(self, player_command: str, game_config: dict, history: list[dict]):
         """
-        Generates a game response using the RAG pipeline.
+        Generates a game response using a two-stage, defragmented RAG pipeline.
         This is a generator function that yields JSON chunks.
         """
         lang = game_config.get("language", "en")
@@ -141,98 +144,65 @@ class RAGService:
         )
         rules_kb = game_config.get("rules")
 
-        # Define priority for sorting descriptive chunks first
-        label_priority = [
-            "location_description",
-            "read_aloud_text",
-            "lore",
-            "prose",
-            "item_description",
-            "dialogue",
-            "mechanics",
-            "stat_block",
-        ]
-        priority_map = {label: i for i, label in enumerate(label_priority)}
-
-        # 1. Get and sort Module/Setting chunks
-        sorted_module_chunks = []
+        # --- Stage 1: Build Player-Facing Narrative Context (No DM Knowledge) ---
+        narrative_filter = {"label": {"$ne": "dm_knowledge"}}
+        narrative_module_docs, narrative_module_metas = [], []
         if module_kb:
             try:
-                docs, metas = self.vector_store.query(module_kb, player_command, n_results=4)
-                module_chunks = [
-                    {"text": doc, "label": meta.get("label", "prose")}
-                    for doc, meta in zip(docs, metas)
-                ]
-                sorted_module_chunks = sorted(
-                    module_chunks, key=lambda x: priority_map.get(x["label"], 99)
+                # Find the single most relevant player-safe chunk
+                docs, metas = self.vector_store.query(
+                    module_kb, player_command, n_results=1, where_filter=narrative_filter
                 )
-                if sorted_module_chunks:
-                    log_msg = [
-                        f"Retrieved & sorted {len(sorted_module_chunks)} chunks from "
-                        f"'{module_kb}':"
-                    ]
-                    for c in sorted_module_chunks:
-                        log_msg.append(
-                            f"  - Label: {c['label']:<20} | "
-                            f"Text: {self._format_text_for_log(c['text'])}"
-                        )
-                    log.debug("\n".join(log_msg))
+                if docs:
+                    # Defragment to get the full, player-safe section
+                    narrative_module_docs, narrative_module_metas = self._get_full_section(
+                        module_kb, metas[0], where_filter=narrative_filter
+                    )
             except Exception:
-                log.warning("Could not query or find module/setting KB '%s'.", module_kb)
+                log.warning("Could not query module/setting KB '%s'.", module_kb)
 
-        # 2. Get Rules chunks
-        rules_chunks = []
-        if rules_kb:
-            try:
-                docs, metas = self.vector_store.query(rules_kb, player_command, n_results=2)
-                rules_chunks = [
-                    {"text": doc, "label": meta.get("label", "mechanics")}
-                    for doc, meta in zip(docs, metas)
-                ]
-                if rules_chunks:
-                    log_msg = [f"Retrieved {len(rules_chunks)} chunks from '{rules_kb}':"]
-                    for c in rules_chunks:
-                        log_msg.append(
-                            f"  - Label: {c['label']:<20} | "
-                            f"Text: {self._format_text_for_log(c['text'])}"
-                        )
-                    log.debug("\n".join(log_msg))
-            except Exception:
-                log.warning("Could not query or find rules KB '%s'.", rules_kb)
+        # Get relevant rules (always considered player-safe)
+        rules_docs, _ = self.vector_store.query(rules_kb, player_command, n_results=2)
 
-        # 3. Build final context string and insight data
         context_blocks = []
-        insight_data = []
+        if narrative_module_docs:
+            context_blocks.append("\n\n---\n\n".join(narrative_module_docs))
+        if rules_docs:
+            context_blocks.append("\n\n---\n\n".join(rules_docs))
 
-        if sorted_module_chunks:
-            context_blocks.append(
-                f"[CONTEXT FROM '{module_kb.upper()}']\n"
-                + "\n\n---\n\n".join(c["text"] for c in sorted_module_chunks)
-            )
-            insight_data.extend(sorted_module_chunks)
-        if rules_chunks:
-            context_blocks.append(
-                f"[CONTEXT FROM '{rules_kb.upper()}']\n"
-                + "\n\n---\n\n".join(c["text"] for c in rules_chunks)
-            )
-            insight_data.extend(rules_chunks)
+        narrative_context_str = "\n\n".join(context_blocks) or "No context found."
 
-        context_str = "\n\n".join(context_blocks) or "No specific context was found."
+        # --- Stage 2: Build DM's Insight Context (Includes DM Knowledge) ---
+        insight_module_docs, insight_module_metas = [], []
+        if module_kb:
+            # Find the single most relevant chunk, including DM knowledge
+            docs, metas = self.vector_store.query(module_kb, player_command, n_results=1)
+            if docs:
+                # Defragment to get the full section, including DM knowledge
+                insight_module_docs, insight_module_metas = self._get_full_section(
+                    module_kb, metas[0]
+                )
+        insight_data = [
+            {"text": doc, "label": meta.get("label", "prose")}
+            for doc, meta in zip(insight_module_docs, insight_module_metas)
+        ]
+        insight_data.extend(
+            [{"text": doc, "label": "mechanics"} for doc in rules_docs]
+        )
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
+        # --- Stage 3: Generate and Stream LLM Response ---
         history_str = "\n".join([f"{t['role'].title()}: {t['content']}" for t in history])
         user_prompt = (
             f"[CONVERSATION HISTORY]\n{history_str}\n\n"
-            f"[CONTEXT]\n{context_str}\n\n"
+            f"[CONTEXT]\n{narrative_context_str}\n\n"
             f"[PLAYER ACTION]\n{player_command}"
         )
-
         game_master_prompt = self._get_prompt("GAME_MASTER", lang)
         session_model = game_config.get("llm_model", self.dm_model)
         llm_stream = query_text_llm(
             game_master_prompt, user_prompt, self.ollama_url, session_model, stream=True
         )
-
         full_narrative = ""
         for chunk_data in llm_stream:
             chunk_content = chunk_data.get("response", "")
@@ -241,7 +211,6 @@ class RAGService:
 
         show_visuals = game_config.get("show_visual_aids", False)
         show_ascii = game_config.get("show_ascii_scene", False)
-
         if full_narrative and module_kb:
             if show_visuals:
                 yield from self._find_and_yield_visual_aid(
