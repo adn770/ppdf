@@ -260,27 +260,49 @@ PROMPT_REGISTRY = {
     },
     "DESCRIBE_IMAGE": {
         "en": (
-            "You are a visual analysis assistant for a tabletop role-playing game (TTRPG). "
-            "Describe the image in a single, objective sentence, as if you were describing "
-            "it to players during a game. Your response MUST be in English."
+            "You are a visual analysis engine for a tabletop role-playing game (TTRPG).\n"
+            "Your task is to describe the provided image in a single, objective, and "
+            "descriptive sentence.\n\n"
+            "CRITICAL RULES:\n"
+            "1. Your response MUST be only the descriptive sentence and nothing else.\n"
+            "2. Describe the image as if you were a Dungeon Master setting a scene for players.\n"
+            "3. DO NOT be conversational. Do not start with 'This image shows...' or 'In "
+            "this image...'.\n"
+            "4. DO NOT refuse to answer. If the image is unclear, describe the literal "
+            "shapes, colors, and textures you see.\n"
+            "5. Your response MUST be in English."
         ),
         "es": (
-            "Eres un asistente de análisis visual para un juego de rol de mesa (TTRPG). "
-            "Describe la imagen en una única frase objetiva, como si se la estuvieras "
-            "describiendo a los jugadores durante una partida. Tu respuesta DEBE ser "
-            "en español."
+            "Eres un motor de análisis visual para un juego de rol de mesa (TTRPG).\n"
+            "Tu tarea es describir la imagen proporcionada en una única frase objetiva y "
+            "descriptiva.\n\n"
+            "REGLAS CRÍTICAS:\n"
+            "1. Tu respuesta DEBE ser únicamente la frase descriptiva y nada más.\n"
+            "2. Describe la imagen como si fueras un Dungeon Master presentando una escena.\n"
+            "3. NO seas conversacional. No empieces con 'La imagen muestra...' o 'En "
+            "esta imagen...'.\n"
+            "4. NO te niegues a responder. Si la imagen no es clara, describe las "
+            "formas, colores y texturas literales que ves.\n"
+            "5. Tu respuesta DEBE ser en español."
         ),
         "ca": (
-            "Ets un assistent d'anàlisi visual per a un joc de rol de taula (TTRPG). "
-            "Descriu la imatge en una única frase objectiva, com si l'estiguessis "
-            "descrivint als jugadors durant una partida. La teva resposta HA DE ser "
-            "en català."
+            "Ets un motor d'anàlisi visual per a un joc de rol de taula (TTRPG).\n"
+            "La teva tasca és descriure la imatge proporcionada en una única frase "
+            "objectiva i descriptiva.\n\n"
+            "REGLES CRÍTIQUES:\n"
+            "1. La teva resposta HA DE ser únicament la frase descriptiva i res més.\n"
+            "2. Descriu la imatge com si fossis un Dungeon Master presentant una escena.\n"
+            "3. NO siguis conversacional. No comencis amb 'La imatge mostra...' o 'En "
+            "aquesta imatge...'.\n"
+            "4. NO et neguis a respondre. Si la imatge no és clara, descriu les "
+            "formes, colors i textures literals que veus.\n"
+            "5. La teva resposta HA DE ser en català."
         ),
     },
     "CLASSIFY_IMAGE": {
         "en": (
             "You are a visual classification assistant for a TTRPG tool. Classify "
-            "the image as one of the following: `cover`, `map`, `handout`, `art`, "
+            "the described scene as one of the following: `cover`, `map`, `handout`, `art`, "
             "`decoration`, `other`. Your response must be ONLY one of these words "
             "and nothing else."
         )

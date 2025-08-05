@@ -292,6 +292,26 @@ game state, and interacts with the LLM.
     -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
         images, and maps).
 
+### 3.3. `dmme-eval` - The Evaluation Utility
+
+`dmme-eval` is a command-line utility for the systematic testing and evaluation of
+both LLM prompts and core backend ingestion pipelines.
+
+#### 3.3.1. CLI Structure
+The tool uses a subcommand structure:
+-   **`prompt`**: All functionality related to testing and evaluating system prompts.
+-   **`ingest`**: All functionality related to testing parts of the ingestion pipeline.
+
+#### 3.3.2. Prompt Evaluation Mode
+This mode operates on **Test Suites**. A test suite is a directory containing a
+prompt, its configuration, and a set of test scenarios. Key features include an
+"LLM-as-a-Judge" evaluation and a `--compare` mode for side-by-side analysis.
+
+#### 3.3.3. Ingestion Test Mode
+This mode allows for isolated testing of backend services. The primary task is
+`extract-images`, which runs the full image processing pipeline on a PDF and
+generates a visual Markdown report for easy analysis.
+
 ---
 
 ## 4. Frontend Design (HTML/CSS/JavaScript)
@@ -390,12 +410,13 @@ A two-panel layout for all party and character management.
 
 ## 5. Source Code Structure
 
-The project is organized into a monorepo containing the two main scripts at the
+The project is organized into a monorepo containing the main scripts at the
 root, a shared `core` library, and dedicated libraries for each application.
 
 `dmme_project/`
 ├── **ppdf.py**: Main entry point for the PDF utility (Reformatter & Indexer).
 ├── **dmme.py**: Main entry point to launch the Game Driver Flask server.
+├── **dmme-eval.py**: A command-line utility for prompt engineering.
 |
 ├── **core/**: A library for utilities shared across all scripts.
 │   ├── `log_utils.py`: `RichLogFormatter` for consistent, colored console logging.
@@ -1003,15 +1024,58 @@ This implementation plan details the incremental steps to build the `dmme` appli
         keys and text for the updated labels.
     -   **Outcome**: The settings panel correctly displays, loads, and saves the new
         model role configurations.
+
+### Phase 13: `dmme-eval` Utility
+
+-   **Milestone 40: `dmme-eval` Foundation and CLI Structure**
+    -   **Goal**: Create the basic scaffolding for the `dmme_eval.py` script, including
+        the subcommand-based CLI.
+    -   **Description**: This milestone builds the entry point and command-line
+        argument parsing for the new tool, providing a foundation for all subsequent
+        functionality.
+    -   **Key Tasks**: Create the `dmme_eval.py` file. Use `argparse` to implement the
+        `prompt` and `ingest` subcommands and their respective arguments. Integrate
+        the existing `core/log_utils.py` for logging.
+    -   **Outcome**: A runnable script that correctly parses all designed commands and is
+        ready for the implementation of its core logic.
+
+-   **Milestone 41: Implement Ingestion Test Mode (`extract-images`)**
+    -   **Goal**: Implement the full logic for the `ingest --task extract-images`
+        feature.
+    -   **Description**: This provides the first piece of useful functionality, allowing
+        for targeted testing and refinement of the `ppdf` image extraction and
+        analysis pipeline.
+    -   **Key Tasks**: Write the core logic for the `extract-images` task. Implement
+        temporary directory creation. Import and call the `process_pdf_images`
+        function from `ppdf_lib.api`. Generate the visual Markdown report.
+    -   **Outcome**: A user can run the tool on a PDF and receive a complete, visual
+        report on all extracted images and their AI-generated metadata.
+
+-   **Milestone 42: Implement Prompt Evaluation Logic (Single Run)**
+    -   **Goal**: Implement the core logic for the `prompt` subcommand for a single
+        test suite.
+    -   **Description**: This builds the main prompt evaluation engine, allowing a
+        developer to benchmark a prompt's performance against multiple scenarios.
+    -   **Key Tasks**: Implement Test Suite parsing. Loop through scenarios, calling the
+        `dm_model`. Implement the "LLM-as-a-Judge" feature using the `utility_model`
+        to score and critique the output. Generate the Markdown report.
+    -   **Outcome**: A user can run the tool on a single prompt test suite and get a
+        full, objective evaluation report.
+
+-   **Milestone 43: Implement Prompt Comparison Mode**
+    -   **Goal**: Add the `--compare` functionality to the `prompt` subcommand.
+    -   **Description**: This provides the key feature for rapid iteration, allowing for
+        direct, side-by-side comparison of two prompt versions.
+    -   **Key Tasks**: Modify the `prompt` subcommand to handle two input directories.
+        Run the same scenarios against both prompts. Generate the side-by-side
+        comparison report in Markdown.
+    -   **Outcome**: A user can easily compare two different prompts to see which one
+        performs better on a given set of test cases.
+
 ---
 
 ## 7. Potential Future Extensions
 
-This section serves as a wishlist for powerful features that are outside the scope of
-the initial implementation plan but could be added in the future.
-
--   **Prompt Evaluation Tool (`dmme-eval`)**: A command-line utility for prompt
-    engineering.
 -   **Dynamic Music & Soundscapes**: An "AI DJ" system.
 -   **Automated Combat Tracker**: A dedicated UI panel for combat.
 -   **Interactive Map Viewer (Graphical)**: A feature to display graphical maps from
