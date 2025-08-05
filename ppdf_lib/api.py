@@ -1,3 +1,4 @@
+# ppdf_lib/api.py
 # --- ppdf_lib/api.py ---
 import os
 import json
@@ -232,17 +233,96 @@ def process_pdf_images(
 
             image_count += 1
             img_id = f"image_{image_count:03d}"
-            image_filename = os.path.join(output_dir, f"{img_id}.png")
-            thumb_filename = os.path.join(output_dir, f"thumb_{img_id}.jpg")
+            base_image_filename = f"{img_id}.png"
+            base_thumb_filename = f"thumb_{img_id}.jpg"
+            image_filename = os.path.join(output_dir, base_image_filename)
+            thumb_filename = os.path.join(output_dir, base_thumb_filename)
             json_filename = os.path.join(output_dir, f"{img_id}.json")
 
-            image_data = None
+            img = None
+            image_data = element.stream.get_data()
+            if not image_data:
+                log.warning("Image %s has no data stream, skipping.", img_id)
+                continue
+
             try:
-                image_data = element.stream.get_data()
-                if not image_data:
-                    log.warning("Image %s has no data stream, skipping.", img_id)
-                    continue
                 img = Image.open(BytesIO(image_data))
+            except UnidentifiedImageError:
+                log.warning(
+                    "Could not identify image format for image on page %d. "
+                    "Attempting raw reconstruction.",
+                    page_layout.pageid,
+                )
+                first_32_bytes = image_data[:32]
+                hexdump = " ".join(f"{byte:02x}" for byte in first_32_bytes)
+                stream_attrs = element.stream.attrs if hasattr(element, "stream") else {}
+                log.debug(
+                    (
+                        "Unidentified image details:\n"
+                        "  - Name: %s\n"
+                        "  - Dimensions: %dx%d\n"
+                        "  - Stream Attrs: %s\n"
+                        "  - Data Length: %d bytes\n"
+                        "  - First 32 bytes: %s"
+                    ),
+                    element.name,
+                    element.width,
+                    element.height,
+                    stream_attrs,
+                    len(image_data),
+                    hexdump,
+                )
+                try:
+                    width = stream_attrs.get("Width")
+                    height = stream_attrs.get("Height")
+                    if not (width and height):
+                        log.warning("Stream Attrs missing Width/Height. Skipping.")
+                        continue
+
+                    size = (width, height)
+                    data_len = len(image_data)
+                    mode = None
+                    bpc = stream_attrs.get("BitsPerComponent")
+                    cs = stream_attrs.get("ColorSpace")
+
+                    if bpc == 1:
+                        mode = "1"
+                    elif bpc == 8:
+                        if cs == b"/DeviceGray":
+                            mode = "L"
+                        elif cs == b"/DeviceRGB" or isinstance(cs, list):
+                            mode = "RGB"
+
+                    if not mode:
+                        if data_len == size[0] * size[1]:
+                            mode = "L"
+                        elif data_len == size[0] * size[1] * 3:
+                            mode = "RGB"
+                        elif data_len == size[0] * size[1] * 4:
+                            mode = "RGBA"
+
+                    if mode:
+                        log.debug(
+                            "Attempting reconstruction with mode '%s' and true "
+                            "dimensions %s",
+                            mode,
+                            size,
+                        )
+                        img = Image.frombytes(mode, size, image_data)
+                    else:
+                        log.warning("Could not determine raw image mode. Skipping.")
+                        continue
+                except Exception as recon_e:
+                    log.error("Raw image reconstruction failed: %s", recon_e)
+                    continue
+            except Exception as e:
+                log.error("Failed to process image %s: %s.", img_id, e)
+                continue
+
+            if not img:
+                continue
+
+            try:
                 if img.mode in ("RGBA", "P"):
                     img = img.convert("RGB")
                 img.save(image_filename, "PNG")
@@ -255,90 +335,8 @@ def process_pdf_images(
                 img.save(thumb_filename, "JPEG", quality=85)
                 yield f"  -> Created thumbnail for image {image_count}."
 
-            except UnidentifiedImageError:
-                log.warning(
-                    "Could not identify image format for an image on page %d. "
-                    "Attempting raw reconstruction.",
-                    page_layout.pageid,
-                )
-                if image_data:
-                    first_32_bytes = image_data[:32]
-                    hexdump = " ".join(f"{byte:02x}" for byte in first_32_bytes)
-                    stream_attrs = element.stream.attrs if hasattr(element, "stream") else {}
-                    log.debug(
-                        (
-                            "Unidentified image details:\n"
-                            "  - Name: %s\n"
-                            "  - Dimensions: %dx%d\n"
-                            "  - Stream Attrs: %s\n"
-                            "  - Data Length: %d bytes\n"
-                            "  - First 32 bytes: %s"
-                        ),
-                        element.name,
-                        element.width,
-                        element.height,
-                        stream_attrs,
-                        len(image_data),
-                        hexdump,
-                    )
-                    # --- Fallback logic for raw image data ---
-                    try:
-                        width = stream_attrs.get("Width")
-                        height = stream_attrs.get("Height")
-                        if not (width and height):
-                            log.warning("Stream Attrs missing Width/Height. Skipping.")
-                            continue
-
-                        size = (width, height)
-                        data_len = len(image_data)
-                        mode = None
-
-                        # Determine mode from stream attrs first
-                        bpc = stream_attrs.get("BitsPerComponent")
-                        cs = stream_attrs.get("ColorSpace")
-
-                        if bpc == 1:
-                            mode = "1"
-                        elif bpc == 8:
-                            if cs == b"/DeviceGray":
-                                mode = "L"
-                            elif cs == b"/DeviceRGB" or isinstance(cs, list):
-                                mode = "RGB"
-
-                        # If mode is still unknown, fallback to data length heuristic
-                        if not mode:
-                            if data_len == size[0] * size[1]:
-                                mode = "L"
-                            elif data_len == size[0] * size[1] * 3:
-                                mode = "RGB"
-                            elif data_len == size[0] * size[1] * 4:
-                                mode = "RGBA"
-
-                        if mode:
-                            log.debug(
-                                "Attempting reconstruction with mode '%s' and true "
-                                "dimensions %s",
-                                mode,
-                                size,
-                            )
-                            img = Image.frombytes(mode, size, image_data)
-                            img.save(image_filename, "PNG")
-                            message = (
-                                "Successfully reconstructed and saved raw image "
-                                f"{image_count}."
-                            )
-                            log.info(message)
-                            yield message
-                        else:
-                            log.warning("Could not determine raw image mode. Skipping.")
-                            continue
-                    except Exception as recon_e:
-                        log.error("Raw image reconstruction failed: %s", recon_e)
-                        continue
-                else:
-                    continue
             except Exception as e:
-                log.error("Could not save image %s: %s.", image_filename, e)
+                log.error("Could not save image or thumbnail for %s: %s.", img_id, e)
                 continue
 
             with open(image_filename, "rb") as f:
@@ -348,7 +346,6 @@ def process_pdf_images(
                 describe_prompt, saved_image_bytes, ollama_url, model
             )
 
-            # Intelligent Classification
             classification_model = _get_classification_model()
             page_type = extractor._classify_page_type(page_layout, [], [element], total_pages)
             if page_type in ["cover", "art"]:
@@ -363,14 +360,10 @@ def process_pdf_images(
                     ollama_url,
                     classification_model,
                     temperature=0.1,
-                )
+                ).strip()
                 log.debug(
-                    "Image Classification:\n"
-                    "  - Model: %s\n"
-                    "  - Prompt: %s\n"
-                    "  - Classification: %s",
+                    "Image Classification: Model=%s, Result=%s",
                     classification_model,
-                    classify_prompt.replace("\n", " "),
                     classification,
                 )
 
@@ -388,7 +381,8 @@ def process_pdf_images(
                 "bbox": [element.x0, element.y0, element.x1, element.y1],
                 "description": description or "Description generation failed.",
                 "classification": classification,
-                "thumbnail_filename": os.path.basename(thumb_filename),
+                "image_filename": base_image_filename,
+                "thumbnail_filename": base_thumb_filename,
             }
             with open(json_filename, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=4)

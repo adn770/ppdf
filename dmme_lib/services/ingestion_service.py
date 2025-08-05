@@ -167,10 +167,12 @@ class IngestionService:
             pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
         )
         yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
+
         # --- Section Filtering based on user selection (if provided) ---
         if sections_to_include:
             sections = [s for s in sections if s.title in sections_to_include]
             yield f"✔ Filtered to {len(sections)} user-selected sections."
+
         # --- Section-level Classification and Filtering ---
         page_type_map = {pm.page_num: pm.page_type for pm in page_models}
         content_sections = []
@@ -314,8 +316,9 @@ class IngestionService:
         )
 
     def _create_asset_manifest(self, final_dir: str):
-        """Creates an assets.json manifest file in the final asset directory."""
-        manifest = {}
+        """Creates an assets.json manifest file with detailed asset objects."""
+        manifest_data = {"assets": []}
+        dir_name = os.path.basename(final_dir)
         try:
             for filename in sorted(os.listdir(final_dir)):
                 if not filename.endswith(".json") or filename == "assets.json":
@@ -323,19 +326,26 @@ class IngestionService:
                 with open(os.path.join(final_dir, filename), "r") as f:
                     data = json.load(f)
 
-                classification = data.get("classification")
                 thumb_filename = data.get("thumbnail_filename")
-                if classification and thumb_filename:
-                    cat_key = f"{classification}s"
-                    if cat_key not in manifest:
-                        manifest[cat_key] = []
-                    thumb_path = os.path.join(os.path.basename(final_dir), thumb_filename)
-                    manifest[cat_key].append(thumb_path)
+                image_filename = data.get("image_filename")
+
+                if not (thumb_filename and image_filename):
+                    continue
+
+                manifest_data["assets"].append(
+                    {
+                        "id": os.path.splitext(image_filename)[0],
+                        "thumb_url": f"{dir_name}/{thumb_filename}",
+                        "full_url": f"{dir_name}/{image_filename}",
+                        "classification": data.get("classification", "other"),
+                        "description": data.get("description", ""),
+                    }
+                )
 
             manifest_path = os.path.join(final_dir, "assets.json")
             with open(manifest_path, "w") as f:
-                json.dump(manifest, f, indent=4)
-            log.info("Created asset manifest at %s", manifest_path)
+                json.dump(manifest_data, f, indent=4)
+            log.info("Created detailed asset manifest at %s", manifest_path)
         except Exception as e:
             log.error("Failed to create asset manifest: %s", e)
 

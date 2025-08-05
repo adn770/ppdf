@@ -253,10 +253,18 @@ class RAGService:
             if os.path.exists(manifest_path):
                 with open(manifest_path, "r") as f:
                     manifest = json.load(f)
-                cover_urls = manifest.get("covers", [])[:4]
-                if len(cover_urls) > 1:
-                    last_image = cover_urls.pop()
-                    cover_urls.insert(0, last_image)
+
+                all_assets = manifest.get("assets", [])
+                cover_assets = [a for a in all_assets if a.get("classification") == "cover"]
+
+                if len(cover_assets) > 1:
+                    last_image = cover_assets.pop()
+                    cover_assets.insert(0, last_image)
+
+                cover_urls = [
+                    a.get("thumb_url") for a in cover_assets[:4] if a.get("thumb_url")
+                ]
+
                 if cover_urls:
                     log.info("Found %d cover images in manifest for mosaic.", len(cover_urls))
                     yield {
