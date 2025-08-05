@@ -267,16 +267,23 @@ class RAGService:
                     last_image = cover_assets.pop()
                     cover_assets.insert(0, last_image)
 
-                cover_urls = [
-                    a.get("thumb_url") for a in cover_assets[:4] if a.get("thumb_url")
-                ]
+                cover_assets_data = []
+                for asset in cover_assets[:4]:
+                    thumb = asset.get("thumb_url")
+                    full = asset.get("full_url")
+                    if thumb and full:
+                        cover_assets_data.append(
+                            {
+                                "thumb_url": f"/assets/images/{thumb}",
+                                "full_url": f"/assets/images/{full}",
+                            }
+                        )
 
-                if cover_urls:
-                    log.info("Found %d cover images in manifest for mosaic.", len(cover_urls))
-                    yield {
-                        "type": "cover_mosaic",
-                        "image_urls": [f"/assets/images/{url}" for url in cover_urls],
-                    }
+                if cover_assets_data:
+                    log.info(
+                        "Found %d cover images in manifest for mosaic.", len(cover_assets_data)
+                    )
+                    yield {"type": "cover_mosaic", "assets": cover_assets_data}
         except Exception as e:
             log.error("Failed during cover mosaic manifest processing: %s", e)
 
