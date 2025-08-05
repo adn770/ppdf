@@ -171,6 +171,7 @@ def ingest_document():
     tmp_path = data.get("temp_file_path")
     pages_str = data.get("pages", "all")
     sections_to_include = data.get("sections_to_include")
+    extract_images = data.get("extract_images", True)  # Get the new flag
 
     if not metadata or not tmp_path:
         return jsonify({"error": "Missing metadata or temp_file_path"}), 400
@@ -200,13 +201,16 @@ def ingest_document():
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
 
-                # --- Image Extraction (for PDFs only) ---
-                if is_pdf:
+                # --- Image Extraction (for PDFs only, now conditional) ---
+                if is_pdf and extract_images:
                     assets_path = app.config["ASSETS_PATH"]
                     for msg in ingestion_service.process_and_extract_images(
                         tmp_path, assets_path, metadata, pages_str=pages_str
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
+                elif is_pdf:
+                    msg = "Skipping image extraction as requested."
+                    yield f"data: {json.dumps({'message': f'✔ {msg}'})}\n\n"
 
             except Exception as e:
                 log.error("Document ingestion stream failed: %s", e, exc_info=True)

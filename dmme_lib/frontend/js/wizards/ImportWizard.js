@@ -1,6 +1,6 @@
 // dmme_lib/frontend/js/wizards/ImportWizard.js
 import { apiCall } from './ApiHelper.js';
-import { status } from '../ui.js';
+import { status, confirmationModal } from '../ui.js';
 
 export class ImportWizard {
     constructor(appInstance) {
@@ -29,6 +29,7 @@ export class ImportWizard {
         this.uploadText = document.getElementById('wizard-upload-text');
         this.pdfPagesGroup = document.getElementById('pdf-pages-group');
         this.pdfPagesInput = document.getElementById('pdf-pages-input');
+        this.extractImagesCheckbox = document.getElementById('extract-images-checkbox');
         this.reviewImage = document.getElementById('review-image');
         this.reviewCounter = document.getElementById('image-review-counter');
         this.imgDesc = document.getElementById('image-description');
@@ -114,6 +115,8 @@ export class ImportWizard {
         document.getElementById('kb-desc').value = '';
         this.pdfPagesInput.value = 'all';
         this.pdfPagesInput.disabled = true;
+        this.extractImagesCheckbox.checked = true;
+        this.extractImagesCheckbox.disabled = true;
         this.unhighlight();
         this.progressLog = null;
         this.isProcessing = false;
@@ -138,7 +141,6 @@ export class ImportWizard {
         this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 2) ?
             'block' : 'none';
         this.nextBtn.style.display = this.currentStep < 2 ? 'block' : 'none';
-
         if (this.currentStep === 3) { // Image review pane
             if (!finalizeBtn) {
                 const btnHTML =
@@ -244,7 +246,6 @@ export class ImportWizard {
             const sectionsToInclude = Array.from(
                 this.sectionListEl.querySelectorAll('input:checked')
             ).map(cb => cb.dataset.sectionTitle);
-
             this.navigate(1); // Move to processing pane (now step 2)
             await this.runFullIngestionProcess(sectionsToInclude);
         }
@@ -282,6 +283,7 @@ export class ImportWizard {
                 temp_file_path: this.serverTempFilePath,
                 pages: pagesValue || 'all',
                 sections_to_include: sectionsToInclude,
+                extract_images: this.extractImagesCheckbox.checked,
                 metadata: {
                     kb_name: this.knowledgeBaseName,
                     kb_type: document.getElementById('kb-type').value,
@@ -298,7 +300,7 @@ export class ImportWizard {
             await this._processStream(response);
 
             const isPdf = this.selectedFile.name.toLowerCase().endsWith('.pdf');
-            if (isPdf) {
+            if (isPdf && this.extractImagesCheckbox.checked) {
                 await this.loadImagesForReview();
                 if (this.reviewImages.length > 0) {
                     const msg = `✔ Found ${this.reviewImages.length} images to review.`;
@@ -424,8 +426,13 @@ export class ImportWizard {
 
     async discardCurrentImage() {
         const current = this.reviewImages[this.currentReviewIndex];
-        const msg = `Are you sure you want to discard this image?\n\n(${current.filename})`;
-        if (confirm(msg)) {
+        const confirmed = await confirmationModal.confirm(
+            'deleteImageTitle',
+            'deleteImageMsg',
+            { filename: current.filename }
+        );
+
+        if (confirmed) {
             try {
                 const url = `/api/knowledge/review-images/${this.knowledgeBaseName}/${current.filename}`;
                 await apiCall(url, { method: 'DELETE' });
@@ -473,6 +480,7 @@ export class ImportWizard {
             this.selectedFile = files[0];
             const isPdf = this.selectedFile.name.toLowerCase().endsWith('.pdf');
             this.pdfPagesInput.disabled = !isPdf;
+            this.extractImagesCheckbox.disabled = !isPdf;
             this._uploadFile(this.selectedFile);
         }
     }

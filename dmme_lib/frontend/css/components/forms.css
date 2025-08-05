@@ -23,6 +23,26 @@
     gap: 16px 24px;
 }
 
+.form-group-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    transform: scale(1.2);
+    accent-color: var(--accent-color);
+}
+
+.form-group-checkbox label {
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group textarea,
