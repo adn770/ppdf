@@ -65,6 +65,7 @@ def explore_knowledge_base(kb_name):
                                     "url": f"/assets/images/{kb_name}/{thumb_path}",
                                     "caption": meta.get("description", "No caption"),
                                     "classification": meta.get("classification", "other"),
+                                    "thumb_filename": thumb_path,
                                 }
                             )
                     except (IOError, json.JSONDecodeError) as e:
@@ -94,6 +95,19 @@ def delete_knowledge_base(kb_name):
     except Exception as e:
         log.error("Failed to delete knowledge base '%s': %s", kb_name, e, exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/<kb_name>/asset/<thumb_filename>", methods=["DELETE"])
+def delete_asset(kb_name, thumb_filename):
+    """Deletes a single asset's files and updates the manifest."""
+    try:
+        current_app.ingestion_service.delete_asset(kb_name, thumb_filename)
+        return "", 204  # No Content
+    except FileNotFoundError:
+        return jsonify({"error": "Asset not found"}), 404
+    except Exception as e:
+        log.error("Failed to delete asset '%s': %s", thumb_filename, e, exc_info=True)
+        return jsonify({"error": "Failed to delete asset"}), 500
 
 
 @bp.route("/upload-temp-file", methods=["POST"])

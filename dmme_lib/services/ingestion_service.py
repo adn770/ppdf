@@ -73,7 +73,10 @@ class IngestionService:
                 chunk, labeler_prompt, self.ollama_url, classification_model
             )
             log.debug(
-                "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
+                "Semantic Labeling:\n"
+                "  - Model: %s\n"
+                "  - Input: %s\n"
+                "  - Label: %s",
                 classification_model,
                 self._format_text_for_log(chunk),
                 label,
@@ -446,6 +449,7 @@ class IngestionService:
             "source": "user_upload",
             "original_filename": file_storage.filename,
             "thumbnail_filename": thumb_filename,
+            "image_filename": image_filename,
         }
         with open(json_path, "w") as f:
             json.dump(metadata, f, indent=4)
@@ -469,3 +473,49 @@ class IngestionService:
             "caption": description,
             "classification": classification,
         }
+
+    def delete_asset(self, kb_name: str, thumb_filename: str):
+        """Deletes an asset's image, thumbnail, and metadata, then updates the manifest."""
+        assets_dir = os.path.join(current_app.config["ASSETS_PATH"], "images", kb_name)
+        if not os.path.isdir(assets_dir):
+            raise FileNotFoundError("Asset directory for KB does not exist.")
+
+        base_name = thumb_filename.replace("thumb_", "").replace(".jpg", "")
+        json_filename = f"{base_name}.json"
+        json_path = os.path.join(assets_dir, json_filename)
+
+        if not os.path.exists(json_path):
+            raise FileNotFoundError(f"Asset metadata file not found: {json_filename}")
+
+        with open(json_path, "r") as f:
+            metadata = json.load(f)
+
+        image_filename = metadata.get("image_filename")
+        if not image_filename:
+            # Fallback for older assets before this key was saved
+            image_exts = [".png", ".jpg", ".jpeg", ".webp"]
+            for ext in image_exts:
+                if os.path.exists(os.path.join(assets_dir, f"{base_name}{ext}")):
+                    image_filename = f"{base_name}{ext}"
+                    break
+            if not image_filename:
+                raise FileNotFoundError(f"Could not determine main image for {base_name}")
+
+        thumb_path = os.path.join(assets_dir, thumb_filename)
+        image_path = os.path.join(assets_dir, image_filename)
+
+        log.info("Deleting asset files for %s: %s, %s, %s",
+                 kb_name, image_filename, thumb_filename, json_filename)
+
+        # Delete the files, ignoring errors if they're already gone
+        for path in [image_path, thumb_path, json_path]:
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                log.warning("File not found during deletion, continuing: %s", path)
+            except Exception as e:
+                log.error("Error deleting file %s: %s", path, e)
+                raise
+
+        # Regenerate the manifest
+        self._create_asset_manifest(assets_dir)

@@ -28,6 +28,7 @@ export class LibraryHub {
         });
         this._addDragDropListeners();
         this.listEl.addEventListener('click', (e) => this._handleKbDelete(e));
+        this.assetGrid.addEventListener('click', (e) => this._handleAssetDelete(e));
         this.isInitialized = true;
     }
 
@@ -150,6 +151,7 @@ export class LibraryHub {
         card.innerHTML = `
             <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
             <p>${asset.classification}</p>
+            <button class="delete-asset-btn" data-filename="${asset.thumb_filename}" title="Delete Asset">🗑️</button>
         `;
         this.assetGrid.appendChild(card);
     }
@@ -215,6 +217,34 @@ export class LibraryHub {
                 this.selectedKb = null;
             }
             await this.loadKnowledgeBases();
+        }
+    }
+
+    async _handleAssetDelete(event) {
+        const deleteBtn = event.target.closest('.delete-asset-btn');
+        if (!deleteBtn) return;
+
+        const thumbFilename = deleteBtn.dataset.filename;
+        const confirmed = await confirmationModal.confirm(
+            'deleteAssetTitle',
+            'deleteAssetMsg',
+            { filename: thumbFilename }
+        );
+
+        if (confirmed) {
+            try {
+                const response = await fetch(`/api/knowledge/${this.selectedKb.name}/asset/${thumbFilename}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP Error: ${response.status}`);
+                }
+                deleteBtn.closest('.asset-card').remove();
+                status.setText('deleteAssetSuccess', false, { filename: thumbFilename });
+            } catch (error) {
+                status.setText(error.message, true);
+            }
         }
     }
 
