@@ -13,11 +13,17 @@ log = logging.getLogger("dmme.rag")
 
 class RAGService:
     def __init__(
-        self, vector_store: VectorStoreService, ollama_url: str, model: str, assets_path: str
+        self,
+        vector_store: VectorStoreService,
+        ollama_url: str,
+        dm_model: str,
+        utility_model: str,
+        assets_path: str,
     ):
         self.vector_store = vector_store
         self.ollama_url = ollama_url
-        self.model = model
+        self.dm_model = dm_model
+        self.utility_model = utility_model
         self.assets_path = assets_path
         log.info("RAGService initialized.")
 
@@ -113,7 +119,7 @@ class RAGService:
             prompt_content = f"[PREVIOUS SESSION RECAP]\n{recap}\n\n{prompt_content}"
 
         kickoff_prompt = self._get_prompt("KICKOFF_ADVENTURE", lang)
-        session_model = game_config.get("llm_model", self.model)
+        session_model = game_config.get("llm_model", self.dm_model)
         llm_stream = query_text_llm(
             kickoff_prompt, prompt_content, self.ollama_url, session_model, stream=True
         )
@@ -222,7 +228,7 @@ class RAGService:
         )
 
         game_master_prompt = self._get_prompt("GAME_MASTER", lang)
-        session_model = game_config.get("llm_model", self.model)
+        session_model = game_config.get("llm_model", self.dm_model)
         llm_stream = query_text_llm(
             game_master_prompt, user_prompt, self.ollama_url, session_model, stream=True
         )
@@ -242,7 +248,7 @@ class RAGService:
                     player_command, full_narrative, module_kb
                 )
             if show_ascii:
-                yield from self._find_and_yield_ascii_map(full_narrative, game_config)
+                yield from self._find_and_yield_ascii_map(full_narrative)
 
     def _find_and_yield_cover_mosaic(self, kb_name: str):
         """Finds up to 4 cover images from the manifest and yields them as a mosaic."""
@@ -306,12 +312,9 @@ class RAGService:
         log.debug("Generating ASCII map for narrative.")
         try:
             lang = game_config.get("language", "en")
-            classification_model = current_app.config_service.get_settings()["Ollama"][
-                "classification_model"
-            ]
             prompt = self._get_prompt("ASCII_MAP_GENERATOR", lang)
             response_data = query_text_llm(
-                prompt, narrative, self.ollama_url, classification_model
+                prompt, narrative, self.ollama_url, self.utility_model
             )
             map_response = response_data.get("response", "").strip()
             if map_response:
@@ -327,6 +330,6 @@ class RAGService:
         """
         log.info("Generating journal recap in '%s'.", lang)
         prompt = self._get_prompt("SUMMARIZE_SESSION", lang)
-        response_data = query_text_llm(prompt, session_log, self.ollama_url, self.model)
+        response_data = query_text_llm(prompt, session_log, self.ollama_url, self.dm_model)
         summary = response_data.get("response", "").strip()
         return summary

@@ -33,7 +33,9 @@ def create_app(config_overrides=None):
         CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
         ASSETS_PATH=ASSETS_DIR,
         OLLAMA_URL="http://localhost:11434",
-        OLLAMA_MODEL="llava:latest",
+        DM_MODEL="llama3.1:latest",
+        VISION_MODEL="llava:latest",
+        UTILITY_MODEL="llama3.1:latest",
         EMBEDDING_MODEL="mxbai-embed-large",
     )
 
@@ -46,17 +48,32 @@ def create_app(config_overrides=None):
     try:
         app.storage = StorageService(app.config["DATABASE"])
         app.config_service = ConfigService(app.config["CONFIG_PATH"])
+        # Load managed settings and update app config
+        managed_settings = app.config_service.get_settings()
+        app.config.update(
+            OLLAMA_URL=managed_settings["Ollama"]["url"],
+            DM_MODEL=managed_settings["Ollama"]["dm_model"],
+            VISION_MODEL=managed_settings["Ollama"]["vision_model"],
+            UTILITY_MODEL=managed_settings["Ollama"]["utility_model"],
+            EMBEDDING_MODEL=managed_settings["Ollama"]["embedding_model"],
+        )
+
         app.vector_store = VectorStoreService(
             app.config["CHROMA_PATH"], app.config["OLLAMA_URL"], app.config["EMBEDDING_MODEL"]
         )
         app.ingestion_service = IngestionService(
-            app.vector_store, app.config["OLLAMA_URL"], app.config["OLLAMA_MODEL"]
+            vector_store=app.vector_store,
+            ollama_url=app.config["OLLAMA_URL"],
+            dm_model=app.config["DM_MODEL"],
+            vision_model=app.config["VISION_MODEL"],
+            utility_model=app.config["UTILITY_MODEL"],
         )
         app.rag_service = RAGService(
-            app.vector_store,
-            app.config["OLLAMA_URL"],
-            app.config["OLLAMA_MODEL"],
-            app.config["ASSETS_PATH"],
+            vector_store=app.vector_store,
+            ollama_url=app.config["OLLAMA_URL"],
+            dm_model=app.config["DM_MODEL"],
+            utility_model=app.config["UTILITY_MODEL"],
+            assets_path=app.config["ASSETS_PATH"],
         )
         with app.app_context():
             app.storage.init_db()

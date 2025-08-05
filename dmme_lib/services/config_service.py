@@ -17,9 +17,9 @@ class ConfigService:
             },
             "Ollama": {
                 "url": "http://localhost:11434",
-                "main_model": "llama3.1:latest",
+                "dm_model": "llama3.1:latest",
                 "vision_model": "llava:latest",
-                "classification_model": "llama3:latest",
+                "utility_model": "llama3:latest",
                 "embedding_model": "mxbai-embed-large",
             },
             "Game": {

@@ -60,7 +60,7 @@ def main():
         "--debug",
         dest="debug_topics",
         metavar="TOPICS",
-        help="Enable DEBUG logging (all,api,rag,ingest,storage,config).",
+        help="Enable DEBUG logging (all,api,rag,ingest,storage,config,llm).",
     )
     args = parser.parse_args()
 

@@ -24,19 +24,20 @@ log = logging.getLogger("dmme.ingest")
 
 
 class IngestionService:
-    def __init__(self, vector_store: VectorStoreService, ollama_url: str, model: str):
+    def __init__(
+        self,
+        vector_store: VectorStoreService,
+        ollama_url: str,
+        dm_model: str,
+        vision_model: str,
+        utility_model: str,
+    ):
         self.vector_store = vector_store
         self.ollama_url = ollama_url
-        self.model = model
+        self.dm_model = dm_model
+        self.vision_model = vision_model
+        self.utility_model = utility_model
         log.info("IngestionService initialized.")
-
-    def _get_classification_model(self):
-        """Gets the classification model from the app's config service."""
-        return current_app.config_service.get_settings()["Ollama"]["classification_model"]
-
-    def _get_vision_model(self):
-        """Gets the vision model from the app's config service."""
-        return current_app.config_service.get_settings()["Ollama"]["vision_model"]
 
     def _get_prompt(self, key: str, lang: str) -> str:
         """Safely retrieves a prompt from the registry, falling back to English."""
@@ -56,25 +57,30 @@ class IngestionService:
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        yield f"✔ Starting Markdown processing for KB '{kb_name}' in '{lang}'."
+        msg = f"✔ Starting Markdown processing for KB '{kb_name}' in '{lang}'."
+        log.info(msg)
+        yield msg
         chunks = [c.strip() for c in re.split(r"\n{2,}", file_content) if c.strip()]
-        yield f"Splitting file into {len(chunks)} raw chunks."
+        msg = f"Splitting file into {len(chunks)} raw chunks."
+        log.info(msg)
+        yield msg
 
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
-        classification_model = self._get_classification_model()
         documents, metadatas = [], []
 
         valid_chunks = [c for c in chunks if len(c) >= 50]
         num_valid = len(valid_chunks)
 
         for i, chunk in enumerate(valid_chunks):
-            yield f"  -> Applying semantic label to chunk {i + 1}/{num_valid}..."
+            msg = f"  -> Applying semantic label to chunk {i + 1}/{num_valid}..."
+            log.info(msg)
+            yield msg
             label = get_semantic_label(
-                chunk, labeler_prompt, self.ollama_url, classification_model
+                chunk, labeler_prompt, self.ollama_url, self.utility_model
             )
             log.debug(
                 "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
-                classification_model,
+                self.utility_model,
                 self._format_text_for_log(chunk),
                 label,
             )
@@ -89,13 +95,21 @@ class IngestionService:
             )
 
         if not documents:
-            yield "✔ No valid text chunks found to ingest."
+            msg = "✔ No valid text chunks found to ingest."
+            log.info(msg)
+            yield msg
             return
 
-        yield f"✔ Processing complete. Found {len(documents)} valid chunks."
-        yield "Generating embeddings and saving to vector store..."
+        msg = f"✔ Processing complete. Found {len(documents)} valid chunks."
+        log.info(msg)
+        yield msg
+        msg = "Generating embeddings and saving to vector store..."
+        log.info(msg)
+        yield msg
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
-        yield "✔ Saved to vector store."
+        msg = "✔ Saved to vector store."
+        log.info(msg)
+        yield msg
 
     def _recover_paragraphs(self, section: Section, formatted_text: str) -> list[str]:
         """
@@ -161,35 +175,40 @@ class IngestionService:
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
-        yield f"Analyzing PDF structure for '{kb_name}' (Pages: {pages_str})..."
+        msg = f"Analyzing PDF structure for '{kb_name}' (Pages: {pages_str})..."
+        log.info(msg)
+        yield msg
         extraction_options = {"num_cols": "auto", "rm_footers": True, "style": False}
         sections, page_models = process_pdf_text(
             pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
         )
-        yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
-
+        msg = f"✔ Structure analysis complete. Found {len(sections)} logical sections."
+        log.info(msg)
+        yield msg
         # --- Section Filtering based on user selection (if provided) ---
         if sections_to_include:
             sections = [s for s in sections if s.title in sections_to_include]
-            yield f"✔ Filtered to {len(sections)} user-selected sections."
-
+            msg = f"✔ Filtered to {len(sections)} user-selected sections."
+            log.info(msg)
+            yield msg
         # --- Section-level Classification and Filtering ---
         page_type_map = {pm.page_num: pm.page_type for pm in page_models}
         content_sections = []
         classifier_prompt = self._get_prompt("SECTION_CLASSIFIER", lang)
-        classification_model = self._get_classification_model()
         valid_section_tags = {"content", "appendix"}
         valid_llm_tags = valid_section_tags.union(
             {"preface", "table_of_contents", "legal", "credits", "index"}
         )
 
-        model_details = get_model_details(self.ollama_url, classification_model)
+        model_details = get_model_details(self.ollama_url, self.utility_model)
         ctx = model_details.get("context_length", 4096)  # Default to 4k if lookup fails
         target_chars = int(ctx * 0.8)
-        yield (
-            f"Classifying {len(sections)} sections using '{classification_model}' "
+        msg = (
+            f"Classifying {len(sections)} sections using '{self.utility_model}' "
             f"(context: {target_chars} chars)..."
         )
+        log.info(msg)
+        yield msg
 
         for i, section in enumerate(sections):
             if not section.paragraphs:
@@ -216,7 +235,7 @@ class IngestionService:
                 classifier_prompt,
                 representative_text,
                 self.ollama_url,
-                classification_model,
+                self.utility_model,
                 temperature=0.1,
             )
             final_tag = response_data.get("response", "").strip()
@@ -230,7 +249,7 @@ class IngestionService:
                 "  - Title: '%s'\n"
                 "  - Hint: %s -> Final Tag: %s\n"
                 "  - Input: %s",
-                classification_model,
+                self.utility_model,
                 section.title or "Untitled",
                 hint_tag,
                 final_tag,
@@ -240,7 +259,9 @@ class IngestionService:
             if final_tag in valid_section_tags:
                 content_sections.append(section)
             else:
-                yield f"  -> Skipping section '{section.title}' (classified as '{final_tag}')"
+                msg = f"  -> Skipping section '{section.title}' (classified as '{final_tag}')"
+                log.info(msg)
+                yield msg
 
         # --- Paragraph-level Reformatting and Semantic Labeling ---
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
@@ -251,23 +272,31 @@ class IngestionService:
             if not section.paragraphs or not any(p.lines for p in section.paragraphs):
                 continue
 
-            yield f"Reformatting section {i + 1}/{len(content_sections)} ('{section.title}')..."
+            msg = (
+                f"Reformatting section {i + 1}/{len(content_sections)} ('{section.title}')..."
+            )
+            log.info(msg)
+            yield msg
             stream = reformat_section_with_llm(
                 section=section,
                 system_prompt=PROMPT_STRICT,
                 ollama_url=self.ollama_url,
-                model=self.model,
+                model=self.dm_model,
                 chunk_size=4000,
             )
             formatted_section_text = "".join(list(stream))
 
-            yield "  -> Recovering paragraphs from formatted text..."
+            msg = "  -> Recovering paragraphs from formatted text..."
+            log.info(msg)
+            yield msg
             recovered_chunks = self._recover_paragraphs(section, formatted_section_text)
 
-            yield f"  -> Labeling {len(recovered_chunks)} recovered chunks..."
+            msg = f"  -> Labeling {len(recovered_chunks)} recovered chunks..."
+            log.info(msg)
+            yield msg
             for chunk in recovered_chunks:
                 label = get_semantic_label(
-                    chunk, labeler_prompt, self.ollama_url, classification_model
+                    chunk, labeler_prompt, self.ollama_url, self.utility_model
                 )
                 documents.append(chunk)
                 metadatas.append(
@@ -280,13 +309,21 @@ class IngestionService:
                 )
                 chunk_id += 1
 
-        yield f"✔ Processing complete. Found {len(documents)} valid chunks."
-        yield "Generating embeddings and saving to vector store..."
+        msg = f"✔ Processing complete. Found {len(documents)} valid chunks."
+        log.info(msg)
+        yield msg
+        msg = "Generating embeddings and saving to vector store..."
+        log.info(msg)
+        yield msg
         if not documents:
-            yield "✔ No valid text chunks found to ingest."
+            msg = "✔ No valid text chunks found to ingest."
+            log.info(msg)
+            yield msg
             return
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
-        yield "✔ Saved to vector store."
+        msg = "✔ Saved to vector store."
+        log.info(msg)
+        yield msg
 
     def process_and_extract_images(
         self, pdf_path: str, assets_path: str, metadata: dict, pages_str: str = "all"
@@ -294,7 +331,9 @@ class IngestionService:
         """Extracts images from a PDF and processes them using language-aware prompts."""
         kb_name = metadata.get("kb_name")
         lang = metadata.get("language", "en")
-        yield f"Starting image extraction for '{kb_name}' (Pages: {pages_str})..."
+        msg = f"Starting image extraction for '{kb_name}' (Pages: {pages_str})..."
+        log.info(msg)
+        yield msg
 
         review_dir = os.path.join(assets_path, "images", f"{kb_name}_reviewing")
         if os.path.exists(review_dir):
@@ -303,13 +342,12 @@ class IngestionService:
 
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
-        vision_model = self._get_vision_model()
 
         yield from process_pdf_images(
             pdf_path,
             review_dir,
             self.ollama_url,
-            vision_model,
+            self.vision_model,
             describe_prompt,
             classify_prompt,
             pages_str=pages_str,
@@ -435,16 +473,14 @@ class IngestionService:
 
         kb_metadata = self.vector_store.get_kb_metadata(kb_name)
         lang = kb_metadata.get("language", "en")
-        vision_model = self._get_vision_model()
-        classification_model = self._get_classification_model()
 
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         description = query_multimodal_llm(
-            describe_prompt, image_bytes, self.ollama_url, vision_model
+            describe_prompt, image_bytes, self.ollama_url, self.vision_model
         )
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
         classification = query_multimodal_llm(
-            classify_prompt, image_bytes, self.ollama_url, classification_model, 0.1
+            classify_prompt, image_bytes, self.ollama_url, self.utility_model, 0.1
         ).strip()
         if classification not in {"cover", "art", "map", "handout", "decoration", "other"}:
             classification = "art"

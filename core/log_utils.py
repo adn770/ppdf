@@ -11,7 +11,7 @@ import logging
 
 PROJECT_TOPICS = {
     "ppdf": {"layout", "structure", "reconstruct", "llm", "tts", "tables", "api", "prescan"},
-    "dmme": {"api", "rag", "ingest", "storage", "config"},
+    "dmme": {"api", "rag", "ingest", "storage", "config", "llm"},
 }
 
 

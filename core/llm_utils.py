@@ -3,11 +3,21 @@ import logging
 import requests
 import json
 import base64
+import time
+import re
 
 # Local Application Imports
 from dmme_lib.constants import PROMPT_REGISTRY
 
-log = logging.getLogger("dmme.llm_utils")
+log_llm = logging.getLogger("dmme.llm")
+
+
+def _format_text_for_log(text: str) -> str:
+    """Formats a long text block into a concise, single-line summary for logging."""
+    single_line_text = str(text).replace("\n", " ").strip()
+    if len(single_line_text) > 120:
+        return f'"{single_line_text[:55]}...{single_line_text[-55:]}"'
+    return f'"{single_line_text}"'
 
 
 def _get_prompt_from_registry(key: str, lang: str) -> str:
@@ -17,11 +27,11 @@ def _get_prompt_from_registry(key: str, lang: str) -> str:
 
 def get_model_details(ollama_url: str, model: str) -> dict:
     """Queries the Ollama /api/show endpoint for model details."""
-    log.info("Querying details for model: %s...", model)
+    log_llm.info("Querying details for model: %s...", model)
     try:
         response = requests.post(f"{ollama_url}/api/show", json={"name": model}, timeout=10)
         if response.status_code == 404:
-            log.error("Model '%s' not found.", model)
+            log_llm.error("Model '%s' not found.", model)
             return {}  # Return empty dict on not found
         response.raise_for_status()
         model_info = response.json()
@@ -41,10 +51,10 @@ def get_model_details(ollama_url: str, model: str) -> dict:
             "quantization_level": details.get("quantization_level", "N/A"),
             "context_length": context_length,
         }
-        log.info("Model details retrieved: %s", result)
+        log_llm.info("Model details retrieved: %s", result)
         return result
     except requests.exceptions.RequestException as e:
-        log.error("Could not connect to Ollama at %s: %s", ollama_url, e)
+        log_llm.error("Could not connect to Ollama at %s: %s", ollama_url, e)
         return {}
 
 
@@ -62,7 +72,14 @@ def query_text_llm(
     In streaming mode, it yields the raw JSON chunk from the API.
     In non-streaming mode, it returns the full JSON response dictionary.
     """
-    log.debug("Querying text LLM '%s' (Stream: %s)...", model, stream)
+    log_llm.debug(
+        "Querying LLM:\n  - Model: %s (Stream: %s)\n  - System: %s\n  - User: %s",
+        model,
+        stream,
+        _format_text_for_log(prompt),
+        _format_text_for_log(user_content),
+    )
+    start_time = time.monotonic()
     payload = {
         "model": model,
         "system": prompt,
@@ -83,8 +100,10 @@ def query_text_llm(
                     chunk_data = json.loads(line.decode("utf-8"))
                     yield chunk_data
                 except (json.JSONDecodeError, UnicodeDecodeError):
-                    log.warning("Failed to decode stream chunk: %s", line)
+                    log_llm.warning("Failed to decode stream chunk: %s", line)
                     continue
+        duration = time.monotonic() - start_time
+        log_llm.debug("LLM stream finished for model '%s' in %.2f seconds.", model, duration)
 
     try:
         response = requests.post(
@@ -96,17 +115,21 @@ def query_text_llm(
             return _stream_generator(response)
         else:
             data = response.json()
-            log.debug("LLM response received: %s", data.get("response", "").strip())
+            duration = time.monotonic() - start_time
+            response_text = data.get("response", "").strip()
+            log_llm.debug(
+                "LLM response received:\n  - Model: %s\n  - Duration: %.2fs\n  - Response: %s",
+                model,
+                duration,
+                _format_text_for_log(response_text),
+            )
             return data
 
     except requests.exceptions.RequestException as e:
-        log.error("Failed to query text LLM: %s", e)
+        log_llm.error("Failed to query text LLM: %s", e)
         if stream:
-            # Return a generator expression that yields a single error chunk.
-            # This avoids using 'yield' in the main function's scope.
             return (chunk for chunk in [{"error": str(e)}])
         else:
-            # Return a dictionary for the non-streaming error case.
             return {"error": str(e)}
 
 
@@ -115,13 +138,19 @@ def query_multimodal_llm(
 ) -> str:
     """Sends a prompt and a single image to an Ollama multimodal model."""
     if not image_bytes:
-        log.error("No image bytes provided for multimodal query.")
+        log_llm.error("No image bytes provided for multimodal query.")
         return ""
 
     encoded_image = base64.b64encode(image_bytes).decode("utf-8")
+    log_llm.debug(
+        "Querying Multimodal LLM:\n  - Model: %s\n  - Prompt: %s\n  - Image: %d bytes",
+        model,
+        _format_text_for_log(prompt),
+        len(image_bytes),
+    )
+    start_time = time.monotonic()
 
     try:
-        log.debug("Querying multimodal LLM '%s'...", model)
         payload = {
             "model": model,
             "prompt": prompt,
@@ -141,10 +170,17 @@ def query_multimodal_llm(
         )
         response.raise_for_status()
         data = response.json()
-        log.debug("LLM response received: %s", data.get("response", "").strip())
-        return data.get("response", "").strip()
+        duration = time.monotonic() - start_time
+        response_text = data.get("response", "").strip()
+        log_llm.debug(
+            "Multimodal LLM response received:\n  - Model: %s\n  - Duration: %.2fs\n  - Response: %s",
+            model,
+            duration,
+            _format_text_for_log(response_text),
+        )
+        return response_text
     except requests.exceptions.RequestException as e:
-        log.error("Failed to query multimodal LLM: %s", e)
+        log_llm.error("Failed to query multimodal LLM: %s", e)
         return ""
 
 
@@ -152,9 +188,12 @@ def generate_embeddings_ollama(
     chunks: list[str], ollama_url: str, model: str
 ) -> list[list[float]]:
     """Generates embeddings for a list of text chunks using Ollama."""
+    log_llm.debug("Generating embeddings for %d chunks with model '%s'.", len(chunks), model)
+    start_time = time.monotonic()
     embeddings = []
     try:
-        for chunk in chunks:
+        for i, chunk in enumerate(chunks):
+            log_llm.debug("  - Embedding chunk %d/%d...", i + 1, len(chunks))
             response = requests.post(
                 f"{ollama_url}/api/embeddings",
                 json={"model": model, "prompt": chunk},
@@ -162,15 +201,22 @@ def generate_embeddings_ollama(
             )
             response.raise_for_status()
             embeddings.append(response.json()["embedding"])
+        duration = time.monotonic() - start_time
+        log_llm.debug(
+            "Successfully generated %d embeddings in %.2f seconds.", len(chunks), duration
+        )
         return embeddings
     except requests.exceptions.RequestException as e:
-        log.error("Failed to generate embeddings via Ollama: %s", e)
+        log_llm.error("Failed to generate embeddings via Ollama: %s", e)
         raise
 
 
 def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> str:
     """Gets a single semantic label for a text chunk using a provided prompt."""
+    # FIX: Synchronized with SEMANTIC_LABELER prompt in constants.py
     valid_labels = [
+        "read_aloud_kickoff",
+        "adventure_hook",
         "stat_block",
         "read_aloud_text",
         "item_description",
@@ -181,9 +227,11 @@ def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> 
         "prose",
     ]
     response_data = query_text_llm(prompt, chunk, ollama_url, model, temperature=0.1)
-    label = response_data.get("response", "").strip()
+    # FIX: More robust cleaning of the model's response
+    label = re.sub(r"[`'\"]", "", response_data.get("response", "").strip())
     if label in valid_labels:
         return label
+    log_llm.warning("LLM returned invalid semantic label '%s'. Defaulting to 'prose'.", label)
     return "prose"  # Default fallback
 
 
@@ -212,7 +260,10 @@ def generate_character_json(
         # Clean the response to remove markdown code block delimiters
         clean_str = response_str.replace("```json", "").replace("```", "").strip()
         char_data = json.loads(clean_str)
+        log_llm.debug(
+            "Successfully parsed generated character JSON for '%s'.", char_data.get("name")
+        )
         return char_data
     except json.JSONDecodeError:
-        log.error("LLM returned invalid JSON for character generation: %s", response_str)
+        log_llm.error("LLM returned invalid JSON for character generation: %s", response_str)
         raise ValueError("LLM returned invalid JSON. Please try again.")

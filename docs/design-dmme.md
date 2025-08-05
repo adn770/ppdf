@@ -964,6 +964,45 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome:** A user can drag and drop an image file onto the Library Hub to add
         it to the selected Knowledge Base.
 
+### Phase 12: Refactor LLM Configuration and Usage
+
+-   **Milestone 37: Backend Configuration Refactor**
+    -   **Goal**: Update all backend configuration files and service initializations to use the
+        new four-model role system (`dm_model`, `vision_model`, `utility_model`,
+        `embedding_model`).
+    -   **Description**: This milestone standardizes how the application manages and accesses
+        the different Ollama models, making the system more robust and easier to
+        configure.
+    -   **Key Tasks**: Rename keys in `config_service.py` defaults. Update `app.py` to
+        load all four model settings. Update `IngestionService` and `RAGService`
+        constructors to accept the specific model names they require.
+    -   **Outcome**: The backend application initializes correctly with the new
+        configuration scheme, passing the correct model names to each service.
+
+-   **Milestone 38: Backend Logic Refactor**
+    -   **Goal**: Refactor the service methods to use the correct, explicitly-configured
+        model for each specific LLM task.
+    -   **Description**: This ensures that each task (e.g., creative writing,
+        classification, reformatting) uses the most appropriate and efficient model,
+        preventing mismatches like using a vision model for text tasks.
+    -   **Key Tasks**: Modify `rag_service.py` to use `dm_model` for narration and
+        `utility_model` for ASCII maps. Update `ingestion_service.py` to use
+        `utility_model` for PDF reformatting. Implement the two-stage "See then
+        Classify" logic for image classification.
+    -   **Outcome**: All backend LLM calls use the correct model for the task at hand,
+        improving performance and accuracy.
+
+-   **Milestone 39: Frontend Settings UI Update**
+    -   **Goal**: Update the user-facing settings panel to reflect the new, clearer model
+        role names.
+    -   **Description**: This makes the application's configuration intuitive for the user,
+        allowing them to easily assign specific models to the "DM Model" and
+        "Utility Model" roles.
+    -   **Key Tasks**: In `index.html`, update the `id` and `data-key` attributes for
+        the model inputs. Update all `locales/*.json` files with new translation
+        keys and text for the updated labels.
+    -   **Outcome**: The settings panel correctly displays, loads, and saves the new
+        model role configurations.
 ---
 
 ## 7. Potential Future Extensions

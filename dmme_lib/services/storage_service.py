@@ -115,10 +115,12 @@ class StorageService:
 
     # --- Campaign CRUD Methods ---
     def get_all_campaigns(self):
+        log.debug("Fetching all campaigns.")
         with self._get_connection() as conn:
             return conn.execute("SELECT * FROM campaigns ORDER BY updated_at DESC;").fetchall()
 
     def get_campaign(self, campaign_id: int):
+        log.debug("Fetching campaign with id: %d.", campaign_id)
         with self._get_connection() as conn:
             return conn.execute(
                 "SELECT * FROM campaigns WHERE id = ?;", (campaign_id,)
@@ -126,6 +128,7 @@ class StorageService:
 
     def get_latest_session_for_campaign(self, campaign_id: int):
         """Gets the most recent session for a given campaign."""
+        log.debug("Fetching latest session for campaign_id: %d.", campaign_id)
         with self._get_connection() as conn:
             return conn.execute(
                 """
@@ -139,6 +142,7 @@ class StorageService:
     def create_campaign(
         self, name: str, description: str = "", game_config: dict | None = None
     ):
+        log.debug("Creating campaign with name: '%s'.", name)
         config_json = json.dumps(game_config) if game_config else None
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -148,6 +152,7 @@ class StorageService:
             return cursor.lastrowid
 
     def update_campaign(self, campaign_id: int, name: str, description: str):
+        log.debug("Updating campaign id %d with name: '%s'.", campaign_id, name)
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -157,20 +162,24 @@ class StorageService:
             return cursor.rowcount > 0
 
     def delete_campaign(self, campaign_id: int):
+        log.debug("Deleting campaign with id: %d.", campaign_id)
         with self._get_connection() as conn:
             cursor = conn.execute("DELETE FROM campaigns WHERE id = ?;", (campaign_id,))
             return cursor.rowcount > 0
 
     # --- Party CRUD Methods ---
     def get_all_parties(self):
+        log.debug("Fetching all parties.")
         with self._get_connection() as conn:
             return conn.execute("SELECT * FROM parties ORDER BY updated_at DESC;").fetchall()
 
     def get_party(self, party_id: int):
+        log.debug("Fetching party with id: %d.", party_id)
         with self._get_connection() as conn:
             return conn.execute("SELECT * FROM parties WHERE id = ?;", (party_id,)).fetchone()
 
     def create_party(self, name: str):
+        log.debug("Creating party with name: '%s'.", name)
         with self._get_connection() as conn:
             try:
                 cursor = conn.execute("INSERT INTO parties (name) VALUES (?);", (name,))
@@ -180,6 +189,7 @@ class StorageService:
                 return None
 
     def update_party(self, party_id: int, name: str):
+        log.debug("Updating party id %d with name: '%s'.", party_id, name)
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         with self._get_connection() as conn:
             try:
@@ -193,12 +203,14 @@ class StorageService:
                 return False
 
     def delete_party(self, party_id: int):
+        log.debug("Deleting party with id: %d.", party_id)
         with self._get_connection() as conn:
             cursor = conn.execute("DELETE FROM parties WHERE id = ?;", (party_id,))
             return cursor.rowcount > 0
 
     # --- Character CRUD Methods ---
     def get_characters_for_party(self, party_id: int):
+        log.debug("Fetching characters for party_id: %d.", party_id)
         with self._get_connection() as conn:
             return conn.execute(
                 "SELECT * FROM characters WHERE party_id = ? ORDER BY created_at ASC;",
@@ -206,6 +218,7 @@ class StorageService:
             ).fetchall()
 
     def get_character(self, character_id: int):
+        log.debug("Fetching character with id: %d.", character_id)
         with self._get_connection() as conn:
             return conn.execute(
                 "SELECT * FROM characters WHERE id = ?;", (character_id,)
@@ -214,6 +227,7 @@ class StorageService:
     def create_character(
         self, party_id: int, name: str, char_class: str, level: int, desc: str, stats: dict
     ):
+        log.debug("Creating character '%s' for party_id: %d.", name, party_id)
         stats_json = json.dumps(stats)
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -227,6 +241,7 @@ class StorageService:
             return cursor.lastrowid
 
     def delete_character(self, character_id: int):
+        log.debug("Deleting character with id: %d.", character_id)
         with self._get_connection() as conn:
             cursor = conn.execute("DELETE FROM characters WHERE id = ?;", (character_id,))
             return cursor.rowcount > 0
@@ -234,6 +249,7 @@ class StorageService:
     # --- Session & Journaling Methods ---
     def create_session(self, campaign_id: int) -> int:
         """Creates a new session record for a campaign and returns the new session ID."""
+        log.debug("Creating new session record for campaign_id: %d.", campaign_id)
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -252,6 +268,7 @@ class StorageService:
 
     def save_session_end_data(self, session_id: int, recap_text: str, narrative_log: str):
         """Saves the recap, full log, and end time for a given session."""
+        log.debug("Saving end-of-session data for session_id: %d.", session_id)
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -262,6 +279,7 @@ class StorageService:
 
     def get_campaign_state(self, campaign_id: int):
         """Retrieves the full state required to resume a campaign."""
+        log.debug("Fetching full campaign state for campaign_id: %d.", campaign_id)
         with self._get_connection() as conn:
             campaign = self.get_campaign(campaign_id)
             if not campaign:
