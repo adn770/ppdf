@@ -49,9 +49,7 @@ class RAGService:
 
         log.debug("Defragmenting RAG context for section: '%s'", section_title)
         base_where = {"section_title": section_title}
-        final_where = (
-            {"$and": [base_where, where_filter]} if where_filter else base_where
-        )
+        final_where = {"$and": [base_where, where_filter]} if where_filter else base_where
 
         docs, metas = self.vector_store.query(
             kb_name,
@@ -82,7 +80,6 @@ class RAGService:
         priority_labels = ["read_aloud_kickoff", "adventure_hook"]
         found_docs, found_metas = [], []
 
-        # Priority 1 & 2: Search for specific labels
         for label in priority_labels:
             log.debug("Searching for kickoff content with priority label: '%s'", label)
             docs, metas = self.vector_store.query(
@@ -93,7 +90,26 @@ class RAGService:
             )
             if docs:
                 log.info("Found high-priority kickoff content with label '%s'.", label)
-                found_docs, found_metas = self._get_full_section(active_kb, metas[0])
+                # Get all chunks from the same section to ensure we have the full sequence
+                all_docs, all_metas = self._get_full_section(active_kb, metas[0])
+                # Combine and sort chunks by their original ingestion order
+                s_chunks = sorted(
+                    zip(all_docs, all_metas), key=lambda i: i[1].get("chunk_id", 0)
+                )
+                # Find the starting point of our kickoff sequence
+                start_idx = next((i for i, (d, _) in enumerate(s_chunks) if d == docs[0]), -1)
+                if start_idx != -1:
+                    sequence = [s_chunks[start_idx]]
+                    for i in range(start_idx + 1, len(s_chunks)):
+                        if s_chunks[i][1].get("label") == "mechanics":
+                            sequence.append(s_chunks[i])
+                        else:
+                            break
+                    found_docs = [item[0] for item in sequence]
+                    found_metas = [item[1] for item in sequence]
+                    log.info("Built kickoff sequence with %d chunks.", len(found_docs))
+                else:
+                    found_docs, found_metas = self._get_full_section(active_kb, metas[0])
                 break
 
         # Fallback: General search if no priority content was found
@@ -146,7 +162,7 @@ class RAGService:
 
         # --- Stage 1: Build Player-Facing Narrative Context (No DM Knowledge) ---
         narrative_filter = {"label": {"$ne": "dm_knowledge"}}
-        narrative_module_docs, narrative_module_metas = [], []
+        narrative_module_docs = []
         if module_kb:
             try:
                 # Find the single most relevant player-safe chunk
@@ -155,7 +171,7 @@ class RAGService:
                 )
                 if docs:
                     # Defragment to get the full, player-safe section
-                    narrative_module_docs, narrative_module_metas = self._get_full_section(
+                    narrative_module_docs, _ = self._get_full_section(
                         module_kb, metas[0], where_filter=narrative_filter
                     )
             except Exception:
@@ -186,9 +202,7 @@ class RAGService:
             {"text": doc, "label": meta.get("label", "prose")}
             for doc, meta in zip(insight_module_docs, insight_module_metas)
         ]
-        insight_data.extend(
-            [{"text": doc, "label": "mechanics"} for doc in rules_docs]
-        )
+        insight_data.extend([{"text": doc, "label": "mechanics"} for doc in rules_docs])
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
         # --- Stage 3: Generate and Stream LLM Response ---

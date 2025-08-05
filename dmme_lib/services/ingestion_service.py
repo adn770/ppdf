@@ -15,7 +15,7 @@ from core.llm_utils import (
     get_model_details,
     query_multimodal_llm,
 )
-from ppdf_lib.api import process_pdf_text, reformat_section_with_llm
+from ppdf_lib.api import process_pdf_text, process_pdf_images, reformat_section_with_llm
 from ppdf_lib.models import Section
 from dmme_lib.constants import PROMPT_REGISTRY
 from ppdf_lib.constants import PROMPT_STRICT
