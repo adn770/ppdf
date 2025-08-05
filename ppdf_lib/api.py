@@ -45,24 +45,26 @@ def _parse_page_selection(pages_str: str) -> set | None:
         return None
 
 
-def _chunk_text_by_paragraphs(text: str, max_size: int):
+def _chunk_text_by_paragraphs(section: Section, max_size: int):
     """
-    Splits text into chunks of a maximum size without breaking paragraphs.
+    Splits a Section's paragraphs into chunks of a maximum size.
     Yields each chunk as a string.
     """
-    paragraphs = re.split(r"\n{2,}", text.strip())
     current_chunk_parts = []
     current_chunk_size = 0
 
-    for para in paragraphs:
-        para_size = len(para)
+    for para in section.paragraphs:
+        para_text = para.get_llm_text()
+        para_size = len(para_text)
+        # Check if adding the next paragraph would exceed the max size.
+        # The +2 accounts for the newline joiner.
         if current_chunk_parts and current_chunk_size + para_size + 2 > max_size:
             yield "\n\n".join(current_chunk_parts)
-            current_chunk_parts = [para]
+            current_chunk_parts = [para_text]
             current_chunk_size = para_size
         else:
-            current_chunk_parts.append(para)
-            current_chunk_size += para_size + 2
+            current_chunk_parts.append(para_text)
+            current_chunk_size += para_size + 2  # Add 2 for the joiner
 
     if current_chunk_parts:
         yield "\n\n".join(current_chunk_parts)
@@ -86,10 +88,9 @@ def reformat_section_with_llm(
     if not no_fmt_titles:
         title = title.upper()
 
-    section_text = section.get_llm_text()
     user_content_base = f"# {title}\n\n" if not no_fmt_titles else f"{title}\n\n"
 
-    chunks = list(_chunk_text_by_paragraphs(section_text, chunk_size))
+    chunks = list(_chunk_text_by_paragraphs(section, chunk_size))
 
     for i, chunk_text in enumerate(chunks):
         user_content = user_content_base + chunk_text if i == 0 else chunk_text
