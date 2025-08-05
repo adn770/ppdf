@@ -4,22 +4,90 @@
 import argparse
 import logging
 import sys
+import os
+import tempfile
+import shutil
+import json
+from datetime import datetime
 
 from core.log_utils import setup_logging
+from ppdf_lib.api import process_pdf_images
+from dmme_lib.constants import PROMPT_REGISTRY
 
 
 def handle_ingest_command(args):
     """Handler for the 'ingest' subcommand."""
     log = logging.getLogger("dmme_eval.ingest")
-    log.info("Running Ingestion Test...")
-    log.info("  - Task: %s", args.task)
-    log.info("  - PDF File: %s", args.pdf_file)
-    log.info("  - Output Dir: %s", args.output_dir)
-    log.info("  - Vision Model: %s", args.vision_model)
-    #
-    # --- Implementation for Milestone 41 will go here ---
-    #
-    log.warning("Ingestion test logic is not yet implemented.")
+    if args.task != "extract-images":
+        log.error("Task '%s' is not yet implemented.", args.task)
+        return
+
+    os.makedirs(args.output_dir, exist_ok=True)
+    pdf_name = os.path.splitext(os.path.basename(args.pdf_file))[0]
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_filename = f"report_{pdf_name}_{ts}.md"
+    report_path = os.path.join(args.output_dir, report_filename)
+    assets_dir = os.path.join(args.output_dir, "assets")
+    os.makedirs(assets_dir, exist_ok=True)
+
+    temp_dir = tempfile.mkdtemp(prefix="dmme_eval_")
+    log.info("Using temporary directory: %s", temp_dir)
+
+    try:
+        log.info("Starting image extraction task for '%s'...", args.pdf_file)
+        describe_prompt = PROMPT_REGISTRY["DESCRIBE_IMAGE"][args.lang]
+        classify_prompt = PROMPT_REGISTRY["CLASSIFY_IMAGE"][args.lang]
+
+        progress_generator = process_pdf_images(
+            pdf_path=args.pdf_file,
+            output_dir=temp_dir,
+            ollama_url=args.url,
+            vision_model=args.vision_model,
+            utility_model=args.utility_model,
+            describe_prompt=describe_prompt,
+            classify_prompt=classify_prompt,
+        )
+        for message in progress_generator:
+            log.info(message)
+
+        log.info("Generating Markdown report...")
+        report_content = [f"# Image Extraction Report: `{pdf_name}`"]
+        report_content.append(f"**Generated on:** {datetime.now().isoformat()}")
+        report_content.append("\n---\n")
+
+        json_files = sorted([f for f in os.listdir(temp_dir) if f.endswith(".json")])
+        if not json_files:
+            report_content.append("## No images were extracted from this document.")
+
+        for json_file in json_files:
+            with open(os.path.join(temp_dir, json_file), "r") as f:
+                meta = json.load(f)
+
+            img_file = meta.get("image_filename")
+            thumb_file = meta.get("thumbnail_filename")
+
+            if img_file:
+                shutil.copy(os.path.join(temp_dir, img_file), assets_dir)
+            if thumb_file:
+                shutil.copy(os.path.join(temp_dir, thumb_file), assets_dir)
+
+            report_content.append(
+                f"## Image: `{img_file}` (Page: {meta.get('page_number', 'N/A')})"
+            )
+            report_content.append(f"![{img_file}](./assets/{thumb_file})")
+            report_content.append("\n**Classification:**")
+            report_content.append(f"`{meta.get('classification', 'N/A')}`")
+            report_content.append("\n**AI-Generated Description:**")
+            report_content.append(f"> {meta.get('description', 'N/A')}")
+            report_content.append("\n---\n")
+
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(report_content))
+        log.info("Report successfully generated at: %s", report_path)
+
+    finally:
+        log.info("Cleaning up temporary directory...")
+        shutil.rmtree(temp_dir)
 
 
 def handle_prompt_command(args):
@@ -98,6 +166,14 @@ def parse_arguments(args=None):
         "--vision-model",
         default="llava:latest",
         help="Ollama model for image description.",
+    )
+    p_ingest.add_argument(
+        "--utility-model",
+        default="llama3.1:latest",
+        help="Ollama model for image classification.",
+    )
+    p_ingest.add_argument(
+        "--lang", default="en", choices=["en", "es", "ca"], help="Language for prompts."
     )
     p_ingest.set_defaults(func=handle_ingest_command)
 
