@@ -77,6 +77,43 @@ class PromptTestSuite:
             return False
 
 
+def _run_single_scenario_eval(suite, user_input, args):
+    """Runs a single scenario through the full evaluation pipeline."""
+    log = logging.getLogger("dmme_eval.prompt")
+    # 1. Get main response
+    resp_data = query_text_llm(
+        prompt=suite.prompt,
+        user_content=user_input,
+        ollama_url=args.url,
+        model=suite.config.get("model", args.dm_model),
+        temperature=suite.config.get("temperature"),
+    )
+    response_text = resp_data.get("response", "").strip()
+
+    # 2. Get judge's critique
+    judge_input = PROMPT_LLM_AS_JUDGE.format(
+        system_prompt=suite.prompt, user_input=user_input, response=response_text
+    )
+    critique_data = query_text_llm(
+        prompt="",  # The whole thing is the user content for the judge
+        user_content=judge_input,
+        ollama_url=args.url,
+        model=args.utility_model,
+    )
+    critique_text = critique_data.get("response", "").strip()
+    score, critique = 0, "Evaluation failed."
+    try:
+        clean_critique = critique_text.replace("```json", "").replace("```", "")
+        critique_json = json.loads(clean_critique)
+        score = critique_json.get("score", 0)
+        critique = critique_json.get("critique", "Invalid JSON from judge.")
+    except json.JSONDecodeError:
+        log.warning("Failed to parse judge's JSON response: %s", critique_text)
+        critique = f"LLM returned invalid JSON:\n{critique_text}"
+
+    return {"score": score, "critique": critique, "output": response_text}
+
+
 def handle_ingest_command(args):
     """Handler for the 'ingest' subcommand."""
     log = logging.getLogger("dmme_eval.ingest")
@@ -155,16 +192,10 @@ def handle_ingest_command(args):
 def handle_prompt_command(args):
     """Handler for the 'prompt' subcommand."""
     log = logging.getLogger("dmme_eval.prompt")
+    os.makedirs(args.output_dir, exist_ok=True)
     is_comparison = len(args.test_suite_dirs) == 2
-    if is_comparison:
-        log.info("Running Prompt Comparison...")
-        log.info("  - Suite 1: %s", args.test_suite_dirs[0])
-        log.info("  - Suite 2: %s", args.test_suite_dirs[1])
-        #
-        # --- Implementation for Milestone 43 will go here ---
-        #
-        log.warning("Prompt comparison logic is not yet implemented.")
-    else:
+
+    if not is_comparison:
         log.info("Running Single Prompt Evaluation...")
         suite = PromptTestSuite(args.test_suite_dirs[0])
         if not suite.load():
@@ -173,75 +204,87 @@ def handle_prompt_command(args):
         results = []
         for name, user_input in suite.scenarios.items():
             log.info("  - Running scenario: '%s'...", name)
-            # 1. Get main response
-            resp_data = query_text_llm(
-                prompt=suite.prompt,
-                user_content=user_input,
-                ollama_url=args.url,
-                model=suite.config.get("model", args.dm_model),
-                temperature=suite.config.get("temperature"),
-            )
-            response_text = resp_data.get("response", "").strip()
+            eval_result = _run_single_scenario_eval(suite, user_input, args)
+            eval_result["name"] = name
+            eval_result["input"] = user_input
+            results.append(eval_result)
 
-            # 2. Get judge's critique
-            judge_input = PROMPT_LLM_AS_JUDGE.format(
-                system_prompt=suite.prompt, user_input=user_input, response=response_text
-            )
-            critique_data = query_text_llm(
-                prompt="",  # The whole thing is the user content for the judge
-                user_content=judge_input,
-                ollama_url=args.url,
-                model=args.utility_model,
-            )
-            critique_text = critique_data.get("response", "").strip()
-            score, critique = 0, "Evaluation failed."
-            try:
-                # Clean markdown code block delimiters before parsing
-                clean_critique = critique_text.replace("```json", "").replace("```", "")
-                critique_json = json.loads(clean_critique)
-                score = critique_json.get("score", 0)
-                critique = critique_json.get("critique", "Invalid JSON from judge.")
-            except json.JSONDecodeError:
-                log.warning("Failed to parse judge's JSON response: %s", critique_text)
-                critique = f"LLM returned invalid JSON:\n{critique_text}"
-
-            results.append({
-                "name": name, "score": score, "critique": critique,
-                "input": user_input, "output": response_text
-            })
-
-        # 3. Generate report
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         report_filename = f"report_prompt_{suite.name}_{ts}.md"
         report_path = os.path.join(args.output_dir, report_filename)
-        os.makedirs(args.output_dir, exist_ok=True)
-
         scores = [r["score"] for r in results if r["score"] > 0]
         avg_score = statistics.mean(scores) if scores else 0
-
         report = [f"# Prompt Evaluation Report: `{suite.name}`", "---"]
         report.append(f"## 📊 Summary")
         report.append(f"- **Average Score:** {avg_score:.2f} / 5.0")
         report.append(f"- **Scenarios Tested:** {len(results)}")
         report.append(f"- **DM Model:** `{args.dm_model}`")
         report.append(f"- **Utility Model:** `{args.utility_model}`")
-        report.append("\n---\n")
-        report.append("## 📝 Scenario Details\n")
-
+        report.append("\n---\n## 📝 Scenario Details\n")
         for r in results:
             report.append(f"### Scenario: `{r['name']}`\n")
             report.append(f"**Score:** {r['score']}/5\n")
             report.append(f"**Critique:** {r['critique']}\n")
-            report.append("<details>")
-            report.append("<summary>Click to see Input/Output</summary>\n")
+            report.append("<details><summary>Click to see Input/Output</summary>\n")
             report.append("#### User Input\n```text\n" + r["input"] + "\n```\n")
             report.append("#### Generated Response\n```markdown\n" + r["output"] + "\n```\n")
-            report.append("</details>\n")
-            report.append("\n---\n")
+            report.append("</details>\n\n---\n")
 
         with open(report_path, "w", encoding="utf-8") as f:
             f.write("\n".join(report))
         log.info("Evaluation complete. Report saved to: %s", report_path)
+
+    else:
+        log.info("Running Prompt Comparison...")
+        suite_a = PromptTestSuite(args.test_suite_dirs[0])
+        suite_b = PromptTestSuite(args.test_suite_dirs[1])
+        if not suite_a.load() or not suite_b.load():
+            return
+
+        common_scenarios = sorted(list(set(suite_a.scenarios.keys()) & set(suite_b.scenarios.keys())))
+        if not common_scenarios:
+            log.error("No common scenarios found between the two suites. Cannot compare.")
+            return
+
+        log.info("Found %d common scenarios to compare.", len(common_scenarios))
+        results = {}
+        for name in common_scenarios:
+            log.info("  - Running scenario: '%s'...", name)
+            results[name] = {
+                "A": _run_single_scenario_eval(suite_a, suite_a.scenarios[name], args),
+                "B": _run_single_scenario_eval(suite_b, suite_b.scenarios[name], args),
+            }
+        scores_a = [r["A"]["score"] for r in results.values() if r["A"]["score"] > 0]
+        scores_b = [r["B"]["score"] for r in results.values() if r["B"]["score"] > 0]
+        avg_a = statistics.mean(scores_a) if scores_a else 0
+        avg_b = statistics.mean(scores_b) if scores_b else 0
+
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        r_name = f"report_compare_{suite_a.name}_vs_{suite_b.name}_{ts}.md"
+        report_path = os.path.join(args.output_dir, r_name)
+        report = [f"# Prompt Comparison Report: `{suite_a.name}` vs `{suite_b.name}`", "---"]
+        report.append("## 📊 Summary")
+        report.append(f"| Suite | Average Score |")
+        report.append(f"| :--- | :---: |")
+        report.append(f"| **A: `{suite_a.name}`** | **{avg_a:.2f} / 5.0** |")
+        report.append(f"| **B: `{suite_b.name}`** | **{avg_b:.2f} / 5.0** |")
+        report.append("\n---\n## 📝 Scenario Details\n")
+        for name in common_scenarios:
+            res = results[name]
+            report.append(f"### Scenario: `{name}`\n")
+            report.append(f"| Metric | Suite A: `{suite_a.name}` | Suite B: `{suite_b.name}` |")
+            report.append(f"| :--- | :--- | :--- |")
+            report.append(f"| **Score** | **{res['A']['score']}/5** | **{res['B']['score']}/5** |")
+            report.append(f"| **Critique** | {res['A']['critique']} | {res['B']['critique']} |")
+            report.append("<table><tr><td>\n")
+            report.append("<details><summary>Suite A Output</summary>\n\n" + "````markdown\n" + res["A"]["output"] + "\n````\n\n</details>")
+            report.append("</td><td>\n")
+            report.append("<details><summary>Suite B Output</summary>\n\n" + "````markdown\n" + res["B"]["output"] + "\n````\n\n</details>")
+            report.append("</td></tr></table>\n\n---\n")
+
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(report))
+        log.info("Comparison complete. Report saved to: %s", report_path)
 
 
 def parse_arguments(args=None):
