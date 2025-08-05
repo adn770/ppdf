@@ -27,7 +27,7 @@ class App {
         this.lightbox = new Lightbox();
         this.gameplayHandler = new GameplayHandler(this, this.dmInsight, this.lightbox);
         this.diceRoller = new DiceRoller(this.gameplayHandler);
-        this.libraryHub = new LibraryHub(this);
+        this.libraryHub = new LibraryHub(this, this.lightbox);
         this.partyHub = new PartyHub(this);
         this.settings = null;
         this.i18n = i18n;

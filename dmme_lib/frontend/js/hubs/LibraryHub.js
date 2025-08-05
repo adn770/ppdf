@@ -3,8 +3,9 @@ import { apiCall } from '../wizards/ApiHelper.js';
 import { status, confirmationModal } from '../ui.js';
 
 export class LibraryHub {
-    constructor(appInstance) {
+    constructor(appInstance, lightboxInstance) {
         this.app = appInstance;
+        this.lightbox = lightboxInstance;
         this.isInitialized = false;
         this.selectedKb = null;
 
@@ -28,7 +29,7 @@ export class LibraryHub {
         });
         this._addDragDropListeners();
         this.listEl.addEventListener('click', (e) => this._handleKbDelete(e));
-        this.assetGrid.addEventListener('click', (e) => this._handleAssetDelete(e));
+        this.assetGrid.addEventListener('click', (e) => this._handleAssetInteraction(e));
         this.isInitialized = true;
     }
 
@@ -151,10 +152,11 @@ export class LibraryHub {
 
         const card = document.createElement('div');
         card.className = 'asset-card';
+        card.dataset.fullUrl = asset.full_url;
         card.innerHTML = `
-            <img src="${asset.url}" alt="${asset.caption}" title="${asset.caption}">
+            <img src="${asset.thumb_url}" alt="${asset.description}" title="${asset.description}">
             <p>${asset.classification}</p>
-            <button class="contextual-delete-btn slide-in-bottom" data-filename="${asset.thumb_filename}">
+            <button class="contextual-delete-btn slide-in-bottom" data-thumb-filename="${asset.thumb_url.split('/').pop()}">
                 <span class="icon">&times;</span>
                 <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
             </button>
@@ -204,6 +206,19 @@ export class LibraryHub {
         }
     }
 
+    _handleAssetInteraction(event) {
+        const deleteBtn = event.target.closest('.contextual-delete-btn');
+        if (deleteBtn) {
+            event.stopPropagation();
+            this._handleAssetDelete(deleteBtn);
+        } else {
+            const card = event.target.closest('.asset-card');
+            if (card && card.dataset.fullUrl) {
+                this.lightbox.open(card.dataset.fullUrl);
+            }
+        }
+    }
+
     async _handleKbDelete(event) {
         const deleteBtn = event.target.closest('.contextual-delete-btn');
         if (!deleteBtn) return;
@@ -226,11 +241,8 @@ export class LibraryHub {
         }
     }
 
-    async _handleAssetDelete(event) {
-        const deleteBtn = event.target.closest('.contextual-delete-btn');
-        if (!deleteBtn) return;
-
-        const thumbFilename = deleteBtn.dataset.filename;
+    async _handleAssetDelete(deleteBtn) {
+        const thumbFilename = deleteBtn.dataset.thumbFilename;
         const confirmed = await confirmationModal.confirm(
             'deleteAssetTitle',
             'deleteAssetMsg',
@@ -238,17 +250,12 @@ export class LibraryHub {
         );
         if (confirmed) {
             try {
-                const response = await fetch(`/api/knowledge/${this.selectedKb.name}/asset/${thumbFilename}`, {
-                    method: 'DELETE'
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP Error: ${response.status}`);
-                }
+                const url = `/api/knowledge/${this.selectedKb.name}/asset/${thumbFilename}`;
+                await apiCall(url, { method: 'DELETE' });
                 deleteBtn.closest('.asset-card').remove();
                 status.setText('deleteAssetSuccess', false, { filename: thumbFilename });
             } catch (error) {
-                status.setText(error.message, true);
+                // Status is already shown by apiCall helper
             }
         }
     }

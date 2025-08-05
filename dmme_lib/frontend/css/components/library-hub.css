@@ -127,6 +127,7 @@
     display: grid;
     grid-template-rows: 1fr auto;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .asset-card:hover {

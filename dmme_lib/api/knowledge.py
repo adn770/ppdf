@@ -48,28 +48,19 @@ def explore_knowledge_base(kb_name):
         # 1. Get all text documents from the vector store
         documents = current_app.vector_store.get_all_from_kb(kb_name)
 
-        # 2. Get all assets from the filesystem
+        # 2. Get all assets from the manifest for efficiency
         assets = []
-        assets_path = current_app.config["ASSETS_PATH"]
-        kb_asset_dir = os.path.join(assets_path, "images", kb_name)
-        if os.path.isdir(kb_asset_dir):
-            for filename in sorted(os.listdir(kb_asset_dir)):
-                if filename.endswith(".json") and filename != "assets.json":
-                    try:
-                        with open(os.path.join(kb_asset_dir, filename), "r") as f:
-                            meta = json.load(f)
-                        thumb_path = meta.get("thumbnail_filename")
-                        if thumb_path:
-                            assets.append(
-                                {
-                                    "url": f"/assets/images/{kb_name}/{thumb_path}",
-                                    "caption": meta.get("description", "No caption"),
-                                    "classification": meta.get("classification", "other"),
-                                    "thumb_filename": thumb_path,
-                                }
-                            )
-                    except (IOError, json.JSONDecodeError) as e:
-                        log.warning("Could not read asset metadata %s: %s", filename, e)
+        manifest_path = os.path.join(
+            current_app.config["ASSETS_PATH"], "images", kb_name, "assets.json"
+        )
+        if os.path.exists(manifest_path):
+            with open(manifest_path, "r") as f:
+                manifest = json.load(f)
+            # Add the full /assets prefix to the URLs for the client
+            for asset in manifest.get("assets", []):
+                asset["thumb_url"] = f"/assets/images/{asset['thumb_url']}"
+                asset["full_url"] = f"/assets/images/{asset['full_url']}"
+                assets.append(asset)
 
         return jsonify({"documents": documents, "assets": assets})
     except Exception as e:
