@@ -15,8 +15,10 @@ from core.llm_utils import (
     get_model_details,
     query_multimodal_llm,
 )
-from ppdf_lib.api import process_pdf_text, process_pdf_images
+from ppdf_lib.api import process_pdf_text, process_pdf_images, reformat_section_with_llm
+from ppdf_lib.models import Section
 from dmme_lib.constants import PROMPT_REGISTRY
+from ppdf_lib.constants import PROMPT_STRICT
 
 log = logging.getLogger("dmme.ingest")
 
@@ -61,11 +63,12 @@ class IngestionService:
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
         classification_model = self._get_classification_model()
         documents, metadatas = [], []
-        for i, chunk in enumerate(chunks):
-            if len(chunk) < 50:
-                continue
 
-            yield f"  -> Applying semantic label to chunk {i + 1}/{len(chunks)}..."
+        valid_chunks = [c for c in chunks if len(c) >= 50]
+        num_valid = len(valid_chunks)
+
+        for i, chunk in enumerate(valid_chunks):
+            yield f"  -> Applying semantic label to chunk {i + 1}/{num_valid}..."
             label = get_semantic_label(
                 chunk, labeler_prompt, self.ollama_url, classification_model
             )
@@ -89,10 +92,55 @@ class IngestionService:
             yield "✔ No valid text chunks found to ingest."
             return
 
-        yield f"✔ Semantic labeling complete. Found {len(documents)} valid chunks."
+        yield f"✔ Processing complete. Found {len(documents)} valid chunks."
         yield "Generating embeddings and saving to vector store..."
         self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
         yield "✔ Saved to vector store."
+
+    def _recover_paragraphs(self, section: Section, formatted_text: str) -> list[str]:
+        """
+        Uses the original paragraphs as a map to recover the formatted versions
+        from the fully formatted section text.
+        """
+        recovered_chunks = []
+        search_text = formatted_text
+        for para in section.paragraphs:
+            if not para.lines:
+                continue
+
+            first_line = para.lines[0].strip()
+            # Create a search pattern by removing potential trailing hyphens
+            start_pattern = first_line[:-1] if first_line.endswith("-") else first_line
+
+            # For single-line paragraphs, just search for the start
+            if len(para.lines) == 1:
+                start_match = re.search(re.escape(start_pattern), search_text, re.IGNORECASE)
+                if not start_match:
+                    continue # Skip if not found
+
+                # Find the next paragraph break or end of text
+                end_match = re.search(r'\n\s*\n', search_text[start_match.end():])
+                if end_match:
+                    chunk = search_text[start_match.start() : start_match.end() + end_match.start()]
+                else:
+                    chunk = search_text[start_match.start():]
+            else:
+                last_line = para.lines[-1].strip()
+                start_match = re.search(re.escape(start_pattern), search_text, re.IGNORECASE)
+                if not start_match:
+                    continue
+
+                end_match = re.search(re.escape(last_line), search_text[start_match.end():], re.IGNORECASE)
+                if not end_match:
+                    chunk = search_text[start_match.start():] # Fallback
+                else:
+                    chunk = search_text[start_match.start() : start_match.end() + end_match.end()]
+
+            recovered_chunks.append(chunk.strip())
+            # Reduce the search space for the next paragraph
+            search_text = search_text[start_match.end():]
+
+        return recovered_chunks
 
     def ingest_pdf_text(
         self,
@@ -116,12 +164,8 @@ class IngestionService:
 
         # --- Section Filtering based on user selection (if provided) ---
         if sections_to_include:
-            original_count = len(sections)
             sections = [s for s in sections if s.title in sections_to_include]
-            yield (
-                f"✔ Filtered to {len(sections)} user-selected sections "
-                f"(out of {original_count})."
-            )
+            yield f"✔ Filtered to {len(sections)} user-selected sections."
 
         # --- Section-level Classification and Filtering ---
         page_type_map = {pm.page_num: pm.page_type for pm in page_models}
@@ -145,7 +189,6 @@ class IngestionService:
             if not section.paragraphs:
                 continue
 
-            # Build a rich context for classification
             context_parts = []
             current_chars = 0
             if section.title:
@@ -158,7 +201,7 @@ class IngestionService:
                 if current_chars + len(para_text) > target_chars:
                     break
                 context_parts.append(para_text)
-                current_chars += len(para_text) + 2  # Account for newlines
+                current_chars += len(para_text) + 2
 
             representative_text = "\n\n".join(context_parts)
             hint_tag = page_type_map.get(section.page_start, "content")
@@ -172,20 +215,18 @@ class IngestionService:
             ).strip()
 
             if final_tag not in valid_llm_tags:
-                final_tag = "content"  # Default to content on ambiguous response
+                final_tag = "content"
 
             log.debug(
                 "Section Classification:\n"
                 "  - Model: %s\n"
                 "  - Title: '%s'\n"
                 "  - Hint: %s -> Final Tag: %s\n"
-                "  - Prompt: %s\n"
                 "  - Input: %s",
                 classification_model,
                 section.title or "Untitled",
                 hint_tag,
                 final_tag,
-                classifier_prompt.replace("\n", " "),
                 self._format_text_for_log(representative_text),
             )
 
@@ -194,36 +235,34 @@ class IngestionService:
             else:
                 yield f"  -> Skipping section '{section.title}' (classified as '{final_tag}')"
 
-        # --- Paragraph-level Semantic Labeling on Filtered Sections ---
+        # --- Paragraph-level Reformatting and Semantic Labeling ---
         labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
         documents, metadatas = [], []
         chunk_id = 0
-        total_paras = sum(len(s.paragraphs) for s in content_sections)
 
-        yield f"Applying semantic labels to {total_paras} paragraphs..."
-        para_count = 0
-        for section in content_sections:
-            for para in section.paragraphs:
-                para_count += 1
-                para_text = para.get_text()
-                if para.is_table or len(para_text) < 50:
-                    continue
+        for i, section in enumerate(content_sections):
+            if not section.paragraphs or not any(p.lines for p in section.paragraphs):
+                continue
 
+            yield f"Reformatting section {i + 1}/{len(content_sections)} ('{section.title}')..."
+            stream = reformat_section_with_llm(
+                section=section,
+                system_prompt=PROMPT_STRICT,
+                ollama_url=self.ollama_url,
+                model=self.model,
+                chunk_size=4000,
+            )
+            formatted_section_text = "".join(list(stream))
+
+            yield "  -> Recovering paragraphs from formatted text..."
+            recovered_chunks = self._recover_paragraphs(section, formatted_section_text)
+
+            yield f"  -> Labeling {len(recovered_chunks)} recovered chunks..."
+            for chunk in recovered_chunks:
                 label = get_semantic_label(
-                    para_text, labeler_prompt, self.ollama_url, classification_model
+                    chunk, labeler_prompt, self.ollama_url, classification_model
                 )
-
-                log.debug(
-                    "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
-                    classification_model,
-                    self._format_text_for_log(para_text),
-                    label,
-                )
-
-                if (para_count) % 25 == 0 or para_count == 1:
-                    yield f"  -> Labeling paragraph {para_count}/{total_paras}..."
-
-                documents.append(para_text)
+                documents.append(chunk)
                 metadatas.append(
                     {
                         "source_file": metadata.get("filename", "unknown.pdf"),
@@ -233,8 +272,8 @@ class IngestionService:
                     }
                 )
                 chunk_id += 1
-        yield f"✔ Semantic labeling complete. Found {len(documents)} valid chunks."
 
+        yield f"✔ Processing complete. Found {len(documents)} valid chunks."
         yield "Generating embeddings and saving to vector store..."
         if not documents:
             yield "✔ No valid text chunks found to ingest."

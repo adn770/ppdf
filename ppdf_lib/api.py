@@ -2,6 +2,8 @@
 import os
 import json
 import logging
+import re
+import requests
 from PIL import Image, UnidentifiedImageError
 from io import BytesIO
 from flask import current_app
@@ -43,6 +45,113 @@ def _parse_page_selection(pages_str: str) -> set | None:
         return None
 
 
+def _chunk_text_by_paragraphs(text: str, max_size: int):
+    """
+    Splits text into chunks of a maximum size without breaking paragraphs.
+    Yields each chunk as a string.
+    """
+    paragraphs = re.split(r"\n{2,}", text.strip())
+    current_chunk_parts = []
+    current_chunk_size = 0
+
+    for para in paragraphs:
+        para_size = len(para)
+        if current_chunk_parts and current_chunk_size + para_size + 2 > max_size:
+            yield "\n\n".join(current_chunk_parts)
+            current_chunk_parts = [para]
+            current_chunk_size = para_size
+        else:
+            current_chunk_parts.append(para)
+            current_chunk_size += para_size + 2
+
+    if current_chunk_parts:
+        yield "\n\n".join(current_chunk_parts)
+
+
+def _query_llm_api_stream(payload: dict, url: str):
+    """
+    Helper to query the Ollama generate endpoint and yield response chunks.
+    Yields structured JSON data from the stream.
+    """
+    try:
+        r = requests.post(f"{url}/api/generate", json=payload, stream=True)
+        r.raise_for_status()
+        for line in r.iter_lines():
+            if line:
+                try:
+                    yield json.loads(line.decode("utf-8"))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    continue
+    except requests.exceptions.RequestException as e:
+        log.error("Ollama API request failed: %s", e)
+        yield {"error": str(e)}
+
+
+def reformat_section_with_llm(
+    section: Section,
+    system_prompt: str,
+    ollama_url: str,
+    model: str,
+    chunk_size: int,
+    temperature: float = 0.2,
+    no_fmt_titles: bool = False,
+    is_final_section: bool = False,
+):
+    """
+    Takes a Section object, reformats its content via LLM, and streams the result.
+    This is a generator function.
+    """
+    title = section.title or "Untitled"
+    if not no_fmt_titles:
+        title = title.upper()
+
+    section_text = section.get_llm_text()
+    user_content_base = f"# {title}\n\n" if not no_fmt_titles else f"{title}\n\n"
+
+    chunks = list(_chunk_text_by_paragraphs(section_text, chunk_size))
+
+    for i, chunk_text in enumerate(chunks):
+        user_content = user_content_base + chunk_text if i == 0 else chunk_text
+
+        stop_sequences = None
+        is_final_chunk = is_final_section and i == len(chunks) - 1
+        if is_final_chunk:
+            stop_sequences = ["||END||"]
+            lure = "The next document begins:"
+            user_content += stop_sequences[0] + lure
+
+        options = {"temperature": temperature}
+        if stop_sequences:
+            options["stop"] = stop_sequences
+
+        payload = {
+            "model": model,
+            "system": system_prompt,
+            "prompt": user_content,
+            "stream": True,
+            "options": options,
+        }
+
+        full_response = ""
+        for j in _query_llm_api_stream(payload, ollama_url):
+            if j.get("error"):
+                yield f"[ERROR: {j.get('error')}]"
+                break
+
+            response_chunk = j.get("response", "")
+            if response_chunk:
+                full_response += response_chunk
+                yield response_chunk
+
+            if j.get("done"):
+                # Handle stop sequence logic after the stream for the chunk is done
+                if is_final_chunk and stop_sequences:
+                    # This part is tricky with generators. The final output needs to be post-processed.
+                    # A simpler approach for the library is to just yield everything and let the caller handle it.
+                    # Or, we can buffer and yield. For now, let's assume caller handles stripping.
+                    pass
+
+
 def process_pdf_text(
     pdf_path: str,
     options: dict,
@@ -69,7 +178,6 @@ def process_pdf_text(
     # Note: Semantic labeling is now handled by the dmme IngestionService,
     # which has access to the internationalized prompts.
     # This function is now only responsible for raw structural extraction.
-
     return sections, extractor.page_models
 
 

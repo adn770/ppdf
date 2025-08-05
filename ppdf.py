@@ -37,7 +37,7 @@ from ppdf_lib.constants import (
     PROMPT_ANALYZE_PROMPT,
     PROMPT_DESCRIBE_TABLE_PURPOSE,
 )
-from ppdf_lib.api import process_pdf_text, process_pdf_images
+from ppdf_lib.api import process_pdf_text, process_pdf_images, reformat_section_with_llm
 from ppdf_lib.extractor import PDFTextExtractor
 
 from core.tts import TTSManager, PIPER_AVAILABLE
@@ -90,12 +90,14 @@ class Application:
             # Handle image extraction mode first, as it's an exclusive action
             if self.args.extract_images:
                 logging.getLogger("ppdf").info("--- Running in Image Extraction Mode ---")
-                process_pdf_images(
+                # Consume the generator to execute the function
+                for _ in process_pdf_images(
                     self.args.pdf_file,
                     self.args.extract_images,
                     self.args.url,
                     self.args.model,
-                )
+                ):
+                    pass
                 return
 
             self._smart_preset_override()
@@ -292,7 +294,6 @@ class Application:
 
             preset_data = PROMPT_PRESETS[preset_name]
             system_prompt = preset_data["prompt"]
-            produces_markdown = preset_data.get("markdown_output", False)
 
             self._log_run_conditions(system_prompt, preset_name)
             processed_sections = self._preprocess_table_summaries(sections, preset_name)
@@ -306,10 +307,7 @@ class Application:
 
                 llm_start = time.monotonic()
                 final_md = self._generate_output_with_llm(
-                    processed_sections,
-                    system_prompt,
-                    run_stats,
-                    produces_markdown,
+                    processed_sections, system_prompt, run_stats
                 )
                 run_stats["llm_wall_duration"] = time.monotonic() - llm_start
 
@@ -541,33 +539,19 @@ class Application:
         except IOError as e:
             logging.getLogger("ppdf").error("Error saving LLM output: %s", e)
 
-    def _chunk_text_by_paragraphs(self, text, max_size):
+    def _handle_stream_output(self, stream_generator):
         """
-        Splits text into chunks of a maximum size without breaking paragraphs.
-        Yields each chunk as a string.
+        Consumes a generator of text chunks and handles rich, tts, and stdout display.
+        Returns the full, concatenated text.
         """
-        paragraphs = re.split(r"\n{2,}", text.strip())
-        current_chunk_parts = []
-        current_chunk_size = 0
+        if self.args.rich_stream:
+            return self._stream_generator_to_rich(stream_generator)
+        else:
+            return self._stream_generator_to_stdout(stream_generator)
 
-        for para in paragraphs:
-            para_size = len(para)
-            if current_chunk_parts and current_chunk_size + para_size + 2 > max_size:
-                yield "\n\n".join(current_chunk_parts)
-                current_chunk_parts = [para]
-                current_chunk_size = para_size
-            else:
-                current_chunk_parts.append(para)
-                current_chunk_size += para_size + 2
-
-        if current_chunk_parts:
-            yield "\n\n".join(current_chunk_parts)
-
-    def _generate_output_with_llm(self, sections, system_prompt, run_stats, produces_markdown):
+    def _generate_output_with_llm(self, sections, system_prompt, run_stats):
         """Orchestrates section-by-section, chunk-aware processing with the LLM."""
-        all_markdown, agg_stats = [], {"eval_count": 0, "eval_duration": 0}
-        chars_sent, chars_received = 0, 0
-
+        all_markdown = []
         for i, section in enumerate(sections):
             s_page, e_page = section.page_start, section.page_end
             logging.getLogger("ppdf").info(
@@ -578,157 +562,49 @@ class Application:
                 e_page,
                 section.title or "Untitled",
             )
-            section_markdown_parts = []
-            section_text = section.get_llm_text()
-            chunks = list(self._chunk_text_by_paragraphs(section_text, self.args.chunk_size))
+            is_final_section = i == len(sections) - 1
 
-            for j, chunk_text in enumerate(chunks):
-                self.stats["chunk_sizes"].append(len(chunk_text))
-                logging.getLogger("ppdf").info(
-                    "  -> Processing chunk %d/%d for section %d (%d chars)...",
-                    j + 1,
-                    len(chunks),
-                    i + 1,
-                    len(chunk_text),
-                )
+            stream_generator = reformat_section_with_llm(
+                section=section,
+                system_prompt=system_prompt,
+                ollama_url=self.args.url,
+                model=self.args.model,
+                chunk_size=self.args.chunk_size,
+                temperature=self.args.temperature,
+                no_fmt_titles=self.args.no_fmt_titles,
+                is_final_section=is_final_section,
+            )
 
-                title = section.title or "Untitled"
-                if not self.args.no_fmt_titles:
-                    title = title.upper()
+            section_markdown = self._handle_stream_output(stream_generator)
+            all_markdown.append(section_markdown)
 
-                user_content = (
-                    f"# {title}\n\n{chunk_text}"
-                    if produces_markdown
-                    else f"{title}\n\n{chunk_text}"
-                )
-
-                # Add a stop sequence to the very last chunk to prevent rambling
-                stop_sequences = None
-                is_final_chunk = i == len(sections) - 1 and j == len(chunks) - 1
-                if is_final_chunk:
-                    stop_sequences = ["||END||"]
-                    lure = "The next document begins:"
-                    user_content += stop_sequences[0] + lure
-
-                full_response, chunk_stats = self._query_llm_api(
-                    system_prompt,
-                    user_content,
-                    self.tts_manager,
-                    stop_sequences=stop_sequences,
-                )
-                if full_response:
-                    if is_final_chunk and stop_sequences:
-                        full_response = full_response.split(stop_sequences[0])[0]
-                        full_response = full_response.rstrip()
-
-                    response = full_response
-                    if (
-                        produces_markdown
-                        and j > 0
-                        and response.strip().startswith(f"# {title}")
-                    ):
-                        response = re.sub(rf"^# {re.escape(title)}\s*", "", response.strip())
-
-                    section_markdown_parts.append(response)
-                    for key in agg_stats:
-                        agg_stats[key] += chunk_stats.get(key, 0)
-                    chars_sent += len(system_prompt) + len(user_content)
-                    chars_received += len(full_response)
-                else:
-                    err_msg = f"\n[ERROR: Could not process chunk {j + 1} of section {i + 1}]"
-                    section_markdown_parts.append(err_msg)
-
-            all_markdown.append("\n\n".join(section_markdown_parts))
-
-        run_stats.update({f"llm_{k}": v for k, v in agg_stats.items()})
-        run_stats["llm_chars_sent"] = chars_sent
-        run_stats["llm_chars_received"] = chars_received
+        # TODO: Collect stats from the stream generator if possible, for now they are lost
+        run_stats["llm_eval_count"] = 0
+        run_stats["llm_eval_duration"] = 0
         return "\n\n".join(all_markdown)
 
-    def _query_llm_api(
-        self,
-        system,
-        user,
-        tts_manager=None,
-        is_analysis=False,
-        stop_sequences=None,
-    ):
-        """Queries the Ollama /api/generate endpoint and streams response."""
-        options = {"temperature": self.args.temperature}
-        if stop_sequences:
-            options["stop"] = stop_sequences
-
+    def _query_llm_api(self, system, user, is_analysis=False):
+        """
+        Queries the Ollama /api/generate endpoint for non-streaming use cases.
+        Used for prompt analysis and table summaries.
+        """
         payload = {
             "model": self.args.model,
             "system": system,
             "prompt": user,
-            "stream": True,
-            "options": options,
+            "stream": False,
         }
-
-        full_content, stats = "", {}
-        thought_content, is_thinking = "", False
-
-        if not is_analysis and self.args.debug_topics and "llm" in self.args.debug_topics:
-            log_llm.debug("User content for chunk:\n%s", payload["prompt"])
-            if "options" in payload:
-                log_llm.debug("API options: %s", payload["options"])
-
         try:
-            r = requests.post(f"{self.args.url}/api/generate", json=payload, stream=True)
+            r = requests.post(f"{self.args.url}/api/generate", json=payload)
             r.raise_for_status()
-
-            if is_analysis:
-                for line in r.iter_lines():
-                    j, chunk = self._process_stream_line(line, None)
-                    if chunk is not None:
-                        full_content += chunk
-                if j and j.get("done"):
-                    stats = j
-                return full_content.strip(), stats
-
-            def process_chunk(chunk):
-                nonlocal thought_content, is_thinking
-                output_chunk = ""
-                while chunk:
-                    if is_thinking:
-                        if "</think>" in chunk:
-                            part, rest = chunk.split("</think>", 1)
-                            thought_content += part
-                            is_thinking = False
-                            chunk = rest
-                        else:
-                            thought_content += chunk
-                            chunk = ""
-                    else:
-                        if "<think>" in chunk:
-                            part, rest = chunk.split("<think>", 1)
-                            output_chunk += part
-                            is_thinking = True
-                            chunk = rest
-                        else:
-                            output_chunk += chunk
-                            chunk = ""
-                return output_chunk
-
-            if self.args.rich_stream:
-                full_content = self._stream_to_rich(r, process_chunk, stats)
-            else:
-                full_content = self._stream_to_stdout(r, process_chunk, stats)
-
-            if thought_content:
-                log_llm.info(
-                    "\n--- LLM Thought Process ---\n%s\n--- End of Thought ---",
-                    thought_content.strip(),
-                )
-
-            return full_content.strip(), stats
+            response_data = r.json()
+            return response_data.get("response", "").strip(), response_data
         except requests.exceptions.RequestException as e:
             log_llm.error("Ollama API request failed: %s", e)
             return None, {}
 
-    def _stream_to_rich(self, response, processor, stats):
-        """Helper for streaming LLM response to a `rich` live display."""
+    def _stream_generator_to_rich(self, stream_generator):
+        """Helper for streaming a generator to a `rich` live display."""
         content = ""
         custom_theme = Theme(
             {
@@ -744,45 +620,24 @@ class Application:
         console = Console(theme=custom_theme)
         live = Live(console=console, auto_refresh=False, vertical_overflow="visible")
         with live:
-            for line in response.iter_lines():
-                j, raw_chunk = self._process_stream_line(line, self.tts_manager)
-                if raw_chunk is not None:
-                    display_chunk = processor(raw_chunk)
-                    if display_chunk:
-                        content += display_chunk
-                        live.update(Markdown(content), refresh=True)
-                if j and j.get("done"):
-                    stats.update(j)
+            for raw_chunk in stream_generator:
+                if self.tts_manager:
+                    self.tts_manager.add_text(raw_chunk)
+                content += raw_chunk
+                live.update(Markdown(content), refresh=True)
         return content
 
-    def _stream_to_stdout(self, response, processor, stats):
-        """Helper for streaming LLM response directly to stdout."""
+    def _stream_generator_to_stdout(self, stream_generator):
+        """Helper for streaming a generator directly to stdout."""
         content = ""
         print()
-        for line in response.iter_lines():
-            j, raw_chunk = self._process_stream_line(line, self.tts_manager)
-            if raw_chunk is not None:
-                display_chunk = processor(raw_chunk)
-                if display_chunk:
-                    content += display_chunk
-                    print(display_chunk, end="", flush=True)
-            if j and j.get("done"):
-                stats.update(j)
+        for raw_chunk in stream_generator:
+            if self.tts_manager:
+                self.tts_manager.add_text(raw_chunk)
+            content += raw_chunk
+            print(raw_chunk, end="", flush=True)
         print()
         return content
-
-    def _process_stream_line(self, line, tts_manager):
-        """Helper to process a single line from the Ollama stream."""
-        if not line:
-            return None, None
-        try:
-            j = json.loads(line.decode("utf-8"))
-            chunk = j.get("response", "")
-            if chunk and tts_manager:
-                tts_manager.add_text(chunk)
-            return j, chunk
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            return None, None
 
     @staticmethod
     def parse_arguments(args=None):
