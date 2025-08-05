@@ -1127,6 +1127,68 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: A user can click any asset in the Library Hub's asset viewer to
         see the full-resolution image in the lightbox modal.
 
+### Phase 15: Advanced RAG Strategy - Chunking, Security & Context
+
+-   **Milestone 48: Implement Advanced Chunking Heuristics**
+    -   **Goal**: Refactor the ingestion service to produce more contextually
+        complete RAG documents by keeping related content together.
+    -   **Description**: This milestone replaces the simple paragraph recovery logic
+        with an intelligent system that avoids splitting small sections and groups
+        tables with their introductory text, creating a better foundation for
+        retrieval.
+    -   **Key Tasks**: Modify `ingestion_service.py` to: 1) Ingest sections
+        below a character threshold as a single document. 2) Ingest
+        table-only sections as a single document. 3) Redefine chunks as the
+        content between the start of one paragraph and the start of the next.
+    -   **Outcome**: Documents in the vector store are more contextually rich and
+        cohesive, improving the raw material used by the RAG system.
+
+-   **Milestone 49: Enhance Semantic Labeling for Security & Kickoffs**
+    -   **Goal**: Improve the labeling process to distinguish DM-only information
+        and more accurately identify adventure kickoff text.
+    -   **Description**: This milestone introduces a new label for secret
+        information and adds both automated heuristics and a user-driven "cue"
+        system for pinpointing the start of an adventure during ingestion.
+    -   **Key Tasks**: Add a `dm_knowledge` label to the `SEMANTIC_LABELER` prompt
+        in `constants.py`. Add a "Kickoff Cue" text area to the Import Wizard
+        UI. Update the ingestion API to accept this cue and pass it to the LLM
+        labeler. Add a rule to `ingestion_service.py` to limit the
+        `read_aloud_kickoff` label to the first 10 pages of a document.
+    -   **Outcome**: The ingestion pipeline can create more secure and accurately
+        labeled documents, separating player-facing text and correctly
+        identifying complex adventure introductions.
+
+-   **Milestone 50: Implement Two-Stage RAG with Defragmentation**
+    -   **Goal**: Refactor the core RAG retrieval process to prevent information
+        leaks and fix the context fragmentation bug.
+    -   **Description**: This implements the core security and context improvements
+        for gameplay, ensuring the LLM only sees player-safe information while
+        also providing the full, coherent context for the section it's
+        discussing.
+    -   **Key Tasks**: Refactor the `generate_response` method in `rag_service.py`.
+        Implement a two-stage query: first, a query excluding `dm_knowledge`
+        chunks, followed by a call to `_get_full_section` to defragment the
+        context for the LLM. Second, a broader query *including*
+        `dm_knowledge` and its defragmented results to populate the "DM's
+        Insight" modal.
+    -   **Outcome**: A secure and robust RAG retrieval system that prevents secret
+        information leaks and eliminates fragmented context, leading to
+        higher-quality AI responses.
+
+-   **Milestone 51: Implement Kickoff Sequence Grouping**
+    -   **Goal**: Enable the RAG system to handle multi-part adventure
+        introductions that combine narrative and mechanics.
+    -   **Description**: This task updates the kickoff narration logic to recognize
+        and group a sequence of related chunks (e.g., read-aloud text
+        followed by a rumors table) into a single, comprehensive kickoff context.
+    -   **Key Tasks**: Modify the `generate_kickoff_narration` function in
+        `rag_service.py`. After finding the primary `read_aloud_kickoff` chunk,
+        add logic to search for and append any subsequent, contiguous chunks from
+        the same section that are labeled `mechanics`.
+    -   **Outcome**: The application delivers a more accurate kickoff experience for
+        adventures that begin with both narrative and mechanical elements,
+        presenting them together as a single unit.
+
 ---
 
 ## 7. Potential Future Extensions
