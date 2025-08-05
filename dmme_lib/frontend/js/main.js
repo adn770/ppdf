@@ -9,9 +9,11 @@ import { DiceRoller } from './components/DiceRoller.js';
 import { DMInsight } from './components/DMInsight.js';
 import { LibraryHub } from './hubs/LibraryHub.js';
 import { PartyHub } from './hubs/PartyHub.js';
+import { Lightbox } from './components/Lightbox.js';
 import { status } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
+
 class App {
     constructor() {
         this.settingsManager = new SettingsManager(this);
@@ -22,7 +24,8 @@ class App {
         );
         this.loadCampaignWizard = new LoadCampaignWizard(this);
         this.dmInsight = new DMInsight(this);
-        this.gameplayHandler = new GameplayHandler(this, this.dmInsight);
+        this.lightbox = new Lightbox();
+        this.gameplayHandler = new GameplayHandler(this, this.dmInsight, this.lightbox);
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.libraryHub = new LibraryHub(this);
         this.partyHub = new PartyHub(this);
@@ -98,6 +101,7 @@ class App {
         const welcomeView = document.getElementById('welcome-view');
         const recoveryView = document.getElementById('recovery-view');
         const gameViewContent = document.getElementById('game-view-content');
+
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
             gameViewContent.style.display = 'none';
@@ -145,6 +149,7 @@ class App {
             placeholderOption.value = "";
             placeholderOption.textContent = this.i18n.t('themeDefault');
             quickSelector.appendChild(placeholderOption);
+
             mainSelector.querySelectorAll('option').forEach(option => {
                 if (option.value !== 'default') {
                     quickSelector.appendChild(option.cloneNode(true));

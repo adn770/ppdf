@@ -3,9 +3,10 @@ import { showGameSpinner, hideGameSpinner } from './ui.js';
 import { apiCall } from './wizards/ApiHelper.js';
 
 export class GameplayHandler {
-    constructor(appInstance, dmInsightInstance) {
+    constructor(appInstance, dmInsightInstance, lightboxInstance) {
         this.app = appInstance;
         this.dmInsight = dmInsightInstance;
+        this.lightbox = lightboxInstance;
         this.gameConfig = null;
         this.narrativeView = document.getElementById('narrative-view');
         this.playerInput = document.getElementById('player-input');
@@ -16,6 +17,7 @@ export class GameplayHandler {
         this.showVisualAids = false;
         this.showAsciiScene = false;
         this.lastInsightContent = '';
+
         // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
         this.fontSizeSlider = document.getElementById('font-size-slider');
@@ -23,10 +25,6 @@ export class GameplayHandler {
         this.toggleVisualAidsBtn = document.getElementById('toggle-visual-aids-btn');
         this.toggleAsciiSceneBtn = document.getElementById('toggle-ascii-scene-btn');
         this.insightToolbarBtn = document.getElementById('dm-insight-btn-toolbar');
-        // Image Lightbox elements
-        this.lightboxModal = document.getElementById('image-lightbox-modal');
-        this.lightboxImage = document.getElementById('image-lightbox-content');
-        this.lightboxClose = document.getElementById('image-lightbox-close');
 
         this._addEventListeners();
     }
@@ -59,13 +57,13 @@ export class GameplayHandler {
                 this._sendCommandFromInput();
             }
         });
+
         this.quickThemeSelector.addEventListener('change', (e) => this._applyQuickTheme(e));
         this.fontSizeSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.lineHeightSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.toggleVisualAidsBtn.addEventListener('click', () => this._toggleVisualAids());
         this.toggleAsciiSceneBtn.addEventListener('click', () => this._toggleAsciiScene());
         this.insightToolbarBtn.addEventListener('click', () => this._showLastInsight());
-        this.lightboxClose.addEventListener('click', () => this._closeLightbox());
     }
 
     _applyInitialStyles() {
@@ -105,6 +103,7 @@ export class GameplayHandler {
             item.appendChild(body);
             this.partyAccordionContainer.appendChild(item);
         });
+
         // Add event listeners to the newly created headers
         this.partyAccordionContainer.querySelectorAll('.accordion-header').forEach(button => {
             button.addEventListener('click', () => {
@@ -162,7 +161,7 @@ export class GameplayHandler {
         let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
         if (this.gameConfig.llm_model) {
             kbHtml += ` |
- <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
+                <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
         }
         this.kbDisplay.innerHTML = kbHtml;
     }
@@ -316,7 +315,7 @@ export class GameplayHandler {
     _renderVisualAid(chunk) {
         const figure = document.createElement('figure');
         figure.className = 'narrative-entry visual-aid-container';
-        figure.addEventListener('click', () => this._openLightbox(chunk.full_url));
+        figure.addEventListener('click', () => this.lightbox.open(chunk.full_url));
 
         const img = document.createElement('img');
         img.src = chunk.thumb_url;
@@ -330,16 +329,6 @@ export class GameplayHandler {
 
         this.narrativeView.appendChild(figure);
         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
-    }
-
-    _openLightbox(src) {
-        this.lightboxImage.src = src;
-        this.lightboxModal.style.display = 'block';
-    }
-
-    _closeLightbox() {
-        this.lightboxModal.style.display = 'none';
-        this.lightboxImage.src = '';
     }
 
     _renderAsciiMap(chunk) {
@@ -356,8 +345,7 @@ export class GameplayHandler {
         let buffer = '';
         let currentParagraph = initialParagraph;
         let currentParagraphMarkdown = '';
-        this.lastInsightContent = '';
-        // Reset for this turn
+        this.lastInsightContent = ''; // Reset for this turn
 
         while (true) {
             const { value, done } = await reader.read();
@@ -365,8 +353,7 @@ export class GameplayHandler {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop();
-            // Keep the potentially incomplete last line
+            buffer = lines.pop(); // Keep the potentially incomplete last line
 
             for (const line of lines) {
                 if (!line.trim()) continue;
