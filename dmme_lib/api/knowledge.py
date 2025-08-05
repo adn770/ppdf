@@ -176,7 +176,8 @@ def ingest_document():
     tmp_path = data.get("temp_file_path")
     pages_str = data.get("pages", "all")
     sections_to_include = data.get("sections_to_include")
-    extract_images = data.get("extract_images", True)  # Get the new flag
+    extract_images = data.get("extract_images", True)
+    kickoff_cue = data.get("kickoff_cue", "")
 
     if not metadata or not tmp_path:
         return jsonify({"error": "Missing metadata or temp_file_path"}), 400
@@ -202,7 +203,7 @@ def ingest_document():
                         yield f"data: {json.dumps({'message': msg})}\n\n"
                 elif is_pdf:
                     for msg in ingestion_service.ingest_pdf_text(
-                        tmp_path, metadata, pages_str, sections_to_include
+                        tmp_path, metadata, pages_str, sections_to_include, kickoff_cue
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
 

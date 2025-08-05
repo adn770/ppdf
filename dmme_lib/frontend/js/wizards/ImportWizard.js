@@ -74,9 +74,11 @@ export class ImportWizard {
         this.discardImgBtn = document.getElementById('discard-image-btn');
         this.classificationRadios =
             this.modal.querySelectorAll('input[name="image-classification"]');
+
         this.prevImgBtn.addEventListener('click', () => this.navigateReviewImage(-1));
         this.nextImgBtn.addEventListener('click', () => this.navigateReviewImage(1));
         this.discardImgBtn.addEventListener('click', () => this.discardCurrentImage());
+
         // Autosave listeners
         this.imgDesc.addEventListener('input', () => this.debouncedSaveImageChanges());
         this.classificationRadios.forEach(radio => {
@@ -113,6 +115,7 @@ export class ImportWizard {
         this.uploadInput.value = '';
         document.getElementById('kb-name').value = '';
         document.getElementById('kb-desc').value = '';
+        document.getElementById('kb-kickoff-cue').value = '';
         this.pdfPagesInput.value = 'all';
         this.pdfPagesInput.disabled = true;
         this.extractImagesCheckbox.checked = true;
@@ -135,12 +138,14 @@ export class ImportWizard {
         this.panes.forEach((pane, index) => {
             pane.classList.toggle('active', index === this.currentStep);
         });
+
         const finalizeContainer = this.modal.querySelector('.modal-footer');
         let finalizeBtn = this.modal.querySelector('#finalize-btn');
 
         this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 2) ?
             'block' : 'none';
         this.nextBtn.style.display = this.currentStep < 2 ? 'block' : 'none';
+
         if (this.currentStep === 3) { // Image review pane
             if (!finalizeBtn) {
                 const btnHTML =
@@ -284,6 +289,7 @@ export class ImportWizard {
                 pages: pagesValue || 'all',
                 sections_to_include: sectionsToInclude,
                 extract_images: this.extractImagesCheckbox.checked,
+                kickoff_cue: document.getElementById('kb-kickoff-cue').value.trim(),
                 metadata: {
                     kb_name: this.knowledgeBaseName,
                     kb_type: document.getElementById('kb-type').value,
@@ -431,7 +437,6 @@ export class ImportWizard {
             'deleteImageMsg',
             { filename: current.filename }
         );
-
         if (confirmed) {
             try {
                 const url = `/api/knowledge/review-images/${this.knowledgeBaseName}/${current.filename}`;

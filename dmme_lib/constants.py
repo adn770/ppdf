@@ -220,19 +220,22 @@ PROMPT_REGISTRY = {
     },
     "SEMANTIC_LABELER": {
         "en": (
-            "You are a semantic analysis engine. Analyze the text chunk and assign "
-            "ONE primary category label from the list. Prioritize special labels if they apply.\n\n"
+            "You are a semantic analysis engine. Analyze the text chunk and assign ONE "
+            "primary category label from the list. Use the user's cue to help guide your choice.\n\n"
+            "USER KICKOFF CUE (Use this to identify the starting text):\n{kickoff_cue}\n\n"
             "LABEL DEFINITIONS:\n"
-            "- `read_aloud_kickoff`: Text meant to be read to players to start the adventure.\n"
+            "- `dm_knowledge`: Secret information FOR THE DM ONLY. Includes monster tactics, "
+            "  trap mechanics, character motivations, plot secrets, or treasure details.\n"
+            "- `read_aloud_text`: Text explicitly boxed or quoted to be read VERBATIM to players.\n"
+            "- `read_aloud_kickoff`: The very first `read_aloud_text` that starts the adventure.\n"
             "- `adventure_hook`: A plot hook, rumor, or mission for players.\n"
-            "- `stat_block`: A creature's or character's statistics.\n"
-            "- `read_aloud_text`: General descriptive text to be read to players.\n"
-            "- `item_description`: Description of an item.\n"
-            "- `location_description`: Description of a place.\n"
-            "- `mechanics`: Rules or game mechanics.\n"
+            "- `stat_block`: A creature's or character's statistics for game mechanics.\n"
+            "- `item_description`: Description of a specific item.\n"
+            "- `location_description`: Description of a specific place.\n"
+            "- `mechanics`: Rules for how the game is played (e.g., skill checks, combat).\n"
             "- `lore`: Background history or world-building information.\n"
-            "- `dialogue`: Spoken words from a character.\n"
-            "- `prose`: General narrative text that doesn't fit other categories.\n\n"
+            "- `dialogue`: Spoken words from a character, usually in quotes.\n"
+            "- `prose`: General, non-secret narrative text that doesn't fit other categories.\n\n"
             "Respond with ONLY the chosen label and nothing else."
         )
     },
@@ -290,13 +293,13 @@ PROMPT_REGISTRY = {
             "La teva tasca és descriure la imatge proporcionada en una única frase "
             "objectiva i descriptiva.\n\n"
             "REGLES CRÍTIQUES:\n"
-            "1. La teva resposta HA DE ser únicament la frase descriptiva i res més.\n"
-            "2. Descriu la imatge com si fossis un Dungeon Master presentant una escena.\n"
-            "3. NO siguis conversacional. No comencis amb 'La imatge mostra...' o 'En "
+            "1.  La teva resposta HA DE ser únicament la frase descriptiva i res més.\n"
+            "2.  Descriu la imatge com si fossis un Dungeon Master presentant una escena.\n"
+            "3.  NO siguis conversacional. No comencis amb 'La imatge mostra...' o 'En "
             "aquesta imatge...'.\n"
-            "4. NO et neguis a respondre. Si la imatge no és clara, descriu les "
+            "4.  NO et neguis a respondre. Si la imatge no és clara, descriu les "
             "formes, colors i textures literals que veus.\n"
-            "5. La teva resposta HA DE ser en català."
+            "5.  La teva resposta HA DE ser en català."
         ),
     },
     "CLASSIFY_IMAGE": {

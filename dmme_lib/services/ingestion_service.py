@@ -65,7 +65,9 @@ class IngestionService:
         log.info(msg)
         yield msg
 
-        labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
+        labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang).format(
+            kickoff_cue="No hint provided."
+        )
         documents, metadatas = [], []
 
         valid_chunks = [c for c in chunks if len(c) >= 50]
@@ -165,6 +167,7 @@ class IngestionService:
         metadata: dict,
         pages_str: str = "all",
         sections_to_include: list[str] | None = None,
+        kickoff_cue: str = "",
     ):
         """Processes and ingests a PDF file's text content, yielding progress."""
         kb_name = metadata.get("kb_name")
@@ -261,7 +264,7 @@ class IngestionService:
                 yield msg
 
         # --- Paragraph-level Reformatting and Semantic Labeling ---
-        labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang)
+        labeler_prompt_template = self._get_prompt("SEMANTIC_LABELER", lang)
         documents, metadatas = [], []
         chunk_id = 0
 
@@ -287,16 +290,28 @@ class IngestionService:
             log.info(msg)
             yield msg
             recovered_chunks = self._chunk_reformatted_section(section, formatted_section_text)
+            final_labeler_prompt = labeler_prompt_template.format(
+                kickoff_cue=kickoff_cue or "No hint provided."
+            )
 
             for chunk in recovered_chunks:
                 label = get_semantic_label(
-                    chunk, labeler_prompt, self.ollama_url, self.utility_model
+                    chunk, final_labeler_prompt, self.ollama_url, self.utility_model
                 )
+                # Enforce positional heuristic for kickoff
+                if label == "read_aloud_kickoff" and section.page_start > 10:
+                    log.info(
+                        "Overriding 'read_aloud_kickoff' due to positional heuristic (page %d > 10).",
+                        section.page_start,
+                    )
+                    label = "read_aloud_text"
+
                 documents.append(chunk)
                 metadatas.append(
                     {
                         "source_file": metadata.get("filename", "unknown.pdf"),
                         "section_title": section.title or "Untitled",
+                        "page_start": section.page_start,
                         "chunk_id": chunk_id,
                         "label": label if label else "prose",
                     }
