@@ -1,4 +1,88 @@
+design-dmme.md
 # Project: DMme (AI Dungeon Master Engine)
+
+---
+
+## 0. AI Assistant Procedures
+
+This section outlines the collaborative workflows between the developer and the AI
+assistant. The core principle is **Confirmation-Based Structuring**: the developer
+can use natural language, and the assistant is responsible for structuring the
+request into a formal plan that requires developer approval before execution.
+
+### 0.1. Main Rules
+-   **Developer-Led Workflow**: The developer always initiates the activity.
+-   **Providing Context**: The developer will provide the relevant project context.
+-   **Confirmation and Readiness**: The assistant will confirm its understanding and
+    signal its readiness.
+
+### 0.2. Code & Document Generation
+-   **Complete Code**: All source code must be complete and self-contained. "Self-contained"
+    means the code must execute without errors assuming all necessary libraries are
+    installed. All required `import` statements must be present.
+-   **File Content Presentation**: All generated source code for a specific file **must**
+    begin with a single header line in the format: `# --- path/to/your/file.ext ---`.
+-   **Asymmetric Guard Convention**: The developer may use multi-file guards (e.g.,
+    `--- START FILE: ... ---`) for uploading source code context. These guards are
+    for input only. The assistant's generated code **must not** contain these guards.
+-   **Line Length & Formatting**: Code and text should be formatted to a maximum of 95
+    characters per line, with no trailing whitespace.
+-   **Document Integrity**: Design documents must be presented in their complete form.
+-   **Milestone Detail**: Milestones must include a `Goal`, `Description`, `Key
+    Tasks`, and `Outcome`.
+-   **Copy-Friendly Markdown**: Documents in Markdown must be delivered as a raw
+    markdown code block adhering to the GitHub Flavored Markdown (GFM) specification.
+
+### 0.3. Bug Fixing Workflow
+1.  **Initiation**: The developer reports a bug using natural language.
+2.  **Plan Proposal**: The assistant interprets the request, analyzes the issue, and
+    proposes a structured, mandatory `Bug-Fix Plan` for approval.
+3.  **Approval**: The developer provides a simple confirmation (e.g., "Yes, proceed,"
+    "Approved").
+4.  **Execution**: Only after approval does the assistant generate the necessary code to
+    implement the fix.
+
+### 0.4. Idea Development Workflow
+This workflow governs the creation of new features and has two distinct modes.
+
+-   **🧠 Brainstorm Mode (Divergent)**:
+    -   **Goal**: To generate a wide array of diverse, high-level possibilities.
+    -   **Process**: The developer starts with a broad topic (e.g., "Let's brainstorm a
+        music system"). The assistant provides a list of creative, distinct concepts.
+
+-   **🛠️ Design Mode (Convergent)**:
+    -   **Goal**: To refine a single concept into a detailed, actionable plan.
+    -   **Process**: The developer starts with a specific idea or selects an option from
+        Brainstorm Mode. The assistant uses the Confirmation-Based Structuring approach
+        to create and refine a formal `Design Proposal` until it is approved.
+
+### 0.5. Milestone Implementation Workflow
+-   The assistant presents the next milestone from the `Implementation Plan`.
+-   Upon developer approval, the assistant generates the **complete source code** required
+    to fulfill that milestone.
+
+### 0.6. Append-Only Design & Implementation
+-   **Immutable History**: The design document is the single source of truth for the
+    project's history and intent. Completed or superseded phases and milestones
+    **must not be removed or altered**. The document functions as an append-only log.
+-   **Fine-Grained Milestones**: Every new feature must be broken down into a series of
+    incremental, fine-grained milestones.
+-   **Workflow for Extension**: At the conclusion of an **Idea Development** session, the
+    assistant's final output will be a new, fully-formatted `Phase` containing these
+    milestones, ready to be appended to the `Implementation Plan`.
+
+### 0.7. Session Initialization & Code Review
+-   **Step 1: Context Upload**: At the start of a session, the developer will first
+    upload the latest design document, followed by the complete source code.
+-   **Step 2: AI Acknowledgment**: The assistant will confirm receipt of both the
+    design document and the source code files.
+-   **Step 3: Automated Analysis**: The assistant's first action is to perform a
+    comprehensive analysis, comparing the provided source code against the design
+    document.
+-   **Step 4: Report Generation**: The assistant will produce a concise report
+    detailing its findings on alignment, completeness, and deviations.
+-   **Step 5: Proceed with Task**: After presenting the analysis, the assistant will
+    signal its readiness to proceed with the developer's next instruction.
 
 ---
 
@@ -122,11 +206,11 @@ application data besides the vector stores.
 │   └── images/
 │       └── <collection_name>/
 │           ├── assets.json      (*Asset manifest*)
-│           ├── ... (*Extracted image files*)
-│           └── ... (*Extracted thumbnail files*)
+│           ├── ...              (*Extracted image files*)
+│           └── ...              (*Extracted thumbnail files*)
 ├── chroma/
-│   └── ... (*ChromaDB persistent vector storage*)
-├── dmme.db         (*SQLite database for campaigns, sessions, parties, etc.*)
+│   └── ...                  (*ChromaDB persistent vector storage*)
+├── dmme.db                    (*SQLite database for campaigns, sessions, etc.*)
 └── dmme.cfg
 
 ---
@@ -174,8 +258,7 @@ content, transforming raw layout elements into logically structured sections.
     base for more specific content types and holds the raw line objects and bounding
     box.
 -   **`ProseBlock`, `TableBlock`, `BoxedNoteBlock`**: Specific subclasses of
-    `ContentBlock` that represent standard text, structured tables, or sidebars
-   .
+    `ContentBlock` that represent standard text, structured tables, or sidebars.
 -   **`Title`**: Represents a title or heading element found on a page or within a
     column.
 -   **`PageModel`**: A structured representation of a single PDF page's physical
@@ -195,8 +278,8 @@ game state, and interacts with the LLM.
     `characters`.
 -   **Knowledge Ingestion**: Provides an API to support the frontend's **Library
     Hub**. It will invoke `ppdf` for a two-stage process: first to
-    `analyze` a document's structure, and second to perform the final `ingestion` based
-    on user-provided section configurations.
+    `analyze` a document's structure, and second to perform the final `ingestion`
+    based on user-provided section configurations.
 -   **RAG & LLM Logic**: The core RAG service will query the ChromaDB collections,
     leveraging semantic labels for precision. It will also contain the logic for
     generating Journal Recaps and ASCII Scene Maps.
@@ -204,7 +287,8 @@ game state, and interacts with the LLM.
     -   **Campaigns**: Full CRUD APIs for managing campaigns.
     -   **Parties**: Full CRUD APIs for managing saved parties.
     -   **Knowledge**: APIs to orchestrate the multi-step ingestion process,
-        including `POST /api/knowledge/analyze` and `POST /api/knowledge/<kb_name>/upload-asset`.
+        including `POST /api/knowledge/analyze` and
+        `POST /api/knowledge/<kb_name>/upload-asset`.
     -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
         images, and maps).
 
@@ -267,7 +351,8 @@ status bar navigation.
 The main gameplay interface will be a **two-column layout**:
 
 -   **Left Panel (approx. 1/4 width):** A fixed-width side panel containing:
-    -   An upper, scrollable **Party Status Panel** with an accordion view for character details.
+    -   An upper, scrollable **Party Status Panel** with an accordion view for character
+        details.
     -   A lower, fixed **Dice Roller** component anchored to the bottom.
 -   **Right Panel (approx. 3/4 width):** The main interaction area containing:
     -   **Knowledge Source Panel:** Displays active KBs for the session.
@@ -442,7 +527,8 @@ This implementation plan details the incremental steps to build the `dmme` appli
         session using all the designed options.
 
 -   **Milestone 11: Build Static Gameplay UI**
-    -   **Goal**: Create the static HTML and CSS for the main two-column gameplay interface.
+    -   **Goal**: Create the static HTML and CSS for the main two-column gameplay
+        interface.
     -   **Description**: This milestone focuses on building the complete visual layout for
         the game screen without any backend interaction. It establishes the foundational
         structure for all subsequent gameplay functionality.
@@ -465,7 +551,7 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The backend has a testable `/api/game/command` endpoint that the
         frontend can successfully call and receive a valid, albeit static, response from.
 
--   **Milestone 13: Connect UI to Gameplay Stub**
+-   **Milestore 13: Connect UI to Gameplay Stub**
     -   **Goal**: Wire up the frontend player input to the backend stub and display the
         returned data.
     -   **Description**: This connects the two halves of the application. The user will be
@@ -608,22 +694,40 @@ This implementation plan details the incremental steps to build the `dmme` appli
 ### Phase 6 (Refined): Campaign Continuation
 
 -   **Milestone 24.1: Enhance Campaign Persistence**
-    -   **Goal:** Enhance the backend to save the initial `gameConfig` when a campaign is created.
-    -   **Description:** To properly resume a game, the system needs to know which knowledge bases and settings were used to start it. This milestone adds the necessary persistence logic.
-    -   **Key Tasks:** Add a `game_config_json` TEXT column to the `campaigns` table in `storage_service.py`. Modify the `create_campaign` API and service method to accept and store the JSON representation of the `gameConfig`.
-    -   **Outcome:** New campaigns saved in the database now include the configuration required to restart them.
+    -   **Goal:** Enhance the backend to save the initial `gameConfig` when a campaign
+        is created.
+    -   **Description:** To properly resume a game, the system needs to know which
+        knowledge bases and settings were used to start it. This milestone adds the
+        necessary persistence logic.
+    -   **Key Tasks:** Add a `game_config_json` TEXT column to the `campaigns` table
+        in `storage_service.py`. Modify the `create_campaign` API and service
+        method to accept and store the JSON representation of the `gameConfig`.
+    -   **Outcome:** New campaigns saved in the database now include the configuration
+        required to restart them.
 
 -   **Milestone 24.2: Implement Campaign State API**
-    -   **Goal:** Create a backend endpoint to retrieve all data needed to resume a campaign.
-    -   **Description:** This API will provide the frontend with the saved `gameConfig` and the full narrative history from the last session.
-    -   **Key Tasks:** Create a new endpoint, `GET /api/campaigns/<id>/state`. The service logic will fetch the campaign's `game_config_json` and combine it with the narrative log of the most recent session.
-    -   **Outcome:** A functional API endpoint that the frontend can call to get all necessary data to reconstruct and continue a saved game.
+    -   **Goal:** Create a backend endpoint to retrieve all data needed to resume a
+        campaign.
+    -   **Description:** This API will provide the frontend with the saved `gameConfig`
+        and the full narrative history from the last session.
+    -   **Key Tasks:** Create a new endpoint, `GET /api/campaigns/<id>/state`. The
+        service logic will fetch the campaign's `game_config_json` and combine it
+        with the narrative log of the most recent session.
+    -   **Outcome:** A functional API endpoint that the frontend can call to get all
+        necessary data to reconstruct and continue a saved game.
 
 -   **Milestone 24.3: Implement Frontend Campaign Continuation**
-    -   **Goal:** Wire the "Continue Campaign" button to fully load and resume a saved game.
-    -   **Description:** This completes the user-facing feature by replacing the placeholder logic with a call to the new state API and initializing the game view.
-    -   **Key Tasks:** In `LoadCampaignWizard.js`, modify the `recapContinueBtn`'s event listener. It should now call the `/api/campaigns/<id>/state` endpoint. On success, it will call the main application's `startGame()` method, passing in the retrieved game config and the historical narrative log.
-    -   **Outcome:** A user can load a saved campaign, view the recap, and click "Continue" to seamlessly resume their adventure exactly where they left off.
+    -   **Goal:** Wire the "Continue Campaign" button to fully load and resume a saved
+        game.
+    -   **Description:** This completes the user-facing feature by replacing the
+        placeholder logic with a call to the new state API and initializing the game
+        view.
+    -   **Key Tasks:** In `LoadCampaignWizard.js`, modify the `recapContinueBtn`'s
+        event listener. It should now call the `/api/campaigns/<id>/state` endpoint.
+        On success, it will call the main application's `startGame()` method, passing
+        in the retrieved game config and the historical narrative log.
+    -   **Outcome:** A user can load a saved campaign, view the recap, and click
+        "Continue" to seamlessly resume their adventure exactly where they left off.
 
 ### Phase 7: Optional Game Aids
 
@@ -631,8 +735,8 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Goal**: Enhance the backend to retrieve and stream relevant visual aid data.
     -   **Description**: This milestone makes the backend "aware" of the curated images
         in the knowledge base and enables it to send them to the frontend.
-    -   **Key Tasks**: Modify the `RAGService` to retrieve `image_description` documents.
-        Update the `game` API to stream a new JSON object type: `{"type":
+    -   **Key Tasks**: Modify the `RAGService` to retrieve `image_description`
+        documents. Update the `game` API to stream a new JSON object type: `{"type":
         "visual_aid", "image_url": "...", "caption": "..."}`.
     -   **Outcome**: The backend API can now send structured data to the frontend,
         instructing it to display a specific visual aid.
@@ -745,132 +849,124 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome:** A user can select a KB and browse all of its indexed content.
 
 -   **Milestone 34.1: Backend - Create Analysis Endpoint**
-    -   **Goal:** Create a backend API that analyzes a document's structure without full ingestion.
-    -   **Description:** This is the first stage of the two-stage ingestion process. This endpoint will invoke `ppdf` to get a high-level structural overview (list of sections) of a document.
-    -   **Key Tasks:** Implement `POST /api/knowledge/analyze`. This should call a refactored `ppdf_lib` function that returns a JSON list of logical sections (e.g., `[{title: "Chapter 1", page_start: 5}, ...]`).
-    -   **Outcome:** A functional API endpoint that returns a document's structure for review.
+    -   **Goal:** Create a backend API that analyzes a document's structure without full
+        ingestion.
+    -   **Description:** This is the first stage of the two-stage ingestion process. This
+        endpoint will invoke `ppdf` to get a high-level structural overview (list of
+        sections) of a document.
+    -   **Key Tasks:** Implement `POST /api/knowledge/analyze`. This should call a
+        refactored `ppdf_lib` function that returns a JSON list of logical sections
+        (e.g., `[{title: "Chapter 1", page_start: 5}, ...]`).
+    -   **Outcome:** A functional API endpoint that returns a document's structure for
+        review.
 
 -   **Milestone 34.2: Frontend - Build Section Review UI**
-    -   **Goal:** Create the user interface for the new "Section Review" step in the Import Wizard.
-    -   **Description:** This new UI pane will display the list of sections returned by the analysis endpoint, allowing the user to select which ones to include or exclude.
-    -   **Key Tasks:** Add a new pane to the Import Wizard in `index.html`. Write the JavaScript in `ImportWizard.js` to display the section list with checkboxes.
-    -   **Outcome:** A user can upload a document and see a list of its logical sections in a new wizard step.
+    -   **Goal:** Create the user interface for the new "Section Review" step in the
+        Import Wizard.
+    -   **Description:** This new UI pane will display the list of sections returned by
+        the analysis endpoint, allowing the user to select which ones to include or
+        exclude.
+    -   **Key Tasks:** Add a new pane to the Import Wizard in `index.html`. Write the
+        JavaScript in `ImportWizard.js` to display the section list with checkboxes.
+    -   **Outcome:** A user can upload a document and see a list of its logical
+        sections in a new wizard step.
 
 -   **Milestone 34.3: Backend - Refactor Ingestion Endpoint**
     -   **Goal:** Modify the final ingestion endpoint to accept user configurations.
-    -   **Description:** The main ingestion service will be updated to process only the sections specified by the user in the new review step.
-    -   **Key Tasks:** Update the `/api/knowledge/ingest-document` endpoint. It will now accept an additional parameter: a list of section configurations (e.g., which titles to include/exclude). The service logic must be updated to respect these configurations.
-    -   **Outcome:** The backend can now perform a targeted ingestion based on user-provided section selections.
+    -   **Description:** The main ingestion service will be updated to process only the
+        sections specified by the user in the new review step.
+    -   **Key Tasks:** Update the `/api/knowledge/ingest-document` endpoint. It will
+        now accept an additional parameter: a list of section configurations (e.g.,
+        which titles to include/exclude). The service logic must be updated to
+        respect these configurations.
+    -   **Outcome:** The backend can now perform a targeted ingestion based on
+        user-provided section selections.
 
 -   **Milestone 34.4: Frontend - Integrate Two-Stage Workflow**
-    -   **Goal:** Connect the new Section Review UI to the backend, completing the workflow.
-    -   **Description:** This milestone wires the frontend and backend together for the advanced ingestion feature.
-    -   **Key Tasks:** In `ImportWizard.js`, on the "Next" click from the file upload step, call the new `/analyze` endpoint. Populate the review UI with the response. On the "Next" click from the review step, call the modified `/ingest-document` endpoint, passing the user's section selections.
-    -   **Outcome:** A user can upload a file, review its sections, deselect unwanted parts, and then finalize the ingestion process.
+    -   **Goal:** Connect the new Section Review UI to the backend, completing the
+        workflow.
+    -   **Description:** This milestone wires the frontend and backend together for the
+        advanced ingestion feature.
+    -   **Key Tasks:** In `ImportWizard.js`, on the "Next" click from the file upload
+        step, call the new `/analyze` endpoint. Populate the review UI with the
+        response. On the "Next" click from the review step, call the modified
+        `/ingest-document` endpoint, passing the user's section selections.
+    -   **Outcome:** A user can upload a file, review its sections, deselect unwanted
+        parts, and then finalize the ingestion process.
 
 ### Phase 11 (Refined): Character & Asset Management Hubs
 
 -   **Milestone 35.1: UI - Migrate Character Editor to Party Hub**
-    -   **Goal:** Move the character creation and editing UI from the modal into the main Party Hub view.
-    -   **Description:** This refactors the UI to match the hub-based design paradigm, making character management a more integrated experience.
-    -   **Key Tasks:** Copy the HTML form structure for adding a character (manual and AI) from the `party-wizard-modal` into the right-hand panel of the `party-view` in `index.html`.
-    -   **Outcome:** The character editor form is now visually present within the Party Hub's main interface.
+    -   **Goal:** Move the character creation and editing UI from the modal into the main
+        Party Hub view.
+    -   **Description:** This refactors the UI to match the hub-based design paradigm,
+        making character management a more integrated experience.
+    -   **Key Tasks:** Copy the HTML form structure for adding a character (manual and
+        AI) from the `party-wizard-modal` into the right-hand panel of the `party-view`
+        in `index.html`.
+    -   **Outcome:** The character editor form is now visually present within the Party
+        Hub's main interface.
 
 -   **Milestone 35.2: Frontend - Implement Party Hub State Management**
-    -   **Goal:** Make the Party Hub's right panel dynamic, showing either a character list, an editor, or a welcome message.
-    -   **Description:** This adds the necessary JavaScript logic to manage the state of the Party Hub's inspector panel.
-    -   **Key Tasks:** In `PartyHub.js`, add logic to handle clicks on parties in the left-hand list. On selection, display that party's character roster in the right panel. Add logic for a "+ New Character" button that shows the character editor form.
-    -   **Outcome:** The Party Hub is now interactive. Users can select a party to view its members and can switch to a form for adding a new character.
+    -   **Goal:** Make the Party Hub's right panel dynamic, showing either a character
+        list, an editor, or a welcome message.
+    -   **Description:** This adds the necessary JavaScript logic to manage the state of
+        the Party Hub's inspector panel.
+    -   **Key Tasks:** In `PartyHub.js`, add logic to handle clicks on parties in the
+        left-hand list. On selection, display that party's character roster in the
+        right panel. Add logic for a "+ New Character" button that shows the
+        character editor form.
+    -   **Outcome:** The Party Hub is now interactive. Users can select a party to view
+        its members and can switch to a form for adding a new character.
 
 -   **Milestone 35.3: Frontend - Port Character Management Logic**
-    -   **Goal:** Move all character-related business logic from the old modal to the new hub.
-    -   **Description:** This finalizes the feature migration by moving the JavaScript that calls the backend APIs into the `PartyHub.js` module.
-    -   **Key Tasks:** Move the functions for creating (manual and AI) and deleting characters from `PartyWizard.js` to `PartyHub.js`. Ensure they correctly interact with the new UI and call the existing backend APIs. Deprecate the old modal.
-    -   **Outcome:** The Party Hub is a fully self-contained and functional interface for creating, viewing, and managing all parties and characters.
+    -   **Goal:** Move all character-related business logic from the old modal to the
+        new hub.
+    -   **Description:** This finalizes the feature migration by moving the JavaScript
+        that calls the backend APIs into the `PartyHub.js` module.
+    -   **Key Tasks:** Move the functions for creating (manual and AI) and deleting
+        characters from `PartyWizard.js` to `PartyHub.js`. Ensure they correctly
+        interact with the new UI and call the existing backend APIs. Deprecate the
+        old modal.
+    -   **Outcome:** The Party Hub is a fully self-contained and functional interface for
+        creating, viewing, and managing all parties and characters.
 
 -   **Milestone 36.1: Backend - Create Asset Upload Endpoint**
-    -   **Goal:** Create a backend API to allow users to upload their own images to a Knowledge Base.
-    -   **Description:** This endpoint will handle file storage, thumbnail generation, and LLM-powered metadata creation for user-provided images.
-    -   **Key Tasks:** Implement a new `POST /api/knowledge/<kb_name>/upload-asset` endpoint. The logic should save the uploaded file to the correct assets directory, create a thumbnail, call a multimodal LLM to generate a description and classification, and save the metadata to a corresponding `.json` file.
-    -   **Outcome:** A functional API endpoint that can add a new, fully processed image asset to an existing Knowledge Base.
+    -   **Goal:** Create a backend API to allow users to upload their own images to a
+        Knowledge Base.
+    -   **Description:** This endpoint will handle file storage, thumbnail generation,
+        and LLM-powered metadata creation for user-provided images.
+    -   **Key Tasks:** Implement a new `POST /api/knowledge/<kb_name>/upload-asset`
+        endpoint. The logic should save the uploaded file to the correct assets
+        directory, create a thumbnail, call a multimodal LLM to generate a description
+        and classification, and save the metadata to a corresponding `.json` file.
+    -   **Outcome:** A functional API endpoint that can add a new, fully processed image
+        asset to an existing Knowledge Base.
 
 -   **Milestone 36.2: Frontend - Build Drag-and-Drop UI**
     -   **Goal:** Create the user interface for uploading custom assets in the Library Hub.
-    -   **Description:** This will add a clear, interactive area in the Library Hub's "Asset View" where users can drop their image files.
-    -   **Key Tasks:** In `index.html`, add an "Upload Asset" dropzone element to the Library Hub's asset view. Add CSS to style it, including visual feedback for when a user is dragging a file over it.
+    -   **Description:** This will add a clear, interactive area in the Library Hub's
+        "Asset View" where users can drop their image files.
+    -   **Key Tasks:** In `index.html`, add an "Upload Asset" dropzone element to the
+        Library Hub's asset view. Add CSS to style it, including visual feedback for
+        when a user is dragging a file over it.
     -   **Outcome:** A visible and styled drag-and-drop area is present in the Library Hub.
 
 -   **Milestone 36.3: Frontend - Implement Upload Logic**
-    -   **Goal:** Connect the new UI to the backend, completing the custom asset upload feature.
-    -   **Description:** This milestone implements the client-side logic to handle the file upload process and refresh the UI upon completion.
-    -   **Key Tasks:** In `LibraryHub.js`, add event listeners for drag-and-drop events on the new UI element. When a file is dropped, use the Fetch API to send it to the `/upload-asset` endpoint. Upon a successful response, automatically refresh the asset view to show the newly added image.
-    -   **Outcome:** A user can drag and drop an image file onto the Library Hub to add it to the selected Knowledge Base.
+    -   **Goal:** Connect the new UI to the backend, completing the custom asset upload
+        feature.
+    -   **Description:** This milestone implements the client-side logic to handle the
+        file upload process and refresh the UI upon completion.
+    -   **Key Tasks:** In `LibraryHub.js`, add event listeners for drag-and-drop events
+        on the new UI element. When a file is dropped, use the Fetch API to send it
+        to the `/upload-asset` endpoint. Upon a successful response, automatically
+        refresh the asset view to show the newly added image.
+    -   **Outcome:** A user can drag and drop an image file onto the Library Hub to add
+        it to the selected Knowledge Base.
 
 ---
 
-## 7. AI Assistant Procedures
-
-This section outlines the collaborative workflows between the developer and the AI
-assistant.
-
-### 7.0. Main Rules
--   **Developer-Led Workflow**: The developer always initiates the activity.
--   **Providing Context**: The developer will provide the relevant project context.
--   **Confirmation and Readiness**: The assistant will confirm its understanding and
-    signal its readiness.
-
-### 7.1. Design & Refinement Process
--   The developer initiates a design discussion. The AI assistant provides an expert
-    evaluation and proposes alternatives. The developer makes a decision, and the AI
-    assistant creates an actionable plan.
-
-### 7.2. Brainstorming Workflow
--   The developer kicks off a brainstorming session. The AI assistant generates a
-    diverse range of ideas. The developer selects avenues for deeper exploration, and
-    the assistant provides a more detailed breakdown.
-
-### 7.3. Milestone Implementation Workflow
--   The AI assistant presents the next milestone. Upon developer approval, the
-    assistant generates the **complete source code**.
-
-### 7.4. Bug Fixing Workflow
--   The developer reports a bug. The assistant analyzes the issue and proposes a minimal
-    bug-fix plan. Upon approval, the assistant generates the necessary code.
-
-### 7.5. Code & Document Generation
--   **Complete Code**: All source code must be complete and self-contained.
--   **File Content Presentation**: The file's path must be clearly indicated.
--   **Line Length & Formatting**: Code and text should be formatted to a maximum of 95
-    characters per line, with no trailing whitespace.
--   **Document Integrity**: Design documents must be presented in their complete form.
--   **Milestone Detail**: Milestones must include a `Goal`, `Description`, `Key
-    Tasks`, and `Outcome`.
--   **Copy-Friendly Markdown**: Documents in Markdown must be delivered as a raw
-    markdown code block.
-
-### 7.6. Session Initialization & Code Review
--   **Step 1: Context Upload**: At the start of a session, the developer will first
-    upload the latest `design-dmme.md` document, followed by the complete and current
-    source code.
--   **Step 2: AI Acknowledgment**: The assistant will confirm receipt of both the
-    design document and the source code files.
--   **Step 3: Automated Analysis**: The assistant's first action is to perform a
-    comprehensive analysis, comparing the provided source code against the design
-    document.
--   **Step 4: Report Generation**: The assistant will produce a concise report
-    detailing its findings on the following points:
-    -   **Alignment**: How well the current code structure, features, and logic
-        match the design document.
-    -   **Completeness**: Which planned milestones from the design are fully or
-        partially implemented, and which are not yet started.
-    -   **Deviations**: Any significant discrepancies where the code does not follow
-        the design.
--   **Step 5: Proceed with Task**: After presenting the analysis, the assistant will
-    signal its readiness to proceed with the developer's next instruction.
-
----
-
-## 8. Potential Future Extensions
+## 7. Potential Future Extensions
 
 This section serves as a wishlist for powerful features that are outside the scope of
 the initial implementation plan but could be added in the future.
