@@ -117,8 +117,8 @@ class RAGService:
         llm_stream = query_text_llm(
             kickoff_prompt, prompt_content, self.ollama_url, session_model, stream=True
         )
-        for chunk in llm_stream:
-            yield {"type": "narrative_chunk", "content": chunk}
+        for chunk_data in llm_stream:
+            yield {"type": "narrative_chunk", "content": chunk_data.get("response", "")}
 
     def generate_response(self, player_command: str, game_config: dict, history: list[dict]):
         """
@@ -228,9 +228,10 @@ class RAGService:
         )
 
         full_narrative = ""
-        for chunk in llm_stream:
-            full_narrative += chunk
-            yield {"type": "narrative_chunk", "content": chunk}
+        for chunk_data in llm_stream:
+            chunk_content = chunk_data.get("response", "")
+            full_narrative += chunk_content
+            yield {"type": "narrative_chunk", "content": chunk_content}
 
         show_visuals = game_config.get("show_visual_aids", False)
         show_ascii = game_config.get("show_ascii_scene", False)
@@ -301,9 +302,10 @@ class RAGService:
                 "classification_model"
             ]
             prompt = self._get_prompt("ASCII_MAP_GENERATOR", lang)
-            map_response = query_text_llm(
+            response_data = query_text_llm(
                 prompt, narrative, self.ollama_url, classification_model
             )
+            map_response = response_data.get("response", "").strip()
             if map_response:
                 # Clean the response to remove markdown code block delimiters
                 cleaned_map = re.sub(r"```(text|ascii)?\n?|\n?```", "", map_response).strip()
@@ -317,5 +319,6 @@ class RAGService:
         """
         log.info("Generating journal recap in '%s'.", lang)
         prompt = self._get_prompt("SUMMARIZE_SESSION", lang)
-        summary = query_text_llm(prompt, session_log, self.ollama_url, self.model)
+        response_data = query_text_llm(prompt, session_log, self.ollama_url, self.model)
+        summary = response_data.get("response", "").strip()
         return summary

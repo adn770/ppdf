@@ -41,6 +41,7 @@ from ppdf_lib.api import process_pdf_text, process_pdf_images, reformat_section_
 from ppdf_lib.extractor import PDFTextExtractor
 
 from core.tts import TTSManager, PIPER_AVAILABLE
+from core.llm_utils import query_text_llm
 from ppdf_lib.renderer import ASCIIRenderer
 from core.log_utils import ContextFilter, setup_logging
 
@@ -588,20 +589,17 @@ class Application:
         Queries the Ollama /api/generate endpoint for non-streaming use cases.
         Used for prompt analysis and table summaries.
         """
-        payload = {
-            "model": self.args.model,
-            "system": system,
-            "prompt": user,
-            "stream": False,
-        }
-        try:
-            r = requests.post(f"{self.args.url}/api/generate", json=payload)
-            r.raise_for_status()
-            response_data = r.json()
-            return response_data.get("response", "").strip(), response_data
-        except requests.exceptions.RequestException as e:
-            log_llm.error("Ollama API request failed: %s", e)
+        response_data = query_text_llm(
+            prompt=system,
+            user_content=user,
+            ollama_url=self.args.url,
+            model=self.args.model,
+            stream=False,
+        )
+        if "error" in response_data:
+            log_llm.error("Ollama API request failed: %s", response_data["error"])
             return None, {}
+        return response_data.get("response", "").strip(), response_data
 
     def _stream_generator_to_rich(self, stream_generator):
         """Helper for streaming a generator to a `rich` live display."""

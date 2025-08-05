@@ -116,29 +116,35 @@ class IngestionService:
             if len(para.lines) == 1:
                 start_match = re.search(re.escape(start_pattern), search_text, re.IGNORECASE)
                 if not start_match:
-                    continue # Skip if not found
+                    continue  # Skip if not found
 
                 # Find the next paragraph break or end of text
-                end_match = re.search(r'\n\s*\n', search_text[start_match.end():])
+                end_match = re.search(r"\n\s*\n", search_text[start_match.end() :])
                 if end_match:
-                    chunk = search_text[start_match.start() : start_match.end() + end_match.start()]
+                    chunk = search_text[
+                        start_match.start() : start_match.end() + end_match.start()
+                    ]
                 else:
-                    chunk = search_text[start_match.start():]
+                    chunk = search_text[start_match.start() :]
             else:
                 last_line = para.lines[-1].strip()
                 start_match = re.search(re.escape(start_pattern), search_text, re.IGNORECASE)
                 if not start_match:
                     continue
 
-                end_match = re.search(re.escape(last_line), search_text[start_match.end():], re.IGNORECASE)
+                end_match = re.search(
+                    re.escape(last_line), search_text[start_match.end() :], re.IGNORECASE
+                )
                 if not end_match:
-                    chunk = search_text[start_match.start():] # Fallback
+                    chunk = search_text[start_match.start() :]  # Fallback
                 else:
-                    chunk = search_text[start_match.start() : start_match.end() + end_match.end()]
+                    chunk = search_text[
+                        start_match.start() : start_match.end() + end_match.end()
+                    ]
 
             recovered_chunks.append(chunk.strip())
             # Reduce the search space for the next paragraph
-            search_text = search_text[start_match.end():]
+            search_text = search_text[start_match.end() :]
 
         return recovered_chunks
 
@@ -161,12 +167,10 @@ class IngestionService:
             pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
         )
         yield f"✔ Structure analysis complete. Found {len(sections)} logical sections."
-
         # --- Section Filtering based on user selection (if provided) ---
         if sections_to_include:
             sections = [s for s in sections if s.title in sections_to_include]
             yield f"✔ Filtered to {len(sections)} user-selected sections."
-
         # --- Section-level Classification and Filtering ---
         page_type_map = {pm.page_num: pm.page_type for pm in page_models}
         content_sections = []
@@ -206,13 +210,14 @@ class IngestionService:
             representative_text = "\n\n".join(context_parts)
             hint_tag = page_type_map.get(section.page_start, "content")
 
-            final_tag = query_text_llm(
+            response_data = query_text_llm(
                 classifier_prompt,
                 representative_text,
                 self.ollama_url,
                 classification_model,
                 temperature=0.1,
-            ).strip()
+            )
+            final_tag = response_data.get("response", "").strip()
 
             if final_tag not in valid_llm_tags:
                 final_tag = "content"

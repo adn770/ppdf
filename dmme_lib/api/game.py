@@ -1,20 +1,14 @@
 # --- dmme_lib/api/game.py ---
 import json
 import logging
-from flask import Blueprint, request, jsonify, current_app, Response
-from dmme_lib.constants import PROMPT_REGISTRY
-from core.llm_utils import query_text_llm
+from flask import Blueprint, request, jsonify, current_app
+from core.llm_utils import generate_character_json
 
 bp = Blueprint("game", __name__)
 log = logging.getLogger("dmme.api")
 
 # Simple in-memory cache for conversation history (replace with DB persistence later)
 conversation_history = []
-
-
-def _get_prompt_from_registry(key: str, lang: str) -> str:
-    """Safely retrieves a prompt, falling back to English."""
-    return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
 
 
 @bp.route("/start", methods=["POST"])
@@ -105,19 +99,16 @@ def generate_character():
         if not rules_context:
             rules_context = f"No specific rules found. Use general knowledge for '{rules_kb}'."
 
-        prompt_template = _get_prompt_from_registry("GENERATE_CHARACTER", lang)
-        prompt = prompt_template.format(description=description, rules_context=rules_context)
-
-        # NOTE: For character generation, the prompt is the user content
-        response_str = query_text_llm(
-            "", prompt, current_app.config["OLLAMA_URL"], current_app.config["OLLAMA_MODEL"]
+        char_data = generate_character_json(
+            description=description,
+            rules_context=rules_context,
+            lang=lang,
+            ollama_url=current_app.config["OLLAMA_URL"],
+            model=current_app.config["OLLAMA_MODEL"],
         )
-        response_str = response_str.strip().replace("```json", "").replace("```", "")
-        char_data = json.loads(response_str)
         return jsonify(char_data)
-    except json.JSONDecodeError:
-        err = "LLM returned invalid JSON. Please try again."
-        return jsonify({"error": err}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
         current_app.logger.error("Character generation failed: %s", e, exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "An unexpected server error occurred."}), 500

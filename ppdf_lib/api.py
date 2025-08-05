@@ -13,7 +13,7 @@ from pdfminer.layout import LTImage
 
 from .extractor import PDFTextExtractor
 from .models import Section
-from core.llm_utils import query_multimodal_llm
+from core.llm_utils import query_multimodal_llm, query_text_llm
 
 log = logging.getLogger("ppdf.api")
 
@@ -68,25 +68,6 @@ def _chunk_text_by_paragraphs(text: str, max_size: int):
         yield "\n\n".join(current_chunk_parts)
 
 
-def _query_llm_api_stream(payload: dict, url: str):
-    """
-    Helper to query the Ollama generate endpoint and yield response chunks.
-    Yields structured JSON data from the stream.
-    """
-    try:
-        r = requests.post(f"{url}/api/generate", json=payload, stream=True)
-        r.raise_for_status()
-        for line in r.iter_lines():
-            if line:
-                try:
-                    yield json.loads(line.decode("utf-8"))
-                except (json.JSONDecodeError, UnicodeDecodeError):
-                    continue
-    except requests.exceptions.RequestException as e:
-        log.error("Ollama API request failed: %s", e)
-        yield {"error": str(e)}
-
-
 def reformat_section_with_llm(
     section: Section,
     system_prompt: str,
@@ -120,36 +101,28 @@ def reformat_section_with_llm(
             lure = "The next document begins:"
             user_content += stop_sequences[0] + lure
 
-        options = {"temperature": temperature}
-        if stop_sequences:
-            options["stop"] = stop_sequences
+        # The core LLM call is now centralized in llm_utils
+        stream_generator = query_text_llm(
+            prompt=system_prompt,
+            user_content=user_content,
+            ollama_url=ollama_url,
+            model=model,
+            stream=True,
+            temperature=temperature,
+        )
 
-        payload = {
-            "model": model,
-            "system": system_prompt,
-            "prompt": user_content,
-            "stream": True,
-            "options": options,
-        }
-
-        full_response = ""
-        for j in _query_llm_api_stream(payload, ollama_url):
-            if j.get("error"):
-                yield f"[ERROR: {j.get('error')}]"
+        for chunk_data in stream_generator:
+            if chunk_data.get("error"):
+                yield f"[ERROR: {chunk_data.get('error')}]"
                 break
 
-            response_chunk = j.get("response", "")
+            response_chunk = chunk_data.get("response", "")
             if response_chunk:
-                full_response += response_chunk
                 yield response_chunk
 
-            if j.get("done"):
-                # Handle stop sequence logic after the stream for the chunk is done
-                if is_final_chunk and stop_sequences:
-                    # This part is tricky with generators. The final output needs to be post-processed.
-                    # A simpler approach for the library is to just yield everything and let the caller handle it.
-                    # Or, we can buffer and yield. For now, let's assume caller handles stripping.
-                    pass
+            if chunk_data.get("done"):
+                # Caller is responsible for handling stop sequence stripping if needed.
+                pass
 
 
 def process_pdf_text(

@@ -4,7 +4,15 @@ import requests
 import json
 import base64
 
+# Local Application Imports
+from dmme_lib.constants import PROMPT_REGISTRY
+
 log = logging.getLogger("dmme.llm_utils")
+
+
+def _get_prompt_from_registry(key: str, lang: str) -> str:
+    """Safely retrieves a prompt, falling back to English."""
+    return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
 
 
 def get_model_details(ollama_url: str, model: str) -> dict:
@@ -51,45 +59,55 @@ def query_text_llm(
     """
     Sends a standard text prompt to an Ollama model.
     Can operate in both streaming and non-streaming modes.
+    In streaming mode, it yields the raw JSON chunk from the API.
+    In non-streaming mode, it returns the full JSON response dictionary.
     """
-    try:
-        log.debug("Querying text LLM '%s' (Stream: %s)...", model, stream)
-        payload = {
-            "model": model,
-            "system": prompt,
-            "prompt": user_content,
-            "stream": stream,
-        }
-        options = {}
-        if temperature is not None:
-            options["temperature"] = temperature
-        if options:
-            payload["options"] = options
+    log.debug("Querying text LLM '%s' (Stream: %s)...", model, stream)
+    payload = {
+        "model": model,
+        "system": prompt,
+        "prompt": user_content,
+        "stream": stream,
+    }
+    options = {}
+    if temperature is not None:
+        options["temperature"] = temperature
+    if options:
+        payload["options"] = options
 
+    def _stream_generator(response):
+        """Inner generator to handle the streaming response."""
+        for line in response.iter_lines():
+            if line:
+                try:
+                    chunk_data = json.loads(line.decode("utf-8"))
+                    yield chunk_data
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    log.warning("Failed to decode stream chunk: %s", line)
+                    continue
+
+    try:
         response = requests.post(
             f"{ollama_url}/api/generate", json=payload, stream=stream, timeout=60
         )
         response.raise_for_status()
 
-        if not stream:
+        if stream:
+            return _stream_generator(response)
+        else:
             data = response.json()
             log.debug("LLM response received: %s", data.get("response", "").strip())
-            return data.get("response", "").strip()
-        else:
-            # In streaming mode, this function becomes a generator
-            def generator():
-                for line in response.iter_lines():
-                    if line:
-                        chunk_data = json.loads(line.decode("utf-8"))
-                        yield chunk_data.get("response", "")
-
-            return generator()
+            return data
 
     except requests.exceptions.RequestException as e:
         log.error("Failed to query text LLM: %s", e)
         if stream:
-            return iter([])  # Return an empty iterator on error
-        return ""
+            # Return a generator expression that yields a single error chunk.
+            # This avoids using 'yield' in the main function's scope.
+            return (chunk for chunk in [{"error": str(e)}])
+        else:
+            # Return a dictionary for the non-streaming error case.
+            return {"error": str(e)}
 
 
 def query_multimodal_llm(
@@ -152,7 +170,6 @@ def generate_embeddings_ollama(
 
 def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> str:
     """Gets a single semantic label for a text chunk using a provided prompt."""
-    # We only want the single most relevant label
     valid_labels = [
         "stat_block",
         "read_aloud_text",
@@ -163,7 +180,39 @@ def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> 
         "dialogue",
         "prose",
     ]
-    label = query_text_llm(prompt, chunk, ollama_url, model, temperature=0.1)
+    response_data = query_text_llm(prompt, chunk, ollama_url, model, temperature=0.1)
+    label = response_data.get("response", "").strip()
     if label in valid_labels:
         return label
     return "prose"  # Default fallback
+
+
+def generate_character_json(
+    description: str,
+    rules_context: str,
+    lang: str,
+    ollama_url: str,
+    model: str,
+) -> dict:
+    """
+    High-level function to generate a character JSON from a description.
+    Encapsulates prompt construction, LLM call, and JSON parsing.
+    """
+    prompt_template = _get_prompt_from_registry("GENERATE_CHARACTER", lang)
+    prompt = prompt_template.format(description=description, rules_context=rules_context)
+
+    # For this specific task, the complex prompt is the user content
+    response_data = query_text_llm("", prompt, ollama_url, model)
+    response_str = response_data.get("response", "").strip()
+
+    if not response_str:
+        raise ValueError("LLM returned an empty response.")
+
+    try:
+        # Clean the response to remove markdown code block delimiters
+        clean_str = response_str.replace("```json", "").replace("```", "").strip()
+        char_data = json.loads(clean_str)
+        return char_data
+    except json.JSONDecodeError:
+        log.error("LLM returned invalid JSON for character generation: %s", response_str)
+        raise ValueError("LLM returned invalid JSON. Please try again.")

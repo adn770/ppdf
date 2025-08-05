@@ -157,6 +157,8 @@ class RichLogFormatter(logging.Formatter):
             f"{color}{level_name:<5}{self.RESET}:"
             f"{self.BOLD}{topic:<6}{self.RESET}{context_str}: "
         )
-        message = record.getMessage()
-        lines = message.split("\n")
+
+        # Let the parent class handle the initial formatting of the message and traceback
+        s = super().format(record)
+        lines = s.split("\n")
         return "\n".join([f"{prefix}{line}" for line in lines])
