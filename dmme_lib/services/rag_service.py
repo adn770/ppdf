@@ -248,7 +248,7 @@ class RAGService:
                     player_command, full_narrative, module_kb
                 )
             if show_ascii:
-                yield from self._find_and_yield_ascii_map(full_narrative)
+                yield from self._find_and_yield_ascii_map(full_narrative, game_config)
 
     def _find_and_yield_cover_mosaic(self, kb_name: str):
         """Finds up to 4 cover images from the manifest and yields them as a mosaic."""

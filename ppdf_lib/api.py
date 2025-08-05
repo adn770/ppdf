@@ -24,7 +24,7 @@ def _get_classification_model():
     # This check is needed because ppdf.py can run standalone without a Flask app context
     if not current_app:
         return "llama3:latest"  # Fallback for standalone mode
-    return current_app.config_service.get_settings()["Ollama"]["classification_model"]
+    return current_app.config_service.get_settings()["Ollama"]["utility_model"]
 
 
 def _parse_page_selection(pages_str: str) -> set | None:
@@ -185,7 +185,8 @@ def process_pdf_images(
     pdf_path: str,
     output_dir: str,
     ollama_url: str,
-    model: str,
+    vision_model: str,
+    utility_model: str,
     describe_prompt: str,
     classify_prompt: str,
     pages_str: str = "all",
@@ -333,7 +334,9 @@ def process_pdf_images(
                 # --- Create and save thumbnail ---
                 img.thumbnail((256, 256))
                 img.save(thumb_filename, "JPEG", quality=85)
-                yield f"  -> Created thumbnail for image {image_count}."
+                message = f"  -> Created thumbnail for image {image_count}."
+                log.info(message)
+                yield message
 
             except Exception as e:
                 log.error("Could not save image or thumbnail for %s: %s.", img_id, e)
@@ -342,30 +345,23 @@ def process_pdf_images(
             with open(image_filename, "rb") as f:
                 saved_image_bytes = f.read()
 
+            # --- Two-Stage Description and Classification ---
+            # Stage 1: Describe with vision model
             description = query_multimodal_llm(
-                describe_prompt, saved_image_bytes, ollama_url, model
+                describe_prompt, saved_image_bytes, ollama_url, vision_model
             )
 
-            classification_model = _get_classification_model()
-            page_type = extractor._classify_page_type(page_layout, [], [element], total_pages)
-            if page_type in ["cover", "art"]:
-                classification = page_type
-                log.debug(
-                    "Pre-classifying image on page %d as '%s'", page_layout.pageid, page_type
-                )
-            else:
-                classification = query_multimodal_llm(
-                    classify_prompt,
-                    saved_image_bytes,
-                    ollama_url,
-                    classification_model,
-                    temperature=0.1,
-                ).strip()
-                log.debug(
-                    "Image Classification: Model=%s, Result=%s",
-                    classification_model,
-                    classification,
-                )
+            # Stage 2: Classify the description with the utility model
+            classification_data = query_text_llm(
+                classify_prompt, description, ollama_url, utility_model, temperature=0.1
+            )
+            classification = classification_data.get("response", "").strip()
+
+            log.debug(
+                "Image Classification: Model=%s, Result=%s",
+                utility_model,
+                classification,
+            )
 
             valid_cats = {"cover", "art", "map", "handout", "decoration", "other"}
             if classification.lower().strip() not in valid_cats:

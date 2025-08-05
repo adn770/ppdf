@@ -281,7 +281,7 @@ class IngestionService:
                 section=section,
                 system_prompt=PROMPT_STRICT,
                 ollama_url=self.ollama_url,
-                model=self.dm_model,
+                model=self.utility_model,
                 chunk_size=4000,
             )
             formatted_section_text = "".join(list(stream))
@@ -344,12 +344,13 @@ class IngestionService:
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
 
         yield from process_pdf_images(
-            pdf_path,
-            review_dir,
-            self.ollama_url,
-            self.vision_model,
-            describe_prompt,
-            classify_prompt,
+            pdf_path=pdf_path,
+            output_dir=review_dir,
+            ollama_url=self.ollama_url,
+            vision_model=self.vision_model,
+            utility_model=self.utility_model,
+            describe_prompt=describe_prompt,
+            classify_prompt=classify_prompt,
             pages_str=pages_str,
         )
 
@@ -467,21 +468,26 @@ class IngestionService:
             img.thumbnail((256, 256))
             img.save(thumb_path, "JPEG", quality=85)
 
-        # 3. Generate metadata with LLM
+        # 3. Generate metadata with LLM (Two-Stage Process)
         with open(image_path, "rb") as f:
             image_bytes = f.read()
 
         kb_metadata = self.vector_store.get_kb_metadata(kb_name)
         lang = kb_metadata.get("language", "en")
 
+        # Stage 1: Describe with vision model
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         description = query_multimodal_llm(
             describe_prompt, image_bytes, self.ollama_url, self.vision_model
         )
+
+        # Stage 2: Classify description with utility model
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
-        classification = query_multimodal_llm(
-            classify_prompt, image_bytes, self.ollama_url, self.utility_model, 0.1
-        ).strip()
+        classification_data = query_text_llm(
+            classify_prompt, description, self.ollama_url, self.utility_model, 0.1
+        )
+        classification = classification_data.get("response", "").strip()
+
         if classification not in {"cover", "art", "map", "handout", "decoration", "other"}:
             classification = "art"
 
