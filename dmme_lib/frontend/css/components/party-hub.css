@@ -1,0 +1,232 @@
+/* dmme_lib/frontend/css/components/party-hub.css */
+
+.hub-left-panel-split {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.hub-left-panel-top,
+.hub-left-panel-bottom {
+    flex: 1;
+    min-height: 0; /* Important for flexbox scrolling */
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.hub-left-panel-top {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hub-left-panel-bottom {
+    padding-top: 16px;
+}
+
+#character-sheet-hub {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* This element now controls scrolling */
+    padding: 24px; /* Padding is applied inside the scrolling element */
+    box-sizing: border-box;
+}
+
+#char-desc-hub {
+    background-color: #1e1e1e;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    transition: border-color 0.2s;
+    resize: vertical;
+}
+
+#char-desc-hub:focus {
+    border-color: var(--accent-color);
+}
+
+.character-sheet-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.character-sheet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    flex-grow: 1; /* Allows grid to fill space within the flex container */
+}
+
+.stats-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.details-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.details-column .form-group-fill {
+    flex-grow: 1;
+    position: relative; /* Anchor for the AI button */
+}
+
+.primary-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.form-group-center label {
+    text-align: center;
+}
+
+/* --- Primary Stat Icon Boxes --- */
+.primary-stat-icon-box {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.primary-stat-icon-box span {
+    font-size: 1.8em;
+    font-weight: bold;
+    outline: none;
+    min-width: 30px;
+    text-align: center;
+    padding: 4px;
+    border-radius: 4px;
+    border-bottom: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.primary-stat-icon-box span:focus {
+    background-color: rgba(0,0,0,0.5);
+    box-shadow: 0 0 0 2px var(--focus-color);
+}
+
+#level-box {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffd700' d='M12,17.27L18.18,21L17,14.64L22,9.73L14.81,8.63L12,2L9.19,8.63L2,9.73L7,14.64L5.82,21L12,17.27Z'/%3E%3C/svg%3E");
+    background-size: 95px;
+}
+
+#hp-box {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e53935' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' stroke-dasharray='4 2'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+#ac-box {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23007acc' stroke='%23e0e0e0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+#attack-box {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 10 L58 32 L80 20 L75 45 L98 50 L75 55 L80 80 L58 68 L50 90 L42 68 L20 80 L25 55 L2 50 L25 45 L20 20 L42 32 Z' fill='none' stroke='%23e0e0e0' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-size: 95px;
+}
+
+.secondary-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* --- Ability Scores & Saves --- */
+.ability-scores-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ability-score-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.ability-score-row label {
+    font-weight: bold;
+    font-size: 1em;
+    text-align: left;
+    margin: 0;
+}
+
+.score-input {
+    width: 50px;
+    text-align: center;
+    font-size: 1.1em;
+    -moz-appearance: textfield;
+    padding: 6px 4px;
+}
+.score-input::-webkit-outer-spin-button,
+.score-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.modifier-display {
+    background: none;
+    border: 1px dashed var(--border-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+
+.saves-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.save-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* --- New Header & AI Button Positioning --- */
+.character-sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+}
+
+.character-details-header-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-grow: 1;
+}
+
+.form-group-name { flex: 4; }
+.form-group-class { flex: 3; }
+.form-group-alignment { flex: 2; }
+
+#ai-char-generate-hub-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background-color: rgba(42, 42, 46, 0.8);
+    border: 1px solid var(--border-color);
+}
+
+#ai-char-generate-hub-btn:hover {
+    background-color: rgba(62, 62, 66, 0.9);
+}

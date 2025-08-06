@@ -119,4 +119,9 @@ def create_app(config_overrides=None):
     def health_check():
         return "OK"
 
+    @app.route("/favicon.ico")
+    def favicon():
+        """Handles browser requests for the site icon to prevent 404 errors."""
+        return "", 204
+
     return app

@@ -103,7 +103,7 @@ def generate_character():
             rules_context=rules_context,
             lang=lang,
             ollama_url=current_app.config["OLLAMA_URL"],
-            model=current_app.config["OLLAMA_MODEL"],
+            model=current_app.config["DM_MODEL"],
         )
         return jsonify(char_data)
     except ValueError as e:

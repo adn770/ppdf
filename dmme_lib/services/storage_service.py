@@ -240,6 +240,29 @@ class StorageService:
             )
             return cursor.lastrowid
 
+    def update_character(self, character_id: int, data: dict):
+        log.debug("Updating character with id: %d.", character_id)
+        now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        stats_json = json.dumps(data.get("stats", {}))
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE characters SET
+                    name = ?, class = ?, level = ?, description = ?, stats = ?, updated_at = ?
+                WHERE id = ?;
+                """,
+                (
+                    data.get("name"),
+                    data.get("class"),
+                    data.get("level"),
+                    data.get("description"),
+                    stats_json,
+                    now,
+                    character_id,
+                ),
+            )
+            return cursor.rowcount > 0
+
     def delete_character(self, character_id: int):
         log.debug("Deleting character with id: %d.", character_id)
         with self._get_connection() as conn:

@@ -41,6 +41,15 @@ def get_characters(party_id):
     return jsonify(characters_list)
 
 
+@bp.route("/characters/<int:character_id>", methods=["GET"])
+def get_character(character_id):
+    """Gets a single character by their ID."""
+    character_row = current_app.storage.get_character(character_id)
+    if not character_row:
+        return jsonify({"error": "Character not found"}), 404
+    return jsonify(_character_to_dict(character_row))
+
+
 @bp.route("/parties/<int:party_id>/characters", methods=["POST"])
 def create_character(party_id):
     """Creates a new character and adds it to a party."""
@@ -59,6 +68,20 @@ def create_character(party_id):
 
     new_char_row = current_app.storage.get_character(char_id)
     return jsonify(_character_to_dict(new_char_row)), 201
+
+
+@bp.route("/characters/<int:character_id>", methods=["PUT"])
+def update_character(character_id):
+    """Updates an existing character."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid request body"}), 400
+
+    if not current_app.storage.update_character(character_id, data):
+        return jsonify({"error": "Character not found or update failed"}), 404
+
+    updated_char_row = current_app.storage.get_character(character_id)
+    return jsonify(_character_to_dict(updated_char_row))
 
 
 @bp.route("/characters/<int:character_id>", methods=["DELETE"])

@@ -257,9 +257,14 @@ def generate_character_json(
         raise ValueError("LLM returned an empty response.")
 
     try:
-        # Clean the response to remove markdown code block delimiters
-        clean_str = response_str.replace("```json", "").replace("```", "").strip()
-        char_data = json.loads(clean_str)
+        # Use regex to find the JSON object, ignoring surrounding text
+        json_match = re.search(r"\{.*\}", response_str, re.DOTALL)
+        if not json_match:
+            log_llm.error("Could not find a JSON object in the LLM's response.")
+            raise ValueError("LLM did not return a valid JSON object.")
+
+        json_str = json_match.group(0)
+        char_data = json.loads(json_str)
         log_llm.debug(
             "Successfully parsed generated character JSON for '%s'.", char_data.get("name")
         )

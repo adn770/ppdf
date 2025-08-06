@@ -80,7 +80,6 @@ class App {
             button.addEventListener('click', onClick);
             return button;
         };
-
         if (viewName === 'game') {
             container.appendChild(createButton('new-game-btn', 'newGameBtn', () => this.newGameWizard.open()));
             container.appendChild(createButton('load-game-btn', 'loadGameBtn', () => this.loadCampaignWizard.open()));
@@ -88,7 +87,7 @@ class App {
             const key = 'newKbBtn';
             container.appendChild(createButton('import-knowledge-btn', key, () => this.importWizard.open()));
         } else if (viewName === 'party') {
-            container.appendChild(createButton('new-party-btn', 'newPartyBtn', () => this.partyWizard.open()));
+            // This button is now handled inside the PartyHub itself.
         }
 
         // Settings button is common to all views but added here for consistency
@@ -101,7 +100,6 @@ class App {
         const welcomeView = document.getElementById('welcome-view');
         const recoveryView = document.getElementById('recovery-view');
         const gameViewContent = document.getElementById('game-view-content');
-
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
             gameViewContent.style.display = 'none';
@@ -149,7 +147,6 @@ class App {
             placeholderOption.value = "";
             placeholderOption.textContent = this.i18n.t('themeDefault');
             quickSelector.appendChild(placeholderOption);
-
             mainSelector.querySelectorAll('option').forEach(option => {
                 if (option.value !== 'default') {
                     quickSelector.appendChild(option.cloneNode(true));

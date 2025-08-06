@@ -4,6 +4,7 @@
 .form-group label { display: block; margin-bottom: 8px; }
 .form-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
 .form-row .form-group { flex: 1; margin-bottom: 0; }
+.form-row-compact { margin-bottom: 12px; }
 .form-group-wide { flex: 2 !important; }
 
 .form-group-fill {
@@ -48,15 +49,16 @@
 .form-group textarea,
 .form-group select {
     width: 100%;
-    background-color: #1e1e1e;
+    background-color: transparent;
     color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 10px;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+    padding: 10px 4px;
     font-family: inherit;
     font-size: 1em;
     box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s;
 }
 
 .form-group input[type="text"]:focus,
@@ -64,8 +66,7 @@
 .form-group textarea:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px var(--focus-color);
+    border-bottom-color: var(--accent-color);
 }
 
 .radio-group { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 0; }
