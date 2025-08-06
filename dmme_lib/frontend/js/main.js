@@ -1,6 +1,5 @@
 // dmme_lib/frontend/js/main.js
 import { ImportWizard } from './wizards/ImportWizard.js';
-import { PartyWizard } from './wizards/PartyWizard.js';
 import { NewGameWizard } from './wizards/NewGameWizard.js';
 import { LoadCampaignWizard } from './wizards/LoadCampaignWizard.js';
 import { GameplayHandler } from './GameplayHandler.js';
@@ -18,7 +17,6 @@ class App {
     constructor() {
         this.settingsManager = new SettingsManager(this);
         this.importWizard = new ImportWizard(this);
-        this.partyWizard = new PartyWizard(this);
         this.newGameWizard = new NewGameWizard(this,
             (gameConfig) => this.startGame(gameConfig)
         );

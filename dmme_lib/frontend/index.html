@@ -202,90 +202,126 @@
                                         <input type="text" id="char-align-hub" data-field="stats.alignment">
                                     </div>
                                 </div>
-                                <div class="character-sheet-controls">
-                                    <button id="save-character-btn" class="accent-btn" data-i18n-key="saveChanges" disabled>Save Changes</button>
-                                </div>
                             </div>
-                            <div class="character-sheet-grid">
-                                <div class="stats-column">
-                                    <div class="primary-stats-grid">
-                                        <div class="form-group form-group-center">
-                                            <label data-i18n-key="charLevel">Level</label>
-                                            <div id="level-box" class="primary-stat-icon-box">
-                                                <span id="char-level-hub" contenteditable="true" data-field="level"></span>
+                            <div class="hub-tabs character-sheet-tabs">
+                                <button class="hub-tab-btn active" data-pane="character-pane-main">Character</button>
+                                <button class="hub-tab-btn" data-pane="character-pane-equipment">Equipment</button>
+                                <button class="hub-tab-btn" data-pane="character-pane-inventory">Inventory</button>
+                                <button class="hub-tab-btn" data-pane="character-pane-spells">Spells</button>
+                            </div>
+                            <div class="hub-tab-content">
+                                <div id="character-pane-main" class="hub-tab-pane active">
+                                    <div class="character-sheet-grid">
+                                        <div class="stats-column">
+                                            <div class="primary-stats-grid">
+                                                <div class="form-group form-group-center">
+                                                    <label data-i18n-key="charLevel">Level</label>
+                                                    <div id="level-box" class="primary-stat-icon-box">
+                                                        <span id="char-level-hub" contenteditable="true" data-field="level"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group form-group-center">
+                                                    <label data-i18n-key="charHp">Hit Points</label>
+                                                    <div id="hp-box" class="primary-stat-icon-box">
+                                                        <span id="char-hp-hub" contenteditable="true" data-field="stats.hit_points"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group form-group-center">
+                                                    <label data-i18n-key="charAc">Armor Class</label>
+                                                    <div id="ac-box" class="primary-stat-icon-box">
+                                                        <span id="char-ac-hub" contenteditable="true" data-field="stats.armor_class"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group form-group-center">
+                                                    <label data-i18n-key="charAttackBonus">Attack Bonus</label>
+                                                    <div id="attack-box" class="primary-stat-icon-box">
+                                                        <span id="char-attack-hub" contenteditable="true" data-field="stats.attack_bonus"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="secondary-stats-grid">
+                                                <div class="form-group">
+                                                    <div class="panel-header">
+                                                        <h5><span data-i18n-key="abilityScores">Ability Scores</span><button id="roll-stats-btn" class="icon-btn" title="Roll 3d6 for all stats">🎲</button></h5>
+                                                    </div>
+                                                    <div class="ability-scores-grid">
+                                                        <div class="ability-score-row">
+                                                            <label>Strength</label>
+                                                            <input type="number" id="char-str-hub" class="score-input" data-field="stats.strength">
+                                                            <span id="char-str-mod-hub" class="modifier-display"></span>
+                                                        </div>
+                                                        <div class="ability-score-row">
+                                                            <label>Dexterity</label>
+                                                            <input type="number" id="char-dex-hub" class="score-input" data-field="stats.dexterity">
+                                                            <span id="char-dex-mod-hub" class="modifier-display"></span>
+                                                        </div>
+                                                        <div class="ability-score-row">
+                                                            <label>Constitution</label>
+                                                            <input type="number" id="char-con-hub" class="score-input" data-field="stats.constitution">
+                                                            <span id="char-con-mod-hub" class="modifier-display"></span>
+                                                        </div>
+                                                        <div class="ability-score-row">
+                                                            <label>Intelligence</label>
+                                                            <input type="number" id="char-int-hub" class="score-input" data-field="stats.intelligence">
+                                                            <span id="char-int-mod-hub" class="modifier-display"></span>
+                                                        </div>
+                                                        <div class="ability-score-row">
+                                                            <label>Wisdom</label>
+                                                            <input type="number" id="char-wis-hub" class="score-input" data-field="stats.wisdom">
+                                                            <span id="char-wis-mod-hub" class="modifier-display"></span>
+                                                        </div>
+                                                        <div class="ability-score-row">
+                                                            <label>Charisma</label>
+                                                            <input type="number" id="char-cha-hub" class="score-input" data-field="stats.charisma">
+                                                            <span id="char-cha-mod-hub" class="modifier-display"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <div class="panel-header">
+                                                        <h5 data-i18n-key="savesTitle">Saves</h5>
+                                                    </div>
+                                                    <div id="character-saves-display" class="saves-grid"></div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="form-group form-group-center">
-                                            <label data-i18n-key="charHp">Hit Points</label>
-                                            <div id="hp-box" class="primary-stat-icon-box">
-                                                <span id="char-hp-hub" contenteditable="true" data-field="stats.hit_points"></span>
+                                        <div class="details-column">
+                                            <div class="form-group form-group-fill">
+                                                <label for="char-desc-hub" data-i18n-key="formDescription">Description</label>
+                                                <textarea id="char-desc-hub" class="boxed" data-field="description" rows="4" autocomplete="off"></textarea>
+                                                <button id="ai-char-generate-hub-btn" class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
                                             </div>
-                                        </div>
-                                        <div class="form-group form-group-center">
-                                            <label data-i18n-key="charAc">Armor Class</label>
-                                            <div id="ac-box" class="primary-stat-icon-box">
-                                                <span id="char-ac-hub" contenteditable="true" data-field="stats.armor_class"></span>
-                                            </div>
-                                        </div>
-                                        <div class="form-group form-group-center">
-                                            <label data-i18n-key="charAttackBonus">Attack Bonus</label>
-                                            <div id="attack-box" class="primary-stat-icon-box">
-                                                <span id="char-attack-hub" contenteditable="true" data-field="stats.attack_bonus"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="secondary-stats-grid">
-                                        <div class="form-group">
-                                            <div class="panel-header">
-                                                <h5 data-i18n-key="abilityScores">Ability Scores</h5>
-                                                <button id="roll-stats-btn" class="icon-btn" title="Roll 3d6 for all stats">🎲</button>
-                                            </div>
-                                            <div class="ability-scores-grid">
-                                                <div class="ability-score-row">
-                                                    <label>STR</label>
-                                                    <input type="number" id="char-str-hub" class="score-input" data-field="stats.strength">
-                                                    <span id="char-str-mod-hub" class="modifier-display"></span>
-                                                </div>
-                                                <div class="ability-score-row">
-                                                    <label>DEX</label>
-                                                    <input type="number" id="char-dex-hub" class="score-input" data-field="stats.dexterity">
-                                                    <span id="char-dex-mod-hub" class="modifier-display"></span>
-                                                </div>
-                                                <div class="ability-score-row">
-                                                    <label>CON</label>
-                                                    <input type="number" id="char-con-hub" class="score-input" data-field="stats.constitution">
-                                                    <span id="char-con-mod-hub" class="modifier-display"></span>
-                                                </div>
-                                                <div class="ability-score-row">
-                                                    <label>INT</label>
-                                                    <input type="number" id="char-int-hub" class="score-input" data-field="stats.intelligence">
-                                                    <span id="char-int-mod-hub" class="modifier-display"></span>
-                                                </div>
-                                                <div class="ability-score-row">
-                                                    <label>WIS</label>
-                                                    <input type="number" id="char-wis-hub" class="score-input" data-field="stats.wisdom">
-                                                    <span id="char-wis-mod-hub" class="modifier-display"></span>
-                                                </div>
-                                                <div class="ability-score-row">
-                                                    <label>CHA</label>
-                                                    <input type="number" id="char-cha-hub" class="score-input" data-field="stats.charisma">
-                                                    <span id="char-cha-mod-hub" class="modifier-display"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="panel-header">
-                                                <h5 data-i18n-key="savesTitle">Saves</h5>
-                                            </div>
-                                            <div id="character-saves-display" class="saves-grid"></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="details-column">
+                                <div id="character-pane-equipment" class="hub-tab-pane">
+                                    <div class="form-group">
+                                        <h5>Weapons</h5>
+                                        <div id="weapons-grid" class="weapons-grid"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <h5>Armour</h5>
+                                        <div id="armour-grid" class="armour-grid"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <h5>Ammunition</h5>
+                                        <div id="ammunition-grid" class="ammunition-grid"></div>
+                                    </div>
+                                </div>
+                                <div id="character-pane-inventory" class="hub-tab-pane">
                                     <div class="form-group form-group-fill">
-                                        <label for="char-desc-hub" data-i18n-key="formDescription">Description</label>
-                                        <textarea id="char-desc-hub" data-field="description" rows="4" autocomplete="off"></textarea>
-                                        <button id="ai-char-generate-hub-btn" class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
+                                        <label>Inventory</label>
+                                        <textarea data-field="stats.inventory.main" class="large-textarea boxed"></textarea>
+                                    </div>
+                                </div>
+                                <div id="character-pane-spells" class="hub-tab-pane">
+                                    <div class="form-group">
+                                        <label>Spell Slots</label>
+                                        <div id="spell-slots-grid" class="spell-slots-grid boxed"></div>
+                                    </div>
+                                    <div class="form-group form-group-fill">
+                                        <label>Spell List</label>
+                                        <textarea data-field="stats.spells.list" class="large-textarea boxed"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -354,7 +390,7 @@
                             <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
                                 Drag & Drop a PDF or Markdown file here, or click to select
                             </p>
-                            <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md">
+                            <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md,.json">
                         </div>
                         <div class="form-group" id="pdf-pages-group">
                             <label for="pdf-pages-input" data-i18n-key="pdfPagesLabel">Pages to Ingest</label>
@@ -460,84 +496,6 @@
         <div class="modal-footer">
             <button id="import-wizard-back-btn" class="secondary-btn" data-i18n-key="wizardBack">Back</button>
             <button id="import-wizard-next-btn" class="accent-btn" data-i18n-key="wizardNext">Next</button>
-        </div>
-    </div>
-    <div id="party-wizard-modal" class="modal modal-lg">
-        <div class="modal-header">
-            <h2 data-i18n-key="partyManagerTitle">Party Manager</h2>
-            <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="panel-container">
-                <div class="left-panel">
-                    <div class="party-selection-area">
-                        <div class="panel-header">
-                            <h4 data-i18n-key="partiesTitle">Parties</h4>
-                            <button id="show-create-party-panel-btn" class="accent-btn icon-btn" data-i18n-key="newParty" data-i18n-target="title" title="Create New Party">+</button>
-                        </div>
-                        <ul id="party-list" class="item-list"></ul>
-                    </div>
-                    <hr class="wizard-divider">
-                    <div class="party-roster-area">
-                        <h4 data-i18n-key="rosterTitle">Roster</h4>
-                        <ul id="character-list" class="item-list"></ul>
-                    </div>
-                </div>
-                <div class="right-panel">
-                    <div id="party-welcome-panel" class="placeholder-pane">
-                        <p data-i18n-key="partyWelcome">Select a party to view its roster, or create a new one.</p>
-                    </div>
-                    <div id="party-creator-panel" style="display: none;">
-                        <h3 data-i18n-key="partyCreatorTitle">Create New Party</h3>
-                        <div class="form-group">
-                            <label for="new-party-name-input" data-i18n-key="partyNameLabel">Party Name</label>
-                            <input type="text" id="new-party-name-input" autocomplete="off" data-i18n-key="partyNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., The Brightswords">
-                        </div>
-                        <button id="create-party-btn" class="accent-btn" data-i18n-key="saveParty">Save Party</button>
-                    </div>
-                    <div id="character-editor-panel" style="display: none;">
-                        <div class="panel-header">
-                            <h4 data-i18n-key="addCharacterTitle">Add New Character</h4>
-                            <button id="add-char-manual-btn" class="accent-btn icon-btn" data-i18n-key="addCharManual" data-i18n-target="title" title="Add Manually">+</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="char-name" data-i18n-key="formName">Name</label>
-                            <input type="text" id="char-name" autocomplete="off">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="char-class" data-i18n-key="charClass">Class</label>
-                                <input type="text" id="char-class" list="class-suggestions" autocomplete="off">
-                                <datalist id="class-suggestions">
-                                    <option value="Fighter"></option>
-                                    <option value="Wizard"></option>
-                                    <option value="Rogue"></option>
-                                    <option value="Cleric"></option>
-                                    <option value="Ranger"></option>
-                                    <option value="Barbarian"></option>
-                                    <option value="Bard"></option>
-                                    <option value="Druid"></option>
-                                    <option value="Monk"></option>
-                                    <option value="Paladin"></option>
-                                    <option value="Sorcerer"></option>
-                                    <option value="Warlock"></option>
-                                </datalist>
-                            </div>
-                            <div class="form-group">
-                                <label for="char-level" data-i18n-key="charLevel">Level</label>
-                                <input type="number" id="char-level" value="1" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="ai-generator">
-                            <h5 data-i18n-key="aiCharGenerator">AI Character Generator</h5>
-                            <div class="form-group form-group-stretch ai-input-container">
-                                <textarea id="ai-char-desc" rows="4" autocomplete="off" data-i18n-key="aiCharDescPlaceholder" data-i18n-target="placeholder" placeholder="e.g., A grumpy dwarf cleric who lost his faith..."></textarea>
-                                <button id="ai-char-generate-btn" class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     <div id="new-game-wizard-modal" class="modal modal-md">

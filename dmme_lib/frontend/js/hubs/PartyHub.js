@@ -2,6 +2,8 @@
 import { apiCall } from '../wizards/ApiHelper.js';
 import { status, confirmationModal } from '../ui.js';
 
+const SAVE_CATEGORIES = ['poison', 'wands', 'paralysis', 'breath_weapon', 'spells'];
+
 export class PartyHub {
     constructor(appInstance) {
         this.app = appInstance;
@@ -9,19 +11,16 @@ export class PartyHub {
         this.selectedPartyId = null;
         this.selectedCharacterId = null;
         this.characterData = {}; // Cache for character data
-
-        // Defer all DOM selections to init() to ensure the DOM is ready
+        this.autosaveTimer = null;
     }
 
     _setupElements() {
-        // Get the main view container first
         this.view = document.getElementById('party-view');
         if (!this.view) {
             console.error("Party Hub main view container not found!");
             return;
         }
 
-        // Scope all subsequent queries within the view container for robustness
         this.listEl = this.view.querySelector('#party-list-hub');
         this.inspectorPlaceholder = this.view.querySelector('#party-inspector-placeholder');
         this.creatorView = this.view.querySelector('#party-creator-hub');
@@ -29,17 +28,17 @@ export class PartyHub {
         this.characterListEl = this.view.querySelector('#character-list-hub');
         this.showAddCharacterBtn = this.view.querySelector('#show-add-character-hub-btn');
         this.addPartyBtn = this.view.querySelector('#add-party-hub-btn');
-
-        // Creator form inputs
         this.newPartyNameInput = this.view.querySelector('#new-party-name-hub-input');
         this.createPartyBtn = this.view.querySelector('#create-party-hub-btn');
-
-        // Character Sheet Elements
-        this.saveCharBtn = this.sheetView.querySelector('#save-character-btn');
         this.aiGenerateBtn = this.sheetView.querySelector('#ai-char-generate-hub-btn');
         this.rollStatsBtn = this.sheetView.querySelector('#roll-stats-btn');
         this.savesDisplay = this.sheetView.querySelector('#character-saves-display');
-        this.sheetInputs = this.sheetView.querySelectorAll('[data-field]');
+        this.tabs = this.sheetView.querySelectorAll('.hub-tab-btn');
+        this.panes = this.sheetView.querySelectorAll('.hub-tab-pane');
+        this.weaponsGrid = this.sheetView.querySelector('#weapons-grid');
+        this.armourGrid = this.sheetView.querySelector('#armour-grid');
+        this.ammunitionGrid = this.sheetView.querySelector('#ammunition-grid');
+        this.spellSlotsGrid = this.sheetView.querySelector('#spell-slots-grid');
     }
 
     init() {
@@ -51,13 +50,14 @@ export class PartyHub {
         this.listEl.addEventListener('click', (e) => this._handlePartyDelete(e));
         this.showAddCharacterBtn.addEventListener('click', () => this.showCreatorSheet());
         this.characterListEl.addEventListener('click', (e) => this._handleCharacterListClick(e));
-        this.saveCharBtn.addEventListener('click', () => this.saveCharacter());
         this.aiGenerateBtn.addEventListener('click', () => this.generateCharacterWithAI());
         this.rollStatsBtn.addEventListener('click', () => this._rollRandomStats());
-        this.sheetInputs.forEach(input => {
-            input.addEventListener('input', () => this.saveCharBtn.disabled = false);
+        this.tabs.forEach(tab => tab.addEventListener('click', (e) => this._switchTab(e)));
+
+        this.sheetView.querySelectorAll('[data-field]').forEach(input => {
+            input.addEventListener('input', () => this._triggerAutosave());
         });
-        this.sheetView.querySelectorAll('.score-input, .primary-stat-icon-box span').forEach(input => {
+        this.sheetView.querySelectorAll('.score-input').forEach(input => {
             input.addEventListener('input', (e) => this._updateAllModifiers());
         });
         this.isInitialized = true;
@@ -122,7 +122,6 @@ export class PartyHub {
         this.selectedCharacterId = null; // New character mode
         this.clearSheet();
         this.showPanel(this.sheetView);
-        this.saveCharBtn.disabled = false; // Enable save for new character
     }
 
     async selectParty(partyId) {
@@ -161,7 +160,6 @@ export class PartyHub {
                 `;
                 this.characterListEl.appendChild(li);
             });
-            // Auto-select the first character
             this.selectCharacter(characters[0].id);
         } catch (error) {
             this.characterListEl.innerHTML = `<li class="error">Failed to load characters.</li>`;
@@ -179,8 +177,7 @@ export class PartyHub {
     displayCharacterSheet(characterId) {
         const character = this.characterData[this.selectedPartyId]?.find(c => c.id === characterId);
         if (!character) return;
-
-        this.sheetInputs.forEach(input => {
+        this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             const fieldPath = input.dataset.field;
             const getValue = (obj, path) => path.split('.').reduce((o, k) => (o || {})[k], obj);
             const value = getValue(character, fieldPath);
@@ -194,12 +191,15 @@ export class PartyHub {
         });
         this._updateAllModifiers();
         this._renderSaves(character.stats?.saves);
-        this.saveCharBtn.disabled = true;
+        this._renderWeapons(character.stats?.equipment?.weapons);
+        this._renderArmour(character.stats?.equipment?.armour);
+        this._renderAmmunition(character.stats?.equipment?.ammunition);
+        this._renderSpellSlots(character.stats?.spells?.slots);
         this.showPanel(this.sheetView);
     }
     
     clearSheet() {
-        this.sheetInputs.forEach(input => {
+        this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             if (input.tagName === 'SPAN') {
                 input.textContent = '';
             } else {
@@ -209,6 +209,10 @@ export class PartyHub {
         this.view.querySelector('#char-level-hub').textContent = '1';
         this._updateAllModifiers();
         this._renderSaves(null);
+        this._renderWeapons(null);
+        this._renderArmour(null);
+        this._renderAmmunition(null);
+        this._renderSpellSlots(null);
     }
 
     async createParty() {
@@ -225,32 +229,50 @@ export class PartyHub {
         this.inspectorPlaceholder.style.display = 'flex';
     }
 
-    async saveCharacter() {
+    _triggerAutosave() {
+        clearTimeout(this.autosaveTimer);
+        status.setText('savingStatus');
+        this.autosaveTimer = setTimeout(() => this._performAutosave(), 1500);
+    }
+    
+    async _performAutosave() {
+        status.setText('savingStatus');
         const isNew = this.selectedCharacterId === null;
         let charData = {};
-        this.sheetInputs.forEach(input => {
+        this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             const fieldPath = input.dataset.field;
             const value = (input.tagName === 'SPAN') ? input.textContent : input.value;
             const setValue = (obj, path, val) => {
                 const keys = path.split('.');
                 const lastKey = keys.pop();
                 const lastObj = keys.reduce((o, k) => o[k] = o[k] || {}, obj);
-                lastObj[lastKey] = val;
+                if (input.type === 'number' && val !== '') {
+                    lastObj[lastKey] = Number(val);
+                } else {
+                    lastObj[lastKey] = val;
+                }
             };
             setValue(charData, fieldPath, value);
         });
+
         const url = isNew ? `/api/parties/${this.selectedPartyId}/characters` : `/api/characters/${this.selectedCharacterId}`;
         const method = isNew ? 'POST' : 'PUT';
-        const updatedChar = await apiCall(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(charData),
-        });
-        this.saveCharBtn.disabled = true;
-        status.setText(isNew ? 'charCreated' : 'charUpdated', false, { name: charData.name });
-        await this._loadAndRenderCharacters(this.selectedPartyId);
-        if (isNew) {
-            this.selectCharacter(updatedChar.id);
+
+        try {
+            const updatedChar = await apiCall(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(charData),
+            });
+            status.setText('savedStatus');
+            if (isNew) {
+                this.selectedCharacterId = updatedChar.id;
+                await this._loadAndRenderCharacters(this.selectedPartyId);
+                this.selectCharacter(updatedChar.id);
+            }
+            setTimeout(() => status.clear(), 2000);
+        } catch (error) {
+            status.setText('saveErrorStatus', true);
         }
     }
     
@@ -280,10 +302,9 @@ export class PartyHub {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-
             this.displayCharacterSheet({ id: this.selectedCharacterId, ...charData });
-            this.saveCharBtn.disabled = false;
             status.setText('generatedChar', false, { name: charData.name, class: charData.class });
+            await this._performAutosave(); // Immediately save the new character
         } catch (error) {
             // apiCall helper shows status
         } finally {
@@ -304,38 +325,135 @@ export class PartyHub {
             const scoreInput = this.sheetView.querySelector(`#char-${score}-hub`);
             const modDisplay = this.sheetView.querySelector(`#char-${score}-mod-hub`);
             if(scoreInput && modDisplay) {
-                const value = scoreInput.tagName === 'SPAN' ? scoreInput.textContent : scoreInput.value;
-                modDisplay.textContent = this._calculateModifier(value);
+                modDisplay.textContent = this._calculateModifier(scoreInput.value);
             }
         });
     }
 
     _renderSaves(saves) {
         this.savesDisplay.innerHTML = '';
-        if (!saves || typeof saves !== 'object') return;
-        for (const [key, value] of Object.entries(saves)) {
-            const name = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-            const saveEl = document.createElement('div');
-            saveEl.className = 'save-item';
-            saveEl.innerHTML = `<span>${name}</span><strong>${value}</strong>`;
-            this.savesDisplay.appendChild(saveEl);
-        }
+        SAVE_CATEGORIES.forEach(key => {
+            const value = saves?.[key] ?? 15;
+            const name = key.replace(/_/g, ' ');
+            
+            const row = document.createElement('div');
+            row.className = 'save-row';
+            
+            const label = document.createElement('label');
+            label.textContent = name;
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'score-input';
+            input.dataset.field = `stats.saves.${key}`;
+            input.value = value;
+            
+            input.addEventListener('input', () => this._triggerAutosave());
+
+            row.appendChild(label);
+            row.appendChild(input);
+            this.savesDisplay.appendChild(row);
+        });
     }
 
     _rollRandomStats() {
         const scores = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
-        scores.forEach(score => {
-            let total = 0;
-            for (let i = 0; i < 3; i++) {
-                total += Math.floor(Math.random() * 6) + 1;
-            }
-            const scoreInput = this.sheetView.querySelector(`#char-${score}-hub`);
-            if (scoreInput) {
-                scoreInput.value = total;
-            }
-        });
-        this._updateAllModifiers();
-        this.saveCharBtn.disabled = false;
+        const animationInterval = setInterval(() => {
+            scores.forEach(score => {
+                const scoreInput = this.sheetView.querySelector(`#char-${score}-hub`);
+                if (scoreInput) {
+                    scoreInput.value = Math.floor(Math.random() * 16) + 3;
+                    this._updateAllModifiers();
+                }
+            });
+        }, 50);
+
+        setTimeout(() => {
+            clearInterval(animationInterval);
+            scores.forEach(score => {
+                let total = 0;
+                for (let i = 0; i < 3; i++) {
+                    total += Math.floor(Math.random() * 6) + 1;
+                }
+                const scoreInput = this.sheetView.querySelector(`#char-${score}-hub`);
+                if (scoreInput) scoreInput.value = total;
+            });
+            this._updateAllModifiers();
+            this._triggerAutosave();
+        }, 400);
+    }
+
+    _renderWeapons(weapons = []) {
+        this.weaponsGrid.innerHTML = '';
+        for (let i = 0; i < 8; i++) {
+            const item = weapons[i] || {};
+            const row = document.createElement('div');
+            row.className = 'weapon-row';
+            row.innerHTML = `
+                <input type="text" data-field="stats.equipment.weapons.${i}.name" placeholder="Name" value="${item.name || ''}">
+                <input type="text" data-field="stats.equipment.weapons.${i}.type" placeholder="Type" value="${item.type || ''}">
+                <input type="text" data-field="stats.equipment.weapons.${i}.to_hit" placeholder="To Hit" value="${item.to_hit || ''}">
+                <input type="text" data-field="stats.equipment.weapons.${i}.damage" placeholder="Damage" value="${item.damage || ''}">
+            `;
+            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
+            this.weaponsGrid.appendChild(row);
+        }
+    }
+
+    _renderArmour(armour = []) {
+        this.armourGrid.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+            const item = armour[i] || {};
+            const row = document.createElement('div');
+            row.className = 'armour-row';
+            row.innerHTML = `
+                <input type="text" data-field="stats.equipment.armour.${i}.name" placeholder="Name" value="${item.name || ''}">
+                <input type="text" data-field="stats.equipment.armour.${i}.type" placeholder="Type" value="${item.type || ''}">
+                <input type="text" data-field="stats.equipment.armour.${i}.bonus" placeholder="AC Bonus" value="${item.bonus || ''}">
+            `;
+            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
+            this.armourGrid.appendChild(row);
+        }
+    }
+
+    _renderAmmunition(ammunition = []) {
+        this.ammunitionGrid.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+            const item = ammunition[i] || {};
+            const row = document.createElement('div');
+            row.className = 'ammunition-row';
+            row.innerHTML = `
+                <input type="text" data-field="stats.equipment.ammunition.${i}.type" placeholder="Type" value="${item.type || ''}">
+                <input type="number" data-field="stats.equipment.ammunition.${i}.count" placeholder="Count" value="${item.count || ''}">
+            `;
+            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
+            this.ammunitionGrid.appendChild(row);
+        }
+    }
+
+    _renderSpellSlots(slots = {}) {
+        this.spellSlotsGrid.innerHTML = '';
+        for (let i = 1; i < 10; i++) {
+            const slot = slots[`lvl${i}`] || {};
+            const group = document.createElement('div');
+            group.className = 'form-group';
+            group.innerHTML = `
+                <label>Level ${i}</label>
+                <div class="spell-slot-row">
+                    <input type="number" data-field="stats.spells.slots.lvl${i}.used" placeholder="Used" value="${slot.used || ''}">
+                    <span>/</span>
+                    <input type="number" data-field="stats.spells.slots.lvl${i}.max" placeholder="Max" value="${slot.max || ''}">
+                </div>
+            `;
+            group.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
+            this.spellSlotsGrid.appendChild(group);
+        }
+    }
+
+    _switchTab(event) {
+        const targetPaneId = event.target.dataset.pane;
+        this.tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.pane === targetPaneId));
+        this.panes.forEach(pane => pane.classList.toggle('active', pane.id === targetPaneId));
     }
 
     async _handlePartyDelete(event) {

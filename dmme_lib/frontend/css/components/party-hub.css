@@ -1,4 +1,7 @@
 /* dmme_lib/frontend/css/components/party-hub.css */
+:root {
+    --subtle-border-color: #3a3a3a;
+}
 
 .hub-left-panel-split {
     display: flex;
@@ -27,22 +30,29 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* This element now controls scrolling */
-    padding: 24px; /* Padding is applied inside the scrolling element */
+    padding: 24px;
     box-sizing: border-box;
 }
 
-#char-desc-hub {
-    background-color: #1e1e1e;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 10px;
-    transition: border-color 0.2s;
-    resize: vertical;
+.character-sheet-tabs {
+    margin-bottom: 16px;
+    flex-shrink: 0;
 }
 
-#char-desc-hub:focus {
-    border-color: var(--accent-color);
+#character-sheet-hub .hub-tab-content {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+#character-sheet-hub .hub-tab-pane {
+    padding-right: 8px; /* For scrollbar */
+    display: none;
+    flex-direction: column;
+    gap: 24px;
+}
+
+#character-sheet-hub .hub-tab-pane.active {
+    display: flex;
 }
 
 .character-sheet-controls {
@@ -55,18 +65,13 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px 24px;
-    flex-grow: 1; /* Allows grid to fill space within the flex container */
+    width: 100%;
 }
 
-.stats-column {
+.stats-column, .details-column {
     display: flex;
     flex-direction: column;
     gap: 24px;
-}
-
-.details-column {
-    display: flex;
-    flex-direction: column;
 }
 
 .details-column .form-group-fill {
@@ -84,7 +89,6 @@
     text-align: center;
 }
 
-/* --- Primary Stat Icon Boxes --- */
 .primary-stat-icon-box {
     position: relative;
     width: 100%;
@@ -101,17 +105,13 @@
     font-size: 1.8em;
     font-weight: bold;
     outline: none;
-    min-width: 30px;
-    text-align: center;
-    padding: 4px;
-    border-radius: 4px;
-    border-bottom: 2px solid transparent;
-    transition: border-color 0.2s;
-}
-
-.primary-stat-icon-box span:focus {
-    background-color: rgba(0,0,0,0.5);
-    box-shadow: 0 0 0 2px var(--focus-color);
+    color: var(--text-color);
+    /* Creates a 1px outline using the panel background color */
+    text-shadow:
+        -1px -1px 0 var(--panel-bg),
+         1px -1px 0 var(--panel-bg),
+        -1px  1px 0 var(--panel-bg),
+         1px  1px 0 var(--panel-bg);
 }
 
 #level-box {
@@ -138,42 +138,52 @@
     gap: 24px;
 }
 
-/* --- Ability Scores & Saves --- */
-.ability-scores-grid {
+.ability-scores-grid, .saves-grid {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.ability-score-row {
+.ability-score-row, .save-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 8px;
     align-items: center;
+    gap: 8px;
 }
 
-.ability-score-row label {
+.ability-score-row { grid-template-columns: 1fr 60px 40px; }
+.save-row { grid-template-columns: 1fr 60px; }
+
+.ability-score-row label, .save-row label {
     font-weight: bold;
     font-size: 1em;
     text-align: left;
     margin: 0;
+    text-transform: capitalize;
 }
 
 .score-input {
-    width: 50px;
     text-align: center;
     font-size: 1.1em;
     -moz-appearance: textfield;
+    border: none;
+    border-bottom: 1px solid var(--subtle-border-color);
+    background: transparent;
+    border-radius: 0;
     padding: 6px 4px;
+    width: 6ch; /* 6 characters wide */
+    margin: 0 auto; /* Center in its grid cell */
 }
 .score-input::-webkit-outer-spin-button,
 .score-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+.score-input:focus {
+    border-bottom-color: var(--accent-color);
+}
+
 
 .modifier-display {
-    background: none;
     border: 1px dashed var(--border-color);
     width: 40px;
     height: 40px;
@@ -183,28 +193,14 @@
     justify-content: center;
     font-weight: bold;
     font-size: 1.1em;
-    color: var(--text-color);
 }
 
-.saves-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 0.9em;
-}
-
-.save-item {
-    display: flex;
-    justify-content: space-between;
-}
-
-/* --- New Header & AI Button Positioning --- */
 .character-sheet-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     flex-shrink: 0;
 }
 
@@ -215,18 +211,51 @@
     flex-grow: 1;
 }
 
-.form-group-name { flex: 4; }
-.form-group-class { flex: 3; }
+.form-group-name { flex: 3; }
+.form-group-class { flex: 2; }
 .form-group-alignment { flex: 2; }
+
+.panel-header h5 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0;
+}
 
 #ai-char-generate-hub-btn {
     position: absolute;
     bottom: 12px;
     right: 12px;
-    background-color: rgba(42, 42, 46, 0.8);
-    border: 1px solid var(--border-color);
 }
 
-#ai-char-generate-hub-btn:hover {
-    background-color: rgba(62, 62, 66, 0.9);
+.weapon-row { display: grid; gap: 8px; grid-template-columns: 2fr 1fr 1fr 1fr; }
+.armour-row { display: grid; gap: 8px; grid-template-columns: 2fr 2fr 1fr; }
+.ammunition-row { display: grid; gap: 8px; grid-template-columns: 1fr auto; }
+
+.spell-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
+}
+
+.spell-slot-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.spell-slot-row input { text-align: center; }
+.spell-slot-row span { padding: 0 4px; }
+
+.boxed {
+    background-color: #1e1e1e;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.large-textarea {
+    flex-grow: 1;
+    resize: none;
 }
