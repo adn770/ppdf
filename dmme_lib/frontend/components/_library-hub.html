@@ -1,0 +1,35 @@
+<div id="library-view" class="view-container">
+    <div class="hub-container">
+        <div class="hub-left-panel">
+            <div class="panel-header">
+                <h4 data-i18n-key="kbMgmtTitle">Knowledge Bases</h4>
+            </div>
+            <ul id="kb-list-hub" class="item-list hub-item-list"></ul>
+        </div>
+        <div id="library-inspector" class="hub-right-panel">
+            <div id="library-inspector-placeholder" class="placeholder-pane">
+                <p data-i18n-key="libraryWelcome">Select an item to see details.</p>
+            </div>
+            <div id="library-inspector-content" style="display: none;">
+                <div class="hub-tabs">
+                    <button class="hub-tab-btn active" data-pane="text" data-i18n-key="textView">Text</button>
+                    <button class="hub-tab-btn" data-pane="assets" data-i18n-key="assetView">Assets</button>
+                </div>
+                <div class="hub-tab-content">
+                    <div id="library-text-view" class="hub-tab-pane active">
+                        <div class="hub-pane-wrapper"></div>
+                    </div>
+                    <div id="library-asset-view" class="hub-tab-pane">
+                        <div class="hub-pane-wrapper">
+                            <div id="asset-upload-dropzone" class="asset-dropzone">
+                                <p data-i18n-key="dropzoneText">Drag & drop an image here to upload</p>
+                            </div>
+                            <div id="asset-grid-container" class="asset-grid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

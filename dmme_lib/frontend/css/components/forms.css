@@ -49,16 +49,15 @@
 .form-group textarea,
 .form-group select {
     width: 100%;
-    background-color: transparent;
+    background-color: #1e1e1e;
     color: var(--text-color);
-    border: none;
-    border-bottom: 1px solid var(--border-color);
-    border-radius: 0;
-    padding: 10px 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
     font-family: inherit;
     font-size: 1em;
     box-sizing: border-box;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input[type="text"]:focus,
@@ -66,7 +65,8 @@
 .form-group textarea:focus,
 .form-group select:focus {
     outline: none;
-    border-bottom-color: var(--accent-color);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--focus-color);
 }
 
 .radio-group { display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 0; }

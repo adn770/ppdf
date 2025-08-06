@@ -52,6 +52,8 @@
 
 .hub-right-panel {
     flex-grow: 1;
-    padding: 0; /* Padding is handled by child elements for better scrollbar control */
-    min-width: 0; /* Prevents flexbox overflow */
+    padding: 0;
+    /* Padding is handled by child elements for better scrollbar control */
+    min-width: 0;
+    /* Prevents flexbox overflow */
 }

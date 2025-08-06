@@ -12,12 +12,20 @@ export function hideGameSpinner() {
 
 class ConfirmationModal {
     constructor() {
+        this.modal = null;
+        this.title = null;
+        this.message = null;
+        this.confirmBtn = null;
+        this.cancelBtn = null;
+        this.resolvePromise = null;
+    }
+
+    init() {
         this.modal = document.getElementById('confirmation-modal');
         this.title = document.getElementById('confirmation-title');
         this.message = document.getElementById('confirmation-message');
         this.confirmBtn = document.getElementById('confirmation-confirm-btn');
         this.cancelBtn = document.getElementById('confirmation-cancel-btn');
-        this.resolvePromise = null;
 
         this.confirmBtn.addEventListener('click', () => this._resolve(true));
         this.cancelBtn.addEventListener('click', () => this._resolve(false));
@@ -45,7 +53,10 @@ class ConfirmationModal {
 // --- Global UI Instances ---
 export const confirmationModal = new ConfirmationModal();
 export const status = {
-    _el: document.getElementById('status-text'),
+    _el: null,
+    init() {
+        this._el = document.getElementById('status-text');
+    },
     setText(key, isError = false, replacements = {}) {
         if (this._el) {
             this._el.textContent = i18n.t(key, replacements);

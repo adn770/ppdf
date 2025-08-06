@@ -9,12 +9,26 @@ import { DMInsight } from './components/DMInsight.js';
 import { LibraryHub } from './hubs/LibraryHub.js';
 import { PartyHub } from './hubs/PartyHub.js';
 import { Lightbox } from './components/Lightbox.js';
-import { status } from './ui.js';
+import { status, confirmationModal } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
 
 class App {
     constructor() {
+        this.settings = null;
+        this.i18n = i18n;
+        this.currentView = 'game';
+    }
+
+    async init() {
+        status.setText('initializing');
+        await this.loadComponents();
+
+        // Initialize UI modules that depend on the now-loaded DOM
+        confirmationModal.init();
+        status.init();
+
+        // Initialize managers and hubs after the DOM is populated
         this.settingsManager = new SettingsManager(this);
         this.importWizard = new ImportWizard(this);
         this.newGameWizard = new NewGameWizard(this,
@@ -27,13 +41,7 @@ class App {
         this.diceRoller = new DiceRoller(this.gameplayHandler);
         this.libraryHub = new LibraryHub(this, this.lightbox);
         this.partyHub = new PartyHub(this);
-        this.settings = null;
-        this.i18n = i18n;
-        this.currentView = 'game';
-    }
 
-    async init() {
-        status.setText('initializing');
         this.settings = await this.settingsManager.loadSettings();
         this.settingsManager.applyTheme(this.settings.Appearance.theme);
         await this.i18n.init(this.settings.Appearance.language);
@@ -44,6 +52,28 @@ class App {
         });
         this.updateHeader(this.currentView);
         await this.checkForRecovery();
+    }
+
+    async loadComponents() {
+        const mainContent = document.getElementById('main-content');
+        const body = document.body;
+
+        const components = [
+            { file: 'components/_game-view.html', target: mainContent },
+            { file: 'components/_library-hub.html', target: mainContent },
+            { file: 'components/_party-hub.html', target: mainContent },
+            { file: 'components/_modals-wizards.html', target: body },
+        ];
+
+        await Promise.all(components.map(async (component) => {
+            try {
+                const response = await fetch(component.file);
+                const html = await response.text();
+                component.target.insertAdjacentHTML('beforeend', html);
+            } catch (error) {
+                console.error(`Failed to load component: ${component.file}`, error);
+            }
+        }));
     }
 
     switchView(viewName) {
