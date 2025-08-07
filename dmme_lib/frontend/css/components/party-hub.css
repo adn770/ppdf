@@ -64,7 +64,7 @@
 .character-sheet-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px 24px;
+    gap: 16px 32px;
     width: 100%;
 }
 
@@ -120,7 +120,7 @@
 }
 
 #hp-box {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e53935' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' stroke-dasharray='4 2'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e53935' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'%3E%3C/path%3E%3C/svg%3E");
 }
 
 #ac-box {
@@ -135,7 +135,12 @@
 .secondary-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    column-gap: 64px; /* Use column-gap for clarity */
+    align-items: baseline;
+}
+
+.secondary-stats-grid .form-group {
+    min-height: 300px;
 }
 
 .ability-scores-grid, .saves-grid {
@@ -147,11 +152,15 @@
 .ability-score-row, .save-row {
     display: grid;
     align-items: center;
-    gap: 8px;
+    min-height: 36px;
+    gap: 4px;
 }
 
-.ability-score-row { grid-template-columns: 1fr 60px 40px; }
-.save-row { grid-template-columns: 1fr 60px; }
+/* fixed label | fixed score | fixed gap | fixed modifier */
+.ability-score-row { grid-template-columns: 12ch 5ch 3ch auto; }
+
+/* fixed label | fixed score */
+.save-row { grid-template-columns: 16ch 5ch; }
 
 .ability-score-row label, .save-row label {
     font-weight: bold;
@@ -169,9 +178,8 @@
     border-bottom: 1px solid var(--subtle-border-color);
     background: transparent;
     border-radius: 0;
-    padding: 6px 4px;
-    width: 6ch; /* 6 characters wide */
-    margin: 0 auto; /* Center in its grid cell */
+    width: 100%; /* Fill the grid column */
+    margin: 0;
 }
 .score-input::-webkit-outer-spin-button,
 .score-input::-webkit-inner-spin-button {
@@ -206,14 +214,26 @@
 
 .character-details-header-group {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 16px;
     flex-grow: 1;
+}
+
+/* Enforce a minimum height on header form groups to prevent layout shift on focus */
+.character-details-header-group .form-group {
+    min-height: 58px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
 .form-group-name { flex: 3; }
 .form-group-class { flex: 2; }
 .form-group-alignment { flex: 2; }
+
+.panel-header {
+    position: relative;
+}
 
 .panel-header h5 {
     display: flex;
@@ -221,6 +241,17 @@
     justify-content: space-between;
     width: 100%;
     margin: 0;
+}
+
+#roll-stats-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+}
+
+.flex-spacer {
+    flex-grow: 1;
 }
 
 #ai-char-generate-hub-btn {

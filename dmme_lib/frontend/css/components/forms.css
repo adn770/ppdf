@@ -105,3 +105,55 @@
 .form-row + .form-group {
     margin-top: 16px;
 }
+
+/* --- NEW: Character Sheet Underline Input Style (Pseudo-element) --- */
+.form-group.cs-input-underline {
+    position: relative;
+    padding-bottom: 2px; /* Add space for the thickest underline state */
+}
+
+/* Make the actual input invisible, inheriting the parent's padding */
+.form-group.cs-input-underline input {
+    background: transparent;
+    border: none;
+    padding: 10px 2px 0 2px;
+}
+
+.form-group.cs-input-underline input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* The visual underline, drawn by the pseudo-element */
+.form-group.cs-input-underline::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #3a7ca5;
+    transition: all 0.2s ease-in-out;
+}
+
+/* The focused state, targets the pseudo-element when the input is focused */
+.form-group.cs-input-underline:focus-within::after {
+    height: 2px;
+    background-color: var(--accent-color);
+}
+.form-group input.cs-input-underline-small {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 8px 2px 2px 2px; /* Compact padding */
+    border-bottom: 1px solid #3a7ca5;
+    transition: border-color 0.2s ease-in-out, border-width 0.2s ease-in-out;
+}
+
+.form-group input.cs-input-underline-small:focus {
+    outline: none;
+    box-shadow: none;
+    border-bottom-width: 2px;
+    padding-bottom: 1px; /* Compensate for border */
+    border-bottom-color: var(--accent-color);
+}

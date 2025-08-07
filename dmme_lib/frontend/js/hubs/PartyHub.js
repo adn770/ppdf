@@ -3,7 +3,6 @@ import { apiCall } from '../wizards/ApiHelper.js';
 import { status, confirmationModal } from '../ui.js';
 
 const SAVE_CATEGORIES = ['poison', 'wands', 'paralysis', 'breath_weapon', 'spells'];
-
 export class PartyHub {
     constructor(appInstance) {
         this.app = appInstance;
@@ -53,7 +52,6 @@ export class PartyHub {
         this.aiGenerateBtn.addEventListener('click', () => this.generateCharacterWithAI());
         this.rollStatsBtn.addEventListener('click', () => this._rollRandomStats());
         this.tabs.forEach(tab => tab.addEventListener('click', (e) => this._switchTab(e)));
-
         this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             input.addEventListener('input', () => this._triggerAutosave());
         });
@@ -254,10 +252,8 @@ export class PartyHub {
             };
             setValue(charData, fieldPath, value);
         });
-
         const url = isNew ? `/api/parties/${this.selectedPartyId}/characters` : `/api/characters/${this.selectedCharacterId}`;
         const method = isNew ? 'POST' : 'PUT';
-
         try {
             const updatedChar = await apiCall(url, {
                 method: method,
@@ -344,7 +340,7 @@ export class PartyHub {
             
             const input = document.createElement('input');
             input.type = 'number';
-            input.className = 'score-input';
+            input.className = 'score-input cs-input-underline-small';
             input.dataset.field = `stats.saves.${key}`;
             input.value = value;
             
@@ -367,7 +363,6 @@ export class PartyHub {
                 }
             });
         }, 50);
-
         setTimeout(() => {
             clearInterval(animationInterval);
             scores.forEach(score => {
