@@ -11,6 +11,7 @@ export class PartyHub {
         this.selectedCharacterId = null;
         this.characterData = {}; // Cache for character data
         this.autosaveTimer = null;
+        this._statSizerSpan = null; // For dynamic input sizing
     }
 
     _setupElements() {
@@ -25,7 +26,8 @@ export class PartyHub {
         this.creatorView = this.view.querySelector('#party-creator-hub');
         this.sheetView = this.view.querySelector('#character-sheet-hub');
         this.characterListEl = this.view.querySelector('#character-list-hub');
-        this.showAddCharacterBtn = this.view.querySelector('#show-add-character-hub-btn');
+        this.showAddCharacterBtn =
+            this.view.querySelector('#show-add-character-hub-btn');
         this.addPartyBtn = this.view.querySelector('#add-party-hub-btn');
         this.newPartyNameInput = this.view.querySelector('#new-party-name-hub-input');
         this.createPartyBtn = this.view.querySelector('#create-party-hub-btn');
@@ -40,25 +42,58 @@ export class PartyHub {
         this.spellSlotsGrid = this.sheetView.querySelector('#spell-slots-grid');
     }
 
+    _createStatSizer() {
+        this._statSizerSpan = document.createElement('span');
+        const sizerStyles = {
+            position: 'absolute',
+            visibility: 'hidden',
+            height: 'auto',
+            width: 'auto',
+            whiteSpace: 'pre',
+            fontSize: '1.8em',
+            fontWeight: 'bold',
+            fontFamily: 'var(--font-family-sans)',
+            padding: '4px 8px',
+        };
+        Object.assign(this._statSizerSpan.style, sizerStyles);
+        document.body.appendChild(this._statSizerSpan);
+    }
+
+    _resizeStatInput(input) {
+        if (!this._statSizerSpan) return;
+        // Use placeholder for min-width, add a buffer
+        this._statSizerSpan.textContent = input.value || '00';
+        const newWidth = this._statSizerSpan.offsetWidth + 4;
+        input.style.width = `${newWidth}px`;
+    }
+
     init() {
         if (this.isInitialized) return;
         this._setupElements();
+        this._createStatSizer();
         this.loadParties();
         this.addPartyBtn.addEventListener('click', () => this.showCreatorPanel());
         this.createPartyBtn.addEventListener('click', () => this.createParty());
         this.listEl.addEventListener('click', (e) => this._handlePartyDelete(e));
-        this.showAddCharacterBtn.addEventListener('click', () => this.showCreatorSheet());
-        this.characterListEl.addEventListener('click', (e) => this._handleCharacterListClick(e));
-        this.aiGenerateBtn.addEventListener('click', () => this.generateCharacterWithAI());
+        this.showAddCharacterBtn.addEventListener(
+            'click', () => this.showCreatorSheet()
+        );
+        this.characterListEl.addEventListener(
+            'click', (e) => this._handleCharacterListClick(e)
+        );
+        this.aiGenerateBtn.addEventListener(
+            'click', () => this.generateCharacterWithAI()
+        );
         this.rollStatsBtn.addEventListener('click', () => this._rollRandomStats());
-        this.tabs.forEach(tab => tab.addEventListener('click', (e) => this._switchTab(e)));
+        this.tabs.forEach(tab => tab.addEventListener(
+            'click', (e) => this._switchTab(e))
+        );
         this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             input.addEventListener('input', () => this._triggerAutosave());
         });
         this.sheetView.querySelectorAll('.score-input').forEach(input => {
             input.addEventListener('input', (e) => this._updateAllModifiers());
         });
-
         const equipmentPane = document.getElementById('character-pane-equipment');
         equipmentPane.addEventListener('click', (e) => {
             const addBtn = e.target.closest('.icon-btn');
@@ -69,7 +104,6 @@ export class PartyHub {
                 this._handleEquipmentDelete(deleteBtn);
             }
         });
-        
         const mainPane = document.getElementById('character-pane-main');
         mainPane.addEventListener('click', (e) => {
             const statBox = e.target.closest('.primary-stat-icon-box');
@@ -77,7 +111,6 @@ export class PartyHub {
                 this._switchToEditMode(statBox);
             }
         });
-
         this.isInitialized = true;
     }
 
@@ -87,7 +120,8 @@ export class PartyHub {
             const parties = await apiCall('/api/parties/');
             this.renderPartyList(parties);
         } catch (error) {
-            this.listEl.innerHTML = `<li class="error">${this.app.i18n.t('errorLoadParties')}</li>`;
+            const key = 'errorLoadParties';
+            this.listEl.innerHTML = `<li class="error">${this.app.i18n.t(key)}</li>`;
         }
     }
 
@@ -105,12 +139,15 @@ export class PartyHub {
                 <div class="item-main-content">
                     <span>${party.name}</span>
                 </div>
-                <button class="contextual-delete-btn slide-in-right" data-party-id="${party.id}" data-party-name="${party.name}">
+                <button class="contextual-delete-btn slide-in-right"
+                        data-party-id="${party.id}"
+                        data-party-name="${party.name}">
                     <span class="icon">&times;</span>
                     <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
                 </button>
             `;
-            li.querySelector('.item-main-content').addEventListener('click', () => this.selectParty(party.id));
+            const mainContent = li.querySelector('.item-main-content');
+            mainContent.addEventListener('click', () => this.selectParty(party.id));
             this.listEl.appendChild(li);
         });
     }
@@ -125,7 +162,9 @@ export class PartyHub {
     showCreatorPanel() {
         this.selectedPartyId = null;
         this.selectedCharacterId = null;
-        this.listEl.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+        this.listEl.querySelectorAll('li').forEach(
+            li => li.classList.remove('selected')
+        );
         this.characterListEl.innerHTML = '';
         this.newPartyNameInput.value = '';
         this.showPanel(this.creatorView);
@@ -171,33 +210,41 @@ export class PartyHub {
                         <span class="char-info">${char.name}</span>
                         <span class="char-details">Lvl ${char.level} ${char.class}</span>
                     </div>
-                    <button class="contextual-delete-btn slide-in-right" data-char-id="${char.id}" data-char-name="${char.name}">
+                    <button class="contextual-delete-btn slide-in-right"
+                            data-char-id="${char.id}"
+                            data-char-name="${char.name}">
                         <span class="icon">&times;</span>
-                        <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
+                        <span data-i18n-key="deleteBtn">
+                            ${this.app.i18n.t('deleteBtn')}
+                        </span>
                     </button>
                 `;
                 this.characterListEl.appendChild(li);
             });
             this.selectCharacter(characters[0].id);
         } catch (error) {
-            this.characterListEl.innerHTML = `<li class="error">Failed to load characters.</li>`;
+            const key = 'Failed to load characters.';
+            this.characterListEl.innerHTML = `<li class="error">${key}</li>`;
         }
     }
-    
+
     selectCharacter(characterId) {
         this.selectedCharacterId = characterId;
         this.characterListEl.querySelectorAll('li').forEach(li => {
-            li.classList.toggle('selected', li.dataset.charId === String(characterId));
+            const id = String(characterId);
+            li.classList.toggle('selected', li.dataset.charId === id);
         });
         this.displayCharacterSheet(characterId);
     }
 
     displayCharacterSheet(characterId) {
-        const character = this.characterData[this.selectedPartyId]?.find(c => c.id === characterId);
+        const charData = this.characterData[this.selectedPartyId];
+        const character = charData?.find(c => c.id === characterId);
         if (!character) return;
         this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             const fieldPath = input.dataset.field;
-            const getValue = (obj, path) => path.split('.').reduce((o, k) => (o || {})[k], obj);
+            const getValue = (obj, path) =>
+                path.split('.').reduce((o, k) => (o || {})[k], obj);
             const value = getValue(character, fieldPath);
             const displayValue = value !== undefined && value !== null ? value : '';
 
@@ -219,7 +266,7 @@ export class PartyHub {
         this._renderSpellSlots(character.stats?.spells?.slots);
         this.showPanel(this.sheetView);
     }
-    
+
     clearSheet() {
         this.sheetView.querySelectorAll('[data-field]').forEach(input => {
             if (input.classList.contains('primary-stat-input')) {
@@ -263,10 +310,13 @@ export class PartyHub {
         status.setText('savingStatus');
         this.autosaveTimer = setTimeout(() => this._performAutosave(), 1500);
     }
-    
+
     _serializeGrid(gridElement, fields) {
         const items = [];
-        gridElement.querySelectorAll('.weapon-row, .armour-row, .ammunition-row').forEach(row => {
+        const rows = gridElement.querySelectorAll(
+            '.weapon-row, .armour-row, .ammunition-row'
+        );
+        rows.forEach(row => {
             const item = {};
             fields.forEach(field => {
                 const input = row.querySelector(`[data-field-key="${field}"]`);
@@ -280,7 +330,7 @@ export class PartyHub {
         });
         return items;
     }
-    
+
     async _performAutosave() {
         status.setText('savingStatus');
         const isNew = this.selectedCharacterId === null;
@@ -300,15 +350,18 @@ export class PartyHub {
             };
             setValue(charData, fieldPath, value);
         });
-    
         if (!charData.stats) charData.stats = {};
+        const wFields = ['name', 'type', 'to_hit', 'damage'];
+        const aFields = ['name', 'type', 'bonus'];
+        const amFields = ['type', 'count'];
         charData.stats.equipment = {
-            weapons: this._serializeGrid(this.weaponsGrid, ['name', 'type', 'to_hit', 'damage']),
-            armour: this._serializeGrid(this.armourGrid, ['name', 'type', 'bonus']),
-            ammunition: this._serializeGrid(this.ammunitionGrid, ['type', 'count']),
+            weapons: this._serializeGrid(this.weaponsGrid, wFields),
+            armour: this._serializeGrid(this.armourGrid, aFields),
+            ammunition: this._serializeGrid(this.ammunitionGrid, amFields),
         };
-    
-        const url = isNew ? `/api/parties/${this.selectedPartyId}/characters` : `/api/characters/${this.selectedCharacterId}`;
+        const url = isNew
+            ? `/api/parties/${this.selectedPartyId}/characters`
+            : `/api/characters/${this.selectedCharacterId}`;
         const method = isNew ? 'POST' : 'PUT';
         try {
             const updatedChar = await apiCall(url, {
@@ -327,13 +380,14 @@ export class PartyHub {
             status.setText('saveErrorStatus', true);
         }
     }
-    
+
     async generateCharacterWithAI() {
         let description = document.getElementById('char-desc-hub').value.trim();
         if (!description) {
             const name = document.getElementById('char-name-hub').value.trim();
             const charClass = document.getElementById('char-class-hub').value.trim();
-            const level = this.view.querySelector('#level-box .primary-stat-value').textContent;
+            const levelBox = this.view.querySelector('#level-box');
+            const level = levelBox.querySelector('.primary-stat-value').textContent;
             if (!name || !charClass) return status.setText('errorCharNameClass', true);
             description = `${name}, a level ${level} ${charClass}`;
         }
@@ -355,7 +409,8 @@ export class PartyHub {
                 body: JSON.stringify(payload),
             });
             this.displayCharacterSheet({ id: this.selectedCharacterId, ...charData });
-            status.setText('generatedChar', false, { name: charData.name, class: charData.class });
+            const genData = { name: charData.name, class: charData.class };
+            status.setText('generatedChar', false, genData);
             await this._performAutosave();
         } catch (error) {
             // apiCall helper shows status
@@ -376,7 +431,7 @@ export class PartyHub {
         scores.forEach(score => {
             const scoreInput = this.sheetView.querySelector(`#char-${score}-hub`);
             const modDisplay = this.sheetView.querySelector(`#char-${score}-mod-hub`);
-            if(scoreInput && modDisplay) {
+            if (scoreInput && modDisplay) {
                 modDisplay.textContent = this._calculateModifier(scoreInput.value);
             }
         });
@@ -387,20 +442,20 @@ export class PartyHub {
         SAVE_CATEGORIES.forEach(key => {
             const value = saves?.[key] ?? 15;
             const name = key.replace(/_/g, ' ');
-            
+
             const row = document.createElement('div');
             row.className = 'save-row';
-            
+
             const label = document.createElement('label');
             label.textContent = name;
-            
+
             const input = document.createElement('input');
             input.type = 'number';
             input.className = 'score-input cs-input-underline-small';
             input.dataset.field = `stats.saves.${key}`;
-            
+
             input.value = value;
-            
+
             input.addEventListener('input', () => this._triggerAutosave());
 
             row.appendChild(label);
@@ -434,12 +489,10 @@ export class PartyHub {
             this._triggerAutosave();
         }, 400);
     }
-    
+
     _addEquipmentRow(section) {
         const classMap = {
-            weapons: 'weapon-row',
-            armour: 'armour-row',
-            ammunition: 'ammunition-row'
+            weapons: 'weapon-row', armour: 'armour-row', ammunition: 'ammunition-row'
         };
         const gridMap = {
             weapons: this.weaponsGrid,
@@ -448,27 +501,34 @@ export class PartyHub {
         };
         const htmlMap = {
             weapons: `
-                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name">
-                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type">
-                <input type="text" class="cs-input-underline-small" data-field-key="to_hit" placeholder="To Hit">
-                <input type="text" class="cs-input-underline-small" data-field-key="damage" placeholder="Damage">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="name" placeholder="Name">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="type" placeholder="Type">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="to_hit" placeholder="To Hit">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="damage" placeholder="Damage">
                 <button class="delete-row-btn">&times;</button>`,
             armour: `
-                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name">
-                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type">
-                <input type="text" class="cs-input-underline-small" data-field-key="bonus" placeholder="AC Bonus">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="name" placeholder="Name">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="type" placeholder="Type">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="bonus" placeholder="AC Bonus">
                 <button class="delete-row-btn">&times;</button>`,
             ammunition: `
-                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type">
-                <input type="number" class="cs-input-underline-small" data-field-key="count" placeholder="Count">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="type" placeholder="Type">
+                <input type="number" class="cs-input-underline-small"
+                       data-field-key="count" placeholder="Count">
                 <button class="delete-row-btn">&times;</button>`
         };
-
         const grid = gridMap[section];
         const newRow = document.createElement('div');
         newRow.className = classMap[section];
         newRow.innerHTML = htmlMap[section];
-
         newRow.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', () => this._triggerAutosave());
         });
@@ -477,14 +537,14 @@ export class PartyHub {
     }
 
     _handleEquipmentDelete(deleteButton) {
-        deleteButton.closest('.weapon-row, .armour-row, .ammunition-row').remove();
+        const row = deleteButton.closest('.weapon-row, .armour-row, .ammunition-row');
+        row.remove();
         this._triggerAutosave();
     }
-    
+
     _renderEquipment(grid, sectionName, items = [], createRowInnerHTML) {
         grid.innerHTML = '';
         const effectiveItems = (items && items.length > 0) ? items : [{}];
-
         effectiveItems.forEach(item => {
             const row = document.createElement('div');
             row.className = `${sectionName}-row`;
@@ -495,14 +555,22 @@ export class PartyHub {
             grid.appendChild(row);
         });
     }
-    
+
     _renderWeapons(weapons) {
         this._renderEquipment(this.weaponsGrid, 'weapon', weapons, (item = {}) => {
             return `
-                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name" value="${item.name || ''}">
-                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type" value="${item.type || ''}">
-                <input type="text" class="cs-input-underline-small" data-field-key="to_hit" placeholder="To Hit" value="${item.to_hit || ''}">
-                <input type="text" class="cs-input-underline-small" data-field-key="damage" placeholder="Damage" value="${item.damage || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="name" placeholder="Name"
+                       value="${item.name || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="type" placeholder="Type"
+                       value="${item.type || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="to_hit" placeholder="To Hit"
+                       value="${item.to_hit || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="damage" placeholder="Damage"
+                       value="${item.damage || ''}">
                 <button class="delete-row-btn">&times;</button>
             `;
         });
@@ -511,22 +579,34 @@ export class PartyHub {
     _renderArmour(armour) {
         this._renderEquipment(this.armourGrid, 'armour', armour, (item = {}) => {
             return `
-                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name" value="${item.name || ''}">
-                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type" value="${item.type || ''}">
-                <input type="text" class="cs-input-underline-small" data-field-key="bonus" placeholder="AC Bonus" value="${item.bonus || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="name" placeholder="Name"
+                       value="${item.name || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="type" placeholder="Type"
+                       value="${item.type || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="bonus" placeholder="AC Bonus"
+                       value="${item.bonus || ''}">
                 <button class="delete-row-btn">&times;</button>
             `;
         });
     }
 
     _renderAmmunition(ammunition) {
-        this._renderEquipment(this.ammunitionGrid, 'ammunition', ammunition, (item = {}) => {
-            return `
-                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type" value="${item.type || ''}">
-                <input type="number" class="cs-input-underline-small" data-field-key="count" placeholder="Count" value="${item.count || ''}">
-                <button class="delete-row-btn">&times;</button>
-            `;
-        });
+        this._renderEquipment(
+            this.ammunitionGrid, 'ammunition', ammunition, (item = {}) => {
+                return `
+                    <input type="text" class="cs-input-underline-small"
+                           data-field-key="type" placeholder="Type"
+                           value="${item.type || ''}">
+                    <input type="number" class="cs-input-underline-small"
+                           data-field-key="count" placeholder="Count"
+                           value="${item.count || ''}">
+                    <button class="delete-row-btn">&times;</button>
+                `;
+            }
+        );
     }
 
     _renderSpellSlots(slots = {}) {
@@ -538,22 +618,31 @@ export class PartyHub {
             group.innerHTML = `
                 <label>Level ${i}</label>
                 <div class="spell-slot-row">
-                    <input type="number" data-field="stats.spells.slots.lvl${i}.used" placeholder="Used" value="${slot.used || ''}">
+                    <input type="number" data-field="stats.spells.slots.lvl${i}.used"
+                           placeholder="Used" value="${slot.used || ''}">
                     <span>/</span>
-                    <input type="number" data-field="stats.spells.slots.lvl${i}.max" placeholder="Max" value="${slot.max || ''}">
+                    <input type="number" data-field="stats.spells.slots.lvl${i}.max"
+                           placeholder="Max" value="${slot.max || ''}">
                 </div>
             `;
-            group.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
+            const inputs = group.querySelectorAll('input');
+            inputs.forEach(i => i.addEventListener(
+                'input', () => this._triggerAutosave())
+            );
             this.spellSlotsGrid.appendChild(group);
         }
     }
 
     _switchTab(event) {
         const targetPaneId = event.target.dataset.pane;
-        this.tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.pane === targetPaneId));
-        this.panes.forEach(pane => pane.classList.toggle('active', pane.id === targetPaneId));
+        this.tabs.forEach(tab =>
+            tab.classList.toggle('active', tab.dataset.pane === targetPaneId)
+        );
+        this.panes.forEach(pane =>
+            pane.classList.toggle('active', pane.id === targetPaneId)
+        );
     }
-    
+
     _switchToEditMode(statBox) {
         statBox.classList.add('is-editing');
         const display = statBox.querySelector('.primary-stat-value');
@@ -561,18 +650,19 @@ export class PartyHub {
 
         input.value = display.textContent;
         display.style.display = 'none';
-        input.style.display = 'block';
+        input.style.display = 'inline-block';
+        this._resizeStatInput(input);
         input.focus();
         input.select();
-
         input.oninput = () => {
             input.value = input.value.replace(/[^0-9.+\-]/g, '');
+            this._resizeStatInput(input);
         };
 
         const finishEditing = (saveChanges) => {
             this._switchToDisplayMode(statBox, saveChanges);
         };
-        
+
         input.onblur = () => finishEditing(true);
         input.onkeydown = (e) => {
             if (e.key === 'Enter') {
@@ -593,9 +683,9 @@ export class PartyHub {
             display.textContent = input.value;
             this._triggerAutosave();
         }
-        
+
         input.style.display = 'none';
-        display.style.display = 'block';
+        display.style.display = 'inline-block';
 
         input.onblur = null;
         input.onkeydown = null;
@@ -642,7 +732,8 @@ export class PartyHub {
             if (confirmed) {
                 await apiCall(`/api/characters/${characterId}`, { method: 'DELETE' });
                 await this._loadAndRenderCharacters(this.selectedPartyId);
-                status.setText('deleteCharSuccess', false, { name: characterName });
+                const data = { name: characterName };
+                status.setText('deleteCharSuccess', false, data);
             }
         } else {
             this.selectCharacter(parseInt(li.dataset.charId, 10));
