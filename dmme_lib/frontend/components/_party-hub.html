@@ -79,173 +79,150 @@
                                 <div class="primary-stats-grid">
                                     <div class="form-group form-group-center">
                                         <label data-i18n-key="charLevel">Level</label>
-                                        <div id="level-box"
-                                            class="primary-stat-icon-box">
-                                            <span id="char-level-hub"
-                                                contenteditable="true"
-                                                data-field="level"></span>
+                                        <div id="level-box" class="primary-stat-icon-box">
+                                            <span class="primary-stat-value"></span>
+                                            <input type="text" class="primary-stat-input" data-field="level" maxlength="8" style="display: none;">
                                         </div>
                                     </div>
                                     <div class="form-group form-group-center">
-                                        <label data-i18n-key="charHp">Hit
-                                            Points</label>
+                                        <label data-i18n-key="charHp">Hit Points</label>
                                         <div id="hp-box" class="primary-stat-icon-box">
-                                            <span id="char-hp-hub"
-                                                contenteditable="true"
-                                                data-field="stats.hit_points"></span>
+                                            <span class="primary-stat-value"></span>
+                                            <input type="text" class="primary-stat-input" data-field="stats.hit_points" maxlength="8" style="display: none;">
                                         </div>
                                     </div>
                                     <div class="form-group form-group-center">
-                                        <label data-i18n-key="charAc">Armor
-                                            Class</label>
+                                        <label data-i18n-key="charAc">Armor Class</label>
                                         <div id="ac-box" class="primary-stat-icon-box">
-                                            <span id="char-ac-hub"
-                                                contenteditable="true"
-                                                data-field="stats.armor_class"></span>
+                                            <span class="primary-stat-value"></span>
+                                            <input type="text" class="primary-stat-input" data-field="stats.armor_class" maxlength="8" style="display: none;">
                                         </div>
                                     </div>
                                     <div class="form-group form-group-center">
-                                        <label
-                                            data-i18n-key="charAttackBonus">Attack
-                                            Bonus</label>
-                                        <div id="attack-box"
-                                            class="primary-stat-icon-box">
-                                            <span id="char-attack-hub"
-                                                contenteditable="true"
-                                                data-field="stats.attack_bonus"></span>
+                                        <label data-i18n-key="charAttackBonus">Attack Bonus</label>
+                                        <div id="attack-box" class="primary-stat-icon-box">
+                                            <span class="primary-stat-value"></span>
+                                            <input type="text" class="primary-stat-input" data-field="stats.attack_bonus" maxlength="8" style="display: none;">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="secondary-stats-grid">
                                     <div class="form-group">
                                         <div class="panel-header">
-                                            <h5><span
-                                                    data-i18n-key="abilityScores">Ability
-                                                    Scores</span></h5>
-                                            <button id="roll-stats-btn"
-                                                class="icon-btn"
-                                                title="Roll 3d6 for all stats">🎲</button>
+                                            <h5><span data-i18n-key="abilityScores">Ability Scores</span></h5>
+                                            <button id="roll-stats-btn" class="icon-btn" title="Roll 3d6 for all stats">🎲</button>
                                         </div>
                                         <div class="ability-scores-grid">
                                             <div class="ability-score-row">
                                                 <label>Strength</label>
-                                                <input type="number"
-                                                    id="char-str-hub"
-                                                    class="score-input cs-input-underline-small"
-                                                    data-field="stats.strength">
+                                                <input type="number" id="char-str-hub" class="score-input cs-input-underline-small" data-field="stats.strength">
                                                 <span></span>
-                                                <span id="char-str-mod-hub"
-                                                    class="modifier-display"></span>
+                                                <span id="char-str-mod-hub" class="modifier-display"></span>
                                             </div>
                                             <div class="ability-score-row">
                                                 <label>Dexterity</label>
-                                                <input type="number"
-                                                    id="char-dex-hub"
-                                                    class="score-input cs-input-underline-small"
-                                                    data-field="stats.dexterity">
+                                                <input type="number" id="char-dex-hub" class="score-input cs-input-underline-small" data-field="stats.dexterity">
                                                 <span></span>
-                                                <span id="char-dex-mod-hub"
-                                                    class="modifier-display"></span>
+                                                <span id="char-dex-mod-hub" class="modifier-display"></span>
                                             </div>
                                             <div class="ability-score-row">
                                                 <label>Constitution</label>
-                                                <input type="number"
-                                                    id="char-con-hub"
-                                                    class="score-input cs-input-underline-small"
-                                                    data-field="stats.constitution">
+                                                <input type="number" id="char-con-hub" class="score-input cs-input-underline-small" data-field="stats.constitution">
                                                 <span></span>
-                                                <span id="char-con-mod-hub"
-                                                    class="modifier-display"></span>
+                                                <span id="char-con-mod-hub" class="modifier-display"></span>
                                             </div>
                                             <div class="ability-score-row">
                                                 <label>Intelligence</label>
-                                                <input type="number"
-                                                    id="char-int-hub"
-                                                    class="score-input cs-input-underline-small"
-                                                    data-field="stats.intelligence">
+                                                <input type="number" id="char-int-hub" class="score-input cs-input-underline-small" data-field="stats.intelligence">
                                                 <span></span>
-                                                <span id="char-int-mod-hub"
-                                                    class="modifier-display"></span>
+                                                <span id="char-int-mod-hub" class="modifier-display"></span>
                                             </div>
                                             <div class="ability-score-row">
                                                 <label>Wisdom</label>
-                                                <input type="number"
-                                                    id="char-wis-hub"
-                                                    class="score-input cs-input-underline-small"
-                                                    data-field="stats.wisdom">
+                                                <input type="number" id="char-wis-hub" class="score-input cs-input-underline-small" data-field="stats.wisdom">
                                                 <span></span>
-                                                <span id="char-wis-mod-hub"
-                                                    class="modifier-display"></span>
+                                                <span id="char-wis-mod-hub" class="modifier-display"></span>
                                             </div>
                                             <div class="ability-score-row">
                                                 <label>Charisma</label>
-                                                <input type="number"
-                                                    id="char-cha-hub"
-                                                    class="score-input cs-input-underline-small"
-                                                    data-field="stats.charisma">
+                                                <input type="number" id="char-cha-hub" class="score-input cs-input-underline-small" data-field="stats.charisma">
                                                 <span></span>
-                                                <span id="char-cha-mod-hub"
-                                                    class="modifier-display"></span>
+                                                <span id="char-cha-mod-hub" class="modifier-display"></span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <div class="panel-header">
-                                            <h5 data-i18n-key="savesTitle">Saving
-                                                Throws</h5>
+                                            <h5 data-i18n-key="savesTitle">Saving Throws</h5>
                                         </div>
-                                        <div id="character-saves-display"
-                                            class="saves-grid"></div>
+                                        <div id="character-saves-display" class="saves-grid"></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="details-column">
                                 <div class="form-group form-group-fill">
-                                    <label for="char-desc-hub"
-                                        data-i18n-key="formDescription">Description</label>
-                                    <textarea id="char-desc-hub" class="boxed"
-                                        data-field="description" rows="4"
-                                        autocomplete="off"></textarea>
-                                    <button id="ai-char-generate-hub-btn"
-                                        class="icon-btn"
-                                        data-i18n-key="aiCharGenerate"
-                                        data-i18n-target="title"
-                                        title="Generate with AI">✨</button>
+                                    <label for="char-desc-hub" data-i18n-key="formDescription">Description</label>
+                                    <textarea id="char-desc-hub" class="boxed" data-field="description" rows="4" autocomplete="off"></textarea>
+                                    <button id="ai-char-generate-hub-btn" class="icon-btn" data-i18n-key="aiCharGenerate" data-i18n-target="title" title="Generate with AI">✨</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div id="character-pane-equipment" class="hub-tab-pane">
                         <div class="form-group">
-                            <h5>Weapons</h5>
-                            <div id="weapons-grid" class="weapons-grid"></div>
+                            <div class="panel-header">
+                                <h5>Weapons</h5>
+                                <button class="icon-btn" data-section="weapons" title="Add Weapon">+</button>
+                            </div>
+                            <div class="equipment-header-row weapon-row">
+                                <span>Name</span>
+                                <span>Type</span>
+                                <span>To Hit</span>
+                                <span>Damage</span>
+                                <span></span>
+                            </div>
+                            <div id="weapons-grid"></div>
                         </div>
                         <div class="form-group">
-                            <h5>Armour</h5>
-                            <div id="armour-grid" class="armour-grid"></div>
+                            <div class="panel-header">
+                                <h5>Armour</h5>
+                                <button class="icon-btn" data-section="armour" title="Add Armour">+</button>
+                            </div>
+                            <div class="equipment-header-row armour-row">
+                                <span>Name</span>
+                                <span>Type</span>
+                                <span>AC Bonus</span>
+                                <span></span>
+                            </div>
+                            <div id="armour-grid"></div>
                         </div>
                         <div class="form-group">
-                            <h5>Ammunition</h5>
-                            <div id="ammunition-grid" class="ammunition-grid"></div>
+                            <div class="panel-header">
+                                <h5>Ammunition</h5>
+                                <button class="icon-btn" data-section="ammunition" title="Add Ammunition">+</button>
+                            </div>
+                            <div class="equipment-header-row ammunition-row">
+                                <span>Type</span>
+                                <span>Count</span>
+                                <span></span>
+                            </div>
+                            <div id="ammunition-grid"></div>
                         </div>
                     </div>
                     <div id="character-pane-inventory" class="hub-tab-pane">
                         <div class="form-group form-group-fill">
                             <label>Inventory</label>
-                            <textarea data-field="stats.inventory.main"
-                                class="large-textarea boxed"></textarea>
+                            <textarea data-field="stats.inventory.main" class="large-textarea boxed"></textarea>
                         </div>
                     </div>
                     <div id="character-pane-spells" class="hub-tab-pane">
                         <div class="form-group">
                             <label>Spell Slots</label>
-                            <div id="spell-slots-grid"
-                                class="spell-slots-grid boxed"></div>
+                            <div id="spell-slots-grid" class="spell-slots-grid boxed"></div>
                         </div>
                         <div class="form-group form-group-fill">
                             <label>Spell List</label>
-                            <textarea data-field="stats.spells.list"
-                                class="large-textarea boxed"></textarea>
+                            <textarea data-field="stats.spells.list" class="large-textarea boxed"></textarea>
                         </div>
                     </div>
                 </div>

@@ -58,6 +58,26 @@ export class PartyHub {
         this.sheetView.querySelectorAll('.score-input').forEach(input => {
             input.addEventListener('input', (e) => this._updateAllModifiers());
         });
+
+        const equipmentPane = document.getElementById('character-pane-equipment');
+        equipmentPane.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('.icon-btn');
+            const deleteBtn = e.target.closest('.delete-row-btn');
+            if (addBtn) {
+                this._addEquipmentRow(addBtn.dataset.section);
+            } else if (deleteBtn) {
+                this._handleEquipmentDelete(deleteBtn);
+            }
+        });
+        
+        const mainPane = document.getElementById('character-pane-main');
+        mainPane.addEventListener('click', (e) => {
+            const statBox = e.target.closest('.primary-stat-icon-box');
+            if (statBox && !statBox.classList.contains('is-editing')) {
+                this._switchToEditMode(statBox);
+            }
+        });
+
         this.isInitialized = true;
     }
 
@@ -181,7 +201,11 @@ export class PartyHub {
             const value = getValue(character, fieldPath);
             const displayValue = value !== undefined && value !== null ? value : '';
 
-            if (input.tagName === 'SPAN') {
+            if (input.classList.contains('primary-stat-input')) {
+                input.value = displayValue;
+                const displaySpan = input.previousElementSibling;
+                if (displaySpan) displaySpan.textContent = displayValue;
+            } else if (input.tagName === 'SPAN') {
                 input.textContent = displayValue;
             } else {
                 input.value = displayValue;
@@ -198,18 +222,25 @@ export class PartyHub {
     
     clearSheet() {
         this.sheetView.querySelectorAll('[data-field]').forEach(input => {
-            if (input.tagName === 'SPAN') {
+            if (input.classList.contains('primary-stat-input')) {
+                input.value = '';
+                const displaySpan = input.previousElementSibling;
+                if (displaySpan) displaySpan.textContent = '';
+            } else if (input.tagName === 'SPAN') {
                 input.textContent = '';
             } else {
                 input.value = '';
             }
         });
-        this.view.querySelector('#char-level-hub').textContent = '1';
+        const levelBox = this.view.querySelector('#level-box');
+        levelBox.querySelector('.primary-stat-value').textContent = '1';
+        levelBox.querySelector('.primary-stat-input').value = '1';
+
         this._updateAllModifiers();
         this._renderSaves(null);
-        this._renderWeapons(null);
-        this._renderArmour(null);
-        this._renderAmmunition(null);
+        this._renderWeapons([]);
+        this._renderArmour([]);
+        this._renderAmmunition([]);
         this._renderSpellSlots(null);
     }
 
@@ -233,6 +264,23 @@ export class PartyHub {
         this.autosaveTimer = setTimeout(() => this._performAutosave(), 1500);
     }
     
+    _serializeGrid(gridElement, fields) {
+        const items = [];
+        gridElement.querySelectorAll('.weapon-row, .armour-row, .ammunition-row').forEach(row => {
+            const item = {};
+            fields.forEach(field => {
+                const input = row.querySelector(`[data-field-key="${field}"]`);
+                if (input) {
+                    item[field] = input.value;
+                }
+            });
+            if (Object.values(item).some(val => val && val.trim() !== '')) {
+                items.push(item);
+            }
+        });
+        return items;
+    }
+    
     async _performAutosave() {
         status.setText('savingStatus');
         const isNew = this.selectedCharacterId === null;
@@ -252,6 +300,14 @@ export class PartyHub {
             };
             setValue(charData, fieldPath, value);
         });
+    
+        if (!charData.stats) charData.stats = {};
+        charData.stats.equipment = {
+            weapons: this._serializeGrid(this.weaponsGrid, ['name', 'type', 'to_hit', 'damage']),
+            armour: this._serializeGrid(this.armourGrid, ['name', 'type', 'bonus']),
+            ammunition: this._serializeGrid(this.ammunitionGrid, ['type', 'count']),
+        };
+    
         const url = isNew ? `/api/parties/${this.selectedPartyId}/characters` : `/api/characters/${this.selectedCharacterId}`;
         const method = isNew ? 'POST' : 'PUT';
         try {
@@ -277,7 +333,7 @@ export class PartyHub {
         if (!description) {
             const name = document.getElementById('char-name-hub').value.trim();
             const charClass = document.getElementById('char-class-hub').value.trim();
-            const level = document.getElementById('char-level-hub').textContent;
+            const level = this.view.querySelector('#level-box .primary-stat-value').textContent;
             if (!name || !charClass) return status.setText('errorCharNameClass', true);
             description = `${name}, a level ${level} ${charClass}`;
         }
@@ -300,7 +356,7 @@ export class PartyHub {
             });
             this.displayCharacterSheet({ id: this.selectedCharacterId, ...charData });
             status.setText('generatedChar', false, { name: charData.name, class: charData.class });
-            await this._performAutosave(); // Immediately save the new character
+            await this._performAutosave();
         } catch (error) {
             // apiCall helper shows status
         } finally {
@@ -342,6 +398,7 @@ export class PartyHub {
             input.type = 'number';
             input.className = 'score-input cs-input-underline-small';
             input.dataset.field = `stats.saves.${key}`;
+            
             input.value = value;
             
             input.addEventListener('input', () => this._triggerAutosave());
@@ -377,53 +434,99 @@ export class PartyHub {
             this._triggerAutosave();
         }, 400);
     }
+    
+    _addEquipmentRow(section) {
+        const classMap = {
+            weapons: 'weapon-row',
+            armour: 'armour-row',
+            ammunition: 'ammunition-row'
+        };
+        const gridMap = {
+            weapons: this.weaponsGrid,
+            armour: this.armourGrid,
+            ammunition: this.ammunitionGrid
+        };
+        const htmlMap = {
+            weapons: `
+                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name">
+                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type">
+                <input type="text" class="cs-input-underline-small" data-field-key="to_hit" placeholder="To Hit">
+                <input type="text" class="cs-input-underline-small" data-field-key="damage" placeholder="Damage">
+                <button class="delete-row-btn">&times;</button>`,
+            armour: `
+                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name">
+                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type">
+                <input type="text" class="cs-input-underline-small" data-field-key="bonus" placeholder="AC Bonus">
+                <button class="delete-row-btn">&times;</button>`,
+            ammunition: `
+                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type">
+                <input type="number" class="cs-input-underline-small" data-field-key="count" placeholder="Count">
+                <button class="delete-row-btn">&times;</button>`
+        };
 
-    _renderWeapons(weapons = []) {
-        this.weaponsGrid.innerHTML = '';
-        for (let i = 0; i < 8; i++) {
-            const item = weapons[i] || {};
-            const row = document.createElement('div');
-            row.className = 'weapon-row';
-            row.innerHTML = `
-                <input type="text" data-field="stats.equipment.weapons.${i}.name" placeholder="Name" value="${item.name || ''}">
-                <input type="text" data-field="stats.equipment.weapons.${i}.type" placeholder="Type" value="${item.type || ''}">
-                <input type="text" data-field="stats.equipment.weapons.${i}.to_hit" placeholder="To Hit" value="${item.to_hit || ''}">
-                <input type="text" data-field="stats.equipment.weapons.${i}.damage" placeholder="Damage" value="${item.damage || ''}">
-            `;
-            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
-            this.weaponsGrid.appendChild(row);
-        }
+        const grid = gridMap[section];
+        const newRow = document.createElement('div');
+        newRow.className = classMap[section];
+        newRow.innerHTML = htmlMap[section];
+
+        newRow.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => this._triggerAutosave());
+        });
+        grid.appendChild(newRow);
+        this._triggerAutosave();
     }
 
-    _renderArmour(armour = []) {
-        this.armourGrid.innerHTML = '';
-        for (let i = 0; i < 4; i++) {
-            const item = armour[i] || {};
+    _handleEquipmentDelete(deleteButton) {
+        deleteButton.closest('.weapon-row, .armour-row, .ammunition-row').remove();
+        this._triggerAutosave();
+    }
+    
+    _renderEquipment(grid, sectionName, items = [], createRowInnerHTML) {
+        grid.innerHTML = '';
+        const effectiveItems = (items && items.length > 0) ? items : [{}];
+
+        effectiveItems.forEach(item => {
             const row = document.createElement('div');
-            row.className = 'armour-row';
-            row.innerHTML = `
-                <input type="text" data-field="stats.equipment.armour.${i}.name" placeholder="Name" value="${item.name || ''}">
-                <input type="text" data-field="stats.equipment.armour.${i}.type" placeholder="Type" value="${item.type || ''}">
-                <input type="text" data-field="stats.equipment.armour.${i}.bonus" placeholder="AC Bonus" value="${item.bonus || ''}">
+            row.className = `${sectionName}-row`;
+            row.innerHTML = createRowInnerHTML(item);
+            row.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => this._triggerAutosave());
+            });
+            grid.appendChild(row);
+        });
+    }
+    
+    _renderWeapons(weapons) {
+        this._renderEquipment(this.weaponsGrid, 'weapon', weapons, (item = {}) => {
+            return `
+                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name" value="${item.name || ''}">
+                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type" value="${item.type || ''}">
+                <input type="text" class="cs-input-underline-small" data-field-key="to_hit" placeholder="To Hit" value="${item.to_hit || ''}">
+                <input type="text" class="cs-input-underline-small" data-field-key="damage" placeholder="Damage" value="${item.damage || ''}">
+                <button class="delete-row-btn">&times;</button>
             `;
-            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
-            this.armourGrid.appendChild(row);
-        }
+        });
     }
 
-    _renderAmmunition(ammunition = []) {
-        this.ammunitionGrid.innerHTML = '';
-        for (let i = 0; i < 4; i++) {
-            const item = ammunition[i] || {};
-            const row = document.createElement('div');
-            row.className = 'ammunition-row';
-            row.innerHTML = `
-                <input type="text" data-field="stats.equipment.ammunition.${i}.type" placeholder="Type" value="${item.type || ''}">
-                <input type="number" data-field="stats.equipment.ammunition.${i}.count" placeholder="Count" value="${item.count || ''}">
+    _renderArmour(armour) {
+        this._renderEquipment(this.armourGrid, 'armour', armour, (item = {}) => {
+            return `
+                <input type="text" class="cs-input-underline-small" data-field-key="name" placeholder="Name" value="${item.name || ''}">
+                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type" value="${item.type || ''}">
+                <input type="text" class="cs-input-underline-small" data-field-key="bonus" placeholder="AC Bonus" value="${item.bonus || ''}">
+                <button class="delete-row-btn">&times;</button>
             `;
-            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => this._triggerAutosave()));
-            this.ammunitionGrid.appendChild(row);
-        }
+        });
+    }
+
+    _renderAmmunition(ammunition) {
+        this._renderEquipment(this.ammunitionGrid, 'ammunition', ammunition, (item = {}) => {
+            return `
+                <input type="text" class="cs-input-underline-small" data-field-key="type" placeholder="Type" value="${item.type || ''}">
+                <input type="number" class="cs-input-underline-small" data-field-key="count" placeholder="Count" value="${item.count || ''}">
+                <button class="delete-row-btn">&times;</button>
+            `;
+        });
     }
 
     _renderSpellSlots(slots = {}) {
@@ -449,6 +552,54 @@ export class PartyHub {
         const targetPaneId = event.target.dataset.pane;
         this.tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.pane === targetPaneId));
         this.panes.forEach(pane => pane.classList.toggle('active', pane.id === targetPaneId));
+    }
+    
+    _switchToEditMode(statBox) {
+        statBox.classList.add('is-editing');
+        const display = statBox.querySelector('.primary-stat-value');
+        const input = statBox.querySelector('.primary-stat-input');
+
+        input.value = display.textContent;
+        display.style.display = 'none';
+        input.style.display = 'block';
+        input.focus();
+        input.select();
+
+        input.oninput = () => {
+            input.value = input.value.replace(/[^0-9.+\-]/g, '');
+        };
+
+        const finishEditing = (saveChanges) => {
+            this._switchToDisplayMode(statBox, saveChanges);
+        };
+        
+        input.onblur = () => finishEditing(true);
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                finishEditing(true);
+            } else if (e.key === 'Escape') {
+                finishEditing(false);
+            }
+        };
+    }
+
+    _switchToDisplayMode(statBox, saveChanges) {
+        statBox.classList.remove('is-editing');
+        const display = statBox.querySelector('.primary-stat-value');
+        const input = statBox.querySelector('.primary-stat-input');
+
+        if (saveChanges) {
+            display.textContent = input.value;
+            this._triggerAutosave();
+        }
+        
+        input.style.display = 'none';
+        display.style.display = 'block';
+
+        input.onblur = null;
+        input.onkeydown = null;
+        input.oninput = null;
     }
 
     async _handlePartyDelete(event) {
