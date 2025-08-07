@@ -12,7 +12,7 @@ class ConfigService:
         self.config_path = config_path
         self.defaults = {
             "Appearance": {
-                "theme": "default",
+                "theme": "high-contrast",
                 "language": "en",
             },
             "Ollama": {

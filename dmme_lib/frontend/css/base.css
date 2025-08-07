@@ -14,6 +14,7 @@
     --danger-pastel-hover: #D96C6C;
     --button-inverted-bg: #ffffff;
     --focus-color: rgba(0, 122, 204, 0.3);
+    --underline-color: #005a99;
     --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
         Arial, sans-serif;
     --font-family-mono: "Courier New", Courier, monospace;
@@ -27,6 +28,7 @@ body.theme-vibrant-focus {
     --accent-color: #8a3ffc;
     --accent-hover: #a46cfc;
     --focus-color: rgba(138, 63, 252, 0.3);
+    --underline-color: #6a2dbd;
 }
 
 body.theme-high-contrast {
@@ -37,6 +39,7 @@ body.theme-high-contrast {
     --accent-color: #00aaff;
     --accent-hover: #33bbff;
     --focus-color: rgba(0, 170, 255, 0.4);
+    --underline-color: #0088cc;
 }
 
 body.theme-crt-green {
@@ -49,6 +52,7 @@ body.theme-crt-green {
     --danger-color: #ff0000;
     --danger-hover: #cc0000;
     --focus-color: rgba(0, 255, 0, 0.4);
+    --underline-color: #009900;
     --font-family-sans: "VT323", monospace;
     /* Fallback to generic monospace */
     --font-family-mono: "VT323", monospace;
@@ -64,6 +68,7 @@ body.theme-ocean-blue {
     --danger-color: #e76f51;
     --danger-hover: #d64f30;
     --focus-color: rgba(46, 196, 182, 0.3);
+    --underline-color: #1e7a6e;
 }
 
 body.theme-forest-green {
@@ -76,6 +81,7 @@ body.theme-forest-green {
     --danger-color: #c62828;
     --danger-hover: #a61818;
     --focus-color: rgba(106, 153, 85, 0.3);
+    --underline-color: #527a43;
 }
 
 body.theme-warm-sepia {
@@ -88,6 +94,7 @@ body.theme-warm-sepia {
     --danger-color: #8b0000;
     --danger-hover: #6b0000;
     --focus-color: rgba(160, 82, 45, 0.3);
+    --underline-color: #804124;
 }
 
 body.theme-cyberpunk {
@@ -100,6 +107,7 @@ body.theme-cyberpunk {
     --danger-color: #ff4500;
     --danger-hover: #cc3300;
     --focus-color: rgba(255, 0, 255, 0.4);
+    --underline-color: #cc00cc;
 }
 
 /* --- Custom Scrollbar --- */
@@ -163,8 +171,7 @@ body, html {
 }
 
 .view-container.active {
-    display: flex;
-    /* Shown when active */
+    display: flex; /* Shown when active */
 }
 
 /* Make game view content take up full space inside its view container */

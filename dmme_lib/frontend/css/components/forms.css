@@ -132,7 +132,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background-color: #3a7ca5;
+    background-color: var(--underline-color);
     transition: all 0.2s ease-in-out;
 }
 
@@ -146,7 +146,7 @@
     border: none;
     border-radius: 0;
     padding: 8px 2px 2px 2px; /* Compact padding */
-    border-bottom: 1px solid #3a7ca5;
+    border-bottom: 1px solid var(--underline-color);
     transition: border-color 0.2s ease-in-out, border-width 0.2s ease-in-out;
 }
 

@@ -3,7 +3,6 @@ import { apiCall } from '../wizards/ApiHelper.js';
 import { status, confirmationModal } from '../ui.js';
 
 const SAVE_CATEGORIES = ['poison', 'wands', 'paralysis', 'breath_weapon', 'spells'];
-
 export class PartyHub {
     constructor(appInstance) {
         this.app = appInstance;
@@ -78,7 +77,7 @@ export class PartyHub {
         this.loadParties();
         this.addPartyBtn.addEventListener('click', () => this.showCreatorPanel());
         this.createPartyBtn.addEventListener('click', () => this.createParty());
-        this.listEl.addEventListener('click', (e) => this._handlePartyDelete(e));
+        this.listEl.addEventListener('click', (e) => this._handlePartyListClick(e));
         this.showAddCharacterBtn.addEventListener(
             'click', () => this.showCreatorSheet()
         );
@@ -177,8 +176,6 @@ export class PartyHub {
                     <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
                 </button>
             `;
-            const mainContent = li.querySelector('.item-main-content');
-            mainContent.addEventListener('click', () => this.selectParty(party.id));
             this.listEl.appendChild(li);
         });
     }
@@ -403,9 +400,11 @@ export class PartyHub {
         charData.stats.spells.list = this._serializeGrid(this.spellListGrid, slFields);
 
         const url = isNew
-            ? `/api/parties/${this.selectedPartyId}/characters`
+            ?
+            `/api/parties/${this.selectedPartyId}/characters`
             : `/api/characters/${this.selectedCharacterId}`;
-        const method = isNew ? 'POST' : 'PUT';
+        const method = isNew ?
+            'POST' : 'PUT';
         try {
             const updatedChar = await apiCall(url, {
                 method: method,
@@ -551,11 +550,11 @@ export class PartyHub {
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="name" placeholder="Description">
                 <input type="text" class="cs-input-underline-small"
-                        data-field-key="type" placeholder="Type">
+                         data-field-key="type" placeholder="Type">
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="to_hit" placeholder="To Hit">
                 <input type="text" class="cs-input-underline-small"
-                        data-field-key="damage" placeholder="Damage">
+                         data-field-key="damage" placeholder="Damage">
                 <button class="delete-row-btn">🗑️</button>`,
             armour: `
                 <div class="drag-handle">⠿</div>
@@ -824,13 +823,7 @@ export class PartyHub {
         input.oninput = null;
     }
 
-    async _handlePartyDelete(event) {
-        const deleteBtn = event.target.closest('.contextual-delete-btn');
-        if (!deleteBtn) return;
-        event.stopPropagation();
-
-        const partyId = deleteBtn.dataset.partyId;
-        const partyName = deleteBtn.dataset.partyName;
+    async _deleteParty(partyId, partyName) {
         const confirmed = await confirmationModal.confirm(
             'deletePartyTitle', 'deletePartyMsg', { name: partyName }
         );
@@ -846,6 +839,19 @@ export class PartyHub {
             }
             await this.loadParties();
             status.setText('deletePartySuccess', false, { name: partyName });
+        }
+    }
+
+    _handlePartyListClick(event) {
+        const li = event.target.closest('li');
+        if (!li || !li.dataset.partyId) return;
+
+        const deleteBtn = event.target.closest('.contextual-delete-btn');
+        if (deleteBtn) {
+            event.stopPropagation();
+            this._deleteParty(deleteBtn.dataset.partyId, deleteBtn.dataset.partyName);
+        } else {
+            this.selectParty(parseInt(li.dataset.partyId, 10));
         }
     }
 
