@@ -176,7 +176,7 @@
                             </div>
                             <div class="equipment-header-row weapon-row">
                                 <span></span>
-                                <span>Name</span>
+                                <span>Description</span>
                                 <span>Type</span>
                                 <span>To Hit</span>
                                 <span>Damage</span>
@@ -191,7 +191,7 @@
                             </div>
                             <div class="equipment-header-row armour-row">
                                 <span></span>
-                                <span>Name</span>
+                                <span>Description</span>
                                 <span>Type</span>
                                 <span>AC Bonus</span>
                                 <span></span>
@@ -205,8 +205,10 @@
                             </div>
                             <div class="equipment-header-row ammunition-row">
                                 <span></span>
-                                <span>Type</span>
+                                <span>Description</span>
                                 <span>Count</span>
+                                <span>To Hit</span>
+                                <span>Damage</span>
                                 <span></span>
                             </div>
                             <div id="ammunition-grid"></div>
@@ -214,18 +216,40 @@
                     </div>
                     <div id="character-pane-inventory" class="hub-tab-pane">
                         <div class="form-group form-group-fill">
-                            <label>Inventory</label>
-                            <textarea data-field="stats.inventory.main" class="large-textarea boxed"></textarea>
+                            <div class="panel-header">
+                                <h5>Inventory</h5>
+                                <button class="accent-btn icon-btn" data-section="inventory" title="Add Item">+</button>
+                            </div>
+                            <div class="equipment-header-row inventory-row">
+                                <span></span>
+                                <span>Description</span>
+                                <span>Quantity</span>
+                                <span>Weight</span>
+                                <span>Value</span>
+                                <span></span>
+                            </div>
+                            <div id="inventory-grid"></div>
                         </div>
                     </div>
                     <div id="character-pane-spells" class="hub-tab-pane">
                         <div class="form-group">
                             <label>Spell Slots</label>
-                            <div id="spell-slots-grid" class="spell-slots-grid boxed"></div>
+                            <div id="spell-slots-grid" class="spell-slots-grid"></div>
                         </div>
                         <div class="form-group form-group-fill">
-                            <label>Spell List</label>
-                            <textarea data-field="stats.spells.list" class="large-textarea boxed"></textarea>
+                            <div class="panel-header">
+                                <h5>Spell List</h5>
+                                <button class="accent-btn icon-btn" data-section="spells" title="Add Spell">+</button>
+                            </div>
+                            <div class="equipment-header-row spell-list-row">
+                                <span></span>
+                                <span>Level</span>
+                                <span>Spell Name</span>
+                                <span>Duration</span>
+                                <span>Range</span>
+                                <span></span>
+                            </div>
+                            <div id="spell-list-grid"></div>
                         </div>
                     </div>
                 </div>

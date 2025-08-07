@@ -10,11 +10,9 @@ export class PartyHub {
         this.isInitialized = false;
         this.selectedPartyId = null;
         this.selectedCharacterId = null;
-        this.characterData = {};
-        // Cache for character data
+        this.characterData = {}; // Cache for character data
         this.autosaveTimer = null;
-        this._statSizerSpan = null;
-        // For dynamic input sizing
+        this._statSizerSpan = null; // For dynamic input sizing
         this.draggedItem = null;
     }
 
@@ -43,7 +41,9 @@ export class PartyHub {
         this.weaponsGrid = this.sheetView.querySelector('#weapons-grid');
         this.armourGrid = this.sheetView.querySelector('#armour-grid');
         this.ammunitionGrid = this.sheetView.querySelector('#ammunition-grid');
+        this.inventoryGrid = this.sheetView.querySelector('#inventory-grid');
         this.spellSlotsGrid = this.sheetView.querySelector('#spell-slots-grid');
+        this.spellListGrid = this.sheetView.querySelector('#spell-list-grid');
     }
 
     _createStatSizer() {
@@ -108,6 +108,26 @@ export class PartyHub {
                 this._handleEquipmentDelete(deleteBtn);
             }
         });
+        const inventoryPane = document.getElementById('character-pane-inventory');
+        inventoryPane.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('.icon-btn');
+            const deleteBtn = e.target.closest('.delete-row-btn');
+            if (addBtn) {
+                this._addEquipmentRow(addBtn.dataset.section);
+            } else if (deleteBtn) {
+                this._handleEquipmentDelete(deleteBtn);
+            }
+        });
+        const spellsPane = document.getElementById('character-pane-spells');
+        spellsPane.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('.icon-btn');
+            const deleteBtn = e.target.closest('.delete-row-btn');
+            if (addBtn) {
+                this._addEquipmentRow(addBtn.dataset.section);
+            } else if (deleteBtn) {
+                this._handleEquipmentDelete(deleteBtn);
+            }
+        });
         const mainPane = document.getElementById('character-pane-main');
         mainPane.addEventListener('click', (e) => {
             const statBox = e.target.closest('.primary-stat-icon-box');
@@ -116,7 +136,10 @@ export class PartyHub {
             }
         });
         // Add drag-drop listeners to equipment grids
-        [this.weaponsGrid, this.armourGrid, this.ammunitionGrid].forEach(grid => {
+        [
+            this.weaponsGrid, this.armourGrid, this.ammunitionGrid, this.inventoryGrid,
+            this.spellListGrid
+        ].forEach(grid => {
             this._addDragDropListenersToGrid(grid);
         });
         this.isInitialized = true;
@@ -184,8 +207,7 @@ export class PartyHub {
             status.setText('errorSelectPartyToAddChar', true);
             return;
         }
-        this.selectedCharacterId = null;
-        // New character mode
+        this.selectedCharacterId = null; // New character mode
         this.clearSheet();
         this.showPanel(this.sheetView);
     }
@@ -272,7 +294,9 @@ export class PartyHub {
         this._renderWeapons(character.stats?.equipment?.weapons);
         this._renderArmour(character.stats?.equipment?.armour);
         this._renderAmmunition(character.stats?.equipment?.ammunition);
+        this._renderInventory(character.stats?.inventory?.items);
         this._renderSpellSlots(character.stats?.spells?.slots);
+        this._renderSpellList(character.stats?.spells?.list);
         this.showPanel(this.sheetView);
     }
 
@@ -297,7 +321,9 @@ export class PartyHub {
         this._renderWeapons([]);
         this._renderArmour([]);
         this._renderAmmunition([]);
+        this._renderInventory([]);
         this._renderSpellSlots(null);
+        this._renderSpellList([]);
     }
 
     async createParty() {
@@ -323,7 +349,7 @@ export class PartyHub {
     _serializeGrid(gridElement, fields) {
         const items = [];
         const rows = gridElement.querySelectorAll(
-            '.weapon-row, .armour-row, .ammunition-row'
+            '.weapon-row, .armour-row, .ammunition-row, .inventory-row, .spell-list-row'
         );
         rows.forEach(row => {
             const item = {};
@@ -362,18 +388,24 @@ export class PartyHub {
         if (!charData.stats) charData.stats = {};
         const wFields = ['name', 'type', 'to_hit', 'damage'];
         const aFields = ['name', 'type', 'bonus'];
-        const amFields = ['type', 'count'];
+        const amFields = ['description', 'count', 'to_hit', 'damage'];
+        const iFields = ['description', 'quantity', 'weight', 'value'];
+        const slFields = ['level', 'name', 'duration', 'range'];
         charData.stats.equipment = {
             weapons: this._serializeGrid(this.weaponsGrid, wFields),
             armour: this._serializeGrid(this.armourGrid, aFields),
             ammunition: this._serializeGrid(this.ammunitionGrid, amFields),
         };
+        charData.stats.inventory = {
+            items: this._serializeGrid(this.inventoryGrid, iFields)
+        };
+        if (!charData.stats.spells) charData.stats.spells = {};
+        charData.stats.spells.list = this._serializeGrid(this.spellListGrid, slFields);
+
         const url = isNew
-            ?
-            `/api/parties/${this.selectedPartyId}/characters`
+            ? `/api/parties/${this.selectedPartyId}/characters`
             : `/api/characters/${this.selectedCharacterId}`;
-        const method = isNew ?
-            'POST' : 'PUT';
+        const method = isNew ? 'POST' : 'PUT';
         try {
             const updatedChar = await apiCall(url, {
                 method: method,
@@ -412,8 +444,7 @@ export class PartyHub {
             const payload = {
                 description: description,
                 rules_kb: rules,
-                language: this.app.settings.Appearance.language ||
-                    'en'
+                language: this.app.settings.Appearance.language || 'en'
             };
             const charData = await apiCall('/api/game/generate-character', {
                 method: 'POST',
@@ -504,29 +535,32 @@ export class PartyHub {
 
     _addEquipmentRow(section) {
         const classMap = {
-            weapons: 'weapon-row', armour: 'armour-row', ammunition: 'ammunition-row'
+            weapons: 'weapon-row', armour: 'armour-row', ammunition: 'ammunition-row',
+            inventory: 'inventory-row', spells: 'spell-list-row'
         };
         const gridMap = {
             weapons: this.weaponsGrid,
             armour: this.armourGrid,
-            ammunition: this.ammunitionGrid
+            ammunition: this.ammunitionGrid,
+            inventory: this.inventoryGrid,
+            spells: this.spellListGrid
         };
         const htmlMap = {
             weapons: `
                 <div class="drag-handle">⠿</div>
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="name" placeholder="Name">
+                       data-field-key="name" placeholder="Description">
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="type" placeholder="Type">
+                        data-field-key="type" placeholder="Type">
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="to_hit" placeholder="To Hit">
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="damage" placeholder="Damage">
+                        data-field-key="damage" placeholder="Damage">
                 <button class="delete-row-btn">🗑️</button>`,
             armour: `
                 <div class="drag-handle">⠿</div>
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="name" placeholder="Name">
+                       data-field-key="name" placeholder="Description">
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="type" placeholder="Type">
                 <input type="text" class="cs-input-underline-small"
@@ -535,9 +569,35 @@ export class PartyHub {
             ammunition: `
                 <div class="drag-handle">⠿</div>
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="type" placeholder="Type">
+                       data-field-key="description" placeholder="Description">
                 <input type="number" class="cs-input-underline-small"
                        data-field-key="count" placeholder="Count">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="to_hit" placeholder="To Hit">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="damage" placeholder="Damage">
+                <button class="delete-row-btn">🗑️</button>`,
+            inventory: `
+                <div class="drag-handle">⠿</div>
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="description" placeholder="Description">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="quantity" placeholder="Qty">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="weight" placeholder="Wt">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="value" placeholder="Value">
+                <button class="delete-row-btn">🗑️</button>`,
+            spells: `
+                <div class="drag-handle">⠿</div>
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="level" placeholder="Lvl">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="name" placeholder="Spell Name">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="duration" placeholder="Duration">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="range" placeholder="Range">
                 <button class="delete-row-btn">🗑️</button>`
         };
         const grid = gridMap[section];
@@ -553,7 +613,9 @@ export class PartyHub {
     }
 
     _handleEquipmentDelete(deleteButton) {
-        const row = deleteButton.closest('.weapon-row, .armour-row, .ammunition-row');
+        const row = deleteButton.closest(
+            '.weapon-row, .armour-row, .ammunition-row, .inventory-row, .spell-list-row'
+        );
         row.remove();
         this._triggerAutosave();
     }
@@ -578,7 +640,7 @@ export class PartyHub {
             return `
                 <div class="drag-handle">⠿</div>
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="name" placeholder="Name"
+                       data-field-key="name" placeholder="Description"
                        value="${item.name || ''}">
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="type" placeholder="Type"
@@ -599,7 +661,7 @@ export class PartyHub {
             return `
                 <div class="drag-handle">⠿</div>
                 <input type="text" class="cs-input-underline-small"
-                       data-field-key="name" placeholder="Name"
+                       data-field-key="name" placeholder="Description"
                        value="${item.name || ''}">
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="type" placeholder="Type"
@@ -618,31 +680,80 @@ export class PartyHub {
                 return `
                     <div class="drag-handle">⠿</div>
                     <input type="text" class="cs-input-underline-small"
-                           data-field-key="type" placeholder="Type"
-                           value="${item.type || ''}">
+                           data-field-key="description" placeholder="Description"
+                           value="${item.description || ''}">
                     <input type="number" class="cs-input-underline-small"
                            data-field-key="count" placeholder="Count"
                            value="${item.count || ''}">
+                    <input type="text" class="cs-input-underline-small"
+                           data-field-key="to_hit" placeholder="To Hit"
+                           value="${item.to_hit || ''}">
+                    <input type="text" class="cs-input-underline-small"
+                           data-field-key="damage" placeholder="Damage"
+                           value="${item.damage || ''}">
                     <button class="delete-row-btn">🗑️</button>
                 `;
             }
         );
     }
 
+    _renderInventory(items) {
+        this._renderEquipment(this.inventoryGrid, 'inventory', items, (item = {}) => {
+            return `
+                <div class="drag-handle">⠿</div>
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="description" placeholder="Description"
+                       value="${item.description || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="quantity" placeholder="Qty"
+                       value="${item.quantity || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="weight" placeholder="Wt"
+                       value="${item.weight || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="value" placeholder="Value"
+                       value="${item.value || ''}">
+                <button class="delete-row-btn">🗑️</button>
+            `;
+        });
+    }
+
+    _renderSpellList(spells) {
+        this._renderEquipment(this.spellListGrid, 'spell-list', spells, (item = {}) => {
+            return `
+                <div class="drag-handle">⠿</div>
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="level" placeholder="Lvl"
+                       value="${item.level || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="name" placeholder="Spell Name"
+                       value="${item.name || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="duration" placeholder="Duration"
+                       value="${item.duration || ''}">
+                <input type="text" class="cs-input-underline-small"
+                       data-field-key="range" placeholder="Range"
+                       value="${item.range || ''}">
+                <button class="delete-row-btn">🗑️</button>
+            `;
+        });
+    }
+
     _renderSpellSlots(slots = {}) {
         this.spellSlotsGrid.innerHTML = '';
-        for (let i = 1; i < 10; i++) {
-            const slot = slots[`lvl${i}`] ||
-                {};
+        for (let i = 1; i <= 6; i++) {
+            const slot = slots[`lvl${i}`] || {};
             const group = document.createElement('div');
             group.className = 'form-group';
             group.innerHTML = `
                 <label>Level ${i}</label>
                 <div class="spell-slot-row">
-                    <input type="number" data-field="stats.spells.slots.lvl${i}.used"
+                    <input type="number" class="cs-input-underline-small"
+                           data-field="stats.spells.slots.lvl${i}.used"
                            placeholder="Used" value="${slot.used || ''}">
                     <span>/</span>
-                    <input type="number" data-field="stats.spells.slots.lvl${i}.max"
+                    <input type="number" class="cs-input-underline-small"
+                           data-field="stats.spells.slots.lvl${i}.max"
                            placeholder="Max" value="${slot.max || ''}">
                 </div>
             `;
@@ -785,7 +896,6 @@ export class PartyHub {
         const grid = e.currentTarget;
         const afterElement = this._getDragAfterElement(grid, e.clientY);
         const currentPlaceholder = grid.querySelector('.drop-placeholder');
-
         if (afterElement == null) {
             if (!currentPlaceholder || currentPlaceholder.nextSibling) {
                 if (currentPlaceholder) currentPlaceholder.remove();
@@ -829,7 +939,6 @@ export class PartyHub {
     _getDragAfterElement(container, y) {
         const draggableElements =
             [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
-
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
