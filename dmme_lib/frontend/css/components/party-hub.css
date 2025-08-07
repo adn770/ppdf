@@ -12,7 +12,8 @@
 .hub-left-panel-top,
 .hub-left-panel-bottom {
     flex: 1;
-    min-height: 0; /* Important for flexbox scrolling */
+    min-height: 0;
+    /* Important for flexbox scrolling */
     display: flex;
     flex-direction: column;
     padding: 16px;
@@ -108,7 +109,8 @@
 }
 
 .primary-stat-value {
-    display: inline-block; /* Allows for padding and sizing */
+    display: inline-block;
+    /* Allows for padding and sizing */
     padding: 4px 8px;
     border-radius: 6px;
     transition: all 0.2s ease-in-out;
@@ -203,10 +205,12 @@
     gap: 4px;
 }
 
-/* fixed label | fixed score | fixed gap | fixed modifier */
+/* fixed label |
+ fixed score | fixed gap | fixed modifier */
 .ability-score-row { grid-template-columns: 12ch 5ch 3ch auto; }
 
-/* fixed label | fixed score */
+/* fixed label |
+ fixed score */
 .save-row { grid-template-columns: 16ch 5ch; }
 
 .ability-score-row label, .save-row label {
@@ -225,7 +229,8 @@
     border-bottom: 1px solid var(--subtle-border-color);
     background: transparent;
     border-radius: 0;
-    width: 100%; /* Fill the grid column */
+    width: 100%;
+    /* Fill the grid column */
     margin: 0;
 }
 .score-input::-webkit-outer-spin-button,
@@ -309,25 +314,68 @@
     right: 12px;
 }
 
-.weapon-row { display: grid; gap: 8px; grid-template-columns: 2fr 1fr 1fr 1fr 32px; }
-.armour-row { display: grid; gap: 8px; grid-template-columns: 2fr 2fr 1fr 32px; }
-.ammunition-row { display: grid; gap: 8px; grid-template-columns: 1fr auto 32px; }
+.drag-handle {
+    cursor: grab;
+    color: #888;
+    padding-right: 2px;
+    font-size: 1.8em;
+    line-height: 1;
+    opacity: 0;
+    transition: color 0.2s, opacity 0.2s;
+}
 
 .delete-row-btn {
     background: none;
     border: none;
     color: #888;
-    font-size: 1.5em;
+    font-size: 1.2em;
     cursor: pointer;
-    padding: 0;
+    padding: 0 0 0 2px;
     line-height: 1;
+    opacity: 0;
+    transition: color 0.2s, opacity 0.2s;
 }
+
+#weapons-grid > .weapon-row:hover .drag-handle,
+#armour-grid > .armour-row:hover .drag-handle,
+#ammunition-grid > .ammunition-row:hover .drag-handle,
+#weapons-grid > .weapon-row:hover .delete-row-btn,
+#armour-grid > .armour-row:hover .delete-row-btn,
+#ammunition-grid > .ammunition-row:hover .delete-row-btn {
+    opacity: 1;
+}
+.drag-handle:hover { color: #ccc; }
 .delete-row-btn:hover { color: var(--danger-color); }
+.dragging { opacity: 0.4 !important; background: #333; }
+.drop-placeholder { height: 38px; background: var(--focus-color); border-radius: 4px; }
 
 .equipment-header-row {
-    padding: 0 4px 8px 4px;
+    display: grid;
+    align-items: end;
+    gap: 8px;
+    padding: 0 4px;
     margin-bottom: 8px;
-    align-items: center;
+}
+
+#weapons-grid, #armour-grid, #ammunition-grid {
+    display: grid;
+    gap: 4px 8px;
+}
+
+.equipment-header-row.weapon-row, #weapons-grid {
+    grid-template-columns: 28px 2fr 1fr 1fr 1fr 32px;
+}
+.equipment-header-row.armour-row, #armour-grid {
+    grid-template-columns: 28px 2fr 2fr 1fr 32px;
+}
+.equipment-header-row.ammunition-row, #ammunition-grid {
+    grid-template-columns: 28px 2fr 1fr 32px;
+}
+
+#weapons-grid > .weapon-row,
+#armour-grid > .armour-row,
+#ammunition-grid > .ammunition-row {
+    display: contents; /* Children become direct grid items */
 }
 
 .equipment-header-row span {
@@ -335,6 +383,11 @@
     font-weight: bold;
     color: #888;
     text-transform: uppercase;
+    padding-bottom: 4px;
+}
+
+.equipment-header-row span:not(:first-child):not(:last-child) {
+    border-bottom: 1px solid var(--subtle-border-color);
 }
 
 .spell-slots-grid {
