@@ -1,0 +1,1728 @@
+{
+  "joc_de_rol": {
+    "nomenclatura": {
+      "titol": "Nomenclatura",
+      "notacio_daus": {
+        "titol": "Notació dels daus",
+        "descripcio": "La notació dX, on 'X' és el nombre de cares del dau, es fa servir en aquest llibre per descriure els daus dels jocs de rol. Així d6 és un de sis cares, d20 de vint, etc. Quan cal tirar diversos daus i sumar-ne els resultats, la quantitat s'indica abans de la 'd'; per exemple, 3d6 vol dir tirar tres daus de sis cares (o el mateix dau tres cops) i sumar-ne els resultats. Si s'escriu, '3d6+2' llavors indica llançar tres daus de sis cares i al final afegir-hi 2.",
+        "tirades_especials": {
+          "titol": "Tirades X-en-6 i X-en-20",
+          "descripcio": "Són per especificar una probabilitat d'èxit de X-en-Y. Per exemple, 2-en-6, 12-en-20, etc.; significa que s'ha de tirar un dau de 'Y' cares i es té èxit quan el resultat és menor o igual a 'X'. Per exemple, quan s'indica una probabilitat de 2-en-6 i es té èxit quan el resultat de la tirada del dau de sis cares és un '1' o un '2' i és un fracàs quan és per sobre."
+        }
+      },
+      "termes": [
+        {"terme": "Director de joc (DJ)", "definicio": "També anomenat àrbitre, narrador, dungeon master o simplement master, és el jugador que explica i facilita la interacció amb el món de joc, és qui narra l'aventura, descriu l'entorn i en decideix la reacció de les criatures a les accions dels personatges. Igualment, és qui aplica les regles i en resol les possibles disputes."},
+        {"terme": "Jugadors", "definicio": "Els altres participants, cada jugador sol conduir i interpretar un únic personatge."},
+        {"terme": "Personatge jugador (PJ)", "definicio": "El personatge conduït i interpretat per un jugador."},
+        {"terme": "Personatge no jugador (PNJ)", "definicio": "Qualsevol altre personatge que interactua amb els personatges dels jugadors durant el joc, que són interpretats i conduïts pel director de joc."},
+        {"terme": "Grup", "definicio": "El grup de personatges que van junts d'aventures."},
+        {"terme": "Aventura", "definicio": "Una sèrie d'una o més sessions de joc en les que el grup s'involucra en una trama o explora una ubicació."},
+        {"terme": "Campanya", "definicio": "Una corrua d'aventures encadenades, que solen implicar un grup de personatges estable i un únic món de joc."},
+        {"terme": "Punts d'habilitat", "definicio": "Les habilitats: força (FOR), destresa (DES), constitució (CON), intel·ligència (INT), saviesa (SAV), i carisma (CAR) que descriuen les característiques tant físiques com mentals del personatge."},
+        {"terme": "Classe", "definicio": "Descriu els trets físics, les competències, els talents, els idiomes que coneix, amb quines armes i armadures pot lluitar o quants encanteris pot llançar el personatge."},
+        {"terme": "Nivell", "definicio": "L'experiència es representa pel nivell, començant al primer i avançant superant les aventures. En assolir un nivell nou es pot obtenir noves capacitats i poders."},
+        {"terme": "Punts d'experiència (PX)", "definicio": "L'avanç del personatge s’obté dels punts d'experiència atorgats pel DJ després de cada sessió i es puja de nivell quan s'ha acumulat la quantitat de punts definida per la classe."},
+        {"terme": "Alineació (AL)", "definicio": "Els personatges es poden alinear amb un dels tres principis còsmics universals: legalitat, neutralitat o caos, i això en determina com la màgia influeix en ells. Aquest aspecte es pot fer servir com a pauta per interpretar el comportament del personatge."},
+        {"terme": "Punts de cop (pc)", "definicio": "És una mesura abstracta de la capacitat per entomar i evitar els cops, tots els éssers en tenen un nombre màxim que augmenta amb l'experiència i un nombre actual, dels que se'n fa el seguiment per separat. Quan es pren dany els punts actuals minven, i es poden recuperar amb la curació màgica o el descans, però mai per sobre del valor màxim."},
+        {"terme": "Daus de cop (DC)", "definicio": "El tipus i nombre de daus que es fan servir per calcular els punts de cop màxims del personatge que venen determinats per la classe i el nivell."},
+        {"terme": "Classe d'armadura (CA)", "definicio": "És la capacitat del personatge per evitar el dany en combat que depèn de la mena d'armadura que porti i del modificador de destresa; com més alta sigui la CA millor és la defensa."},
+        {"terme": "La bonificació a l'atac (BA)", "definicio": "Representa l'expertesa del personatge en les arts del combat i augmenta proporcionalment a cada nivell."},
+        {"terme": "Tirada d'atac", "definicio": "És la tirada que es fa per decidir si es pot colpir a un oponent en un atac, superant la seva defensa (CA)."},
+        {"terme": "Tirada de salvació", "definicio": "La capacitat del personatge per evitar veure's afectat per certs tipus de perills o disminuir-ne el dany. Se'n defineixen cinc categories: mort 'M' (o metzina), varetes 'V', paràlisi 'P' (o petrificació), atacs d'alè 'A', encanteris 'E' (ceptres o bastons màgics). Depèn de la classe i milloren amb les pujades de nivell."},
+        {"terme": "Tirada de moral (opcional)", "definicio": "Es fa per decidir el comportament (fugir o continuar lluitant) de les criatures durant un combat."},
+        {"terme": "Factor de moviment (MV)", "definicio": "La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. Es descriu per un factor de moviment base i un factor de moviment d'encontre assenyalat entre parèntesis. El factor per defecte és 120' (40'); un factor base de 120' i un factor d'encontre de 40'."}
+      ]
+    },
+    "personatges": {
+      "titol": "Personatges",
+      "creacio_personatges": {
+        "titol": "Creació de personatges",
+        "passos": [
+          {"pas": 1, "accio": "Tira les puntuacions d'habilitat", "detall": "Tira 3d6 en ordre per a cada habilitat: força, destresa, constitució, intel·ligència, saviesa i carisma."},
+          {"pas": "opcional_1", "accio": "Ajustar les puntuacions d'habilitat", "detall": "Fins a dos cops, pots intercanviar els punts de dues habilitats i ajustar el personatge al teu gust. Per exemple, si vols jugar amb un lladre i tens un valor baix a destresa la pots intercanviar amb una altra habilitat on hi hagi un valor més alt."},
+          {"pas": "opcional_2", "accio": "Personatges deficients", "detall": "Pots començar de nou quan els resultats són molt baixos; per exemple, un 8 o menys en cada habilitat o una puntuació extremadament baixa en una d'elles."},
+          {"pas": 2, "accio": "Anota els modificadors per habilitat", "detall": "Anota els modificadors de les habilitats del personatge segons la taula corresponent."},
+          {"pas": 3, "accio": "Tria una classe", "detall": "Tria una de les classes tenint en compte els requisits mínims en els punts d'habilitat."},
+          {"pas": 4, "accio": "Tirades de salvació, encanteris i talents de classe", "detall": "Anota qualsevol talent que tingui el personatge per la seva classe i les tirades de salvació. Si el personatge té un llibre d'encanteris, anota quins encanteris conté."},
+          {"pas": 5, "accio": "Tira pels punts de cop", "detall": "Determina quants punts de cop màxims té el personatge tirant el dau indicat per a la classe triada i suma el modificador per constitució. Sempre es comença amb almenys 1 punt de cop."},
+          {"pas": "opcional_3", "accio": "Màxim al primer nivell", "detall": "Per tal d'augmentar la supervivència dels personatges de primer nivell, en comptes de tirar el dau de cop, simplement anota el resultat màxim possible."},
+          {"pas": 6, "accio": "Anota els idiomes coneguts", "detall": "La classe del personatge i la intel·ligència determinen els idiomes coneguts a més del comú."},
+          {"pas": 7, "accio": "Compra l'equipament", "detall": "El personatge comença amb 3d6×10 peces d'or que pot fer servir per adquirir l'equipament inicial. Recorda: La classe que hagis triat pot restringir l'ús d'algun equipament; per exemple, armes i armadures."},
+          {"pas": 8, "accio": "Anota la classe d'armadura", "detall": "La CA de l'armadura modificada amb la destresa. Quan no es porta cap armadura la CA base és 10."},
+          {"pas": 9, "accio": "Tria l'alineació (opcional)", "detall": "Decideix amb quina esfera còsmica està alineat el personatge i anota-ho a la fitxa."},
+          {"pas": 10, "accio": "Tocs finals", "detall": "Tria-li un nom i anota que és al primer nivell, amb zero punts d'experiència i ja pot començar l'aventura!"}
+        ]
+      },
+      "habilitats": {
+        "titol": "Habilitats",
+        "forca": {"nom": "Força", "descripcio": "Descriu el múscul i el poder físic; afecta el combat.", "efectes": ["Lluita cos a cos: el modificador s'aplica tant a les tirades d'atac com a les de dany (mínim un punt de dany) per les armes de lluita cos a cos.", "Obrir portes: s'afegeix el modificador a la probabilitat d'èxit per obrir una porta travada."]},
+        "destresa": {"nom": "Destresa", "descripcio": "La coordinació ull-mà, l'agilitat, els reflexos i l'equilibri que pot millorar les habilitats d'algunes classes.", "efectes": ["CA: modifica la classe d'armadura del personatge.", "Projectils: s'aplica a les tirades d'atac amb les armes a distància, però no a les de dany.", "Iniciativa: modifica la del personatge si es fa servir la regla opcional per iniciativa individual."]},
+        "constitucio": {"nom": "Constitució", "descripcio": "En representa la salut, el vigor i la resistència. Clau per a totes les classes perquè n'augmenta la capacitat de sobreviure i resistir alguns efectes màgics.", "efectes": ["Punts de cop: s'aplica quan es tiren els punts de cop (és a dir, al primer nivell i cada vegada que es puja de nivell) i sempre s'obté un punt de cop com a mínim."]},
+        "intelligencia": {"nom": "Intel·ligència", "descripcio": "És una mesura dels coneixements del personatge i la seva capacitat d'aprenentatge abans de començar el joc; no en mesura la seva memòria ni la capacitat de resoldre enigmes; l'enginy del jugador és el que s'ha de fer servir per a aquestes situacions.", "efectes": ["Idiomes parlats: el valor del modificador indica el nombre d'idiomes addicionals que parla el personatge.", "Alfabetització: indica la capacitat del personatge per llegir i escriure la llengua materna."]},
+        "saviesa": {"nom": "Saviesa", "descripcio": "Descriu la força de voluntat, el sentit comú, la percepció, la intuïció i la connexió del personatge amb l'univers.", "efectes": ["Salvació contra màgia: s'aplica a les tirades de salvació contra els efectes màgics. Normalment, no s'inclou per les tirades de salvació contra els atacs d'alè, però pot aplicar-se a qualsevol altra categoria."]},
+        "carisma": {"nom": "Carisma", "descripcio": "La personalitat, oratòria i habilitat per liderar.", "efectes": ["Reacció dels PNJ: s'aplica el modificador per carisma a la contractació de jornalers i mercenaris, o també quan s'interactua amb criatures."]}
+      },
+      "alineacio": {
+        "titol": "Alineació (opcional)",
+        "descripcio": "Tots els éssers vius, tant els personatges i els PNJ com les criatures, normalment segueixen una de les tres filosofies de comportament anomenades alineacions.",
+        "tipus": [
+          {"nom": "Legal (o legalitat)", "descripcio": "Defensen la justícia, les lleis i la veritat, creuen en el sacrifici personal pel bé comú i creuen en el benestar de la majoria per sobre de l'individual."},
+          {"nom": "Neutral (o neutralitat)", "descripcio": "Creuen en l'equilibri entre les idees de la llei i el caos, tendeixen a fer tot allò que els calgui a si mateixos i poden cometre actes tan 'bons' com 'malvats' per tal d'aconseguir els seus propis objectius; generalment no posaran les necessitats d'altres per davant de les pròpies."},
+          {"nom": "Caòtic (o caos)", "descripcio": "Aquests estan en directa oposició a la llei, no s'hi pot confiar, ja que solen actuar de maneres 'malvades' i tan sols pensen en si mateixos."}
+        ],
+        "regles": [
+          {"regla": "Revelar l'alineació", "descripcio": "El jugador ha d'informar el director de joc sobre quina és l'alineació del seu personatge, però no ho ha de compartir mai amb els altres jugadors."},
+          {"regla": "Interpretar l'alineació", "descripcio": "A l'hora de decidir les accions del seu personatge, els jugadors han d'intentar adherir-se a l'alineació triada, així i tot, tan sols s'ha de fer servir com una pauta per construir el personatge i mai ha de fer-se servir de tal manera que ell o el grup mori. No pot ser l'excusa que permeti enfrontaments entre els jugadors."}
+        ]
+      },
+      "riquesa": {
+        "titol": "Riquesa",
+        "descripcio": "Els personatges amb èxit acumulen fortunes amb el tresor recuperat a les aventures. Aquestes prenen moltes formes, però sovint la més útil són els diners.",
+        "monedes": {
+          "titol": "Monedes",
+          "descripcio": "La moneda més comuna és la peça d'or, així i tot, també n'hi ha d'altres metalls.",
+          "taula_equivalencies": [
+            {"moneda": "pp", "valor_en_pp": 1, "valor_en_po": "1/5", "valor_en_pe": "1/10", "valor_en_pa": "1/50", "valor_en_pc": "1/500"},
+            {"moneda": "po", "valor_en_pp": 5, "valor_en_po": 1, "valor_en_pe": "1/2", "valor_en_pa": "1/10", "valor_en_pc": "1/100"},
+            {"moneda": "pe", "valor_en_pp": 10, "valor_en_po": 2, "valor_en_pe": 1, "valor_en_pa": "1/5", "valor_en_pc": "1/50"},
+            {"moneda": "pa", "valor_en_pp": 50, "valor_en_po": 10, "valor_en_pe": 5, "valor_en_pa": 1, "valor_en_pc": "1/10"},
+            {"moneda": "pc", "valor_en_pp": 500, "valor_en_po": 100, "valor_en_pe": 50, "valor_en_pa": 10, "valor_en_pc": 1}
+          ],
+          "abreviatures": [
+            {"abrev": "pp", "nom": "peça de platí"},
+            {"abrev": "po", "nom": "peça d'or"},
+            {"abrev": "pe", "nom": "peça d'electrum"},
+            {"abrev": "pa", "nom": "peça d'argent"},
+            {"abrev": "pc", "nom": "peça de coure"}
+          ]
+        },
+        "monedes_inicials": {"descripcio": "Els personatges comencen a jugar amb 3d6×10 peces d'or que poden fer servir per comprar l'equipament."}
+      },
+      "idiomes": {
+        "titol": "Idiomes",
+        "descripcio": "Depenen de la classe, el món de joc i tots parlen el comú, tanmateix, els que tenen una intel·ligència més alta poden aprendre'n d'altres.",
+        "comu": {"nom": "El comú", "descripcio": "És l'idioma més usat entre les espècies intel·ligents. Totes les races de personatge i algunes criatures són capaces de parlar el comú."},
+        "altres": {"nom": "Altres idiomes", "descripcio": "En els mons de joc, moltes criatures intel·ligents tenen el seu idioma propi que alguns personatges poden aprendre.", "exemples": ["centauric", "dialecte humà", "doppelgänger", "dragonès", "èlfic", "gargòlic", "gegantés", "gnòlic", "gnòmic", "granyotic", "goblinès", "hàrpic", "hobgoblinès", "kobold", "llangardànic", "medúsic", "minotàuric", "mitgenc", "nanenc", "ogrès", "òrquic", "osgonès", "silvà", "trolès"]},
+        "alfabetitzacio": {
+          "titol": "Llegir i escriure",
+          "nivells": [
+            {"intelligencia": 3, "habilitat": "Incapaç de llegir o escriure, i xampurrejar la llengua materna."},
+            {"intelligencia": "4-5", "habilitat": "Incapaç de llegir o escriure."},
+            {"intelligencia": "6-8", "habilitat": "Pot escriure paraules simples en la llengua materna."},
+            {"intelligencia": "9-12", "habilitat": "Pot llegir i escriure la llengua materna."},
+            {"intelligencia": "13-15", "habilitat": "Pot llegir i escriure un idioma, i en coneix un d'addicional."},
+            {"intelligencia": "16-17", "habilitat": "Pot llegir i escriure un idioma, i en coneix dos d'addicionals."},
+            {"intelligencia": 18, "habilitat": "Pot llegir i escriure un idioma, i coneix tres d'addicionals."}
+          ]
+        }
+      },
+      "experiencia": {
+        "titol": "Experiència",
+        "descripcio": "Els que sobreviuen l'aventura se'ls atorga punts d'experiència (PX) pel tresor i les criatures superades.",
+        "pujar_nivell": {"titol": "Pujar de nivell", "descripcio": "Si un personatge té els punts d'experiència per assolir un nou nivell, cal revisar la descripció de la classe i actualitzar la fitxa amb les millores a les tirades de salvació, la bonificació d'atac, el nombre d'encanteris que pot preparar, etc. També es tira el dau de cop (modificat per la constitució si s'escau) i s'afegeix el resultat al nombre de punts de cop actual i màxim."},
+        "maxim_px_sessio": {"titol": "El màxim de PX en una sessió", "descripcio": "Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés de punts d'experiència que faria pujar un personatge dos o més nivells de cop es perd i el personatge es queda un punt d'experiència per sota del nivell següent."}
+      }
+    },
+    "equipament": {
+      "titol": "Equipament",
+      "equip_aventura": [
+        {"objecte": "Aigua beneïda, un vial", "preu_po": 25, "descripcio": "Per una persona santa que sovint es fa servir en alguns rituals religiosos o per infligir ​​dany a monstres no-morts, i tan sols reté el seu poder en els vials especials en què es beneeix."},
+        {"objecte": "Alls, tres cabeces", "preu_po": 5},
+        {"objecte": "Benes curatives (1d2 punts de cop, 3 torns)", "preu_po": 10},
+        {"objecte": "Bota o ampolla de vidre buida", "preu_po": 1, "descripcio": "De cuir que pot contenir fins a 2 litres de líquid."},
+        {"objecte": "Caixa d'esca (amb pedrenyera i acer)", "preu_po": 3, "descripcio": "Es fa servir per fer foc i encendre torxes, amb 2-en-6 possibilitats d'èxit per assalt i cal dedicar-hi un torn."},
+        {"objecte": "Campana", "preu_po": 3, "descripcio": "Útil per parar paranys del tipus alarma."},
+        {"objecte": "Corda de cànem, 50 peus", "preu_po": 1, "descripcio": "Aguanta el pes d'aproximadament tres éssers de mida humana; la de seda és més prima i lleugera."},
+        {"objecte": "Corda de seda, 50 peus", "preu_po": 10},
+        {"objecte": "Eines de lladre", "preu_po": 25, "descripcio": "Necessàries per desactivar paranys i per obrir panys. Inclou: rossinyols, una serra de metall, un martellet, puntes d'acer, tenalles, tisores, etc."},
+        {"objecte": "Espelma, una dotzena", "preu_po": 1, "descripcio": "Capaç d'il·luminar en un radi de 5 peus i cremar durant 6 torns (1 hora)."},
+        {"objecte": "Estaques (tres) i maça de fusta", "preu_po": 3, "descripcio": "Tres estaques de 18 polzades de llarg són molt útils contra els vampirs."},
+        {"objecte": "Flascó buit", "preu_pa": 1},
+        {"objecte": "Galleda", "preu_po": 1},
+        {"objecte": "Ganxo d'escalada", "preu_po": 25, "descripcio": "D'acer amb tres o quatre puntes que s'utilitza per llançar i ancorar una corda."},
+        {"objecte": "Guix, un saquet", "preu_po": 1, "descripcio": "Útil per marcar a terra i a les parets de pedra."},
+        {"objecte": "Llanterna", "preu_po": 10, "descripcio": "Il·lumina en un radi de 30 peus, protegeix la flama dels corrents d'aire i es pot cobrir per amagar la llum. Crema un flascó d'oli cada quatre hores (24 torns)."},
+        {"objecte": "Llibre d'encanteris (100 pàgines)", "preu_po": 25},
+        {"objecte": "Manta d'hivern", "preu_po": 1},
+        {"objecte": "Martell petit d'acer", "preu_po": 2, "descripcio": "Eina que es pot emprar per a la construcció o com a maça per piquetes de ferro o estaques de fusta."},
+        {"objecte": "Matallops, un menat", "preu_po": 10, "descripcio": "És una herba que pot repel·lir els licantrops. Cal colpejar en un combat cos a cos."},
+        {"objecte": "Mirall de mà d'acer polit", "preu_po": 5, "descripcio": "Petita peça d'acer polit molt útil per reflectir un atac de mirada o espiar a les cantonades."},
+        {"objecte": "Motxilla", "preu_po": 5, "descripcio": "Pot contenir fins a 400 monedes. Es pot portar a l'esquena per tenir les mans lliures."},
+        {"objecte": "Obriülls, un saquet", "preu_po": 1, "descripcio": "Petita arma de ferro amb quatre punxes disposades perquè en quedi una enlaire. S'escampen per terra per tal d'alentir i ferir als perseguidors. Un saquet cobreix una àrea de deu peus quadrats. Les criatures que lluiten o es mouen per l'àrea han de fer una tirada de salvació contra arma d'alè (+2 amb calçat reforçat) o patir 1d4 punts de dany."},
+        {"objecte": "Oli, un flascó", "preu_po": 2, "descripcio": "Un flascó alimenta una llanterna durant quatre hores (24 torns) o es pot usar com una arma.", "usos": ["Llançament: es pot encendre un flascó i llançar-lo.", "Toll: l'oli cobreix un diàmetre de tres peus de terra. S'encén i crema durant 1 torn, danyant a qualsevol personatge o criatures en moviment a través del toll.", "Invulnerabilitat: l'oli encès no perjudica les criatures que tenen un atac de flama natural."]},
+        {"objecte": "Pal de fusta de deu peus", "preu_po": 1, "descripcio": "Fa 2 polzades de gruix. És útil per colpir i activar objectes sospitosos a la masmorra."},
+        {"objecte": "Pala", "preu_po": 15},
+        {"objecte": "Palanca", "preu_po": 10, "descripcio": "Sòlida de ferro i de dos o tres peus de llarg que es pot fer servir per forçar portes o per obrir altres objectes semblants."},
+        {"objecte": "Pergamí, un full", "preu_po": 1},
+        {"objecte": "Piquetes de ferro (12)", "preu_po": 1, "descripcio": "Es poden fer servir per falcar les portes perquè restin obertes o tancades, com a clau per lligar-hi una corda, etc."},
+        {"objecte": "Ploma i tinta (fins a 10 encanteris)", "preu_po": 15},
+        {"objecte": "Poció de curació (1d6 punts de cop)", "preu_po": 100},
+        {"objecte": "Racions de viatge per set dies", "preu_po": 15, "descripcio": "Aliments secs i conservats que es poden dur en viatges llargs on es preveu que pot costar trobar menjar fresc."},
+        {"objecte": "Racions estàndard per set dies", "preu_po": 5, "descripcio": "Aliments frescos sense conservar."},
+        {"objecte": "Sac gran (1) o petit (2)", "preu_po": 2, "descripcio": "Pot contenir fins a 600 monedes els grans i fins a 200 monedes els petits."},
+        {"objecte": "Sac de dormir", "preu_po": 1, "descripcio": "Jaç enrotllable que proporcionen confort quan cal dormir al ras."},
+        {"objecte": "Símbol sagrat de fusta", "preu_po": 1, "descripcio": "Un practicant de la màgia divina està obligat a dur un símbol sagrat de la seva deïtat que pot ser de fusta o de plata. Cada religió té el seu símbol."},
+        {"objecte": "Símbol sagrat de plata", "preu_po": 25},
+        {"objecte": "Torxes (6)", "preu_po": 1, "descripcio": "Pot cremar durant 1 hora (6 torns), il·luminant clarament un radi de 30 peus."},
+        {"objecte": "Vi (2 pintes)", "preu_po": 2},
+        {"objecte": "Xiulet per fer senyals", "preu_pa": 1}
+      ]
+    },
+    "armes_i_armadures": {
+      "titol": "Armes i armadures",
+      "armes": [
+        {"objecte": "Alabarda", "dany": "1d10", "preu_po": 7, "qualitats": "Clavar, cos a cos, a dues mans", "pes_monedes": 150},
+        {"objecte": "Arc curt", "dany": "1d6", "preu_po": 15, "qualitats": "Projectils (5'-50' / 51'-100' / 101'-150'), a dues mans", "pes_monedes": 30},
+        {"objecte": "Arc llarg", "dany": "1d6", "preu_po": 40, "qualitats": "Projectil (5'-70' / 71'-140' / 141'-210'), a dues mans", "pes_monedes": 30},
+        {"objecte": "Ballesta", "dany": "1d6", "preu_po": 30, "qualitats": "Projectils (5'-80' / 81'-160' / 161'-240'), recarrega, a dues mans", "pes_monedes": 60},
+        {"objecte": "Bastó", "dany": "1d4", "preu_po": 2, "qualitats": "Contundent, cos a cos, lent, a dues mans", "pes_monedes": 40},
+        {"objecte": "Daga", "dany": "1d4", "preu_po": 3, "qualitats": "Cos a cos, projectil (5'-10' / 11'-20' / 21'-30')", "pes_monedes": 10},
+        {"objecte": "Daga de plata", "dany": "1d4", "preu_po": 30, "qualitats": "Cos a cos, projectil (5'-10' / 11'-20' / 21'-30')", "pes_monedes": 10},
+        {"objecte": "Destral de batalla", "dany": "1d8", "preu_po": 7, "qualitats": "Cos a cos, a dues mans", "pes_monedes": 60},
+        {"objecte": "Destral de mà", "dany": "1d6", "preu_po": 4, "qualitats": "Cos a cos, projectil (5'-10' / 11'-20' / 21'-30')", "pes_monedes": 30},
+        {"objecte": "Espasa", "dany": "1d8", "preu_po": 10, "qualitats": "Cos a cos", "pes_monedes": 60},
+        {"objecte": "Espasa a dues mans", "dany": "1d10", "preu_po": 15, "qualitats": "Cos a cos, a dues mans", "pes_monedes": 150},
+        {"objecte": "Espasa bastarda", "dany": "1d6+1 / 1d8+1", "preu_po": 15, "qualitats": "Cos a cos, a una o a dues mans", "pes_monedes": 80},
+        {"objecte": "Espasa curta", "dany": "1d6", "preu_po": 7, "qualitats": "Cos a cos", "pes_monedes": 30},
+        {"objecte": "Fona", "dany": "1d4", "preu_po": 2, "qualitats": "Contundent, projectil (5'-40' / 41'-80' / 81'-160')", "pes_monedes": 10},
+        {"objecte": "Garrot", "dany": "1d4", "preu_po": 3, "qualitats": "Contundent, cos a cos", "pes_monedes": 60},
+        {"objecte": "Javelina", "dany": "1d4", "preu_po": 1, "qualitats": "Projectil (5'-30' / 31'-60' / 61'-90')", "pes_monedes": 20},
+        {"objecte": "Llança", "dany": "1d6", "preu_po": 4, "qualitats": "Clavar, cos a cos, projectil (5'-20' / 21'-40' / 41'-60')", "pes_monedes": 30},
+        {"objecte": "Llança de cavalleria", "dany": "1d6", "preu_po": 5, "qualitats": "Envestir, cos a cos", "pes_monedes": 120},
+        {"objecte": "Maça", "dany": "1d6", "preu_po": 5, "qualitats": "Contundent, cos a cos", "pes_monedes": 30},
+        {"objecte": "Martell de guerra", "dany": "1d6", "preu_po": 5, "qualitats": "Contundent, cos a cos", "pes_monedes": 30}
+      ],
+      "armes_improvisades": [
+        {"objecte": "Aigua beneïda", "dany": "1d8", "qualitats": "Projectil (5'-10' / 11'-30' / 31'-50'), esquitxa"},
+        {"objecte": "Oli encès", "dany": "1d8", "qualitats": "Projectil (5'-10' / 11'-30' / 31'-50'), esquitxa"},
+        {"objecte": "Torxa, palanca", "dany": "1d4", "qualitats": "Cos a cos"}
+      ],
+      "municio": [
+        {"objecte": "Buirac amb 20 fletxes", "preu_po": 5, "pes_monedes": 10},
+        {"objecte": "Caixa amb 30 viratons", "preu_po": 10, "pes_monedes": 10},
+        {"objecte": "Fletxa amb punta de plata (2)", "preu_po": 10, "pes_monedes": 1},
+        {"objecte": "Pedres per la fona", "preu_po": "Gratuïtes", "pes_monedes": 10}
+      ],
+      "armadura": [
+        {"objecte": "Armadura de cuir", "preu_po": 20, "ca": 12, "pes_monedes": 200},
+        {"objecte": "Cota de malla", "preu_po": 40, "ca": 14, "pes_monedes": 400},
+        {"objecte": "Cuirassa de plaques", "preu_po": 60, "ca": 16, "pes_monedes": 500},
+        {"objecte": "Escut", "preu_po": 10, "ca_mod": "+1", "pes_monedes": 100}
+      ],
+      "qualitats_armes": {
+        "dau_de_dany": "Per la regla opcional per a dany variable en funció de l'arma es fa servir l'indicat a les taules.",
+        "a_dues_mans": "Calen les dues mans; el personatge no pot fer servir l'escut.",
+        "clavar": "Quan es clava a terra es duplica el dany contra les criatures que envesteixen.",
+        "contundent": "Pot ser brandit pels clergues.",
+        "cos_a_cos": "Combat en espai confinat (5 peus o menys).",
+        "envestir": "A cavall; moure's com a mínim a 60 peus en un assalt i atacar duplica el dany.",
+        "esquitxa": "El contenidor es trenca i esquitxa a l'objectiu amb el líquid que infligeix el dany indicat durant dos assalts, mentre el líquid va gotejant.",
+        "projectil": "Arma llançada o disparada a més de 5 peus de distància. Entre parèntesis els intervals per la distància curta (+1 a l'atac), mitjana i llarga (-1 a l'atac).",
+        "recarrega": "Cal un assalt per carregar entre trets; només es pot disparar cada segon assalt."
+      },
+      "farcells_aventurer": [
+        {"nom": "Farcell A", "preu_po": 40, "contingut": ["Motxilla", "3 sacs grans", "Llanterna", "2 flascons d'oli", "Caixa d'esca", "Bota", "Racions estàndard (7 dies)", "Sac de dormir i manta", "Mirall (petit, d'acer)"]},
+        {"nom": "Farcell B", "preu_po": 30, "contingut": ["Motxilla", "3 sacs grans", "6 torxes", "3 flascons d'oli", "Caixa d'esca", "Bota", "Racions estàndard (7 dies)", "Sac de dormir i manta", "Pal de fusta de 10 peus o corda"]},
+        {"nom": "Farcell C", "preu_po": 30, "contingut": ["Motxilla", "3 sacs petits", "Símbol sagrat (de fusta)", "12 piquetes de ferro", "Martell petit", "Bota", "Racions estàndard (7 dies)", "Sac de dormir i una manta", "6 cabeces d'alls o 1 matallops"]},
+        {"nom": "Farcell D", "preu_po": 50, "contingut": ["Motxilla", "5 sacs petits", "Eines de lladre o símbol sagrat (de plata)", "12 piquetes de ferro", "Martell petit i 3 estaques", "Bota", "Racions estàndard (7 dies)", "Sac de dormir i una manta"]}
+      ]
+    },
+    "classes_de_personatge": {
+      "titol": "Classes de personatge",
+      "clergue": {
+        "nom": "Clergue",
+        "requisits": "Mínim 9 a saviesa",
+        "daus_de_cop": "1d6",
+        "armadura": "Qualsevol i els escuts",
+        "armes": "Qualsevol arma contundent",
+        "idiomes": "Comú",
+        "descripcio": "Aquests són aventurers que coneixen com canalitzar el poder màgic que els atorga la deïtat que representen.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d6", "ba": 0, "salvacio": {"m": 11, "v": 12, "p": 14, "a": 16, "e": 15}, "encanteris": {"1": 1, "2": "-", "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 2, "px": 1500, "dc": "2d6", "ba": 0, "salvacio": {"m": 11, "v": 12, "p": 14, "a": 16, "e": 15}, "encanteris": {"1": 2, "2": "-", "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 3, "px": 3000, "dc": "3d6", "ba": 0, "salvacio": {"m": 11, "v": 12, "p": 14, "a": 16, "e": 15}, "encanteris": {"1": 3, "2": "-", "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 4, "px": 6000, "dc": "4d6", "ba": 0, "salvacio": {"m": 11, "v": 12, "p": 14, "a": 16, "e": 15}, "encanteris": {"1": 3, "2": 1, "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 5, "px": 12000, "dc": "5d6", "ba": "+2", "salvacio": {"m": 9, "v": 10, "p": 12, "a": 14, "e": 12}, "encanteris": {"1": 3, "2": 2, "3": "-", "4": "-", "5": "-"}}
+        ],
+        "habilitats": {
+          "combat": "Poden dur tota mena d'armadures, però la seva fe no els permet l'ús d'armes de tall, esmolades o perforants, i sols poden fer servir garrots, maces, fones, bastons o martells de guerra.",
+          "magia_divina": {
+            "simbol_sagrat": "Ha de portar un símbol sagrat de la seva deïtat per tal de canalitzar l'energia màgica del seu deu.",
+            "perdre_favor": "Els clergues han de ser fidels als principis de la seva alineació, al clergat i a la religió. Perdre el suport dels déus té conseqüències.",
+            "llancament_encanteris": "Pot pregar per obtenir encanteris. El nivell i el nombre d'encanteris es determina en funció del nivell d'experiència del personatge.",
+            "us_objectes_magics": "Aquests poden fer servir pergamins màgics del seu repertori d'encanteris i també fer servir alguns objectes que tan sols els pot activar un llançador d'encanteris divins; por exemple, alguns bastons màgics.",
+            "recerca_magica": "A qualsevol nivell pot dedicar temps i diners en investigacions màgiques que li permet inventar nous encanteris o efectes relacionats amb el seu deu.",
+            "escriure_pergamins": "A partir del 2n nivell ja pot transcriure encanteris. En un pergamí s'hi pot transcriure fins a 1d4 encanteris diferents. Intentar transcriure més d'un cop el mateix encanteri no serveix de res, ja que la màgia és absorbida per l'existent al pergamí. Es triga 2d6 dies pel nivell de l'encanteri i de mitjana té un cost de 10 a 20 po al dia per l'allotjament i la manutenció."
+          },
+          "expulsar_no_morts": {
+            "descripcio": "Poden invocar el poder del seu deu per repel·lir a monstres no-morts. El jugador tira 2d6 i el director de joc consulta la taula segons el nivell del PJ i els daus de cop dels monstres no morts que es volen expulsar.",
+            "exit": "El jugador torna a tirar 2d6 per decidir el nombre de daus de cop que són afectats.",
+            "taula_expulsio": [
+              {"nivell_clergue": 1, "dc_monstre_1": 7, "dc_monstre_2": 9, "dc_monstre_2_especial": 11, "dc_monstre_3": "-", "dc_monstre_4": "-", "dc_monstre_5": "-", "dc_monstre_6": "-", "dc_monstre_7_9": "-"},
+              {"nivell_clergue": 2, "dc_monstre_1": "E", "dc_monstre_2": 7, "dc_monstre_2_especial": 9, "dc_monstre_3": 11, "dc_monstre_4": "-", "dc_monstre_5": "-", "dc_monstre_6": "-", "dc_monstre_7_9": "-"},
+              {"nivell_clergue": 3, "dc_monstre_1": "E", "dc_monstre_2": "E", "dc_monstre_2_especial": 7, "dc_monstre_3": 9, "dc_monstre_4": 11, "dc_monstre_5": "-", "dc_monstre_6": "-", "dc_monstre_7_9": "-"},
+              {"nivell_clergue": 4, "dc_monstre_1": "D", "dc_monstre_2": "E", "dc_monstre_2_especial": "E", "dc_monstre_3": 7, "dc_monstre_4": 9, "dc_monstre_5": 11, "dc_monstre_6": "-", "dc_monstre_7_9": "-"},
+              {"nivell_clergue": 5, "dc_monstre_1": "D", "dc_monstre_2": "D", "dc_monstre_2_especial": "E", "dc_monstre_3": "E", "dc_monstre_4": 7, "dc_monstre_5": 9, "dc_monstre_6": 11, "dc_monstre_7_9": "-"}
+            ],
+            "llegenda": {
+              "E": "No morts expulsats: fugiran si és possible, i no danyaran ni entraran en contacte amb el clergue.",
+              "D": "No morts destruïts: són aniquilats de forma instantània i permanent.",
+              "valor": "És un èxit quan s'iguala o supera aquest valor.",
+              "-": "L'intent d'expulsió falla.",
+              "2*": "Monstres de 2 DC amb una habilitat especial."
+            }
+          }
+        }
+      },
+      "elf": {
+        "nom": "Elf",
+        "requisits": "Mínim 9 a destresa i a intel·ligència",
+        "daus_de_cop": "1d6",
+        "armadura": "Qualsevol i els escuts",
+        "armes": "Qualsevol",
+        "idiomes": ["Comú", "èlfic", "gnòlic", "hobgoblinès", "òrquic"],
+        "descripcio": "Els elfs són éssers encantadors, esvelts i d'orelles punxegudes. En general pesen al voltant de 120 lliures i fan entre 5 i 5,5 peus d'alçada. Poques vegades es troben elfs en els assentaments humans, prefereixen festejar i divertir-se al bosc. Si els tens en contra, són enemics perillosos, ja que són mestres tant amb l'espasa com amb els encanteris. Als elfs els fascinen els encanteris, els objectes màgics ben construïts i els encanta col·leccionar-los.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 13, "a": 15, "e": 15}, "encanteris": {"1": 1, "2": "-", "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 2, "px": 4000, "dc": "2d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 13, "a": 15, "e": 15}, "encanteris": {"1": 2, "2": "-", "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 3, "px": 8000, "dc": "3d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 13, "a": 15, "e": 15}, "encanteris": {"1": 2, "2": 1, "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 4, "px": 16000, "dc": "4d6", "ba": "+2", "salvacio": {"m": 10, "v": 11, "p": 11, "a": 13, "e": 12}, "encanteris": {"1": 2, "2": 2, "3": "-", "4": "-", "5": "-"}},
+          {"nivell": 5, "px": 32000, "dc": "5d6", "ba": "+2", "salvacio": {"m": 10, "v": 11, "p": 11, "a": 13, "e": 12}, "encanteris": {"1": 2, "2": 2, "3": 1, "4": "-", "5": "-"}}
+        ],
+        "habilitats": {
+          "combat": "Els elfs poden fer ús de tota mena d'armes i armadures.",
+          "immunitat_paralisi_guls": "Els elfs són totalment immunes a la paràlisi que poden provocar els guls i d'altres criatures similars.",
+          "infravisio": "Tenen infravisió amb un abast de fins a 60 peus.",
+          "escoltar_portes": "Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat.",
+          "detectar_portes_secretes": "Tenen una vista molt aguda i, quan cerquen activament, els permet detectar portes ocultes i secretes amb una probabilitat de 2-en-6.",
+          "magia_arcana": {
+            "llancament_encanteris": "Els elfs porten a sobre llibres d'encanteris que contenen les fórmules dels encanteris arcans que coneixen. La taula de progressió de nivell mostra el nombre que pot memoritzar. A primer nivell el seu llibre té dos encanteris a més de llegir màgia, seleccionats pel director de joc o triats pel jugador.",
+            "us_objectes_magics": "Poden fer servir pergamins màgics del seu repertori d'encanteris i també fer servir objectes que tan sols els pot activar un llançador de màgia arcana; por exemple, varetes màgiques.",
+            "recerca_magica": "A qualsevol nivell pot dedicar temps i diners en investigacions màgiques que li permet afegir nous encanteris al seu llibre. Quan s'arriba al 9è nivell, també és capaç de crear objectes màgics.",
+            "escriure_pergamins": "A partir del 2n nivell ja pot transcriure encanteris del seu llibre en pergamins. En un pergamí s'hi pot transcriure fins a 1d4 encanteris diferents. Intentar transcriure més d'un cop el mateix encanteri no serveix de res, ja que la màgia és absorbida per l'existent al pergamí. Es triga 2d6 dies pel nivell de l'encanteri i de mitjana té un cost de 10 a 20 po al dia per l'allotjament i la manutenció."
+          }
+        }
+      },
+      "guerrer": {
+        "nom": "Guerrer",
+        "requisits": "Mínim 9 a força",
+        "daus_de_cop": "1d8",
+        "armadura": "Qualsevol i els escuts",
+        "armes": "Qualsevol",
+        "idiomes": "Comú",
+        "descripcio": "Els guerrers són aventurers dedicats al domini de les arts del combat i la guerra. En un grup d'aventurers, el paper dels guerrers acostuma a ser el de lluitar contra criatures i defensar els altres personatges.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d8", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}},
+          {"nivell": 2, "px": 2000, "dc": "2d8", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}},
+          {"nivell": 3, "px": 4000, "dc": "3d8", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}},
+          {"nivell": 4, "px": 8000, "dc": "4d8", "ba": "+2", "salvacio": {"m": 10, "v": 11, "p": 12, "a": 13, "e": 14}},
+          {"nivell": 5, "px": 16000, "dc": "5d8", "ba": "+2", "salvacio": {"m": 10, "v": 11, "p": 12, "a": 13, "e": 14}}
+        ],
+        "habilitats": {
+          "combat": "Els guerrers poden fer servir tota mena d'armes i armadures."
+        }
+      },
+      "lladre": {
+        "nom": "Lladre",
+        "requisits": "Mínim 9 a destresa",
+        "daus_de_cop": "1d6",
+        "armadura": "Cuir i sense escut",
+        "armes": "Qualsevol",
+        "idiomes": "Comú",
+        "descripcio": "Són mestres en l'engany, el sigil i dominen d'altres habilitats úniques que els fa uns companys d'aventura molt útils, però també són astuts i mandrosos, i no sempre s'hi pot confiar.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}},
+          {"nivell": 2, "px": 1500, "dc": "2d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}},
+          {"nivell": 3, "px": 3000, "dc": "3d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}},
+          {"nivell": 4, "px": 6000, "dc": "4d6", "ba": 0, "salvacio": {"m": 10, "v": 11, "p": 12, "a": 13, "e": 14}},
+          {"nivell": 5, "px": 12000, "dc": "5d6", "ba": "+2", "salvacio": {"m": 10, "v": 11, "p": 12, "a": 13, "e": 14}}
+        ],
+        "habilitats": {
+          "combat": "Per poder tenir llibertat de moviments i moure's amb sigil, no poden dur armadures més pesants que el cuir ni escuts, però poden fer servir qualsevol arma.",
+          "atacar_esquena": "Si ataca a un oponent desprevingut per l'esquena, obté una bonificació de +4 a la tirada d'atac i dobla el dany.",
+          "habilitats_lladre": {
+            "descripcio": "Aquests personatges tenen un conjunt d'habilitats divers que els permet enfrontar-se a molts reptes.",
+            "taula_habilitats": [
+              {"nivell": 1, "ep": "5+", "dp": "10+", "ss": "2-en-6", "ao": "10+", "ms": "10+", "op": "10+", "bb": "10+"},
+              {"nivell": 2, "ep": "5+", "dp": "10+", "ss": "2-en-6", "ao": "10+", "ms": "10+", "op": "10+", "bb": "9+"},
+              {"nivell": 3, "ep": "5+", "dp": "10+", "ss": "3-en-6", "ao": "10+", "ms": "9+", "op": "9+", "bb": "9+"},
+              {"nivell": 4, "ep": "5+", "dp": "9+", "ss": "3-en-6", "ao": "10+", "ms": "9+", "op": "9+", "bb": "9+"},
+              {"nivell": 5, "ep": "5+", "dp": "9+", "ss": "3-en-6", "ao": "9+", "ms": "9+", "op": "9+", "bb": "8+"}
+            ],
+            "detalls": [
+              {"nom": "Escalar parets llises (EP)", "descripcio": "Cal tirar per cada 100' i si es falla el PJ cau a mig camí, patint dany per la caiguda."},
+              {"nom": "Detectar o desactivar paranys de tresor (DP)", "descripcio": "Cal una tirada per detectar el parany i després un altre per desactivar-lo. Tan sols es pot intentar un cop per parany."},
+              {"nom": "Sentir sorolls (SS)", "descripcio": "Pot escoltar darrere d'una porta o sentir quelcom que s'acosta com un monstre errant."},
+              {"nom": "Amagar-se en les ombres (AO)", "descripcio": "Cal que s'estigui immòbil i no pot atacar ni moure's mentre s'està amagant."},
+              {"nom": "Moure's en silenci (MS)", "descripcio": "Pot intentar esmunyir-se entre els enemics sense fer cap mena de soroll."},
+              {"nom": "Obrir panys (OP)", "descripcio": "Calen les eines de lladre i tan sols es pot intentar un cop; si es falla es pot provar de nou en aquest pany quan s'assoleix el següent nivell."},
+              {"nom": "Buidar butxaques (BB)", "descripcio": "Si l'objectiu supera el 5è nivell, es penalitza la tirada amb -1 per a cada nivell per sobre; la víctima nota l'intent de robatori quan es falla i el director de joc pot fer una tirada de reacció per decidir-ne el resultat."}
+            ]
+          },
+          "tirada_habilitat": "Totes les habilitats, excepte sentir sorolls, es resolen amb 2d6 més el bonificador de destresa o intel·ligència, si s'escau. És un èxit quan el resultat és major o igual al valor indicat i un '2' és un fracàs.",
+          "coneixement_jugador": "El DJ ha de tirar en nom del jugador per amagar-se en les ombres i moure's en silenci. El personatge sempre creu tenir èxit i quan es falla la tirada, el DJ determina la reacció dels enemics en conseqüència.",
+          "llegir_idiomes": "A partir 4t nivell, pot llegir textos no màgics en qualsevol idioma, fins i tot, de llengües mortes i codis secrets bàsics, amb una probabilitat de 4-en-6. Quan es falla, no es pot tornar a intentar llegir aquest text fins a assolir el següent nivell d'experiència."
+        }
+      },
+      "mag": {
+        "nom": "Mag",
+        "requisits": "Mínim 9 a intel·ligència",
+        "daus_de_cop": "1d4",
+        "armadura": "Cap",
+        "armes": "Daga o bató de mag",
+        "idiomes": "Comú",
+        "descripcio": "Els mags són aventurers dedicats a l'estudi dels secrets arcans i han après les arts per llançar encanteris. A mesura que assoleixen nivells més alts poden llançar més encanteris i més potents.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d4", "ba": 0, "salvacio": {"m": 13, "v": 14, "p": 13, "a": 16, "e": 15}, "encanteris": {"1": 1, "2": "-", "3": "-", "4": "-", "5": "-", "6": "-"}},
+          {"nivell": 2, "px": 2500, "dc": "2d4", "ba": 0, "salvacio": {"m": 13, "v": 14, "p": 13, "a": 16, "e": 15}, "encanteris": {"1": 2, "2": "-", "3": "-", "4": "-", "5": "-", "6": "-"}},
+          {"nivell": 3, "px": 5000, "dc": "3d4", "ba": 0, "salvacio": {"m": 13, "v": 14, "p": 13, "a": 16, "e": 15}, "encanteris": {"1": 2, "2": 1, "3": "-", "4": "-", "5": "-", "6": "-"}},
+          {"nivell": 4, "px": 10000, "dc": "4d4", "ba": 0, "salvacio": {"m": 13, "v": 14, "p": 13, "a": 16, "e": 15}, "encanteris": {"1": 2, "2": 2, "3": "-", "4": "-", "5": "-", "6": "-"}},
+          {"nivell": 5, "px": 20000, "dc": "5d4", "ba": 0, "salvacio": {"m": 13, "v": 14, "p": 13, "a": 16, "e": 15}, "encanteris": {"1": 2, "2": 2, "3": 1, "4": "-", "5": "-", "6": "-"}}
+        ],
+        "habilitats": {
+          "combat": "Els mags només poden brandir una daga o un bastó de mag. A més no són capaços de fer ús ni d'escuts ni vestir cap mena d'armadura. Això els fa molt vulnerables en els combats.",
+          "magia_arcana": {
+            "llancament_encanteris": "Els mags porten a sobre llibres d'encanteris que contenen les fórmules dels encanteris arcans que coneixen. La taula de progressió de nivell mostra el nombre que pot memoritzar. A primer nivell el seu llibre té dos encanteris a més de llegir màgia, seleccionats pel director de joc o triats pel jugador.",
+            "us_objectes_magics": "Els mags poden fer servir pergamins màgics del seu repertori d'encanteris i també fer servir alguns objectes que tan sols els pot activar un llançador d'encanteris de màgia arcana; por exemple, varetes màgiques.",
+            "recerca_magica": "A qualsevol nivell pot dedicar temps i diners en investigacions màgiques que li permet afegir nous encanteris al seu llibre. Quan s'arriba al 9è nivell, també és capaç de crear objectes màgics.",
+            "escriure_pergamins": "A partir del 2n nivell ja pot transcriure encanteris del seu llibre en pergamins. En un pergamí s'hi pot transcriure fins a 1d4 encanteris diferents. Intentar transcriure més d'un cop el mateix encanteri no serveix de res, ja que la màgia és absorbida per l'existent al pergamí. Es triga 2d6 dies pel nivell de l'encanteri i de mitjana té un cost de 10 a 20 po al dia per l'allotjament i la manutenció."
+          }
+        }
+      },
+      "mitgerol": {
+        "nom": "Mitgerol",
+        "requisits": "Mínim 9 a constitució",
+        "daus_de_cop": "1d6",
+        "armadura": "Qualsevol de la mida adequada i els escuts",
+        "armes": "Qualsevol de la mida adequada",
+        "idiomes": ["Comú", "mitgenc"],
+        "descripcio": "Els mitgerols són petits semihumans rodanxons amb els peus peluts i els cabells arrissats que pesen al voltant de 60 lliures i s'alcen uns 3 peus. Són gent amable, amistosa i sobretot, els encanten les comoditats de la seva llar; no són pas coneguts per la seva valentia. Els mitgerols que tornen de les aventures amb un gran tresor, sovint utilitzen aquesta riquesa per donar-se una vida tranquil·la i confortable.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d6", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
+          {"nivell": 2, "px": 2000, "dc": "2d6", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
+          {"nivell": 3, "px": 4000, "dc": "3d6", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
+          {"nivell": 4, "px": 8000, "dc": "4d6", "ba": "+2", "salvacio": {"m": 6, "v": 7, "p": 8, "a": 10, "e": 10}},
+          {"nivell": 5, "px": 16000, "dc": "5d6", "ba": "+2", "salvacio": {"m": 6, "v": 7, "p": 8, "a": 10, "e": 10}}
+        ],
+        "habilitats": {
+          "combat": "Els mitgerols poden vestir tota mena d'armadures, però s'han d'adaptar a la seva mida petita. De la mateixa manera, poden brandir qualsevol arma adequada a la seva alçada (segons ho determini el director de joc). No poden fer ús d'arcs llargs ni espases de dues mans.",
+          "esmunyedis": "A causa de la seva mida petita, els mitgerols obtenen una bonificació +2 a la classe d'armadura quan els ataquen oponents grans (més grans que la mida humana).",
+          "bona_punteria": "La seva coordinació excepcional els proporciona una bonificació +1 a l'atac amb totes les armes de projectils.",
+          "amagar_se": {
+            "descripcio": "Tenen una capacitat especial per desaparèixer de la vista. Per amagar-se cal que s'estigui en silenci i immòbil.",
+            "condicions": [
+              {"lloc": "Al bosc o sotabosc", "probabilitat": "5-en-6 de restar ocult."},
+              {"lloc": "A les masmorres", "probabilitat": "Pot amagar-se entre les ombres o darrere d'altres formes de cobertura i les possibilitats d'èxit són de 2-en-6."}
+            ]
+          },
+          "escoltar_portes": "Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat."
+        }
+      },
+      "nan": {
+        "nom": "Nan",
+        "requisits": "Mínim 9 a constitució",
+        "daus_de_cop": "1d8",
+        "armadura": "Qualsevol i els escuts",
+        "armes": "Mida petita o normal",
+        "idiomes": ["Comú", "nanenc", "gnòmic", "goblinès", "kobold"],
+        "descripcio": "Són uns semihumans robustos i barbuts, d'uns 4' d'alçada i un pes d'unes 150 lliures. Els nans acostumen a viure sota terra i els encanta l'artesania, l'or, el menjar abundant i la beguda forta. Tenen la pell, els cabells i els ulls dels colors de la terra. Els nans són coneguts per la seva tossuderia i pragmatisme. Són resilients i amb una gran resistència a la màgia, tal com es reflecteix en les seves tirades de salvació.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d8", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
+          {"nivell": 2, "px": 2200, "dc": "2d8", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
+          {"nivell": 3, "px": 4400, "dc": "3d8", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
+          {"nivell": 4, "px": 8800, "dc": "4d8", "ba": "+2", "salvacio": {"m": 6, "v": 7, "p": 8, "a": 10, "e": 10}},
+          {"nivell": 5, "px": 17000, "dc": "5d8", "ba": "+2", "salvacio": {"m": 6, "v": 7, "p": 8, "a": 10, "e": 10}}
+        ],
+        "habilitats": {
+          "combat": "Poden vestir tota mena d'armadures. I per la seva curta alçada, només poden brandir armes de mida petita o normal. No poden fer servir ni arcs llargs ni espases de dues mans.",
+          "detectar_trucs_construccio": "Com a miners experts, quan fan una cerca activa tenen una possibilitat de 2-en-6 de detectar noves construccions, parets corredisses o passatges inclinats.",
+          "detectar_paranys_habitacio": "Gràcies a la seva experiència en la construcció, quan fan una cerca activa tenen una possibilitat de 2-en-6 de detectar paranys d'habitació no màgics.",
+          "infravisio": "Tenen infravisió amb un abast de fins a 60 peus.",
+          "escoltar_portes": "Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat."
+        }
+      },
+      "rodamons": {
+        "nom": "Rodamons",
+        "requisits": "Mínim 9 a constitució i a destresa, i 13 a intel·ligència",
+        "daus_de_cop": "1d6",
+        "armadura": "Cuir i sense escut",
+        "armes": "Garrots, dagues, bastons i fones",
+        "idiomes": ["Comú", "mitgenc", "èlfic", "nanenc", "gnòmic", "goblinès", "kobold"],
+        "descripcio": "Sovint anomenats vagabunds o nòmades, han triat un estil de vida que els porta d'una banda a una altra, aprenent a sobreviure pel camí, atresorant perles de coneixement i màgia. Són afables i estan a gust amb qualsevol companyia que coneguin en els seus viatges.",
+        "progressio": [
+          {"nivell": 1, "px": 0, "dc": "1d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}, "encanteris": {"1": "-", "2": "-", "3": "-"}},
+          {"nivell": 2, "px": 2500, "dc": "2d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}, "encanteris": {"1": "-", "2": "-", "3": "-"}},
+          {"nivell": 3, "px": 5000, "dc": "3d6", "ba": 0, "salvacio": {"m": 12, "v": 13, "p": 14, "a": 15, "e": 16}, "encanteris": {"1": "-", "2": "-", "3": "-"}},
+          {"nivell": 4, "px": 10000, "dc": "4d6", "ba": 0, "salvacio": {"m": 10, "v": 11, "p": 12, "a": 13, "e": 14}, "encanteris": {"1": 1, "2": "-", "3": "-"}},
+          {"nivell": 5, "px": 20000, "dc": "5d6", "ba": "+2", "salvacio": {"m": 10, "v": 11, "p": 12, "a": 13, "e": 14}, "encanteris": {"1": 1, "2": "-", "3": "-"}}
+        ],
+        "habilitats": {
+          "combat": "No poden dur armadures més pesants que el cuir ni escuts, i només garrots, dagues, bastons i fones.",
+          "habilitats_rodamons": {
+            "descripcio": "Viatjant per les terres salvatges han après a passar desapercebuts.",
+            "taula_habilitats": [
+              {"nivell": 1, "ss": "2-en-6", "ao": "11+", "ms": "10+"},
+              {"nivell": 2, "ss": "2-en-6", "ao": "10+", "ms": "10+"},
+              {"nivell": 3, "ss": "3-en-6", "ao": "10+", "ms": "9+"},
+              {"nivell": 4, "ss": "3-en-6", "ao": "10+", "ms": "9+"},
+              {"nivell": 5, "ss": "3-en-6", "ao": "9+", "ms": "9+"}
+            ],
+            "detalls": [
+              {"nom": "Sentir sorolls (SS)", "descripcio": "Acostumats als sons naturals de la terra, els permet detectar sorolls o la seva absència."},
+              {"nom": "Amagar-se en les ombres (AO)", "descripcio": "Cal que s'estigui immòbil i no pot atacar ni moure's mentre s'amaga."},
+              {"nom": "Moure's en silenci (MS)", "descripcio": "Pot intentar esmunyir-se entre els enemics sense fer cap mena de soroll."}
+            ]
+          },
+          "tirada_habilitat": "Totes les habilitats, excepte sentir sorolls, es resolen amb 2d6 més el bonificador de destresa o intel·ligència, si s'escau. És un èxit quan el resultat és major o igual al valor indicat i un '2' és un fracàs.",
+          "coneixement_jugador": "El DJ ha de tirar en nom del jugador per amagar-se en les ombres i moure's en silenci. El personatge sempre creu tenir èxit i quan es falla la tirada, el DJ determina la reacció dels enemics en conseqüència.",
+          "llegir_idiomes": "A partir 4t nivell, pot llegir textos no màgics en qualsevol idioma, fins i tot, de llengües mortes i codis secrets bàsics, amb una probabilitat de 4-en-6. Quan es falla, no es pot tornar a intentar llegir aquest text fins a assolir el següent nivell d'experiència.",
+          "magia": {
+            "llancament_encanteris": "A partir del 4t nivell, obté un llibre en blanc des d'on pot llançar encanteris com un mag i també en pot llançar des d'un pergamí amb una probabilitat de 3-en-6. Quan es falla, l'encanteri no funciona com s'esperava i crea un efecte inesperat o perjudicial. La seva màgia és heterodoxa i sols té accés a un repertori reduït que inclou encanteris de màgia arcana com divina.",
+            "encanteris_primer_nivell": [
+              {"d4": 1, "nom": "Encisar persona", "tipus": "Arcà", "durada": "Dies", "abast": "120'"},
+              {"d4": 2, "nom": "Detectar el mal", "tipus": "Diví", "durada": "6 torns", "abast": "120'"},
+              {"d4": 3, "nom": "Detectar màgia", "tipus": "Diví", "durada": "2 torns", "abast": "60'"},
+              {"d4": 4, "nom": "Protecció del mal", "tipus": "Diví", "durada": "6 torns", "abast": "Llançador"}
+            ]
+          }
+        }
+      }
+    },
+    "aventures": {
+      "titol": "Aventures",
+      "organitzacio_grup": {
+        "titol": "Organització del grup",
+        "ordre_de_marxa": "Abans de començar una aventura, els jugadors han de determinar la disposició habitual dels personatges quan exploren masmorres o viatgen per les terres salvatges que es coneix com a l'ordre de marxa del grup. Per exemple, els jugadors poden decidir moure's per les masmorres en una formació a dues columnes, amb els personatges més blindats al davant, els més febles al centre i els últims a la rereguarda. També es poden definir diferents ordres de marxa per a les situacions més comunes; per exemple, en l'exploració, el combat, l'obertura de portes, en registrar les habitacions, etc."
+      },
+      "dividir_tresor": {
+        "titol": "Dividir el tresor",
+        "descripcio": "El botí es pot dividir entre els personatges supervivents de la manera que aquests convinguin.",
+        "tresor_no_magic": "Normalment es divideix equitativament entre els personatges i els seguidors.",
+        "objectes_magics": "Els jugadors han de decidir quin personatge es queda cada objecte. Un mètode per fer-ho és que cada jugador llanci un dau i qui tregui el resultat més alt pot triar primer un objecte màgic, el segon resultat més alt tria a continuació, etc."
+      }
+    },
+    "temps_pes_moviment": {
+      "titol": "Temps, pes i moviment",
+      "seguiment_temps": {
+        "titol": "Seguiment del temps",
+        "descripcio": "S’anomena temps de joc, al que transcorre en el món imaginari on els jugadors viuen les aventures. És crucial que el director de joc en faci un seguiment acurat per tal d'assegurar-se que els personatges descansen i mengen regularment, penalitzar-los si no ho fan. També cal recordar que quan es fan servir torxes o llanternes enceses, aquestes tenen una duració determinada i en algun moment s'apagaran. Finalment, cal recordar que alguns efectes màgics també especifiquen una durada.",
+        "metodes": [
+          "Quan s'explora una masmorra, es fa el seguiment del nombre de torns transcorreguts",
+          "Quan s'explora les terres salvatges, normalment tan sols es compten els dies viatjats."
+        ],
+        "recursos": "Per tal de generar un clima d'angoixa o neguit quan s’explora una masmorra, cal que els jugadors es preocupin dels recursos que gasten com el menjar, l'aigua, les torxes, el combustible de les llanternes, la durada dels efectes màgics, etc."
+      },
+      "seguiment_moviment": {
+        "titol": "Seguiment del moviment",
+        "descripcio": "Quan s’explora, el DJ n'ha de fer el seguiment de la ubicació dels personatges en un mapa, que manté en secret i els jugadors han de confiar en les descripcions que fa de les àrees explorades per dibuixar el seu propi mapa. Per determinar quant tarden els personatges a moure's d'una zona a una altra, el director de joc ha de referir-se al factor de moviment dels personatges.",
+        "velocitat_grup": "Un grup d'aventurers normalment voldrà romandre junt i la seva velocitat serà determinada pel factor de moviment del personatge més lent."
+      },
+      "unitats_mesura": {
+        "titol": "Unitats de mesura",
+        "temps": [
+          {"unitat": "Torns", "equivalencia": "10 minuts de joc; hi ha 6 torns en una hora i el temps es mesura per torns quan s'explora la masmorra."},
+          {"unitat": "Assalts", "equivalencia": "10 segons de temps de joc; hi ha 60 assalts per torn. El temps es mesura en assalts durant els encontres i en especial durant els combats."}
+        ],
+        "pes": "Aquest entra en joc tan sols per decidir el tresor que pot dur un personatge i com que les monedes són la forma més comuna, el pes es mesura en monedes (opcional)."
+      },
+      "carrega": {
+        "titol": "Càrrega (regla opcional)",
+        "descripcio": "Per fer el joc més immersiu i versemblant la gestió de la càrrega també és important. Tant els límits de la càrrega com l'efecte de l'armadura en el factor de moviment presenta dilemes als jugadors. No tan sols han de preocupar-se de triar l'arma i l'armadura pel que costen, el dany o la defensa, també han de considerar com impacta a la seva velocitat i quan tresor podran portar.",
+        "seguiment": "Entre sessions, els jugadors cal que facin el recompte acurat de la càrrega i que el director de joc en prengui nota al principi de cada sessió (afecta la velocitat del grup); tanmateix, durant la sessió no cal fer-ne un seguiment acurat i cal decidir què se'n fa del tresor aconseguit.",
+        "carrega_maxima": "És la puntuació de força × 100 monedes. Per exemple, amb una puntuació de 12, llavors la càrrega màxima és de 1200 monedes i quan se supera aquest límit no es pot moure. Tan sols es compta l'armadura, les armes, els projectils i el tresor.",
+        "pes_armadura": [
+          {"armadura": "Armadura de cuir", "pes_monedes": 200},
+          {"armadura": "Cota de malla", "pes_monedes": 400},
+          {"armadura": "Cuirassa de plaques", "pes_monedes": 500},
+          {"armadura": "Escut", "pes_monedes": 100}
+        ],
+        "pes_armes": [
+          {"armes": "Dagues, fona i projectils (fletxes i viratons)", "pes_monedes": 10},
+          {"armes": "Arcs (curt i llarg), espasa curta, destral de mà, martell de guerra, maça, javelina, llança", "pes_monedes": 30},
+          {"armes": "Espasa, destral de batalla, ballesta, garrot", "pes_monedes": 60},
+          {"armes": "Llança de cavalleria", "pes_monedes": 120},
+          {"armes": "Espases a dues mans o alabarda", "pes_monedes": 150}
+        ],
+        "factor_moviment_carrega": [
+          {"armadura": "Sense armadura", "poca_carrega": "120' (40')", "molta_carrega": "90' (30')"},
+          {"armadura": "Armadura lleugera", "poca_carrega": "90' (30')", "molta_carrega": "60' (20')"},
+          {"armadura": "Armadura pesada", "poca_carrega": "60' (20')", "molta_carrega": "30' (10')"}
+        ],
+        "pes_tresor": [
+          {"tresor": "1 moneda (qualsevol), gemma o pergamí", "pes_monedes": 1},
+          {"tresor": "Joia (1 peça), poció o vareta", "pes_monedes": 10},
+          {"tresor": "Ceptre", "pes_monedes": 20},
+          {"tresor": "Bastó", "pes_monedes": 40}
+        ]
+      }
+    },
+    "habilitats_dany_salvacio": {
+      "titol": "Habilitats, dany i salvació",
+      "tirada_habilitat": {
+        "titol": "Tirada d'habilitat",
+        "mecanica": "1d20; si el resultat és inferior o igual al valor de l'habilitat és un èxit.",
+        "modificadors": "Les bonificacions o penalitzacions s'afegeixen a la tirada, en funció de la dificultat de la tasca. Un modificador de -4 per una acció relativament fàcil i un +4 per una molt difícil.",
+        "uns_i_vints": "Un resultat d'un '1' natural és un èxit i un '20' és un fracàs."
+      },
+      "dany_i_curacio": {
+        "titol": "Dany i curació",
+        "descripcio": "Els éssers tenen un valor de punts de cop totals i un valor d'actuals. Els punts de dany que redueixen els punts de cop actuals i les formes de curació restauren els punts perduts, però mai per sobre del total; els punts de cop totals augmenten quan es puja de nivell.",
+        "inconsciencia": "Un personatge reduït a zero punts de cop o menys cau inconscient i si no és atès, llavors es desperta al cap de 1d6+2 hores. Tan sols pot arrossegar-se amb un moviment de 10 peus o parlar.",
+        "mort_fulminant": "Un personatge o criatura reduït a menys quatre punts de cop o per sota, mor de forma instantània.",
+        "destruccio_objectes": {
+          "normal": "Quan un personatge mor per l'efecte d'un encanteri destructiu o un atac especial, per exemple, per un encanteri de llampec o l'arma d'alè d'un drac, el seu equip també serà destruït.",
+          "magics": "Els objectes màgics d'un personatge mort per un encanteri destructiu o un atac especial tenen una oportunitat d'evitar la seva destrucció així: es pot fer una tirada de salvació per a cada objecte amb els valors del personatge. Els objectes que atorguen una bonificació com les armes i les armadures màgiques, poden aplicar aquesta a la tirada de salvació."
+        },
+        "curacio": {
+          "natural": "Per una nit de descans reparador, es restaura 1 punt de cop i per cada dia sencer dedicat a descansar es recupera 1d3 punts de cop, però si el descans s'interromp, llavors no es cura aquell dia.",
+          "magica": "La curació també es pot produir mitjançant la màgia, per exemple, amb pocions o encanteris, llavors la curació és instantània i tant la curació màgica com la curació natural es poden combinar."
+        }
+      },
+      "tirades_salvacio": {
+        "titol": "Tirades de salvació",
+        "descripcio": "Es pot fer tirades de salvació per evitar parcialment o totalment els efectes de certs atacs o d'altres perills.",
+        "categories": [
+          {"nom": "Mort 'M' o metzina", "descripcio": "Per dany instantani i mortal que podria ser esquivat, o per resistir l'efecte d'un tòxic o una metzina."},
+          {"nom": "Varetes 'V'", "descripcio": "Evita efectes de les varetes màgiques."},
+          {"nom": "Paràlisi 'P' o petrificació", "descripcio": "Davant un efecte que altera tot el cos, el paralitza o el converteix en pedra."},
+          {"nom": "Atacs d'alè 'A'", "descripcio": "Per esquivar l'arma d'alè d'un drac o d'una altra criatura amb un atac semblant."},
+          {"nom": "Encanteris 'E', ceptres o bastons", "descripcio": "Quan s'és l'objectiu d'un encanteri, l'efecte d'un bastó o ceptre."}
+        ],
+        "quan_fer_tirada": "La tirada de salvació adequada i l'efecte de superar-la o no s'indica a la descripció dels encanteris, els atacs de les criatures i sovint a les aventures preparades davant de certes situacions; per exemple, per paranys.",
+        "mecanica": "Quan s'escau, el jugador o el director de joc ha de tirar 1d20 i comparar el resultat amb el valor de la taula de la categoria adequada: si és superior o igual, és un èxit; si és inferior, és un fracàs.",
+        "exit_tirada": {
+          "dany": "Si es té èxit contra un efecte que causa dany, sovint aquest es redueix a la meitat.",
+          "altres_efectes": "Un èxit contra un efecte que no causa dany significa que l'efecte ha estat totalment evitat o resistit, i es nega qualsevol conseqüència."
+        },
+        "salvacio_vs_metzina": {
+          "fallar": "Una tirada de salvació fallida contra la metzina sol ser fatal.",
+          "dany": "Si un atac emmetzinador també infligeix ​​dany, el dany no es veurà afectat per l'èxit o el fracàs d'aquesta tirada de salvació."
+        },
+        "taules_salvacio": {
+          "personatges": "Cada classe té la seva taula que indica els valors de les diferents tirades de salvació per cada nivell d'experiència.",
+          "criatures": "Per la majoria s'utilitza la taula general, però en la descripció de les criatures de vegades es pot assenyalar que salva com una classe de personatge i un nivell; per exemple, G1 per indicar com un guerrer de primer nivell."
+        },
+        "taula_salvacio_criatures": [
+          {"daus_de_cop": "Humà normal", "mort": 14, "varetes": 15, "paralisis": 16, "ale": 17, "encanteris": 18},
+          {"daus_de_cop": "1-3", "mort": 12, "varetes": 13, "paralisis": 14, "ale": 15, "encanteris": 16},
+          {"daus_de_cop": "4-6", "mort": 10, "varetes": 11, "paralisis": 12, "ale": 13, "encanteris": 14},
+          {"daus_de_cop": "7-9", "mort": 8, "varetes": 9, "paralisis": 10, "ale": 10, "encanteris": 12},
+          {"daus_de_cop": "10-12", "mort": 6, "varetes": 7, "paralisis": 8, "ale": 8, "encanteris": 10},
+          {"daus_de_cop": "13-15", "mort": 4, "varetes": 5, "paralisis": 6, "ale": 5, "encanteris": 8},
+          {"daus_de_cop": "16-18", "mort": 2, "varetes": 3, "paralisis": 4, "ale": 3, "encanteris": 6},
+          {"daus_de_cop": "19-21", "mort": 2, "varetes": 2, "paralisis": 2, "ale": 2, "encanteris": 4},
+          {"daus_de_cop": "22+", "mort": 2, "varetes": 2, "paralisis": 2, "ale": 2, "encanteris": 2}
+        ]
+      }
+    },
+    "perills_i_reptes": {
+      "titol": "Perills i reptes",
+      "escalar": {
+        "titol": "Escalar",
+        "descripcio": "Quan els personatges proven d'escalar en una situació difícil o tensa, el director de joc pot demanar una tirada d'habilitat per destresa; es tira 1d20 i si el resultat és més gran que els punts de destresa llavors es cau a la meitat de l'alçada i es pateix dany per la caiguda. La càrrega del personatge pot penalitzar aquesta prova d'habilitat i se suposa que la paret pot ser escalada, ja que almenys hi ha prou llocs on agafar-se.",
+        "parets_llises": "Les parets molt polides o amb molt pocs llocs on agafar-se són normalment impossibles d'escalar sense un equip especialitzat, però alguns personatges tenen habilitats de classe que els permet intentar-ho i la resta de classes ho poden intentar amb una càrrega mínima (sense motxilla) amb una tirada 2d6+bonificació de destresa per cada 100'. Si es treu menys de 10 es falla la tirada i el personatge cau des de la meitat del camí patint dany per la caiguda."
+      },
+      "caure": {
+        "titol": "Caure",
+        "descripcio": "Caure des d'una alçada i xocar sobre una superfície dura, provoca 1d6 punts de dany per cada 10 peus de caiguda fins a un màxim de 200 peus amb 20d6 punts de dany."
+      },
+      "excavar": {
+        "titol": "Excavar",
+        "descripcio": "Amb les eines adients un home pot excavar tres peus cúbics de terra per hora; el modificador de força tan sols n'augmenta o en disminueix el nombre de peus. Amb eines simples o improvisades el nombre de peus cúbics es disminueix a la meitat i es disminueix a un quart quan no es té cap eina."
+      },
+      "nadar": {
+        "titol": "Nadar",
+        "descripcio": "En principi tots els personatges són capaços de nedar i s'entén que tots en tenen l'habilitat a menys que hi pugui haver una raó plausible del contrari.",
+        "factor_moviment": "Els personatges es mouen a la meitat de la velocitat normal quan neden.",
+        "ofegament": "Les circumstàncies en què l'ofegament és un risc, i també la possibilitat d'ofegar a algú altre, les decideix el director de joc. Per exemple, un personatge molt carregat i duent una armadura pesada pot tenir 19-en-20 possibilitats d'ofegar-se. Mentre que un personatge en les mateixes aigües, però duent una armadura lleugera i molt poca càrrega podria tenir tan sols 2-en-20 possibilitats."
+      },
+      "metzines": {
+        "titol": "Metzines",
+        "descripcio": "Hi ha moltes maneres que un personatge s'emmetzini. Quan s'exposa a una metzina cal superar una tirada de salvació contra mort o metzines, o patir-ne els efectes. Sovint es pot produir una mort instantània, la pèrdua de punts de cop o perdre punts d'habilitat."
+      },
+      "drogues_i_alcohol": {
+        "titol": "Drogues i alcohol",
+        "drogues": "Les drogues es tracten d'una manera molt semblant a com es faria per una metzina, però els efectes de fallar la tirada de salvació contra mort o metzines són molt menys severs que la mort i el director de joc decidirà quins són aquests efectes.",
+        "alcohol": "L'alcohol pot ser molt més perjudicial, ja que és molt comú i quasi a l'abast de tothom. És molt senzill beure'n en excés, perquè sovint se serveix vi o cerveses en comptes d'aigua als establiments on s'allotgen els aventurers. Els personatges molt beguts pateixen una penalització de -2 als atacs a distància, a la CA i a totes les tirades de salvació."
+      },
+      "foscor": {
+        "titol": "Foscor",
+        "descripcio": "Sovint els personatges s'aventuren a llocs foscos i tenebrosos, en llocs sense cap mena d'il·luminació natural. Per això cal portar fonts de llum artificial a les expedicions subterrànies, com les torxes que permeten una visió normal en un radi de 30 peus durant sis torns i les llanternes que amb una càrrega d'oli proporcionen visió normal en un radi de 60 peus i duren 24 hores.",
+        "infravisio": {
+          "titol": "Infravisió",
+          "descripcio": "Totes les criatures no humanes i moltes races semihumanes tenen un tipus de visió especial que els permet veure en la foscor.",
+          "tons_de_calor": "Els personatges que tenen infravisió poden veure l'energia calorífica que irradien els éssers vius. En general, els éssers vius seran visibles en tons brillants, mentre que els objectes freds són grisos i els objectes molt freds es veuen negres.",
+          "lectura": "No és possible llegir a les fosques amb infravisió, perquè amb aquesta mena de visió no es pot percebre els detalls fins.",
+          "abast": "L'infravisió funciona dins d'un abast limitat, per defecte de 60 peus per a totes les criatures quan no s'especifica en la descripció.",
+          "disrupcio": "L'infravisió només funciona a la foscor, la llum visible (normal o màgica) i les grans fonts de calor l'anul·len."
+        },
+        "llum_i_sorpresa": "Els personatges i les criatures que porten una font de llum en un entorn fosc no acostumen a poder sorprendre els seus oponents perquè la llum en delata la presència.",
+        "llum_i_armes_a_distancia": "Quan els personatges porten una font de llum poden ser el blanc d'armes a distància sense cap mena de penalització, però quan els personatges intentin apuntar a objectius que són fora del radi il·luminat llavors pateixen una penalització de -4 a les tirades d'atac a més dels modificadors que corresponguin per la distància de l'objectiu."
+      },
+      "desorientar-se": {
+        "titol": "Desorientar-se",
+        "descripcio": "Els personatges poden avançar sense perdre's en carreteres i senders, o orientar-se amb punts de referència coneguts. Però, quan es viatja per regions obertes sense camins o en un bosc espès, és fàcil perdre's; en general, les possibilitats depenen de la classe de terreny, la il·luminació, si hi ha condicions meteorològiques adverses, etc.",
+        "consequencies": "El director de joc decideix en quina direcció viatgen realment quan es perden, és clar que pot triar una direcció que sigui tan sols lleugerament fora de curs. Per exemple, si el grup tenia intenció d'anar cap al sud, en realitat es dirigeix ​​cap al sud-est o sud-oest i poden trigar una mica a adonar-se que avancen en una direcció equivocada."
+      },
+      "monstres_errants": {
+        "titol": "Monstres errants",
+        "descripcio": "A les masmorres i a les terres salvatges, sovint es pot trobar criatures en moviment entre diferents àrees que anomenem monstres errants.",
+        "frequencia": "Periòdicament el director de joc hauria de fer una tirada d'encontre aleatori amb un monstre errant per determinar si aquest es produeix i la freqüència dependrà del tipus d'àrea que s'està explorant.",
+        "possibilitat": "1-en-6 de produir-se un encontre amb un monstre errant que pot variar en funció del tipus d'àrea.",
+        "classe_de_monstre": "Cada àrea ha de tenir la seva pròpia taula de monstres errants on el director de joc tria a l'atzar amb quin monstre es produeix l'encontre.",
+        "soroll_o_llum": "Quan el grup fa soroll o transporta fonts de llum brillants en un entorn fosc, el director de joc pot argumentar que hi ha més possibilitats de trobar-ne.",
+        "amagar-se": "Quan es descansa, en silenci i en un lloc fora del camí, el director de joc pot disminuir la possibilitat de topar-se amb monstres errants."
+      },
+      "portes": {
+        "titol": "Portes",
+        "descripcio": "Les portes tancades amb un pany normalment no es poden obrir sense la clau, però algunes classes poden obrir-ne els panys i la màgia també es pot fer servir per tancar (pany de mag) o obrir (obertura) portes. Amb les eines es pot tirar la porta a terra, alguna mena de destral per les de fusta durant un torn o un mall per les de pedra durant dos o més torns. Sovint les portes estan tan sols travades i per obrir-les cal fer una tirada d'obrir portes d'1-en-6 modificada amb la força, dedicant-hi un torn.",
+        "panys": "N'hi ha de moltes menes, formes i mides. Els que estan encastats en una porta normalment són de ferro i sols podran obrir-se amb la clau, amb l'habilitat d'obrir panys o llançant l'encanteri obertura. Proporcionen una manera de veure o sentir que hi ha a l'altra banda de la porta, però la visió és molt limitada.",
+        "bloquejar_el_pas": "Quan una criatura se situa al llindar d'una porta per tal d'impedir que s'hi pugui passar. Una única criatura ho pot fer en una porta estàndard de 4 peus.",
+        "enrocar-se": "Quan és necessari atrinxerar-se darrere d'una porta mantenint-la tancada, fins a dos personatges poden aguantar-la en contra d'una criatura que intenti obrir-la. Es fa una prova de força contraposada per determinar quin és el resultat.",
+        "paranys": "A les masmorres sovint hi ha paranys relacionats amb les portes; alguns són al pany mentre d'altres són a la mateixa porta i tots aquests paranys s'activen quan s'obre una porta per la força sense que importi de quina manera."
+      },
+      "fam": {
+        "titol": "Fam",
+        "descripcio": "Quan els personatges passen un dia sencer o més sense menjar ni aigua, el director de joc pot començar a aplicar penalitzacions a les tirades d'atac i al factor de moviment, necessitaran descansar més sovint o fins i tot, en casos extrems poden començar a perdre punts de cop."
+      },
+      "privacio_del_son": {
+        "titol": "Privació del son",
+        "descripcio": "Un personatge ha de dormir almenys 4 hores de cada 24 per poder actuar normalment; quan això no es respecta s'aplica una penalització -1 a totes les tirades fins que es descansi adequadament, que augmenta en -1 per cada 4 hores addicional que s'ignori dormir."
+      },
+      "drenatge_habilitats": {
+        "titol": "Drenatge d'habilitats",
+        "descripcio": "La pèrdua de punts d'habilitat afecta significativament als personatges, ja que molt possiblement fa perdre bonificacions. Per exemple, un personatge que vegi la seva força canviar de 13 a 12 ja no tindrà un bonificador +1 a les tirades de dany cos a cos. Potser la més colpidora de totes és la pèrdua de constitució perquè s'apliquen immediatament tant als punts de cop totals com els actuals. Quan alguna habilitat es redueix a zero punts, llavors el personatge mor immediatament."
+      },
+      "malalties": {
+        "titol": "Malalties",
+        "descripcio": "Els personatges que exploren tombes antigues o s'endinsen a les terres salvatges s'exposen a tota mena de plagues i malalties. Cada malaltia tindrà les seves característiques específiques, però en general per totes hi ha un període d'incubació, un interval d'infecció amb un mecanisme de transmissió i finalment un efecte. Quan un personatge s'exposen a una malaltia el director de joc ha de fer una tirada de salvació contra metzina en el seu nom i si no se supera, llavors aquest contrau la malaltia."
+      }
+    },
+    "la_masmorra": {
+      "titol": "La masmorra",
+      "sequencia_de_joc": [
+        "Monstres errants: el director de joc tira segons correspongui.",
+        "Accions: el grup decideix quines accions fer; per exemple, moure's, cercar, escoltar, entrar a les habitacions i registrar-les...",
+        "Descripció: el director de joc descriu què passa i si ensopeguen amb monstres, llavors cal seguir el procediment de l'apartat encontres.",
+        "Final: es calcula el temps transcorregut i es té cura de la durada de les fonts de llum, dels encanteris i les necessitats de descans del grup."
+      ],
+      "portes": {
+        "titol": "Portes",
+        "portes_secretes": "Es descobreixen quan el personatge anuncia que cerca activament en l'àrea on s'amaga la porta.",
+        "portes_tancades": "El pany es pot obrir amb la clau, amb una habilitat de classe i les eines adients, o amb l'ús de la màgia.",
+        "portes_travades": "Llegir perills i reptes per més detalls. Quan es falla l'intent d'obrir la porta llavors no es pot sorprendre a cap criatura a l'altra banda.",
+        "portes_que_es_tanquen": "Les portes obertes sovint es tanquen; per evitar-ho cal clavar-les al llindar, travar-les o falcar-les.",
+        "les_criatures_i_les_portes": "Les criatures que habiten la masmorra poden obrir les portes (també les travades), tret que estiguin tancades amb clau, màgicament o clavades al llindar.",
+        "escoltar_a_les_portes": "Es té una probabilitat d'1-en-6 de detectar sons subtils a l'altra banda d'una porta, però algunes classes poden tenir més possibilitats d'èxit. El DJ sempre tira pel personatge."
+      },
+      "moviment": {
+        "titol": "Moviment",
+        "exploracio": "En àrees desconegudes, poden moure's al seu factor de moviment en peus per torn que ja té en compte que van amb cautela, en silenci, observant on trepitgen, cartografiant i evitant els obstacles.",
+        "en_arees_conegudes": "El director de joc pot permetre moure's a un factor de moviment més alt quan els personatges passen per àrees ja explorades; per exemple, a tres vegades la velocitat base per torn."
+      },
+      "descans": {
+        "titol": "Descans",
+        "frequencia": "Els personatges han de descansar un torn per cada hora exploració a la masmorra.",
+        "penalitzacio": "Quan no es descansa es pateix una penalització -1 a les tirades d'atac i dany fins que no parin a descansar un torn sencer."
+      },
+      "llum_i_visibilitat": {
+        "titol": "Llum i visibilitat",
+        "descripcio": "Quan els personatges porten una font de llum poden ser el blanc d'armes a distància sense cap penalització i quan els personatges intentin fer blanc fora del radi il·luminat tenen una penalització de -4 a les tirades d'atac a més del modificador segons la distància."
+      },
+      "cercar": {
+        "titol": "Cercar",
+        "descripcio": "Sovint hi ha elements ocults com ara paranys i portes secretes que els personatges poden detectar cercant de forma acurada i atenta en una àrea determinada.",
+        "area": "S'ha de triar els 10×10 peus on es fa la cerca.",
+        "temps": "Cal dedicar-hi un torn sencer.",
+        "exit": "Cercant al lloc adequat, hi ha una possibilitat d'1-en-6 (o més per algunes classes) de trobar una porta secreta o un parany d'habitació.",
+        "tirada_dj": "Aquest sempre tira pel personatge perquè mai sàpiga si falla o si simplement no hi ha res ocult a l'àrea cercada.",
+        "un_sol_cop": "Per personatge i àrea."
+      },
+      "paranys": {
+        "titol": "Paranys",
+        "tipus": [
+          {"nom": "Paranys de tresor", "descripcio": "Són petits i estan col·locats en un objecte per evitar que es manipuli o se saquegi; per exemple, una agulla emmetzinada en el pany d'un calaix o una petita ballesta dins d'un cofre."},
+          {"nom": "Parany d'habitació", "descripcio": "Són grans i estan dissenyats per afectar qualsevol criatura que entri en una àrea concreta; per exemple, un pou on es cau quan es trepitja una trapa a terra."}
+        ],
+        "activacio": {
+          "descripcio": "Cada parany s'activa mitjançant una acció específica; per exemple, obrir una porta o passar per sobre d'una àrea determinada, trepitjar una rajola o un graó, etc.",
+          "possibilitat": "De 2-en-6 cada cop que un personatge fa una acció que pugui activar el parany.",
+          "dany": "En activar un parany el dany sol ser automàtic, sense que calgui una tirada d'atac.",
+          "criatures": "Poden evitar els paranys sense cap risc si el director de joc creu que és probable, convenient o hi ha motius per pensar que tenen coneixements de la ubicació del parany."
+        },
+        "cercar_paranys": {
+          "parany_habitacio": "Es pot cercar en una àrea de 10×10 peus i descobrir-ne els paranys quan es té èxit.",
+          "paranys_tresor": "La majoria dels aventurers no tenen prou coneixements sobre enginys i mecanismes per poder descobrir paranys com ara agulles emmetzinades, amb l’excepció algunes classes amb aquesta habilitat."
+        }
+      },
+      "monstres_errants": {
+        "titol": "Monstres errants",
+        "frequencia": "Normalment es tira un cop cada dos torns a la masmorra.",
+        "possibilitat": "La possibilitat típica de trobar-se amb un monstre errant és d'1-en-6.",
+        "distancia": "Els monstres errants estan a 2d6×10 peus de distància, movent-se en direcció al grup."
+      }
+    },
+    "les_terres_salvatges": {
+      "titol": "Les terres salvatges",
+      "sequencia_de_joc": [
+        "Decidir la ruta: els jugadors trien el recorregut del dia.",
+        "Desorientar-se: el DJ determina si el grup es perd.",
+        "Monstres errants: el DJ fa tirades segons correspongui.",
+        "Descripció: el director de joc descriu el terreny i els llocs d'interès al grup, demanant als jugadors les seves accions quan calgui i si es troben amb monstres, llavors cal seguir el procediment descrit a encontres.",
+        "Final del dia: s'anoten els recursos consumits, les racions, la durada dels encanteris i les necessitats de descans del grup."
+      ],
+      "distancia_i_unitats": {
+        "titol": "Distància i unitats de mesura",
+        "distancia_velocitat": "Es mesura en iardes, en lloc de peus; significa que es triplica la distància i la velocitat.",
+        "arees": "Els efectes dels encanteris, l'abast de les armes d'alè, etc., es continuen mesurant en peus."
+      },
+      "trobar_menjar": {
+        "titol": "Trobar menjar",
+        "recollir": "Recollir herbes, arrels, fruites, etc. Es pot fer mentre el grup viatja i es té 1-en-6 possibilitats cada dia de trobar prou menjar per a 1d6 éssers de mida humana.",
+        "cacar": "L'única activitat durant tot un dia; no es pot ni viatjar ni descansar. Hi ha una probabilitat d'1-en-6 de trobar animals adequats per menjar a més dels encontres aleatoris amb monstres errants."
+      },
+      "desorientar-se": {
+        "titol": "Desorientar-se",
+        "descripcio": "Al començament de cada dia, el director de joc ha de tirar per determinar si el grup es perdrà i la probabilitat depèn del terreny que es travessa:",
+        "probabilitats": [
+          {"terreny": "Clars, prats", "probabilitat": "1-en-6"},
+          {"terreny": "Terres ermes, turons, muntanyes, boscos", "probabilitat": "2-en-6"},
+          {"terreny": "Desert, jungla, pantà", "probabilitat": "3-en-6"}
+        ],
+        "condicions": "Les condicions de visibilitat i del temps meteorològic poden influir en la probabilitat de perdre's, llavors cal ajustar-les com sigui convenient."
+      },
+      "visibilitat": {
+        "titol": "Visibilitat",
+        "descripcio": "Es pot albirar fins a tres milles a la rodona, en terreny obert, però aquest abast sovint es pot veure reduït; per exemple, en terrenys coberts com un bosc. O també pot augmentar; per exemple, mirant des del cim d'una muntanya o des d'un arbre alt."
+      },
+      "viatges_per_terra": {
+        "titol": "Viatges per terra",
+        "milles_per_dia": "El nombre de milles que pot viatjar un personatge per dia es determina dividint el factor de moviment base per cinc. Per exemple, un personatge que té un factor de moviment base de 120' podrà viatjar fins a 24 milles per dia.",
+        "modificadors_terreny": [
+          {"terreny": "Terreny difícil (ermots, tarteres, cingles, serrats, deserts i boscos atapeïts)", "modificador": "⅔ de la velocitat normal."},
+          {"terreny": "Selva, muntanyes, pantà", "modificador": "Meitat de la velocitat."},
+          {"terreny": "Carreteres mantingudes", "modificador": "Un 50% més ràpid."}
+        ],
+        "marxa_forcada": {
+          "augment_velocitat": "La distància recorreguda s'incrementa un 50%; per exemple, si es pot viatjar 24 milles per dia, llavors es podrà viatjar 36 milles.",
+          "descans": "Després d'una marxa forçada els personatges han de descansar tot un dia sencer."
+        }
+      },
+      "descansar": {
+        "titol": "Descansar",
+        "frequencia": "Els personatges han de descansar un dia per cada sis de viatge.",
+        "penalitzacio": "Quan no es descansa es pateix una penalització -1 a les tirades d'atac i dany fins que no parin a descansar un dia sencer."
+      },
+      "sorpresa": {
+        "titol": "Sorpresa",
+        "envoltar": "Quan un grup és sorprès per tres o més criatures, és molt possible que hagin envoltat el grup."
+      },
+      "monstres_errants": {
+        "titol": "Monstres errants",
+        "frequencia": "Normalment es fa una tirada per dia, però el DJ pot voler fer-ne més, fins a tres o quatre al dia.",
+        "possibilitats": [
+          {"terreny": "Ciutat, clars, prats, terrenys habitats", "probabilitat": "1-en-6"},
+          {"terreny": "Deshabitat, erm, desert, bosc, turons", "probabilitat": "2-en-6"},
+          {"terreny": "Selva, muntanyes, pantà", "probabilitat": "3-en-6"}
+        ],
+        "distancia": "Els monstres errants es troben a 4d6×10 iardes de distància i quan qualsevol dels dos bàndols és sorprès es redueix a 1d4×10 iardes."
+      }
+    },
+    "encontres": {
+      "titol": "Encontres",
+      "sequencia_de_joc": [
+        "Sorpresa: el director de joc tira per la sorpresa quan s'escau.",
+        "Distància: el director de joc determina a quina distància està l'enemic.",
+        "Iniciativa: totes les faccions que no són sorpreses tiren per la iniciativa i es decideix qui actua primer.",
+        "Accions: cada bàndol no sorprès decideix com actua.",
+        "Conclusió: ha passat un torn."
+      ],
+      "sorpresa": {
+        "titol": "Sorpresa",
+        "descripcio": "Es tira per a cada bàndol que pugui sorprendre's. Per exemple, quan una criatura espera en silenci a un grup que s'acosta fent molt soroll, la criatura no tindrà possibilitats de sorprendre's, però el grup sí.",
+        "tirada": "Cada bàndol desconeixedor de la presència de l'altre tira un 1d6. Amb 1 o 2 el bàndol és sorprès.",
+        "efectes": {
+          "ambdos_sorpresos": "Simplement hi ha una confusió momentània i cap facció obté avantatge.",
+          "bandol_sorpres": "No tira per iniciativa i no pot contraatacar en aquest assalt."
+        }
+      },
+      "distancia_encontre": {
+        "titol": "Distància de l'encontre",
+        "masmorra": "A 2d6×10 peus.",
+        "terres_salvatges": "4d6×10 o 1d4×10 iardes amb sorpresa."
+      },
+      "iniciativa": {
+        "titol": "Iniciativa",
+        "tirada": "Es tira 1d6 per a cada bàndol al començament de cada assalt i s'ordenen els resultats de major a menor.",
+        "resultat": "Actua primer el bàndol amb la tirada més alta i la resta de bàndols actuen en ordre de major a menor.",
+        "empat": "Qualsevol de les dues faccions pot tornar a tirar o es poden resoldre les accions de tots simultàniament."
+      },
+      "accions": {
+        "titol": "Accions",
+        "accions_criatures": {
+          "titol": "Accions de les criatures",
+          "descripcio": "El director de joc determina la reacció de les criatures davant del grup, que no tenen per què mostrar-se sempre hostils. En moltes ocasions es pot fer una tirada de reacció.",
+          "tirada_reaccio": [
+            {"2d6": "2 o menys", "reaccio": "Hostilitat, segur que atacarà o perseguirà"},
+            {"2d6": "3-5", "reaccio": "Animadversió i rebuig, podria atacar o perseguir"},
+            {"2d6": "6-8", "reaccio": "Neutral i la reacció és incerta ara mateix"},
+            {"2d6": "9-11", "reaccio": "Indiferent i no mostra gens d'interès pel grup"},
+            {"2d6": "12+", "reaccio": "Es mostra amistosa i està disposada a ajudar"}
+          ]
+        },
+        "accions_personatges": {
+          "titol": "Accions dels personatges",
+          "descripcio": "Els jugadors decideixen com volen que actuïn els seus personatges.",
+          "accions_habituals": [
+            "Parlamentar: els personatges poden intentar comunicar-se amb les criatures.",
+            "Evasió: si una de les parts decideix fugir, llavors l'altra pot decidir començar una persecució.",
+            "Combat: si un bàndol ataca, llança encanteris, es mostra clarament hostil o pren posicions tàctiques, cal començar a fer el seguiment del temps en assalts."
+          ]
+        }
+      },
+      "moviment": {
+        "titol": "Moviment",
+        "factor_moviment_encontre": "Durant els encontres, un personatge pot moure's fins a un terç del factor de moviment base per torn en peus en la masmorra o iardes en les terres salvatges.",
+        "durada_maxima": "Els personatges poden moure's a aquest factor de moviment durant un màxim de 60 assalts (un torn)."
+      },
+      "evasio": {
+        "titol": "Evasió",
+        "descripcio": "Si un bàndol vol evitar l'encontre, pot intentar fugir. Aquesta acció s'anomena evasió i només és possible abans que comenci el combat. Quan un bàndol intenta una evasió, el bàndol contrari ha de decidir si inicia una persecució."
+      },
+      "conclusio": {
+        "titol": "Conclusió",
+        "descripcio": "Un encontre se suposa que almenys dura tot un torn sencer i s'inclou el temps per descansar per recuperar forces, reagrupar-se, netejar les armes, embenar les ferides, etc."
+      }
+    },
+    "evasio_i_persecucio": {
+      "titol": "Evasió i persecució",
+      "a_la_masmorra": {
+        "titol": "A la masmorra",
+        "evasio": {
+          "fugitius_rapids": "L'evasió té èxit automàticament a menys que es vegin obligats a aturar-se.",
+          "perseguidors_rapids": "Es produeix la persecució."
+        },
+        "persecucio": {
+          "temps": "Es mesura en assalts.",
+          "cursa": "Se suposa que cada bàndol va a tota velocitat.",
+          "linia_visio": "La majoria de les criatures no continuaran la persecució quan ja no poden veure als fugitius.",
+          "deixar_caure_tresor": "Si a les criatures que persegueixen els agraden els tresors, hi ha una probabilitat de 3-en-6 que deixin de perseguir per recollir qualsevol tresor que els personatges deixin caure en el seu camí.",
+          "deixar_caure_menjar": "Les criatures famolenques o no gaire intel·ligents poden deixar de perseguir amb una probabilitat de 3-en-6 quan els personatges deixen caure menjar en el seu camí.",
+          "obstacles": "L'oli encès, els obriülls o d'altres obstacles també poden frenar o fer abandonar una persecució."
+        },
+        "cursa": {
+          "factor_moviment": "Durant una persecució, els personatges corren al seu factor de moviment màxim en peus per assalt.",
+          "cartografiar": "No és possible mentre s'està corrent.",
+          "esgotament": "Els personatges s'esgoten després de córrer 30 assalts seguits.",
+          "efectes_esgotament": "Penalització de -2 a les tirades d'atac i dany, i a la classe d'armadura.",
+          "descans": "Les penalitzacions per esgotament duren fins que els personatges descansin durant tres torns sencers."
+        }
+      },
+      "a_les_terres_salvatges": {
+        "titol": "A les terres salvatges",
+        "evasio": {
+          "descripcio": "La possibilitat d'evasió és una probabilitat de X-en-20 i quan es falla continua la persecució.",
+          "taula_probabilitat_velocitat": [
+            {"velocitat_fugitius": "Més ràpida que el perseguidor", "probabilitat": "16-en-20"},
+            {"velocitat_fugitius": "0' - 30' per assalt més lent que el perseguidor", "probabilitat": "10-en-20"},
+            {"velocitat_fugitius": "31' - 60' per assalt més lent que el perseguidor", "probabilitat": "8-en-20"},
+            {"velocitat_fugitius": "61' - 90' per assalt més lent que el perseguidor", "probabilitat": "7-en-20"},
+            {"velocitat_fugitius": "91' - 120' per assalt més lent que el perseguidor", "probabilitat": "5-en-20"},
+            {"velocitat_fugitius": "121'+ per assalt més lent que el perseguidor", "probabilitat": "2-en-20"}
+          ],
+          "taula_probabilitat_nombre": [
+            {"fugitius": "1-4", "perseguidors_1": "1: 10-en-20", "perseguidors_2_3": "2-3: 14-en-20", "perseguidors_5_mes": "5+: 18-en-20"},
+            {"fugitius": "5-12", "perseguidors_1_3": "1-3: 7-en-20", "perseguidors_4_8": "4-8: 10-en-20", "perseguidors_9_mes": "9+: 14-en-20"},
+            {"fugitius": "13-24", "perseguidors_1_6": "1-6: 5-en-20", "perseguidors_7_16": "7-16: 7-en-20", "perseguidors_17_mes": "17+: 10-en-20"},
+            {"fugitius": "25+", "perseguidors_1_10": "1-10: 2-en-20", "perseguidors_11_30": "11-30: 5-en-20", "perseguidors_31_mes": "31+: 7-en-20"}
+          ],
+          "modificadors": {
+            "doble_rapid": "Si la facció perseguidora és el doble de ràpida que la fugitiva, la possibilitat d'evasió es redueix en 5 punts. Si el factor de moviment del bàndol fugitiu és el doble que la perseguidora, la probabilitat d'evasió augmenta en 5 punts.",
+            "entorn": "El director de joc pot modificar les probabilitats en funció de les condicions i l'entorn. Per exemple, en una zona molt boscosa, la probabilitat d'evasió pot augmentar en 5 punts.",
+            "minima": "La possibilitat mínima és sempre d'1-en-20."
+          }
+        },
+        "persecucio": {
+          "descripcio": "Cada dia fins que finalitzi la persecució: 1. El bàndol fugitiu es mou en una direcció aleatòria. 2. Quan la velocitat del bàndol perseguidor és superior, hi ha 10-en-20 possibilitats d'atrapar-los. 3. El grup fugitiu decideix si continua fugint i pot fer un altre intent d'evasió."
+        }
+      }
+    },
+    "combat": {
+      "titol": "Combat",
+      "sequencia_per_assalt": [
+        "Declarar encanteris i moviment cos a cos",
+        "Iniciativa: cada bàndol tira 1d6.",
+        "El bàndol guanyador actua: a. Moral de les criatures, b. Moviment, c. Atacs amb projectils, d. Llançament d'encanteris, e. Atacs cos a cos",
+        "Els altres bàndols actuen: en ordre d'iniciativa."
+      ],
+      "declarar_accions": "Si el personatge vol llançar un encanteri o moure's mentre es lluita cos a cos ho ha de declarar, però per altres accions no cal.",
+      "iniciativa": "Al principi de cada assalt es tira 1d6 per cada costat; actua primer qui té el resultat més alt i la resta actua per ordre. Si hi ha empat es tira de nou o les accions es resolen alhora.",
+      "moral": {
+        "titol": "Moral (regla opcional)",
+        "descripcio": "El DJ pot fer servir aquest sistema per decidir si les criatures (o els PNJ) es rendeixen o fugen del combat.",
+        "quan_tirar": ["La primera mort en un combat.", "Bàndol reduït a la meitat."],
+        "ajustar_situacio": "El director de joc pot aplicar bonificacions o penalitzacions a la tirada de moral (de -2 fins a +2), segons la situació.",
+        "tirada": "El director de joc tira 2d6 i compara el resultat amb el valor de moral de la criatura: si és superior, es rendeix o fuig; si és igual o inferior, continua lluitant."
+      },
+      "moviment": {
+        "titol": "Moviment",
+        "moure_i_atacar": "Pot moure’s a un terç del factor de moviment normal a cada assalt i a més atacar quan es té un oponent a l'abast o fer una altra acció excepte llançar encanteris.",
+        "a_la_carrera": "Un personatge es pot moure fins al factor de moviment d'encontre a cada assalt durant un màxim de 60 assalts.",
+        "en_lluita_cos_a_cos": {
+          "abandonar": "El personatge es mou cap enrere a la meitat del factor de moviment d'encontre i cal un camí lliure per moure's.",
+          "retirada": "El personatge es gira i fuig al factor de moviment d'encontre. Aquest assalt no pot atacar i l'adversari pot fer un atac d'oportunitat bonificat amb +2 i s'ignora la bonificació a la CA de l'escut si s'escau."
+        }
+      },
+      "atacar": {
+        "titol": "Atacar",
+        "descripcio": "En general, es pot fer un sol cop per assalt.",
+        "abast": "La lluita és cos a cos quan els oponents estan 5' o menys els uns dels altres. Els atacs amb projectils tan sols són possibles quan els objectius estan a més de 5'.",
+        "tirada_atac": "1. Tira 1d20. 2. Modificadors: bonificació d'atac, força per a lluita cos a cos o destresa, abast i cobertura pels atacs de projectils. 3. Resultat: si és igual o superior a la CA de l'oponent, l'atac té èxit i llavors es tira pel dany.",
+        "pifies_i_critics": "Un 20 natural sempre colpeja i llavors l'atac provoca un efecte addicional com la pèrdua de l'escut o l'arma empunyada, infligir una ferida que incapacita o doble dany. Amb un 1 sempre s'erra el cop.",
+        "tirar_pel_dany": {
+          "personatges": "1d6 punts de dany o opcionalment pel dany indicat en la descripció de l'arma. Per les armes de lluita cos a cos s'afegeix el bonificador de força a la tirada de dany.",
+          "criatures": "El dany de les criatures s'indica en les estadístiques o en la seva descripció.",
+          "invulnerables": "Algunes criatures ho són a certs atacs i no prenen dany encara que la tirada d'atac tingui èxit.",
+          "dany_minim": "Sempre es fa almenys un punt de dany."
+        }
+      },
+      "atacs_no_convencionals": {
+        "titol": "Atacs no convencionals",
+        "atacar_esquena": "La víctima no es beneficia de la bonificació per destresa a la CA ni per la de l'escut.",
+        "atacs_sense_armes": "Es tracta igual que el combat cos a cos, però tan sols s'infligeix 1d2+força punts de dany.",
+        "sotmetre": "Els personatges que vulguin sotmetre a un oponent han d'anunciar que ataquen sense intenció de matar. Només es pot fer atacs amb cops contundents. El dany subjugat s'anota per separat. Un personatge reduït a zero punts de cop per dany subjugat es rendirà."
+      },
+      "atacs_a_distancia": {
+        "titol": "Atacs a distància",
+        "atacar_projectils": {
+          "abast_curt": "+1 de bonificació a les tirades d'atac.",
+          "abast_mitja": "Sense bonificacions ni penalitzacions.",
+          "abast_llarg": "-1 penalització als llançaments d'atac.",
+          "mes_enlla": "L'atac no és possible."
+        },
+        "objectius_cobertura": {
+          "completa": "El blanc no es pot colpir.",
+          "parcial": "El director de joc pot aplicar penalitzacions a l'atac entre -1 i -4."
+        },
+        "disparar_cos_a_cos": "Es determina a l'atzar qui és el blanc dels projectils abans de tirar per l'atac."
+      },
+      "llancar_encanteris": {
+        "titol": "Llançar encanteris",
+        "llibertat": "El personatge ha de ser capaç de parlar i moure les mans.",
+        "accio_unica": "No es pot fer altres accions en aquest assalt.",
+        "cap_moviment": "El personatge no pot moure's i llançar un encanteri en el mateix assalt.",
+        "linia_visio": "L'objectiu ha de ser visible pel llançador.",
+        "interrompre": "Si el llançador perd la iniciativa i és atacat amb èxit o falla una tirada de salvació abans del seu torn, l'encanteri que es vol llançar s'interromp i falla."
+      },
+      "situacions_especials": {
+        "titol": "Situacions especials",
+        "indefensio": "Quan una criatura cau inconscient o és paralitzada, congelada o adormida màgicament, en una lluita cos a cos es pot colpir automàticament.",
+        "invulnerabilitats": "Algunes criatures tan sols poden ser danyades amb armes màgiques o de plata.",
+        "diversos_atacants": "El director de joc decideix quants oponents poden atacar a cada personatge, tenint en compte la mida de l'adversari i l'espai al seu voltant.",
+        "visibilitat": "Quan el personatge no pot veure-hi per culpa de la foscor o la ceguesa, s'aplica una penalització de -4 a l'atac.",
+        "aigua": "Quan es lluita a dins o sota l'aigua, les tirades d'atac i dany s'han de penalitzar."
+      },
+      "altres_accions": {
+        "titol": "Altres accions (opcional)",
+        "defensa": "El jugador pot decidir actuar purament en defensa en un assalt d'una lluita cos a cos sacrificant el seu atac a canvi d'una bonificació +2 a la classe d'armadura durant l'assalt.",
+        "canviar_armes": "Quan un personatge no empunya l'arma que vol fer servir, pot deixar qualsevol objecte que tingui a les mans i empunyar l'arma. El personatge pot atacar amb l'arma en aquest assalt però amb una penalització de -2 a la tirada d'atac.",
+        "agafar_objectes": "Quan l'objecte és en un saquet o moneder es trigarà 1d3+1 assalts. Quan és en un sac o a la motxilla es triga 2d6+1 assalts."
+      }
+    },
+    "magia": {
+      "titol": "Màgia",
+      "encanteris": {
+        "titol": "Encanteris",
+        "descripcio": "Algunes de les classes de personatge poden llançar encanteris preparats que consisteixen en patrons d'energia memoritzats que s'obliden en fer la màgia.",
+        "tipus": ["Màgia divina: atorgats per una divinitat o un poder superior.", "Màgia arcana: obtinguts gràcies als estudis esotèrics."],
+        "memoritzar": {
+          "descans_i_estudi": "El llançador pot preparar de nou els seus encanteris després d'un descans llarg i reparador, sense interrupcions d'almenys vuit hores. Llavors ha de dedicar una hora per preparar tots els encanteris que el personatge és capaç de memoritzar.",
+          "duplicats": "Es permet preparar el mateix encanteri més d'un cop, sempre que se sigui capaç de memoritzar més d'un encanteri d'aquell nivell."
+        },
+        "llancament": {
+          "un_cop": "El patró de l'encanteri s'esborra de la ment del personatge fins que el prepari de nou.",
+          "llibertat": "S’ha de poder parlar i moure les mans.",
+          "linia_visio": "L'objectiu ha de poder veure a menys que en la descripció hi digui el contrari."
+        },
+        "efectes": {
+          "seleccio_objectius": "Quan alguns encanteris afecten múltiples objectius, el director de joc ha de decidir si són triats a l'atzar, pel llançador, etc.",
+          "concentracio": "Alguns especifiquen que el llançador ha de concentrar-se per tal de mantenir l'efecte màgic.",
+          "acumulatius": "No es poden fer servir múltiples encanteris per augmentar la mateixa capacitat."
+        }
+      },
+      "llibres_encanteris": {
+        "titol": "Llibres d'encanteris",
+        "inicials": "El llibre d'encanteris conté inicialment tres encanteris que el DJ pot triar, permetre al jugador triar-los d'una llista o triar-los aleatòriament.",
+        "afegir": {
+          "tutela": "El personatge pot consultar una biblioteca o un mentor per aprendre encanteris nous; cal dedicar una setmana de temps de joc aproximadament.",
+          "copiar": "Un llançador d'encanteris arcans pot intentar afegir els encanteris al seu llibre copiant-los d'una altra font; per exemple, un pergamí o el llibre d'encanteris d'un altre mag."
+        },
+        "copiar_regles": "No es pot copiar encanteris d'un nivell superior al que pot llançar el personatge. La possibilitat de poder copiar l'encanteri depèn de la puntuació d'intel·ligència. Els encanteris de pergamins desapareixen del pergamí en copiar-los.",
+        "perduts": "Un llançador d'encanteris arcans pot reescriure els encanteris del seu llibre d'encanteris quan es perd o és destruït. Cost: una setmana i 1.000 po per nivell d'encanteri.",
+        "capturats": "Els llibres d'encanteris de cada llançador estan escrits de manera que només el propietari sigui capaç de llegir-los sense haver de fer servir la màgia."
+      },
+      "magia_arcana": {
+        "titol": "Màgia arcana",
+        "preparar": "Es preparen estudiant un llibre d’encanteris i cal poder-lo llegir.",
+        "reversibles": "La forma, normal o invertida, s'ha de triar quan es memoritza."
+      },
+      "magia_divina": {
+        "titol": "Màgia divina",
+        "preparar": "Es preparen mitjançant la pregària a una deïtat i es pot triar qualsevol encanteri del repertori fins al nivell que el llançador n'és competent.",
+        "reversibles": "Els llançadors d'encanteris divins poden llançar el revers d'un encanteri pronunciant les paraules i realitzant els gestos cap enrere quan es llança.",
+        "perdre_favor": "Han de ser fidels als principis de la seva alineació. Si el personatge perd el favor de la seva deïtat, tindrà conseqüències.",
+        "alineacio_deitat": "Es pot perdre el favor del Déu quan es llança encanteris (o els seus reversos) els efectes dels quals van en contra dels principis de la seva alineació."
+      }
+    },
+    "encanteris_magia_divina": {
+      "titol": "Encanteris de màgia divina",
+      "primer_nivell": [
+        {"nom": "Curar ferides lleus", "invertit": true, "durada": "Instantani", "abast": "Toc o llançador", "descripcio": "Restaura 1d6+1 punts de cop o cura la paràlisi. Invertit: infligeix 1d6+1 punts de dany."},
+        {"nom": "Detectar el mal", "invertit": false, "durada": "6 torns", "abast": "120'", "descripcio": "Els objectes o éssers amb intencions malvades queden envoltats per una lluentor màgica."},
+        {"nom": "Detectar màgia", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "Els objectes, àrees o criatures encantades brillen lleugerament."},
+        {"nom": "Llum", "invertit": true, "durada": "12 torns", "abast": "120'", "descripcio": "Conjura llum en un radi de 15', pot encegar una criatura o cancel·lar foscor. Invertit: crea foscor."},
+        {"nom": "Protecció del mal", "invertit": false, "durada": "12 torns", "abast": "Llançador", "descripcio": "Protegeix el llançador d'atacs de criatures d'alineació diferent (+1 a salvacions, -1 a l'atac enemic)."},
+        {"nom": "Purificar menjar i aigua", "invertit": false, "durada": "Permanent", "abast": "10'", "descripcio": "Fa que aliments o aigua deteriorats siguin adequats per menjar i beure."},
+        {"nom": "Resistir el fred", "invertit": false, "durada": "6 torns", "abast": "30'", "descripcio": "Protegeix del fred normal i atorga +2 a salvacions contra fred màgic, reduint el dany."},
+        {"nom": "Treure la por", "invertit": true, "durada": "2 torns", "abast": "Toc o llançador", "descripcio": "L'objectiu es calma i perd la por. Invertit: espanta un objectiu."}
+      ],
+      "segon_nivell": [
+        {"nom": "Beneir", "invertit": true, "durada": "6 torns", "abast": "60'", "descripcio": "Els aliats en una àrea de 20' obtenen +1 a atac, dany i moral. Invertit: malaurança (-1 als enemics)."},
+        {"nom": "Conèixer alineació", "invertit": false, "durada": "Un assalt", "abast": "10'", "descripcio": "El llançador obté un coneixement immediat de l'alineació d'un personatge, monstre o objecte."},
+        {"nom": "Encís de serps", "invertit": false, "durada": "1d4+1 assalts o torns", "abast": "60'", "descripcio": "Una o més serps deixen de ser hostils i no ataquen."},
+        {"nom": "Parlar amb els animals", "invertit": false, "durada": "6 torns", "abast": "30'", "descripcio": "El llançador es pot comunicar amb un tipus d'animal."},
+        {"nom": "Resistir el foc", "invertit": false, "durada": "2 torns", "abast": "30'", "descripcio": "Atorga resistència al foc a una criatura."},
+        {"nom": "Retenir persona", "invertit": false, "durada": "9 torns", "abast": "180'", "descripcio": "Paralitza 1d4 humanoides si fallen una salvació."},
+        {"nom": "Silenci (radi 15')", "invertit": false, "durada": "12 torns", "abast": "180'", "descripcio": "Una àrea de 15' de radi queda totalment en silenci."},
+        {"nom": "Trobar paranys", "invertit": false, "durada": "2 torns", "abast": "30'", "descripcio": "Els paranys dins de l'abast se li mostren al llançador amb una lluentor blava."}
+      ]
+    },
+    "encanteris_magia_arcana": {
+      "titol": "Encanteris de màgia arcana",
+      "primer_nivell": [
+        {"nom": "Detectar màgia", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "Els objectes, àrees o criatures encantades brillen lleugerament."},
+        {"nom": "Disc flotant", "invertit": false, "durada": "6 torns", "abast": "6'", "descripcio": "Crea un disc de força que segueix al llançador i pot transportar càrregues de fins a 5.000 monedes."},
+        {"nom": "Dormir", "invertit": false, "durada": "4d4 torns", "abast": "240'", "descripcio": "Provoca somnolència màgica a un grup de criatures (2d8 daus de cop) o una sola criatura (fins a 4+1 DC)."},
+        {"nom": "Encisar persona", "invertit": false, "durada": "Dies", "abast": "120'", "descripcio": "Una criatura tipus 'persona' veu al llançador com un amic i aliat de confiança."},
+        {"nom": "Escut", "invertit": false, "durada": "2 torns", "abast": "Llançador", "descripcio": "Crea un camp de força invisible que millora la CA del llançador a 17 contra projectils i 15 contra altres atacs."},
+        {"nom": "Llegir idiomes", "invertit": false, "durada": "2 torns", "abast": "Llançador", "descripcio": "El llançador pot llegir qualsevol idioma, missatge codificat, mapa o instruccions escrites."},
+        {"nom": "Llegir màgia", "invertit": false, "durada": "1 torn", "abast": "Llançador", "descripcio": "Permet desxifrar inscripcions màgiques, pergamins o llibres d'encanteris d'altres mags."},
+        {"nom": "Llum", "invertit": true, "durada": "nivell+6 torns", "abast": "120'", "descripcio": "Conjura llum en un radi de 15', pot encegar una criatura o cancel·lar foscor. Invertit: crea foscor."},
+        {"nom": "Projectil màgic", "invertit": false, "durada": "1 torn", "abast": "150'", "descripcio": "Conjura un o més dards d'energia que colpegen inevitablement, infligint 1d6+1 de dany cadascun."},
+        {"nom": "Protecció del mal", "invertit": false, "durada": "6 torns", "abast": "Llançador", "descripcio": "Protegeix el llançador d'atacs de criatures d'alineació diferent (+1 a salvacions, -1 a l'atac enemic)."},
+        {"nom": "Retenir portal", "invertit": false, "durada": "2d6 torns", "abast": "10'", "descripcio": "Mante una porta, finestra o portal tancat màgicament."},
+        {"nom": "Ventrilòquia", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "El llançador pot fer que la seva veu sembli provenir de qualsevol lloc dins de l'abast."}
+      ],
+      "segon_nivell": [
+        {"nom": "Detectar el mal", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "Els objectes o éssers amb intencions malvades queden envoltats per una lluentor màgica."},
+        {"nom": "Detectar invisibilitat", "invertit": false, "durada": "6 torns", "abast": "10' per nivell", "descripcio": "El llançador pot veure clarament els objectes o les criatures invisibles."},
+        {"nom": "Força fantasmal", "invertit": false, "durada": "Concentració", "abast": "240'", "descripcio": "Manifesta una il·lusió visual (monstre, atac o escena) en un cub de 20 peus."},
+        {"nom": "Imatge mirall", "invertit": false, "durada": "6 torns", "abast": "Llançador", "descripcio": "Apareixen 1d4 duplicats il·lusoris del llançador."},
+        {"nom": "Invisibilitat", "invertit": false, "durada": "Fins interrupció", "abast": "240'", "descripcio": "El llançador, una criatura o un objecte es torna invisible."},
+        {"nom": "Levitació", "invertit": false, "durada": "nivell+6 torns", "abast": "Llançador", "descripcio": "Permet al llançador desplaçar-se amunt i avall flotant per l'aire."},
+        {"nom": "Llum continua", "invertit": true, "durada": "Permanent", "abast": "120'", "descripcio": "Crea llum màgica en un radi de 30', pot encegar o cancel·lar foscor contínua. Invertit: crea foscor contínua."},
+        {"nom": "Obertura", "invertit": false, "durada": "1 assalt", "abast": "60'", "descripcio": "Obre portes, portons, cofres, etc., que estan tancades o barrades."},
+        {"nom": "Pany de mag", "invertit": false, "durada": "Permanent", "abast": "10'", "descripcio": "Tanca un objecte amb un pany màgic."},
+        {"nom": "PES", "invertit": false, "durada": "12 torns", "abast": "60'", "descripcio": "Atorga al llançador la capacitat de percebre i comprendre els pensaments d'altres criatures vives."},
+        {"nom": "Teranyina", "invertit": false, "durada": "48 torns", "abast": "10'", "descripcio": "Evoca una massa de fils forts i enganxosos que bloqueja una àrea cúbica de 10 peus."},
+        {"nom": "Trobar objectes", "invertit": false, "durada": "6 torns", "abast": "120'", "descripcio": "El llançador pot percebre la direcció d'un objecte que vol localitzar."}
+      ],
+      "tercer_nivell": [
+        {"nom": "Apressar", "invertit": false, "durada": "3 torns", "abast": "240'", "descripcio": "Fins a 24 criatures poden moure's i actuar el doble de ràpid del normal."},
+        {"nom": "Bola de foc", "invertit": false, "durada": "Instantani", "abast": "240'", "descripcio": "Una flama explota en una esfera de 20' de radi, infligint 1d6 de dany per nivell del llançador."},
+        {"nom": "Clarividència", "invertit": false, "durada": "12 torns", "abast": "60'", "descripcio": "El llançador obté la capacitat de veure a través dels ulls d'altres éssers vius."},
+        {"nom": "Dissipar màgia", "invertit": false, "durada": "Instantani", "abast": "120'", "descripcio": "Finalitza els encanteris amb una durada no instantània en un volum cúbic de 20'."},
+        {"nom": "Infravisió", "invertit": false, "durada": "Un dia", "abast": "Toc o llançador", "descripcio": "El subjecte pot veure fins a 60' en la foscor amb la infravisió."},
+        {"nom": "Invisibilitat (radi 10')", "invertit": false, "durada": "Fins interrupció", "abast": "120'", "descripcio": "Una criatura seleccionada i totes les criatures a 10 peus o menys d'ella es tornen invisibles."},
+        {"nom": "Llampec", "invertit": false, "durada": "Instantani", "abast": "180'", "descripcio": "Conjura un cop d'energia elèctrica de 60' de llarg i 5' d'ample, infligint 1d6 de dany per nivell."},
+        {"nom": "Protecció del mal (radi 10')", "invertit": false, "durada": "12 torns", "abast": "10' al voltant del llançador", "descripcio": "Protegeix el llançador i els seus aliats d'atacs de criatures d'alineació diferent."},
+        {"nom": "Protecció dels projectils normals", "invertit": false, "durada": "12 torns", "abast": "30'", "descripcio": "Un sol subjecte obté immunitat completa contra míssils petits no màgics."},
+        {"nom": "Retenir persona", "invertit": false, "durada": "1 torn/nivell", "abast": "120'", "descripcio": "Paralitza 1d4 humanoides si fallen una salvació."},
+        {"nom": "Respirar dins l'aigua", "invertit": false, "durada": "Un dia", "abast": "30'", "descripcio": "El subjecte pot respirar dins l'aigua."},
+        {"nom": "Volar", "invertit": false, "durada": "1d6+nivell torns", "abast": "Toc o llançador", "descripcio": "El subjecte obté la capacitat de volar per l'aire."}
+      ]
+    },
+    "regles_opcionals": {
+      "titol": "Regles opcionals",
+      "combat": {
+        "atacar_dues_armes": "L'arma secundària ha de ser petita. Atac principal amb -2, atac secundari amb -4.",
+        "carregar": "Un cop per combat, moure's almenys 20 peus abans d'atacar. +2 a l'atac, -1 a la CA.",
+        "armes_esquitx": {
+          "dirigides_superficie": "Atac contra CA 10. Afecta a totes les criatures en un radi de 5 peus amb 1d2 de dany.",
+          "errar_objectiu": "Cau en una ubicació aleatòria (1d12 per direcció) a 5 peus de l'objectiu."
+        }
+      },
+      "alternativa_drenatge_nivells": {
+        "descripcio": "Es drenen punts de constitució en comptes de nivells o daus de cop.",
+        "regles": [
+          "1 nivell drenat = 1d6 punts de constitució.",
+          "2 nivells drenats = 2d4 punts de constitució.",
+          "Constitució a zero = mort.",
+          "Recuperació: 1 punt per dia o amb l'encanteri 'restaurar'."
+        ]
+      },
+      "rerefons": {
+        "descripcio": "Els personatges poden haver après habilitats d'un ofici abans de l'aventura. Tira 1d100 a la taula.",
+        "us": "Permet realitzar funcions bàsiques de la professió, com estimar valor, fer reparacions menors o construir objectes senzills.",
+        "taula_rerefons": [
+          {"d100": "01-02", "habilitat": "Adroguer"},
+          {"d100": "03-04", "habilitat": "Armador"},
+          {"d100": "05-07", "habilitat": "Arquer / fletxer"},
+          {"d100": "08-11", "habilitat": "Baster"},
+          {"d100": "12-14", "habilitat": "Blanquer"},
+          {"d100": "15-19", "habilitat": "Boter"},
+          {"d100": "20", "habilitat": "Bufador de vidre"},
+          {"d100": "21-24", "habilitat": "Caçador"},
+          {"d100": "25-26", "habilitat": "Calderer"},
+          {"d100": "27-29", "habilitat": "Carnisser"},
+          {"d100": "30", "habilitat": "Cartògraf"},
+          {"d100": "31-34", "habilitat": "Cerveser"},
+          {"d100": "35-36", "habilitat": "Corder"},
+          {"d100": "37", "habilitat": "Enquadernador"},
+          {"d100": "38-40", "habilitat": "Ensostrador"},
+          {"d100": "41-43", "habilitat": "Entrenador d'animals"},
+          {"d100": "44-46", "habilitat": "Ferrer"},
+          {"d100": "47-50", "habilitat": "Forner"},
+          {"d100": "51-53", "habilitat": "Fuster"},
+          {"d100": "54-64", "habilitat": "Granger"},
+          {"d100": "65-67", "habilitat": "Lapidari / joier"},
+          {"d100": "68-70", "habilitat": "Llenyataire"},
+          {"d100": "71-73", "habilitat": "Mariner"},
+          {"d100": "74-76", "habilitat": "Mestre d'aixa"},
+          {"d100": "77-80", "habilitat": "Miner"},
+          {"d100": "81-82", "habilitat": "Paleta"},
+          {"d100": "83-86", "habilitat": "Pellisser"},
+          {"d100": "87-90", "habilitat": "Pescador"},
+          {"d100": "91-93", "habilitat": "Sastre"},
+          {"d100": "94-95", "habilitat": "Taverner"},
+          {"d100": "96-98", "habilitat": "Terrissaire"},
+          {"d100": "99-00", "habilitat": "Tira per a dos rerefons"}
+        ]
+      }
+    },
+    "dirigir_aventures": {
+      "titol": "Dirigir aventures",
+      "criatures_pnj": {
+        "titol": "Les criatures i els PNJ",
+        "descripcio": "El DJ és l'encarregat de decidir com reaccionen les criatures i els PNJs en els encontres, i també quines maquinacions, tàctiques o plans duen a terme. L'escenari de joc ha de mostrar-se viu, dinàmic i versemblant.",
+        "intelligencia_tactiques": "Les criatures intel·ligents poden fer servir tàctiques com emboscades, guàrdies, objectes màgics, i aprendre de trobades anteriors per preparar-se millor.",
+        "motivacio": "Les criatures intel·ligents i els PNJ tenen els seus propis interessos i motivacions més enllà de la simple recuperació de tresor."
+      },
+      "atorgar_experiencia": {
+        "titol": "Atorgar experiència",
+        "descripcio": "Tots els personatges que tornen amb vida d'una aventura reben punts d'experiència (PX) pel tresor recuperat i per les criatures superades.",
+        "tresor_recuperat": "Els personatges guanyen un punt d'experiència per cada peça d'or (po) del tresor. El tresor màgic no atorga PX.",
+        "criatures_superades": {
+          "descripcio": "Totes les criatures superades (enganyades, capturades, espantades, evitades o mortes) concedeixen PX.",
+          "px_base": "El valor en PX es determina pels seus daus de cop.",
+          "bonificacio_px": "El valor s'incrementa per cada habilitat especial que tingui.",
+          "taula_px": [
+            {"dc": "Menys d'1", "base_px": 5, "bonificacio_px": 1},
+            {"dc": "1", "base_px": 10, "bonificacio_px": 3},
+            {"dc": "1+", "base_px": 15, "bonificacio_px": 4},
+            {"dc": "2", "base_px": 20, "bonificacio_px": 5},
+            {"dc": "2+", "base_px": 25, "bonificacio_px": 10},
+            {"dc": "3", "base_px": 35, "bonificacio_px": 15},
+            {"dc": "3+", "base_px": 50, "bonificacio_px": 25},
+            {"dc": "4", "base_px": 75, "bonificacio_px": 50},
+            {"dc": "4+", "base_px": 125, "bonificacio_px": 75},
+            {"dc": "5", "base_px": 175, "bonificacio_px": 125},
+            {"dc": "5+", "base_px": 225, "bonificacio_px": 175},
+            {"dc": "6", "base_px": 275, "bonificacio_px": 225},
+            {"dc": "6+", "base_px": 350, "bonificacio_px": 300},
+            {"dc": "7-7+", "base_px": 450, "bonificacio_px": 400},
+            {"dc": "8-8+", "base_px": 650, "bonificacio_px": 550},
+            {"dc": "9-10+", "base_px": 900, "bonificacio_px": 700},
+            {"dc": "11-12+", "base_px": 1100, "bonificacio_px": 800},
+            {"dc": "13-16+", "base_px": 1350, "bonificacio_px": 950},
+            {"dc": "17-20+", "base_px": 2000, "bonificacio_px": 1150},
+            {"dc": "21-21+", "base_px": 2500, "bonificacio_px": 2000}
+          ]
+        },
+        "dividir_experiencia": "Els PX del tresor i les criatures es reparteixen equitativament entre tots els supervivents, inclosos els seguidors.",
+        "bonificacions_penalitzacions": "El DJ pot atorgar PX addicionals als jugadors que ho facin especialment bé o penalitzar els que no contribueixin."
+      }
+    },
+    "tresors": {
+      "titol": "Tresors",
+      "objectes_de_valor": {
+        "titol": "Objectes de valor",
+        "descripcio": "Les aventures també es pot trobar objectes de valor, el valor del qual no sempre és obvi.",
+        "exemples": ["Obra d'art", "Llibres rars", "Aliments exquisits", "Mobiliari", "Estris de plata", "Pells, marfil, minerals, sedes"]
+      },
+      "objectes_magics": {
+        "titol": "Objectes màgics",
+        "categories": ["Armadures i escuts", "Espases", "Armes", "Pocions", "Anells", "Ceptres, bastons i varetes", "Pergamins i mapes", "Objectes diversos"],
+        "identificacio": "La forma més comuna és mitjançant prova i error. Mags de nivell alt poden identificar-los a canvi d'un pagament o servei.",
+        "us": "Un objecte màgic s'ha d'emprar, brandint-lo o portant-lo de la forma habitual. L'activació requereix concentració, tret que l'objecte estigui sempre actiu.",
+        "taula_tirada_objectes": [
+          {"d20": "1-2", "objecte": "Armadura o escut"},
+          {"d20": "3", "objecte": "Objecte divers"},
+          {"d20": "4-7", "objecte": "Poció"},
+          {"d20": "8", "objecte": "Anell"},
+          {"d20": "9-14", "objecte": "Ceptre, bastó o vareta"},
+          {"d20": "15", "objecte": "Pergamí o mapa"},
+          {"d20": "16-19", "objecte": "Espasa"},
+          {"d20": "20", "objecte": "Arma"}
+        ]
+      },
+      "armadures_i_escuts": {
+        "titol": "Armadures i escuts",
+        "maleits": "Tenen una penalització a la CA. Un cop s'utilitzen en combat, no es poden treure sense màgia.",
+        "encantats": "Tenen una bonificació que millora la CA del portador."
+      },
+      "espases_i_armes": {
+        "titol": "Espases i armes",
+        "maleides": "Tenen una penalització a les tirades d'atac i dany. Un cop s'utilitzen en combat, no es poden deixar anar sense màgia.",
+        "encantades": "Tenen una bonificació a les tirades d'atac i dany."
+      },
+      "gemmes_i_joies": {
+        "titol": "Gemmes i joies",
+        "joies": "Cada peça de joieria està valorada en 3d6×100 po. Si es danyen, el seu valor es redueix a la meitat.",
+        "combinacio": "El DJ pot combinar els valors de les gemmes o joies trobades com vulgui."
+      },
+      "objectes_diversos": {
+        "titol": "Objectes diversos",
+        "us": "Tots els personatges quan no s'indiqui el contrari.",
+        "activacio": "Quan no s'indica es pot fer servir a voluntat i s'activa per concentració."
+      },
+      "pocions": {
+        "titol": "Pocions",
+        "us": "Tots els personatges quan no s'indiqui el contrari.",
+        "identificacio": "Es pot identificar una poció prenent una petita quantitat.",
+        "beure": "Cal un assalt i l'efecte dura 1d6+6 assalts.",
+        "barrejar": "És perillós beure una poció quan ja s'està sota els efectes d'una altra. Pot causar malaltia o cancel·lar els efectes."
+      },
+      "anells": {
+        "titol": "Anells",
+        "us": "Tots els personatges quan no s'indiqui el contrari.",
+        "activacio": "L'efecte màgic s'activa col·locant-lo en un dit i està contínuament actiu.",
+        "multiples": "Un personatge pot portar dos anells màgics, un a cada mà. Més de dos cancel·len tots els efectes."
+      },
+      "ceptres_bastons_varetes": {
+        "titol": "Ceptres, bastons i varetes",
+        "carregues": "Tenen un nombre d'usos limitat. No es poden recarregar.",
+        "ceptres": {"us": "Tots els personatges", "dimensions": "Prim i 3 peus de llarg", "carregues": "1d10"},
+        "varetes": {"us": "Llançadors d'encanteris arcans", "dimensions": "Primers i un peu i mig de llarg", "carregues": "2d10"},
+        "bastons": {"us": "Llançadors d'encanteris", "dimensions": "2 polzades de gruix i 6 peus de llarg", "carregues": "3d10"}
+      },
+      "pergamins_magics": {
+        "titol": "Pergamins màgics",
+        "descripcio": "Contenen fórmules màgiques escrites per un llançador d'encanteris d'alt nivell. Són d'un sol ús.",
+        "maleits": "Només mirar el pergamí maleeix el personatge. La maledicció es pot eliminar amb màgia o una missió.",
+        "proteccio": "La seva lectura crea un cercle de protecció de 10 peus de radi contra un tipus específic de criatura o energia.",
+        "encanteri": "La lectura en veu alta evoca l'efecte d'un encanteri específic. Els pergamins arcans necessiten 'llegir màgia' per ser desxifrats."
+      }
+    },
+    "les_bestioles": {
+      "titol": "Les bestioles",
+      "introduccio": "En aquest joc anomenem tots els éssers com a 'criatures'. Aquest és el terme general; es fan servir termes més específics per descriure i classificar les diferents classes de criatures. Moltes seran neutrals i tan sols es preocupen d’elles mateixes, però algunes seran grans adversaris pels personatges. Els jugadors no haurien d'assumir que totes les criatures són enemigues i que ataquen a l'acte.",
+      "estadistiques": {
+        "titol": "Estadístiques",
+        "descripcio": "Les criatures es descriuen amb estadístiques que descriuen les habilitats generals com el combat, a més d’una descripció física i del seu comportament.",
+        "ca": "Classe d'armadura: Indica la capacitat del monstre per evitar el dany en combat. S'utilitza l'escala ascendent (CA 10 sense armadura).",
+        "dc": "Daus de cop: És el nombre de daus de 8 cares (d8) que s'ha de tirar per determinar els punts de cop de la criatura.",
+        "at": "Atacs per assalt: És el nombre d'atacs per assalt, i les diferents rutines d'atac.",
+        "ba": "Bonificació d'atac: Modificador a la tirada d'atac.",
+        "ts": "Tirada de salvació: Valors per a les salvacions (M: mort, V: varetes, P: paràlisi, A: alè, E: encanteris).",
+        "mv": "Factor de moviment: Factor de moviment base i d'encontre (entre parèntesis).",
+        "ml": "Valor de moral: Nombre a superar amb 2d6 per determinar si la criatura continua lluitant.",
+        "al": "Alineació: Afinitat amb la llei, la neutralitat o el caos.",
+        "px": "Experiència: Valor en punts d'experiència per derrotar el monstre.",
+        "na": "Nombre en què apareixen: Nombre de criatures trobades en masmorres (primer valor) o a l'exterior/cau (segon valor).",
+        "tt": "Tipus de tresor: Codi de lletra per determinar el tresor posseït."
+      },
+      "habilitats_criatures": {
+        "titol": "Habilitats de les criatures",
+        "efectes_quasi_magics": "Moltes criatures tenen atacs o poders que imiten encanteris sense necessitat de memoritzar-los.",
+        "metzines": "Alguns atacs poden emmetzinar, requerint una tirada de salvació contra metzina per evitar la mort o altres efectes.",
+        "paralisi": "Alguns atacs causen paràlisi si es falla una tirada de salvació contra paràlisi.",
+        "drenatge_habilitats": "La pèrdua de punts d'habilitat afecta els modificadors. Una habilitat a zero causa la mort.",
+        "drenatge_nivells": "Pèrdua permanent de nivells i els seus beneficis. Una criatura reduïda a zero daus de cop mor.",
+        "encisar": "La víctima obeeix les ordres de la criatura si falla una salvació contra encanteris.",
+        "atacs_corrosius": "L'àcid destrueix roba i armadures no màgiques.",
+        "petrificacio": "La víctima es converteix en pedra si falla una salvació contra petrificació.",
+        "infravisio": "La majoria de criatures no humanes tenen infravisió fins a 60 peus.",
+        "idiomes": "Molts monstres intel·ligents parlen el comú i el seu propi idioma.",
+        "persones": "Alguns efectes només afecten criatures classificades com a 'persones' (humans, semihumans i humanoides fins a 4+1 DC)."
+      },
+      "bestiari": [
+        {
+          "nom": "Abella gegant",
+          "estadistiques": {"ca": 12, "dc": "1d4 pc", "at": "1×fibló", "ba": "+1", "mv": "150' (50')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 9, "al": "Neutral", "px": 7, "na": "1d6 (5d6)", "tt": "Cap"},
+          "descripcio": "Fan un peu de llarg i no solen ser agressives, excepte quan defensen el seu rusc. Qui rep una fiblada ha de fer una tirada de salvació contra metzina o morir; l'abella mor a l'assalt següent. Mentre el fibló estigui clavat, la víctima pateix 1 punt de dany addicional per assalt. La reina (2 DC, 30 PX) no perd el seu fibló."
+        },
+        {
+          "nom": "Àliga gegant",
+          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "1×bec (1d6), 2×talons (1d4)", "ba": "+2", "mv": "60' (20') / 360' (120') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Legal", "px": 75, "na": "0 (1d6)", "tt": "Cap"},
+          "descripcio": "Criatures intel·ligents que parlen el comú, fan uns 10 peus d'alçada. Acostumen a atacar des de l'aire en picat. Una parella defensarà el seu niu a mort (moral 12)."
+        },
+        {
+          "nom": "Aranya, taràntula",
+          "estadistiques": {"ca": 14, "dc": "4* (18 pc)", "at": "1×mossegada (1d8+metzina)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 125, "na": "1d3 (1d3)", "tt": "U"},
+          "descripcio": "Aranyes peludes de la mida d'un poni. La seva mossegada requereix una tirada de salvació contra metzina o la víctima ballarà incontroladament durant 2d10 assalts (-4 a CA i atacs). Els espectadors han de superar una salvació contra encanteris o unir-se al ball."
+        },
+        {
+          "nom": "Armadura animada",
+          "estadistiques": {"ca": 17, "dc": "4* (16 pc)", "at": "1×arma (1d6)", "ba": "+3", "mv": "90' (30')", "ts": "M13 V14 P13 A16 E15 (M4)", "ml": 12, "al": "Neutral", "px": 125, "na": "1 (0)", "tt": "Cap"},
+          "descripcio": "Armadures animades per actuar com a guardians. No tenen voluntat pròpia i defensen la posició encomanada."
+        },
+        {
+          "nom": "Assetjador invisible",
+          "estadistiques": {"ca": 16, "dc": "8* (36 pc)", "at": "1×cop (4d4)", "ba": "+7", "mv": "120' (40')", "ts": "M8 V9 P10 A10 E12 (8)", "ml": 12, "al": "Neutral", "px": 1200, "na": "1 (1)", "tt": "Cap"},
+          "descripcio": "Criatures del pla elemental de l'aire, convocades per bruixots. Són invisibles i rastregen amb total encert. Sorprèn amb 5-en-6. S'ofèn amb missions llargues o complexes i pot pervertir les ordres."
+        },
+        {
+          "nom": "Au funesta",
+          "estadistiques": {"ca": 14, "dc": "2+1* (10 pc)", "at": "1×mossegada (1d3) o 2×urpes (1d3)", "ba": "+2", "mv": "30' (10') / 60' (20') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Caòtic", "px": 35, "na": "1d4 (2d6)", "tt": "Cap"},
+          "descripcio": "Ocells no-morts intel·ligents. Les seves ferides causen la 'febre funesta' si no se supera una salvació contra metzina. Aquesta malaltia impedeix la curació i només es pot eliminar amb 'curar malalties'."
+        },
+        {
+          "nom": "Aparegut (wraith)",
+          "estadistiques": {"ca": 16, "dc": "4** (18 pc)", "at": "1×toc (1d4+drenatge)", "ba": "+3", "mv": "120' (40') / 240' (80') volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Caòtic", "px": 175, "na": "1d4 (1d6)", "tt": "E"},
+          "descripcio": "No-morts incorporals. Només poden ser danyats per armes màgiques (dany complet) o de plata (meitat de dany). El seu toc drena un nivell d'experiència permanentment. Una víctima amb tots els nivells drenats es converteix en un aparegut."
+        },
+        {
+          "nom": "Bandoler",
+          "estadistiques": {"ca": "13/15/16", "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 6, "al": "Caòtic", "px": 10, "na": "0 (1d4×10)", "tt": "A"},
+          "descripcio": "Mercenaris i criminals. La meitat va a peu (armadura de cuir, escut, espasa, arc curt) i l'altra meitat a cavall (cota de malla, escut, espasa). Tenen líders i comandants de nivells superiors."
+        },
+        {
+          "nom": "Banshee",
+          "estadistiques": {"ca": 19, "dc": "7* (31 pc)", "at": "1×toc (1d8) o 1×gemec (mort)", "ba": "+6", "mv": "150' (50')", "ts": "M8 V9 P10 A10 E12 (7)", "ml": 12, "al": "Caòtic", "px": 850, "na": "1 (1)", "tt": "D"},
+          "descripcio": "Esperits turmentats de dones. Només poden ser danyades per armes màgiques o de plata. Un cop al dia, durant la foscor, el seu gemec pot causar la mort a totes les criatures en un radi de 30 peus que no superin una salvació contra mort."
+        },
+        {
+          "nom": "Basilisc",
+          "estadistiques": {"ca": 15, "dc": "6+1** (28 pc)", "at": "1×mossegada (1d10+petrifica), 1×mirada (petrifica)", "ba": "+6", "mv": "60' (20')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "Neutral", "px": 950, "na": "1d6 (1d6)", "tt": "F"},
+          "descripcio": "Monstre rèptil de vuit potes que petrifica amb la mirada. Les víctimes han de superar una salvació contra petrificació. Lluitar evitant la mirada comporta una penalització de -4 a l'atac. Si es veu a si mateix en un mirall, ha de fer una salvació o quedarà petrificat."
+        },
+        {
+          "nom": "Bolet violeta",
+          "estadistiques": {"ca": 12, "dc": "3* (13 pc)", "at": "2×tentacles (2d4+podrir)", "ba": "+2", "mv": "10' (3')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 50, "na": "1d4 (0)", "tt": "Cap"},
+          "descripcio": "Bolets carnívors gegants. Els seus tentacles descomponen la carn; cal superar una salvació contra metzina o el dany infligit només es podrà curar amb màgia."
+        },
+        {
+          "nom": "Centaure",
+          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "2×peülles (1d6), arma (1d6 o per arma)", "ba": "+3", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 8, "al": "Neutral", "px": 75, "na": "0 (2d10)", "tt": "A"},
+          "descripcio": "Criatures mig home, mig cavall. Són arrogants però honorables. Poden carregar amb piques o llances i solen usar arcs i garrots."
+        },
+        {
+          "nom": "Cocatriu",
+          "estadistiques": {"ca": 13, "dc": "5** (22 pc)", "at": "1×bec (1d6+petrificació)", "ba": "+4", "mv": "90' (30') / 180' (60') volant", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 7, "al": "Neutral", "px": 425, "na": "1d4 (1d8)", "tt": "D"},
+          "descripcio": "Criatura semblant a un pollastre amb cua de serp. Qualsevol criatura tocada per ella ha de superar una salvació contra petrificació o convertir-se en pedra."
+        },
+        {
+          "nom": "Corb mecànic",
+          "estadistiques": {"ca": 16, "dc": "1+1* (5 pc)", "at": "1×bec (2d4), 2×talons (2d4)", "ba": "+2", "mv": "60' (20' ) / 360' (120') volant", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 10, "al": "Neutral", "px": 19, "na": "1 (0)", "tt": "2×ulls de robí"},
+          "descripcio": "Creacions màgiques que combinen parts de corb i mecanismes. Tenen infravisió (90 peus), entenen qualsevol idioma, tenen una oïda millorada i volen en silenci absolut."
+        },
+        {
+          "nom": "Centpeus gegant",
+          "estadistiques": {"ca": 10, "dc": "½* (2 pc)", "at": "1×mossegada (verí)", "ba": "+0", "mv": "60' (20')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 7, "al": "Neutral", "px": 6, "na": "2d4 (1d8)", "tt": "Cap"},
+          "descripcio": "Artròpodes depredadors de 2 a 3 peus de llarg. El seu verí incapacita i emmalalteix durant deu dies si no se supera una salvació contra metzina."
+        },
+        {
+          "nom": "Cuc de femer",
+          "estadistiques": {"ca": 10, "dc": "1 pc", "at": "Cap", "ba": "-1", "mv": "10' (3')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 12, "al": "Neutral", "px": 6, "na": "5d4 (5d4)", "tt": "Cap"},
+          "descripcio": "Paràsits que excaven ràpidament la carn buscant el cor, matant en 1d3 torns. Es poden matar amb 'curar malalties' o foc (que fa 1d6 de dany a la víctima)."
+        },
+        {
+          "nom": "Cuc tentaculat",
+          "estadistiques": {"ca": 12, "dc": "3+1* (14 pc)", "at": "8×tentacles (paràlisis)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Neutral", "px": 75, "na": "1d3 (1d3)", "tt": "B"},
+          "descripcio": "Grans erugues amb tentacles que paralitzen. Les víctimes han de superar una salvació contra paràlisi o quedar immòbils durant 2d4 torns. Un cop paralitzats, el cuc comença a alimentar-se d'ells."
+        },
+        {
+          "nom": "Desencisador",
+          "estadistiques": {"ca": 14, "dc": "5* (22 pc)", "at": "1×toc de trompa (desencisar)", "ba": "+4", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 7, "al": "Neutral", "px": 300, "na": "1d2 (0)", "tt": "Cap"},
+          "descripcio": "Criatura semblant a un dromedari que s'alimenta d'energia màgica. Detecta objectes màgics a 60 peus i ataca al més poderós. El seu toc elimina tota la màgia d'un objecte. Només pot ser danyat per atacs màgics."
+        },
+        {
+          "nom": "Desori",
+          "estadistiques": {"ca": 15, "dc": "8** (36 pc)", "at": "2×esclafit (2d4)", "ba": "+7", "mv": "90' (30') volant", "ts": "M6 V7 P8 A8 E10 (10)", "ml": 10, "al": "Caòtic", "px": 1650, "na": "1 (0)", "tt": "Cap"},
+          "descripcio": "Criatura amorfa en canvi constant. Un cop per encontre pot alliberar una descàrrega d'energia (4d8 de dany en un radi de 10 peus). Desestabilitza la màgia, forçant als mags a superar una salvació contra encanteris per llançar-los."
+        },
+        {
+          "nom": "Drapat",
+          "estadistiques": {"ca": 17, "dc": "5** (22 pc)", "at": "1×toc (1d4) o 1×arma (1d6 o per arma)", "ba": "+3", "mv": "90' (30') / 180' (60') volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Caòtic", "px": 425, "na": "1 (1)", "tt": "C"},
+          "descripcio": "No-mort embolicat en teles. El seu toc, a més del dany, fa perdre un punt de carisma permanentment si no se supera una salvació contra mort. Pot canviar la seva aparença amb una il·lusió tres cops al dia."
+        },
+        {
+          "nom": "Dríada",
+          "estadistiques": {"ca": 14, "dc": "2* (9 pc)", "at": "1×màgia (encisar)", "ba": "+1", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 6, "al": "Neutral", "px": 25, "na": "0 (1d6)", "tt": "D"},
+          "descripcio": "Esperits de la naturalesa lligats a un roure. No se'n poden allunyar més de 300 iardes. Eviten el combat físic i poden encisar als seus atacants per posar-los en contra dels seus companys."
+        },
+        {
+          "nom": "Eixam d'insectes",
+          "estadistiques": {"ca": 12, "dc": "2 a 4 (9/13/18 pc)", "at": "1×eixam (2 o 4 pc)", "ba": "+1/+2/+3", "mv": "30' (10') / 60' (20') volant", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 11, "al": "Neutral", "px": "20/35/75", "na": "1 (1d3)", "tt": "Cap"},
+          "descripcio": "Un gran grup d'insectes que ataca com una sola entitat. Causa dany automàtic a les criatures dins de l'eixam. Les armes normals no el danyen, però el foc, el fum o submergir-se en aigua són eficaços."
+        },
+        {
+          "nom": "Entitat (wight)",
+          "estadistiques": {"ca": 14, "dc": "3* (13 pc)", "at": "1×toc (drenatge)", "ba": "+2", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 12, "al": "Caòtic", "px": 50, "na": "1d6 (1d8)", "tt": "B"},
+          "descripcio": "No-morts que ocupen cossos morts. Només poden ser danyats per armes màgiques o de plata. El seu toc drena un nivell d'experiència permanentment. Una víctima amb tots els nivells drenats es converteix en una entitat."
+        },
+        {
+          "nom": "Escarabat de foc gegant",
+          "estadistiques": {"ca": 15, "dc": "1+2 (6 pc)", "at": "1×mossegada (2d4)", "ba": "+1", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 7, "al": "Neutral", "px": 15, "na": "1d8 (2d6)", "tt": "Cap"},
+          "descripcio": "Insectes nocturns lluminosos. Les seves glàndules oculars emeten una resplendor que il·lumina un radi de 10 peus i persisteix 1d6 dies després de ser retirades."
+        },
+        {
+          "nom": "Escorpí gegant",
+          "estadistiques": {"ca": 17, "dc": "4* (18 pc)", "at": "2×urpes (1d10), 1×fibló (1d4+metzina)", "ba": "+3", "mv": "150' (50')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 11, "al": "Caòtic", "px": 125, "na": "1d6 (1d6)", "tt": "V"},
+          "descripcio": "Depredadors agressius de la mida d'un ase. Si colpeja amb una urpa, obté +2 a l'atac amb el fibló. La fiblada requereix una salvació contra metzina o la víctima mor."
+        },
+        {
+          "nom": "Espectre",
+          "estadistiques": {"ca": 17, "dc": "6** (27 pc)", "at": "1×toc (1d8+drenatge)", "ba": "+5", "mv": "150' (50') / 300' (100') volant", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 11, "al": "Caòtic", "px": 725, "na": "1d4 (1d8)", "tt": "E"},
+          "descripcio": "No-morts que s'assemblen a com eren en vida. Només poden ser danyats per armes màgiques. El seu toc drena dos nivells d'experiència permanentment. Una víctima amb tots els nivells drenats es converteix en un espectre."
+        },
+        {
+          "nom": "Esquelet",
+          "estadistiques": {"ca": 12, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "60' (20')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Caòtic", "px": 10, "na": "3d4 (3d10)", "tt": "Cap"},
+          "descripcio": "No-morts creats per màgia per actuar com a guardians. Són invulnerables a encanteris de 'dormir', 'encisar' o 'retenir'."
+        },
+        {
+          "nom": "Estirge",
+          "estadistiques": {"ca": 12, "dc": "1* (4 pc)", "at": "1×bec (1d3+xuclar sang)", "ba": "+0", "mv": "30' (10') / 180' (60') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Neutral", "px": 13, "na": "1d10 (3d12)", "tt": "L"},
+          "descripcio": "Criatures voladores que xuclen sang. Quan colpegen, es fixen a la víctima i li xuclen 1d3 punts de sang per assalt. Només es poden alliberar matant l'estirge."
+        },
+        {
+          "nom": "Flor carnívora",
+          "estadistiques": {"ca": 14, "dc": "6* (27 pc)", "at": "1×mossegada (1d3+metzina)", "ba": "+5", "mv": "30' (10')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Neutral", "px": 500, "na": "1d4 (1d8)", "tt": "Cap"},
+          "descripcio": "Plantes carnívores que atrauen les preses amb un pol·len olorós (salvació contra metzina per evitar-ho). La seva mossegada seda a la víctima (salvació contra metzina) i li drena 1d3 punts de vida per assalt."
+        },
+        {
+          "nom": "Fong groc",
+          "estadistiques": {"ca": "-", "dc": "2* (9 pc)", "at": "1×espores (1d6+ofegament)", "ba": "+1", "mv": 0, "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 25, "na": "1d4 (1d8)", "tt": "Cap"},
+          "descripcio": "Fong que allibera un núvol d'espores verinoses quan és alterat. Les víctimes han de superar una salvació contra mort o prendre 1d8 de dany per assalt durant sis assalts. És invulnerable a tot excepte al foc."
+        },
+        {
+          "nom": "Gàrgola",
+          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "2×urpes (1d3), 1×mossegada (1d6), 1×banya (1d4)", "ba": "+3", "mv": "90' (30') / 150' (50') volant", "ts": "M8 V9 P10 A10 E12 (8)", "ml": 11, "al": "Caòtic", "px": 75, "na": "1d6 (2d4)", "tt": "C"},
+          "descripcio": "Monstres humanoides amb aspecte de pedra. Poden romandre immòbils per emboscar (sorpresa 4-en-6). Només poden ser danyades amb màgia o armes màgiques."
+        },
+        {
+          "nom": "Gelatina ocre",
+          "estadistiques": {"ca": 11, "dc": "5* (22 pc)", "at": "1×tocar (2d6)", "ba": "+4", "mv": "30' (10')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 12, "al": "Neutral", "px": 300, "na": "1 (0)", "tt": "Cap"},
+          "descripcio": "Monstre amorf de color ocre. Els atacs elèctrics la divideixen en 1d4+1 gelatines més petites. És invulnerable a tot excepte al foc i al fred. El seu àcid dissol la roba, el cuir o la fusta en un assalt."
+        },
+        {
+          "nom": "Gentmalgama o malgamic",
+          "estadistiques": {"ca": 13, "dc": "1+1 (5 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "90' (30')", "ts": "M8 V9 P10 A13 E12 (1)", "ml": 7, "al": "Neutral", "px": 15, "na": "1d8 (5d20)", "tt": "C"},
+          "descripcio": "Humanoides amb parts del cos barrejades de diferents criatures. Són experts en amagar-se (sorpresa 3-en-6) i poden imitar sons d'animals o monstres."
+        },
+        {
+          "nom": "Gnoll",
+          "estadistiques": {"ca": 14, "dc": "2 (9 pc)", "at": "1×arma (2d4 o per arma+1)", "ba": "+1", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Caòtic", "px": 20, "na": "1d6 (3d6)", "tt": "D"},
+          "descripcio": "Humanoides amb cap de hiena, mandrosos i cruels. Tenen infravisió (60 peus). Els grups de 20 o més són dirigits per un individu més fort (3 DC)."
+        },
+        {
+          "nom": "Goblin",
+          "estadistiques": {"ca": 13, "dc": "1-1 (3 pc)", "at": "1×arma (1d6 o per arma)", "ba": 0, "mv": "60' (20')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 7, "al": "Caòtic", "px": 5, "na": "2d4 (6d10)", "tt": "R (C)"},
+          "descripcio": "Petits humanoides malgirbats. Tenen infravisió (90 peus) i pateixen una penalització de -1 a l'atac sota el sol. Odien els nans i els atacaran sense dubtar. Alguns munten llops terribles."
+        },
+        {
+          "nom": "Granota i gripau gegant",
+          "estadistiques": {"ca": 12, "dc": "2 (9 pc)", "at": "1×atrapar (1d4+retenir)", "ba": "+0", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 25, "na": "1d4 (1d4)", "tt": "Cap"},
+          "descripcio": "Poden estirar la llengua fins a 15 peus per atrapar preses petites. Amb un 20 natural a l'atac, s'empassen la víctima sencera, que pateix 1d6 de dany per assalt."
+        },
+        {
+          "nom": "Granyotic (home granota)",
+          "estadistiques": {"ca": 14, "dc": "1* (4 pc)", "at": "1×arma (1d6+1 o per arma+1) o 2×urpes (1d2) i 1×mossegada (1d4+1)", "ba": "+0", "mv": "30' (10') / 150' (50') nedant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 7, "al": "Caòtic", "px": 13, "na": "2d6 (1d8×10)", "tt": "D"},
+          "descripcio": "Humanoides bàrbars amb aparença de granota. La seva pell camaleònica els permet sorprendre amb 3-en-6. Poden saltar fins a 30 peus i obtenir +1 a l'atac."
+        },
+        {
+          "nom": "Gul (necròfag)",
+          "estadistiques": {"ca": 13, "dc": "2* (9 pc)", "at": "2×urpes (1d3+paràlisis), 1×mossegada (1d3+paràlisis)", "ba": "+1", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Caòtic", "px": 25, "na": "1d6 (2d8)", "tt": "B"},
+          "descripcio": "No-morts que mengen carn d'humanoides. Les seves urpes i mossegades causen paràlisi si no se supera una salvació (durada 2d8 torns). Són invulnerables a 'dormir', 'encisar' i 'retenir'."
+        },
+        {
+          "nom": "Harpia",
+          "estadistiques": {"ca": 12, "dc": "3* (13 pc)", "at": "2×urpes (1d4) o 1×arma (1d6 o per arma) o 1×cançó (encís)", "ba": "+2", "mv": "60' (20') / 150' (50') volant", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 7, "al": "Caòtic", "px": 50, "na": "1d6 (2d4)", "tt": "C"},
+          "descripcio": "Esperits amb cos de voltor i tors de dona. La seva cançó encisa a les criatures en un radi de 300 peus que no superin una salvació contra encanteris, fent que caminin cap a ella sense defensar-se."
+        },
+        {
+          "nom": "Hobgoblin",
+          "estadistiques": {"ca": 13, "dc": "1+1 (5 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Caòtic", "px": 15, "na": "1d6 (4d6)", "tt": "D"},
+          "descripcio": "Cosins grans dels goblins, de la mida d'un humà. Són guerrers cruels i calculadors. Tenen infravisió (60 peus) i odien els elfs."
+        },
+        {
+          "nom": "Kobold",
+          "estadistiques": {"ca": 12, "dc": "½ (2 pc)", "at": "1×arma (1d4 o per arma-1)", "ba": 0, "mv": "60' (20')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 6, "al": "Caòtic", "px": 5, "na": "4d4 (6d10)", "tt": "P (J)"},
+          "descripcio": "Petits humanoides reptilians amb cara de gos. Són covards i prefereixen les emboscades i les trampes. Tenen infravisió (90 peus) i odien els gnoms."
+        },
+        {
+          "nom": "Licantrop, home llop",
+          "estadistiques": {"ca": "14 (10 humana)", "dc": "4* (18 pc)", "at": "1×mossegada (2d4)", "ba": "+3", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 8, "al": "Caòtic", "px": 125, "na": "1d6 (2d6)", "tt": "C"},
+          "descripcio": "Humans que poden transformar-se en llops. Només poden ser danyats per armes de plata o màgiques. Poden convocar 1d2 llops. La seva mossegada pot transmetre la licantropia."
+        },
+        {
+          "nom": "Licantrop, home os",
+          "estadistiques": {"ca": "17 (11 humana)", "dc": "6* (27 pc)", "at": "2×urpes (2d4) o 1×mossegada (2d8)", "ba": "+5", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 10, "al": "Neutral", "px": 500, "na": "1d4 (1d4)", "tt": "C"},
+          "descripcio": "Humans que es transformen en grans ossos. Intel·ligents i desconfiats, però poden ser amistosos. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
+        },
+        {
+          "nom": "Licantrop, home rata",
+          "estadistiques": {"ca": "12 (10 humana)", "dc": "3* (13 pc)", "at": "1×mossegada (1d4) o 1×arma (1d6 o per arma)", "ba": "+2", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 8, "al": "Caòtic", "px": 50, "na": "1d8 (2d8)", "tt": "C"},
+          "descripcio": "Humans prims i nerviosos que es transformen en rates. Prefereixen habitar en ciutats. Sorprenen amb 4-en-6 i poden usar armes en forma animal."
+        },
+        {
+          "nom": "Llagosta de cova gegant",
+          "estadistiques": {"ca": 15, "dc": "2 (9 pc)", "at": "1×mossegada (1d2) o 1×salt (1d4) o 1×escopinada (pudor)", "ba": "+1", "mv": "60' (20') / 180' (60') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 5, "al": "Neutral", "px": 20, "na": "2d10 (1d10)", "tt": "Cap"},
+          "descripcio": "Criatures pàl·lides semblants a grills. El seu xeric atrau monstres errants. Poden saltar fins a 60 peus. La seva escopinada requereix una salvació contra metzina o la víctima queda incapacitada per la pudor durant 3d6 assalts."
+        },
+        {
+          "nom": "Llangardaix dragó",
+          "estadistiques": {"ca": 14, "dc": "4+2 (20 pc)", "at": "1×mossegada (1d10)", "ba": "+4", "mv": "120' (40')/210' (70') planar", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 7, "al": "Neutral", "px": 125, "na": "1d4 (1d8)", "tt": "U"},
+          "descripcio": "Llangardaix gegant que pot planar distàncies curtes. La seva mossegada fa doble dany amb un 20 natural."
+        },
+        {
+          "nom": "Llangardaix gecònid",
+          "estadistiques": {"ca": 14, "dc": "3+1 (14 pc)", "at": "1×mossegada (1d8)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 50, "na": "1d6 (1d10)", "tt": "U"},
+          "descripcio": "Llangardaixos que poden escalar parets i córrer pels sostres. Sorprenen amb 3-en-6 quan estan camuflats."
+        },
+        {
+          "nom": "Llangardanic (home llangardaix)",
+          "estadistiques": {"ca": 14, "dc": "2+1 (10 pc)", "at": "1×arma (1d6+1 o per arma+1)", "ba": "+2", "mv": "60' (20') / 120' (40') nedant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 25, "na": "2d4 (6d6)", "tt": "D"},
+          "descripcio": "Humanoides amb escates i cua. Són excel·lents nadadors. La seva força els dona +1 al dany amb armes cos a cos."
+        },
+        {
+          "nom": "Llim verd",
+          "estadistiques": {"ca": "-", "dc": "2* (9 pc)", "at": "1×tocar (consumeix carn)", "ba": "+1", "mv": "3' (1')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Neutral", "px": 25, "na": "1 (0)", "tt": "Cap"},
+          "descripcio": "Devora carn i materials orgànics. Cau de parets i sostres. El foc o el fred li fan la meitat del dany, i l'altra meitat a la víctima. Una víctima en contacte durant sis assalts es transforma en llim verd."
+        },
+        {
+          "nom": "Llop normal",
+          "estadistiques": {"ca": 12, "dc": "2+2 (11 pc)", "at": "1×mossegada (1d6)", "ba": "+2", "mv": "180' (60')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": "6 (8)", "al": "Neutral", "px": 25, "na": "2d6 (3d6)", "tt": "Cap"},
+          "descripcio": "Carnívor que caça en grup. Els grups de 4 o més tenen moral 8."
+        },
+        {
+          "nom": "Llop hivernal",
+          "estadistiques": {"ca": 14, "dc": "6* (27 pc)", "at": "1×mossegada (2d4) o 1×alè (6d4)", "ba": "+5", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "Caòtic", "px": 500, "na": "0 (2d4)", "tt": "I + pells (5.000 po)"},
+          "descripcio": "Llop intel·ligent de pells platejades. El seu alè gelat causa 6d4 de dany (salvació per la meitat). És invulnerable al fred però vulnerable al foc."
+        },
+        {
+          "nom": "Llop terrible",
+          "estadistiques": {"ca": 13, "dc": "4+1 (19 pc)", "at": "1×mossegada (2d4)", "ba": "+4", "mv": "150' (50')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 125, "na": "1d4 (2d4)", "tt": "Cap"},
+          "descripcio": "Llops grans i intel·ligents. De vegades, els goblins els entrenen com a muntura."
+        },
+        {
+          "nom": "Llot gris",
+          "estadistiques": {"ca": 11, "dc": "3* (13 pc)", "at": "1×tocar (2d8)", "ba": "+2", "mv": "10' (3')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 50, "na": "1 (1)", "tt": "Cap"},
+          "descripcio": "Criatures amorfes que es camuflen com a roques. El seu àcid dissol matèria orgànica i metall. Les armes no màgiques que el toquen es dissolen. És invulnerable al foc i al fred."
+        },
+        {
+          "nom": "Mercader",
+          "estadistiques": {"ca": 14, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": "Varia", "al": "Neutral", "px": 10, "na": "0 (1d20)", "tt": "A"},
+          "descripcio": "Viatgen en caravanes ben armades amb guardaespatlles, tinents i un capità."
+        },
+        {
+          "nom": "Micèlic",
+          "estadistiques": {"ca": 10, "dc": "1 (4 pc)", "at": "1×mans garrot (1d4)", "ba": "+0", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Legal", "px": 10, "na": "1d12 (2d10×10)", "tt": "N×2"},
+          "descripcio": "Humanoides fúngics que es comuniquen telepàticament. Són sensibles a la llum intensa (-2 a l'atac, -1 a la CA). Els líders i reis poden llançar espores que paralitzen o causen al·lucinacions."
+        },
+        {
+          "nom": "Mímic",
+          "estadistiques": {"ca": 13, "dc": "9* (40 pc)", "at": "1×pseudopodi (3d4)", "ba": "+7", "mv": "30' (10')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 9, "al": "Neutral", "px": 1600, "na": "1 (0)", "tt": "Cap"},
+          "descripcio": "Monstres que canvien de forma per semblar objectes inanimats. Ataca quan és tocat. La seva cola atrapa qualsevol cosa que el toqui. És sensible a la llum intensa."
+        },
+        {
+          "nom": "Mòmia",
+          "estadistiques": {"ca": 16, "dc": "5+1* (23 pc)", "at": "1×toc (1d12+malaltia)", "ba": "+5", "mv": "60' (20')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 12, "al": "Caòtic", "px": 400, "na": "1d4 (1d12)", "tt": "D"},
+          "descripcio": "No-morts que causen terror (salvació contra paràlisi o quedar immòbil). El seu toc causa la 'putrefacció de la mòmia', una malaltia que impedeix la curació. Només prenen dany de màgia, foc (doble dany) o armes màgiques (meitat de dany)."
+        },
+        {
+          "nom": "Ofídic (home serp)",
+          "estadistiques": {"ca": 15, "dc": "6* (27 pc)", "at": "1×mossegada (1d10+metzina) o 1×arma (1d6 o per arma)", "ba": "+5", "mv": "90' (30')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 8, "al": "Caòtic", "px": 500, "na": "1d4 (2d10)", "tt": "C"},
+          "descripcio": "Monstres amb cos de serp i tors humà. La seva mossegada és verinosa (salvació contra metzina o mort en 1d6 torns). Tenen +4 a les salvacions contra màgia. Alguns són xamans (clergues de 5è nivell)."
+        },
+        {
+          "nom": "Ogre",
+          "estadistiques": {"ca": 14, "dc": "4+1 (19 pc)", "at": "1×garrot (1d10)", "ba": "+4", "mv": "90' (30')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 10, "al": "Caòtic", "px": 125, "na": "1d6 (2d6)", "tt": "C+1.000 po"},
+          "descripcio": "Humans grans i lletjos. Són brutals i agressius. Odien els neandertals."
+        },
+        {
+          "nom": "Orc",
+          "estadistiques": {"ca": 13, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": 0, "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 6, "al": "Caòtic", "px": 10, "na": "2d4 (1d6×10)", "tt": "D"},
+          "descripcio": "Humanoides grotescs amb orelles de llop. Tenen infravisió (60 peus) i pateixen -1 a l'atac sota el sol. Tenen líders i caps més forts. De vegades s'alien amb ogres o trols."
+        },
+        {
+          "nom": "Osgo",
+          "estadistiques": {"ca": 14, "dc": "3+1 (14 pc)", "at": "1×arma (2d4 o arma+1)", "ba": "+3", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 9, "al": "Caòtic", "px": 50, "na": "2d4 (5d4)", "tt": "B"},
+          "descripcio": "Enormes goblins peluts. Es mouen en silenci (sorpresa 3-en-6). Tenen infravisió (60 peus) i +1 al dany per la seva força."
+        },
+        {
+          "nom": "Os bru",
+          "estadistiques": {"ca": 13, "dc": "5 (22 pc)", "at": "2×urpes (1d4), 1×mossegada (1d8)", "ba": "+4", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 175, "na": "1 (1d4)", "tt": "U"},
+          "descripcio": "Carnívor enorme i territorial. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
+        },
+        {
+          "nom": "Os negre",
+          "estadistiques": {"ca": 13, "dc": "4 (18 pc)", "at": "2×urpes (1d3), 1×mossegada (1d6)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 75, "na": "1d4 (1d4)", "tt": "U"},
+          "descripcio": "Omnívor que viu als boscos. Normalment no és perillós, tret que se senti amenaçat. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
+        },
+        {
+          "nom": "Os òliba o os mussol",
+          "estadistiques": {"ca": 14, "dc": "5 (22 pc)", "at": "2×urpes (1d8) o 1×mossegada (1d8)", "ba": "+4", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 9, "al": "Neutral", "px": 175, "na": "1d4 (1d4)", "tt": "C"},
+          "descripcio": "Semblen ossos amb cara d'òliba. Són molt agressius. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
+        },
+        {
+          "nom": "Púding negre",
+          "estadistiques": {"ca": 13, "dc": "10* (45 pc)", "at": "1×tocar (3d8)", "ba": "+8", "mv": "60' (20')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 12, "al": "Neutral", "px": 1600, "na": "1 (0)", "tt": "Cap"},
+          "descripcio": "Criatures amorfes que viuen per menjar. El seu àcid consumeix metalls i fusta en un torn. Els atacs amb armes o electricitat el divideixen en dos. El fred el paralitza temporalment."
+        },
+        {
+          "nom": "Rata",
+          "estadistiques": {"ca": 10, "dc": "1 pc", "at": "1×mossegada per grup (1d6+malaltia)", "ba": "+0", "mv": "60' (20') / 30' (10') nadant", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 5, "al": "Neutral", "px": 5, "na": "5d10 (2d10)", "tt": "L"},
+          "descripcio": "Ataca en grups de 5 a 10. La seva mossegada té 1-en-20 de probabilitat d'infectar (salvació contra metzina). Temen el foc."
+        },
+        {
+          "nom": "Rata gegant",
+          "estadistiques": {"ca": 12, "dc": "½ (2 pc)", "at": "1×mossegada (1d3+malaltia)", "ba": "+0", "mv": "120' (40') / 60' (20') nedant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Neutral", "px": 5, "na": "3d6 (3d10)", "tt": "C"},
+          "descripcio": "Fins a 4 peus de llarg. La seva mossegada té 1-en-20 de probabilitat d'infectar (salvació contra metzina). Temen el foc."
+        },
+        {
+          "nom": "Ratpenat",
+          "estadistiques": {"ca": 13, "dc": "1 pc", "at": "1×grup (confusió)", "ba": "-1", "mv": "9' (3') / 120' (40') volant", "ts": "M14 V15 P16 A17 E18 (HM)", "ml": 6, "al": "Neutral", "px": 5, "na": "1d100 (1d100)", "tt": "Cap"},
+          "descripcio": "Un grup de 10 o més pot confondre a una criatura, causant-li una penalització de -2 a les tirades d'atac i salvació."
+        },
+        {
+          "nom": "Ratpenat gegant",
+          "estadistiques": {"ca": 13, "dc": "2 (9 pc)", "at": "1×mossegada (1d4)", "ba": "+1", "mv": "30' (10') / 180' (60) volant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Neutral", "px": 20, "na": "1d10 (1d10)", "tt": "Cap"},
+          "descripcio": "Carnívors amb una envergadura de 15 peus."
+        },
+        {
+          "nom": "Sangonera gegant",
+          "estadistiques": {"ca": 12, "dc": "6 (27 pc)", "at": "1×mossegada (1d6+drenatge)", "ba": "+5", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 10, "al": "Neutral", "px": 275, "na": "0 (1d4)", "tt": "Cap"},
+          "descripcio": "Cucs xucla-sang de 4 a 6 peus de llarg. Quan colpeja, s'adhereix i xucla 1d6 de sang per assalt fins que ella o la víctima mori."
+        },
+        {
+          "nom": "Trol",
+          "estadistiques": {"ca": 15, "dc": "6+3* (30 pc)", "at": "2×urpes (1d6), 1×mossegada (1d10)", "ba": "+6", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": "10 (8)", "al": "Caòtic", "px": 650, "na": "1d8 (1d8)", "tt": "D"},
+          "descripcio": "Criatures de 9 peus d'alçada amb una regeneració increïble. Tres assalts després de ser danyat, comença a recuperar 3 pc per assalt. Només el foc i l'àcid poden matar-lo permanentment. La seva moral baixa a 8 quan s'enfronta a atacants amb foc o àcid."
+        },
+        {
+          "nom": "Uarg",
+          "estadistiques": {"ca": 14, "dc": "5+3 (25 pc)", "at": "1×mossegada (3d6)", "ba": "+5", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 10, "al": "Neutral", "px": 350, "na": "1d4 (2d4)", "tt": "Cap"},
+          "descripcio": "Semblant a un llop, però més gran, ferotge i intel·ligent. Són aliats dels orcs, que els munten en batalla."
+        },
+        {
+          "nom": "Víbria",
+          "estadistiques": {"ca": 16, "dc": "7* (31 pc)", "at": "1×mossegada (2d8), 1×fibló (1d6+metzina)", "ba": "+6", "mv": "90' (30') / 240' (80') volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 9, "al": "Caòtic", "px": 850, "na": "1d2 (1d6)", "tt": "E"},
+          "descripcio": "Enorme llangardaix volador amb un fibló verinós. Les víctimes del fibló han de superar una salvació contra metzina o morir."
+        },
+        {
+          "nom": "Xisclador",
+          "estadistiques": {"ca": 12, "dc": "3 (13 pc)", "at": "Cap", "ba": "+0", "mv": "9' (3')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Neutral", "px": 35, "na": "1d8 (0)", "tt": "Cap"},
+          "descripcio": "Bolet semimòbil que emet un xiscle estrident quan detecta moviment o llum a prop. Aquest so atrau monstres errants."
+        },
+        {
+          "nom": "Zombi",
+          "estadistiques": {"ca": 11, "dc": "2 (9 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "60' (20')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Caòtic", "px": 20, "na": "2d4 (4d6)", "tt": "Cap"},
+          "descripcio": "Cadàvers humanoides lents però forts. Sempre actuen últims a l'assalt. Prenen la meitat de dany d'armes contundents i només un punt d'armes de projectil. Són invulnerables a 'dormir', 'encisar' i 'retenir'."
+        }
+      ]
+    }
+  }
+}
