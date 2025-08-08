@@ -1,6 +1,13 @@
 <div id="library-view" class="view-container">
     <div class="hub-container">
         <div class="hub-left-panel">
+            <div id="library-search-utility" class="hub-search-utility">
+                <input type="search" id="library-search-input"
+                    placeholder="Search all knowledge...">
+                <select id="library-search-scope">
+                    <option value="all">All Knowledge</option>
+                </select>
+            </div>
             <div class="panel-header">
                 <h4 data-i18n-key="kbMgmtTitle">Knowledge Bases</h4>
             </div>
@@ -12,17 +19,41 @@
             </div>
             <div id="library-inspector-content" style="display: none;">
                 <div class="hub-tabs">
-                    <button class="hub-tab-btn active" data-pane="text" data-i18n-key="textView">Text</button>
-                    <button class="hub-tab-btn" data-pane="assets" data-i18n-key="assetView">Assets</button>
+                    <button class="hub-tab-btn active" data-pane="dashboard">Dashboard</button>
+                    <button class="hub-tab-btn" data-pane="content">Content</button>
+                    <button class="hub-tab-btn" data-pane="entities">Entities</button>
+                    <button class="hub-tab-btn" data-pane="assets">Assets</button>
                 </div>
                 <div class="hub-tab-content">
-                    <div id="library-text-view" class="hub-tab-pane active">
+                    <div id="library-dashboard-view" class="hub-tab-pane active">
+                        <div class="dashboard-grid">
+                            <div class="dashboard-card">
+                                <h5>Total Chunks</h5>
+                                <p id="dashboard-chunk-count" class="stat-large">0</p>
+                            </div>
+                            <div class="dashboard-card entity-card">
+                                <h5>Entity Distribution</h5>
+                                <div id="dashboard-entity-chart" class="chart-container">
+                                </div>
+                            </div>
+                            <div class="dashboard-card full-width">
+                                <h5>Key Terms</h5>
+                                <div id="dashboard-word-cloud" class="word-cloud">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="library-content-view" class="hub-tab-pane">
                         <div class="hub-pane-wrapper"></div>
                     </div>
-                    <div id="library-asset-view" class="hub-tab-pane">
+                    <div id="library-entities-view" class="hub-tab-pane">
+                        <div class="hub-pane-wrapper"></div>
+                    </div>
+                    <div id="library-assets-view" class="hub-tab-pane">
                         <div class="hub-pane-wrapper">
                             <div id="asset-upload-dropzone" class="asset-dropzone">
-                                <p data-i18n-key="dropzoneText">Drag & drop an image here to upload</p>
+                                <p data-i18n-key="dropzoneText">Drag & drop an image here
+                                    to upload</p>
                             </div>
                             <div id="asset-grid-container" class="asset-grid">
                             </div>
