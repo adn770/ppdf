@@ -25,6 +25,8 @@ class RAGService:
         self.dm_model = dm_model
         self.utility_model = utility_model
         self.assets_path = assets_path
+        self.context_cache = {}
+        self.current_location = None
         log.info("RAGService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
@@ -64,6 +66,11 @@ class RAGService:
         Generates the initial narration for a new game or session.
         This is a generator function that yields JSON chunks.
         """
+        # Reset cache for the new game session
+        self.context_cache = {}
+        self.current_location = None
+        log.info("Context cache cleared for new game session.")
+
         lang = game_config.get("language", "en")
         log.info("Generating kickoff narration for game in '%s'.", lang)
         module_kb = game_config.get("module")
@@ -145,9 +152,23 @@ class RAGService:
         for chunk_data in llm_stream:
             yield {"type": "narrative_chunk", "content": chunk_data.get("response", "")}
 
+    def _find_primary_location(self, metas: list[dict]):
+        """Finds the first named location entity in a list of metadata."""
+        for meta in metas:
+            entities_str = meta.get("entities", "{}")
+            try:
+                entities = json.loads(entities_str)
+                for name, type in entities.items():
+                    if type == "location":
+                        log.debug("Found primary location entity: '%s'", name)
+                        return {"name": name, "meta": meta}
+            except (json.JSONDecodeError, TypeError):
+                continue
+        return None
+
     def generate_response(self, player_command: str, game_config: dict, history: list[dict]):
         """
-        Generates a game response using a two-stage, defragmented RAG pipeline.
+        Generates a game response using a multi-query, cached RAG pipeline.
         This is a generator function that yields JSON chunks.
         """
         lang = game_config.get("language", "en")
@@ -159,54 +180,79 @@ class RAGService:
             else game_config.get("setting")
         )
         rules_kb = game_config.get("rules")
+        history_str = "\n".join([f"{t['role'].title()}: {t['content']}" for t in history])
 
-        # --- Stage 1: Build Player-Facing Narrative Context (No DM Knowledge) ---
+        # --- Stage 1: Expand player command into multiple search queries ---
+        expander_prompt = self._get_prompt("QUERY_EXPANDER", lang)
+        expander_user_content = expander_prompt.format(history=history_str, command=player_command)
+        queries = [player_command]
+        try:
+            response_data = query_text_llm(
+                "", expander_user_content, self.ollama_url, self.utility_model, stream=False
+            )
+            expanded_queries = json.loads(response_data.get("response", "[]"))
+            if isinstance(expanded_queries, list):
+                queries.extend(expanded_queries)
+            log.info("Expanded into %d search queries: %s", len(queries), queries)
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning("Could not parse query expansion response, using original command. Error: %s", e)
+
+        # --- Stage 2: Execute all queries and check for cacheable location ---
         narrative_filter = {"label": {"$ne": "dm_knowledge"}}
-        narrative_module_docs = []
-        if module_kb:
-            try:
-                # Find the single most relevant player-safe chunk
-                docs, metas = self.vector_store.query(
-                    module_kb, player_command, n_results=1, where_filter=narrative_filter
+
+        # We query for insight first to identify a primary location
+        insight_module_docs, insight_module_metas = execute_queries(module_kb, queries, n_results=3)
+        primary_location = self._find_primary_location(insight_module_metas)
+
+        # --- Stage 3: Build Context (Cache or Live) ---
+        if primary_location and primary_location["name"] == self.current_location:
+            log.info("CACHE HIT: Using cached context for location: '%s'", self.current_location)
+            cache_entry = self.context_cache[self.current_location]
+            narrative_context_str = cache_entry["narrative_context"]
+            insight_data = cache_entry["insight_data"]
+        else:
+            log.info("CACHE MISS: Building live context.")
+            if primary_location:
+                log.info("New location detected: '%s'. Building context cache.", primary_location["name"])
+                self.current_location = primary_location["name"]
+
+                # Build player-safe context for the new location
+                narrative_docs, _ = self._get_full_section(
+                    module_kb, primary_location["meta"], where_filter=narrative_filter
                 )
-                if docs:
-                    # Defragment to get the full, player-safe section
-                    narrative_module_docs, _ = self._get_full_section(
-                        module_kb, metas[0], where_filter=narrative_filter
-                    )
-            except Exception:
-                log.warning("Could not query module/setting KB '%s'.", module_kb)
+                narrative_context_str = "\n\n---\n\n".join(narrative_docs)
 
-        # Get relevant rules (always considered player-safe)
-        rules_docs, _ = self.vector_store.query(rules_kb, player_command, n_results=2)
+                # Build full insight context for the new location
+                full_docs, full_metas = self._get_full_section(module_kb, primary_location["meta"])
+                insight_data = [{"text": d, "label": m.get("label", "prose")} for d, m in zip(full_docs, full_metas)]
 
-        context_blocks = []
-        if narrative_module_docs:
-            context_blocks.append("\n\n---\n\n".join(narrative_module_docs))
-        if rules_docs:
-            context_blocks.append("\n\n---\n\n".join(rules_docs))
+                # Store both in cache
+                self.context_cache[self.current_location] = {
+                    "narrative_context": narrative_context_str,
+                    "insight_data": insight_data,
+                }
+            else:
+                # No primary location, use multi-query results directly and clear cache
+                self.current_location = None
+                log.info("No primary location detected. Using merged query results.")
+                narrative_module_docs, _ = execute_queries(module_kb, queries, filter=narrative_filter)
+                rules_docs, _ = execute_queries(rules_kb, queries, n_results=3)
 
-        narrative_context_str = "\n\n".join(context_blocks) or "No context found."
+                context_blocks = []
+                if narrative_module_docs:
+                    context_blocks.append("\n\n---\n\n".join(narrative_module_docs))
+                if rules_docs:
+                    context_blocks.append("\n\n---\n\n".join(rules_docs))
+                narrative_context_str = "\n\n".join(context_blocks) or "No context found."
 
-        # --- Stage 2: Build DM's Insight Context (Includes DM Knowledge) ---
-        insight_module_docs, insight_module_metas = [], []
-        if module_kb:
-            # Find the single most relevant chunk, including DM knowledge
-            docs, metas = self.vector_store.query(module_kb, player_command, n_results=1)
-            if docs:
-                # Defragment to get the full section, including DM knowledge
-                insight_module_docs, insight_module_metas = self._get_full_section(
-                    module_kb, metas[0]
-                )
-        insight_data = [
-            {"text": doc, "label": meta.get("label", "prose")}
-            for doc, meta in zip(insight_module_docs, insight_module_metas)
-        ]
-        insight_data.extend([{"text": doc, "label": "mechanics"} for doc in rules_docs])
+                # Rebuild insight data from live query
+                insight_rules_docs, _ = execute_queries(rules_kb, queries, n_results=3)
+                insight_data = [{"text": d, "label": m.get("label", "prose")} for d, m in zip(insight_module_docs, insight_module_metas)]
+                insight_data.extend([{"text": doc, "label": "mechanics"} for doc in insight_rules_docs])
+
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
-        # --- Stage 3: Generate and Stream LLM Response ---
-        history_str = "\n".join([f"{t['role'].title()}: {t['content']}" for t in history])
+        # --- Stage 4: Generate and Stream LLM Response ---
         user_prompt = (
             f"[CONVERSATION HISTORY]\n{history_str}\n\n"
             f"[CONTEXT]\n{narrative_context_str}\n\n"
@@ -323,3 +369,25 @@ class RAGService:
         response_data = query_text_llm(prompt, session_log, self.ollama_url, self.dm_model)
         summary = response_data.get("response", "").strip()
         return summary
+
+def execute_queries(kb_name, queries, filter=None, n_results=2):
+    """Helper function to run a list of queries against a KB and return unique results."""
+    if not kb_name:
+        return [], []
+    unique_docs = {}
+    try:
+        # Access the vector store from the current application context
+        vector_store = current_app.rag_service.vector_store
+        for query in queries:
+            docs, metas = vector_store.query(
+                kb_name, query, n_results=n_results, where_filter=filter
+            )
+            for doc, meta in zip(docs, metas):
+                if doc not in unique_docs:
+                    unique_docs[doc] = meta
+    except Exception as e:
+        log.warning("Could not query KB '%s' for queries. Error: %s", kb_name, e)
+
+    doc_list = list(unique_docs.keys())
+    meta_list = list(unique_docs.values())
+    return doc_list, meta_list

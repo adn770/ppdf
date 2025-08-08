@@ -26,6 +26,24 @@ PERSONA_PRESETS = {
 # The RAG and Ingestion services will select the appropriate prompt based on user settings.
 
 PROMPT_REGISTRY = {
+    "QUERY_EXPANDER": {
+        "en": (
+            "You are a search query expansion assistant for a TTRPG AI Dungeon Master. "
+            "Your task is to analyze the player's most recent action and the conversation "
+            "history, then generate a JSON list of 3 to 5 diverse search queries to "
+            "retrieve the most relevant context from a knowledge base.\n\n"
+            "GUIDELINES:\n"
+            "1.  **Core Intent**: What is the player's primary goal?\n"
+            "2.  **Key Entities**: What specific characters, locations, or items are mentioned?\n"
+            "3.  **Rules & Mechanics**: Is the player asking about a rule or performing an action "
+            "    that requires a rule lookup (e.g., casting a spell, making a skill check)?\n"
+            "4.  **Hypothetical Outcome**: What might happen next? Query for potential consequences "
+            "    or reactions.\n\n"
+            "Your response MUST be a single, valid JSON array of strings and nothing else.\n\n"
+            "[CONVERSATION HISTORY]\n{history}\n\n"
+            "[PLAYER ACTION]\n{command}"
+        )
+    },
     "GAME_MASTER": {
         "en": (
             "You are the Dungeon Master, a master storyteller. Your entire reality is the "
