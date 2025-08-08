@@ -5,7 +5,6 @@ import { status, confirmationModal } from './ui.js';
 export class SettingsManager {
     constructor(appInstance) {
         this.app = appInstance;
-        // Store a reference to the main app
         this.settings = null;
 
         this._setupElements();
@@ -22,7 +21,9 @@ export class SettingsManager {
         this.tabs = this.modal.querySelectorAll('.wizard-tab-btn');
         this.panes = this.modal.querySelectorAll('.settings-pane');
         this.inputs = this.modal.querySelectorAll('[data-section][data-key]');
-        this.modelsDatalist = document.getElementById('ollama-models-list');
+        this.textModelsDatalist = document.getElementById('ollama-text-models-list');
+        this.visionModelsDatalist = document.getElementById('ollama-vision-models-list');
+        this.embeddingModelsDatalist = document.getElementById('ollama-embedding-models-list');
         this.kbDatalist = document.getElementById('kb-list');
     }
 
@@ -75,11 +76,26 @@ export class SettingsManager {
     async _populateModelSuggestions() {
         try {
             const models = await apiCall('/api/ollama/models');
-            this.modelsDatalist.innerHTML = '';
-            models.forEach(modelName => {
+            this.textModelsDatalist.innerHTML = '';
+            this.visionModelsDatalist.innerHTML = '';
+            this.embeddingModelsDatalist.innerHTML = '';
+
+            models.forEach(model => {
                 const option = document.createElement('option');
-                option.value = modelName;
-                this.modelsDatalist.appendChild(option);
+                option.value = model.name;
+
+                switch (model.type_hint) {
+                    case 'vision':
+                        this.visionModelsDatalist.appendChild(option);
+                        break;
+                    case 'embedding':
+                        this.embeddingModelsDatalist.appendChild(option);
+                        break;
+                    case 'text':
+                    default:
+                        this.textModelsDatalist.appendChild(option);
+                        break;
+                }
             });
         } catch (error) {
             console.error("Failed to populate Ollama model suggestions:", error);
@@ -129,7 +145,6 @@ export class SettingsManager {
 
     applyTheme(themeName) {
         document.body.className = '';
-        // Clear existing themes
         if (themeName && themeName !== 'default') {
             document.body.classList.add(`theme-${themeName}`);
         }

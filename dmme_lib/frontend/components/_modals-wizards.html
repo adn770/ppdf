@@ -249,22 +249,24 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="ollama-dm-model" data-i18n-key="ollamaDmModel">DM Model</label>
-                            <input type="text" id="ollama-dm-model" list="ollama-models-list" data-section="Ollama" data-key="dm_model" autocomplete="off">
+                            <input type="text" id="ollama-dm-model" list="ollama-text-models-list" data-section="Ollama" data-key="dm_model" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label for="ollama-utility-model" data-i18n-key="ollamaUtilityModel">Utility Model</label>
-                            <input type="text" id="ollama-utility-model" list="ollama-models-list" data-section="Ollama" data-key="utility_model" autocomplete="off">
+                            <input type="text" id="ollama-utility-model" list="ollama-text-models-list" data-section="Ollama" data-key="utility_model" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label for="ollama-vision-model" data-i18n-key="ollamaVisionModel">Image Analysis Model</label>
-                            <input type="text" id="ollama-vision-model" list="ollama-models-list" data-section="Ollama" data-key="vision_model" autocomplete="off">
+                            <input type="text" id="ollama-vision-model" list="ollama-vision-models-list" data-section="Ollama" data-key="vision_model" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label for="ollama-embedding-model" data-i18n-key="ollamaEmbeddingModel">Embedding Model</label>
-                            <input type="text" id="ollama-embedding-model" autocomplete="off" list="ollama-models-list" data-section="Ollama" data-key="embedding_model">
+                            <input type="text" id="ollama-embedding-model" autocomplete="off" list="ollama-embedding-models-list" data-section="Ollama" data-key="embedding_model">
                         </div>
                     </div>
-                    <datalist id="ollama-models-list"></datalist>
+                    <datalist id="ollama-text-models-list"></datalist>
+                    <datalist id="ollama-vision-models-list"></datalist>
+                    <datalist id="ollama-embedding-models-list"></datalist>
                     <datalist id="kb-list"></datalist>
                 </div>
             </div>
