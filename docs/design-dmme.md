@@ -1,4 +1,3 @@
-design-dmme.md
 # Project: DMme (AI Dungeon Master Engine)
 
 ---
@@ -32,6 +31,9 @@ request into a formal plan that requires developer approval before execution.
     Tasks`, and `Outcome`.
 -   **Copy-Friendly Markdown**: Documents in Markdown must be delivered as a raw
     markdown code block adhering to the GitHub Flavored Markdown (GFM) specification.
+-   **Citation-Free Output**: Generated source code and markdown documents must not
+    contain any inline citations (e.g., ``). All necessary information
+    should be self-contained.
 
 ### 0.3. Bug Fixing Workflow
 1.  **Initiation**: The developer reports a bug using natural language.
@@ -138,7 +140,7 @@ The RAG system is built upon four types of knowledge bases:
 
 ### 1.4. `ppdf` Feature Set
 
--   **Implemented Features (Standalone Tool)**:
+-   **Implemented Features**:
     -   **Advanced PDF Parsing**: A multi-stage pipeline that analyzes page layouts,
         detects columns, reconstructs logical reading order, and identifies
         structural elements like titles, paragraphs, tables, and boxed notes.
@@ -150,19 +152,19 @@ The RAG system is built upon four types of knowledge bases:
         across multiple prompt presets and a unique `--analyze-prompts` mode to have
         an LLM critique system prompts.
     -   **Real-time TTS Output**: Can stream the final, processed text to a
-        local, high-quality text-to-speech engine.
+        local, high-quality text-to-speech engine using Piper TTS.
     -   **Debugging Tools**: A `--dry-run` mode with an ASCII layout renderer to
         visualize the detected structure without calling the LLM.
-
--   **Planned Features (DMme Integration)**:
-    -   **Library Refactoring**: The core processing logic will be refactored to be
-        easily importable and callable by the `dmme` backend.
-    -   **Image Extraction Mode**: A new pipeline dedicated to extracting graphical
-        assets from PDFs and using a multimodal LLM to generate descriptions and
-        classifications (`art`, `map`, `decoration`).
+    -   **Library Refactoring**: The core processing logic has been refactored into a
+        `ppdf_lib.api` module, allowing its functions to be imported and called
+        directly by other Python applications like the `dmme` backend.
+    -   **Image Extraction Mode**: A complete pipeline dedicated to extracting graphical
+        assets from PDFs. It uses a multimodal LLM to generate descriptions and a
+        separate utility model to classify each image (e.g., `art`, `map`, `cover`,
+        `handout`).
     -   **Semantic Labeling**: An enhancement to the text processing pipeline that
-        uses an LLM to add semantic labels (e.g., `is_stat_block`,
-        `is_read_aloud_text`) to text chunks before ingestion.
+        uses an LLM to add semantic labels (e.g., `stat_block`,
+        `read_aloud_text`, `dm_knowledge`) to text chunks before ingestion.
 
 ### 1.5. `dmme` Feature Set
 
@@ -170,28 +172,34 @@ The RAG system is built upon four types of knowledge bases:
     -   **Campaign & Party Management**: Full CRUD functionality for creating, saving,
         and loading persistent campaigns and parties of characters.
     -   **Interactive Gameplay UI**: A two-column interface featuring a narrative log,
-        player input, a dynamically populated party status panel, and a dice roller.
+        player input, a dynamically populated party status panel, and an interactive
+        dice roller.
     -   **Advanced RAG System**: A sophisticated Retrieval-Augmented Generation
         system that leverages semantically labeled text chunks for precise,
-        context-aware responses.
+        context-aware responses. It employs a two-stage retrieval process to prevent
+        DM-only knowledge from being shown to the player while still using it for
+        context.
     -   **Multiple Game Modes**: Support for both pre-defined `Module` play and
-        LLM-generated `Freestyle` play.
+        LLM-generated `Freestyle` play, selectable from a "New Game" wizard.
     -   **Optional Game Aids**: User-selectable aids including an "AI Art Historian" for
         inline visual aids (with thumbnails and lightbox) and an "ASCII Scene Renderer"
         for rogue-like maps.
-
--   **Planned Features (Hub Paradigm)**:
     -   **Library Hub**: A dedicated hub for all Knowledge Base (KB) management,
-        replacing the former "Import" modal. It will feature a KB list, a
-        content/asset explorer, and an integrated, multi-step **Ingestion Wizard**.
+        replacing modal-based workflows. It features a KB list, a
+        content/asset explorer with thumbnail views, and an integrated, multi-step
+        **Ingestion Wizard**.
     -   **Party Hub**: A dedicated hub for creating and managing all parties and their
-        characters, replacing the former "Party Manager" modal. It will include an
-        **LLM-Powered Character Creator**.
+        characters. It features a multi-pane character sheet editor and includes an
+        **LLM-Powered Character Creator** that uses RAG from a selected ruleset to
+        generate character sheets.
     -   **Advanced Ingestion Workflow**: An enhanced workflow that allows for
-        section-level review of a document *before* ingestion, including the
-        ability to exclude sections and apply high-level content "cues".
+        section-level review of a PDF document *before* ingestion. The system first
+        analyzes the document's structure, then presents a list of sections to the user,
+        who can exclude sections from the final import process.
     -   **Custom Asset Upload**: A feature within the Library Hub's asset explorer
-        allowing users to add their own images to a KB via drag-and-drop.
+        allowing users to add their own images to a KB via drag-and-drop. The
+        system automatically generates a description, classification, and thumbnail for
+        the uploaded asset.
 
 ---
 
@@ -226,9 +234,9 @@ analysis to identify the document's logical structure, then leverages a Large
 Language Model (LLM) via Ollama to produce clean, readable, and stylistically
 enhanced Markdown.
 
-For the `dmme` project, `ppdf` will be enhanced to serve as a powerful, importable
-library for the main application, exposing distinct modes for content and image
-processing.
+For the `dmme` project, `ppdf` has been refactored into an importable
+library (`ppdf_lib`), exposing distinct modes for content and image
+processing that are used by the main application's ingestion service.
 
 #### 3.1.1. Detailed Processing Pipeline
 
@@ -277,7 +285,7 @@ game state, and interacts with the LLM.
     database** (`dmme.db`) with tables for `campaigns`, `sessions`, `parties`, and
     `characters`.
 -   **Knowledge Ingestion**: Provides an API to support the frontend's **Library
-    Hub**. It will invoke `ppdf` for a two-stage process: first to
+    Hub**. It will invoke `ppdf_lib` for a two-stage process: first to
     `analyze` a document's structure, and second to perform the final `ingestion`
     based on user-provided section configurations.
 -   **RAG & LLM Logic**: The core RAG service will query the ChromaDB collections,
@@ -298,26 +306,29 @@ game state, and interacts with the LLM.
 both LLM prompts and core backend ingestion pipelines.
 
 #### 3.3.1. CLI Structure
-The tool uses a subcommand structure:
+The tool uses a subcommand structure implemented with `argparse`:
 -   **`prompt`**: All functionality related to testing and evaluating system prompts.
 -   **`ingest`**: All functionality related to testing parts of the ingestion pipeline.
 
 #### 3.3.2. Prompt Evaluation Mode
 This mode operates on **Test Suites**. A test suite is a directory containing a
-prompt, its configuration, and a set of test scenarios. Key features include an
-"LLM-as-a-Judge" evaluation and a `--compare` mode for side-by-side analysis.
+`prompt.txt` file, a `config.json` file, and a subdirectory of `scenarios` containing
+individual test cases as `.txt` files. Key features include an
+"LLM-as-a-Judge" evaluation using a dedicated prompt (`PROMPT_LLM_AS_JUDGE`) and a
+`--compare` mode for side-by-side analysis of two different prompt suites.
+The output for all evaluations is a detailed, self-contained Markdown report.
 
 #### 3.3.3. Ingestion Test Mode
-This mode allows for isolated testing of backend services. The primary task is
-`extract-images`, which runs the full image processing pipeline on a PDF and
-generates a visual Markdown report for easy analysis.
+This mode allows for isolated testing of backend services. The primary implemented
+task is `extract-images`, which runs the full image processing pipeline on a PDF and
+generates a visual Markdown report, including thumbnails, for easy analysis.
 
 ---
 
 ## 4. Frontend Design (HTML/CSS/JavaScript)
 
-The `dmme` frontend will be a single-page application built using a modern, modular
-**ES6 JavaScript** structure. It will feature a modern, component-based design with
+The `dmme` frontend is a single-page application built using a modern, modular
+**ES6 JavaScript** structure. It features a modern, component-based design with
 a dark, themeable interface.
 
 ### 4.1. Detailed Style Guide
@@ -339,11 +350,17 @@ following style guide.
     -   All views displaying narrative text, code, or log-like content will use a
         monospace font (`"Courier New", Courier, monospace`).
 
--   **Theming System**: The application will be themeable. The settings panel will
-    allow users to choose from several pre-defined themes, including:
+-   **Theming System**: The application is themeable. The settings panel will
+    allow users to choose from several pre-defined themes, which are implemented in
+    `base.css`:
     -   Default
     -   Vibrant Focus
     -   High Contrast
+    -   CRT Green Phosphorus
+    -   Ocean Blue
+    -   Forest Green
+    -   Warm Sepia
+    -   Cyberpunk
 
 ### 4.2. UI/UX Paradigm
 
@@ -356,10 +373,11 @@ status bar navigation.
     3.  **Party View:** A dedicated hub for creating and managing all parties and
         characters.
 
--   **Status Bar Navigation:** The primary method for switching between views will be
+-   **Status Bar Navigation:** The primary method for switching between views is
     a set of icons on the left side of the bottom status bar.
 
--   **Contextual Header:** The main header buttons will change based on the active view.
+-   **Contextual Header:** The main header buttons will change based on the active view,
+    a behavior managed in `main.js`.
     -   **Game View Header:** `New Game` | `Load Game` | `Settings`
     -   **Library View Header:** `+ New Knowledge Base` | `Settings`
     -   **Party View Header:** `+ New Party` | `Settings`
@@ -368,7 +386,7 @@ status bar navigation.
 
 #### 4.3.1. Game View
 
-The main gameplay interface will be a **two-column layout**:
+The main gameplay interface is a **two-column layout**:
 
 -   **Left Panel (approx. 1/4 width):** A fixed-width side panel containing:
     -   An upper, scrollable **Party Status Panel** with an accordion view for character
@@ -381,15 +399,15 @@ The main gameplay interface will be a **two-column layout**:
 
 #### 4.3.2. Library Hub
 
-A two-panel layout for all KB-related tasks.
+A two-panel layout for all KB-related tasks:
 
 -   **Left Panel:** A searchable list of all created KBs.
 -   **Right Panel (KB Inspector):** A tabbed interface for the selected KB, also
-    containing the integrated **Ingestion Wizard**.
+    containing the integrated **Ingestion Wizard** and content/asset explorers.
 
 #### 4.3.3. Party Hub
 
-A two-panel layout for all party and character management.
+A two-panel layout for all party and character management:
 
 -   **Left Panel:** A searchable list of all created Parties.
 -   **Right Panel (Party Inspector):** Displays the selected party's character
@@ -399,12 +417,11 @@ A two-panel layout for all party and character management.
 
 -   **New Game Wizard:** A modal launched from the Game View to guide the user
     through selecting a Game Mode and the required knowledge bases.
--   **DM's Insight Modal**: Triggered by an inline '🔍' button on an AI response, this
+-   **DM's Insight Modal**: Triggered by a toolbar button, this
     modal displays the raw RAG context used for that specific generation.
 -   **Image Lightbox Modal**: A simple, reusable modal overlay that displays a
     full-resolution image when a thumbnail in the narrative view is clicked.
--   **Settings Panel:** A multi-pane modal for application configuration. The RAG
-    management pane will be removed in favor of the Library Hub.
+-   **Settings Panel:** A multi-pane modal for application configuration.
 
 ---
 
@@ -414,25 +431,34 @@ The project is organized into a monorepo containing the main scripts at the
 root, a shared `core` library, and dedicated libraries for each application.
 
 `dmme_project/`
-├── **ppdf.py**: Main entry point for the PDF utility (Reformatter & Indexer).
+├── **ppdf.py**: Main entry point for the PDF utility CLI.
 ├── **dmme.py**: Main entry point to launch the Game Driver Flask server.
-├── **dmme-eval.py**: A command-line utility for prompt engineering.
+├── **dmme-eval.py**: A command-line utility for prompt and pipeline evaluation.
 |
 ├── **core/**: A library for utilities shared across all scripts.
 │   ├── `log_utils.py`: `RichLogFormatter` for consistent, colored console logging.
-│   └── `tts.py`: The Text-to-Speech engine manager.
+│   ├── `llm_utils.py`: Centralized functions for querying Ollama models.
+│   └── `tts.py`: The Text-to-Speech engine manager using Piper TTS.
 │
-├── **ppdf_lib/**: All internal logic exclusive to the `ppdf` utility.
-│   ├── `constants.py`: Stores presets for Reformatter mode.
-│   ├── `extractor.py`: The core PDF layout and asset analysis engine.
-│   └── `renderer.py`: `ASCIIRenderer` for visualizing page layout.
+├── **ppdf_lib/**: All internal logic for the `ppdf` utility's pipeline.
+│   ├── `api.py`: The public API for invoking `ppdf` functionality from other scripts.
+│   ├── `scanner.py`: `MarginScanner` for header/footer detection.
+│   ├── `analyzer.py`: `PageLayoutAnalyzer` for Stage 1 analysis.
+│   ├── `segmenter.py`: `ContentSegmenter` for Stage 2 analysis.
+│   ├── `reconstructor.py`: `DocumentReconstructor` for Stage 3 analysis.
+│   ├── `models.py`: Data models for the structured PDF document representation.
+│   ├── `renderer.py`: `ASCIIRenderer` for visualizing page layout.
+│   └── `constants.py`: Stores presets and system prompts for reformatting.
 │
 └── **dmme_lib/**: A self-contained package for the `dmme` web server.
-    ├── `app.py`: The Flask app factory (`create_app`) and WebSocket setup.
-    ├── `constants.py`: Stores DM persona presets for the game.
-    ├── `api/`: Contains all Flask Blueprints for the REST API.
-    ├── `services/`: Contains all backend business logic (SQLite, RAG, LLM, etc.).
+    ├── `app.py`: The Flask app factory (`create_app`) and service initialization.
+    ├── `constants.py`: Stores DM persona presets and all internationalized prompts.
+    ├── `api/`: Contains all Flask Blueprints for the REST API (e.g., `game.py`, `knowledge.py`).
+    ├── `services/`: Contains all backend business logic (`storage_service.py`, `rag_service.py`, etc.).
     └── `frontend/`: All frontend code for the web UI, built with ES6 modules.
+        ├── `js/`: Main application logic (`main.js`), handlers, hubs, and wizards.
+        ├── `css/`: All stylesheets, including base styles and component modules.
+        └── `locales/`: JSON files for internationalization (`en.json`, `es.json`, etc.).
 
 ---
 
@@ -1188,6 +1214,145 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The application delivers a more accurate kickoff experience for
         adventures that begin with both narrative and mechanical elements,
         presenting them together as a single unit.
+
+### Phase 16: Advanced Ingestion & Metadata
+
+-   **Milestone 52: Implement Markdown Structural Pre-Analysis**
+    -   **Goal**: Improve the contextual integrity of chunks ingested from Markdown files.
+    -   **Description**: This milestone replaces the naive newline-based chunking for
+        Markdown files with a more intelligent, structure-aware approach. The system will
+        first parse the document's hierarchy using its Markdown headers (#, ##, etc.) to
+        identify logical sections.
+    -   **Key Tasks**: Modify the `ingest_markdown` function in `ingestion_service.py`.
+        Implement a pre-processing step that splits the document into sections based on
+        header levels. Pass these complete sections to the chunking logic.
+    -   **Outcome**: Chunks from Markdown files are far more contextually complete, keeping
+        headers grouped with their associated paragraphs and tables, which significantly
+        improves the quality of data for subsequent processing and RAG.
+
+-   **Milestone 53: Implement Basic Style Ingestion and Keyword Extraction**
+    -   **Goal**: Make stylistic data from the PDF available to the ingestion service
+        and perform a first-pass keyword extraction.
+    -   **Description**: This is the foundational step. We will modify the pipeline to
+        pass styled (Markdown) text from `ppdf_lib` to the `IngestionService` and
+        implement a simple rule to extract all bolded text into a new metadata
+        field.
+    -   **Key Tasks**:
+        -   In `ingestion_service.py`, update the call to `process_pdf_text` to
+            enable style preservation.
+        -   In `ingestion_service.py`, implement a function that parses a chunk's
+            styled text, extracts all phrases wrapped in `**...**`, and saves
+            them to the new `key_terms` metadata field.
+    -   **Outcome**: All new chunks ingested from PDFs will have a populated
+        `key_terms` field containing all bolded text, and styled text is available
+        for subsequent milestones.
+
+-   **Milestone 54: Implement Context-Aware Italic Handling for Semantic Labeling**
+    -   **Goal**: Improve semantic labeling accuracy by interpreting italics
+        differently based on the knowledge base type.
+    -   **Description**: This step refines the semantic labeling process by introducing
+        specialized prompts. It addresses the issue that italics mean different
+        things in adventure modules versus rulebooks.
+    -   **Key Tasks**:
+        -   Create two new prompts in `dmme_lib/constants.py`:
+            `SEMANTIC_LABELER_ADVENTURE` (treats italics as `read_aloud_text`).
+            `SEMANTIC_LABELER_RULES` (treats italics as `mechanics` or emphasis).
+        -   Modify the semantic labeling step in `ingestion_service.py` to accept the
+            styled text and select the appropriate prompt based on the `kb_type`
+            metadata.
+    -   **Outcome**: Semantic labeling becomes significantly more accurate. The system
+        can now reliably distinguish descriptive read-aloud text from emphasized
+        rule terms, improving the quality of the data foundation.
+
+-   **Milestone 55: Implement Special Handling for Stat Blocks**
+    -   **Goal**: Refine the keyword extraction logic to correctly handle the unique
+        structure of creature stat blocks.
+    -   **Description**: This milestone fixes the "metadata pollution" problem we
+        identified. It adds a condition to the logic from Milestone 53, preventing
+        generic labels like **CA** and **DC** from overwriting the more important
+        creature name as the primary key term.
+    -   **Key Tasks**:
+        -   In `ingestion_service.py`, modify the keyword extraction function.
+        -   Add a check: if a chunk's semantic label is `stat_block`, do *not*
+            extract all bolded phrases.
+        -   Instead, for `stat_block` chunks, extract only the title of the stat
+            block (the creature's name) and make that the sole entry in the
+            `key_terms` field.
+    -   **Outcome**: The `key_terms` metadata for stat blocks becomes clean and highly
+        relevant, containing only the creature's name. This makes finding specific
+        creatures via search or filtering much more reliable.
+
+-   **Milestone 56: Implement Deep Stat Block Parsing**
+    -   **Goal**: Extract structured data from creature stat blocks to enable advanced
+        queries.
+    -   **Description**: This milestone goes beyond simple keyword extraction for stat
+        blocks. It introduces a dedicated LLM-based parsing step that converts the raw
+        text of a stat block into a structured JSON object containing its discrete
+        attributes (CA, DC, Attacks, etc.).
+    -   **Key Tasks**: Design a new `STAT_BLOCK_PARSER` prompt. In `ingestion_service.py`,
+        for chunks labeled `stat_block`, add a call to this new prompt. Store the
+        resulting JSON object in a new `structured_stats` metadata field.
+    -   **Outcome**: The vector store now contains structured, queryable data for
+        creatures. This enables precise RAG queries that are impossible with text
+        alone, such as "Find a creature with CA 15 or higher and more than 6 hit dice."
+
+-   **Milestone 57: Implement Entity Extraction and Relational Metadata**
+    -   **Goal**: Create explicit links between related chunks of information in the
+        vector store.
+    -   **Description**: This final ingestion step builds a relational layer on top of
+        our data. It uses the cleaned-up `key_terms` as candidates to identify
+        and link related concepts, such as a monster to its lair description.
+    -   **Key Tasks**:
+        -   Design a new NER prompt that classifies the `key_terms` of a chunk
+            into entity types (e.g., `creature`, `location`, `item`).
+        -   Add `entities: TEXT` and `linked_chunks: TEXT` fields to the metadata model.
+        -   After all chunks in a document are processed, iterate through them, find
+            chunks that share common classified entities, and populate the
+            `linked_chunks` field with the IDs of related chunks.
+    -   **Outcome**: The knowledge base now functions like a graph. Retrieving one piece
+        of information (e.g., a room description) allows the system to easily
+        find all other chunks explicitly linked to it (e.g., the stat block of a
+        monster in that room).
+
+### Phase 17: Intelligent Retrieval & Caching
+
+-   **Milestone 58: Implement Multi-Query Retrieval**
+    -   **Goal**: Improve retrieval accuracy by generating and executing multiple search
+        queries for each player command.
+    -   **Description**: This enhances the start of the RAG process. Instead of relying
+        on the player's exact phrasing, we use an LLM to brainstorm better ways to
+        search the knowledge base.
+    -   **Key Tasks**:
+        -   Design a "query expansion" prompt that takes a player command and
+            generates 3-5 alternative search queries from different perspectives
+            (rules, narrative, entities).
+        -   In `rag_service.py`, refactor `generate_response` to call this prompt
+            first.
+        -   Update the service to execute all generated queries against the vector
+            store and merge the unique results before ranking and context assembly.
+    -   **Outcome**: Retrieval is more robust and less likely to miss important
+        information, even if the player's command is ambiguous.
+
+-   **Milestone 59: Implement Location-Based Context Caching (Cached Augmented Gen)**
+    -   **Goal**: Provide the AI DM with a persistent, highly-aligned context for the
+        party's current location, improving consistency and performance.
+    -   **Description**: This implements the "open page" concept. When the party enters
+        a significant, known location, the system performs a single, exhaustive
+        query to build a complete "context dossier" for that area, which is then
+        cached and used for subsequent turns.
+    -   **Key Tasks**:
+        -   Add a simple in-memory cache dictionary to the `RAGService`.
+        -   Add logic to `generate_response` to attempt to identify a primary
+            `location` entity from the narrative context.
+        -   Create a new `_build_location_cache` method that, when a new location is
+            detected, retrieves the location's main chunk and all chunks linked to it
+            via the relational metadata from Milestone 57.
+        -   Update `generate_response` to use this cached context block for the LLM
+            prompt instead of performing a live vector search on every turn, as long
+            as the party remains in the cached location.
+    -   **Outcome**: The AI DM's responses become much more consistent and contextually
+        aware within a single location. This also reduces latency, as expensive
+        vector searches are performed less frequently during exploration scenes.
 
 ---
 
