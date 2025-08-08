@@ -53,6 +53,20 @@
     width: 100%;
 }
 
+/* --- Search Utility --- */
+.hub-search-utility {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hub-search-utility input,
+.hub-search-utility select {
+    width: 100%;
+}
+
 /* --- Redesigned Chunk Card --- */
 .text-chunk-card {
     background-color: var(--bg-color);
@@ -123,6 +137,22 @@
     gap: 8px;
     font-size: 1.2em;
 }
+
+/* --- Search Results --- */
+.search-result-card .text-chunk-header {
+    font-size: 0.9em;
+}
+
+.search-result-source {
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.search-result-score {
+    font-family: var(--font-family-mono);
+    color: #ccc;
+}
+
 
 .asset-dropzone {
     flex-shrink: 0;
@@ -306,4 +336,5 @@
 .entity-details-panel {
     flex: 3;
     min-width: 0;
+    overflow-y: auto;
 }

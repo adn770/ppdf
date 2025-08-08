@@ -8,7 +8,8 @@ export class LibraryHub {
         this.lightbox = lightboxInstance;
         this.isInitialized = false;
         this.selectedKb = null;
-        this.kbDataCache = {}; // Cache for explore and entity data
+        this.kbDataCache = {};
+        this.searchDebounceTimer = null;
     }
 
     _setupElements() {
@@ -38,6 +39,10 @@ export class LibraryHub {
         this.assetsView = document.getElementById('library-assets-view');
         this.assetGrid = document.getElementById('asset-grid-container');
         this.dropzone = document.getElementById('asset-upload-dropzone');
+
+        this.searchResultsView = document.getElementById('library-search-results-view');
+        this.searchInput = document.getElementById('library-search-input');
+        this.searchScope = document.getElementById('library-search-scope');
     }
 
     init() {
@@ -52,7 +57,64 @@ export class LibraryHub {
         this.assetGrid.addEventListener('click', (e) => this._handleAssetInteraction(e));
         this.entityFilterInput.addEventListener('input', () => this._filterEntityList());
         this.entityMasterList.addEventListener('click', (e) => this._handleEntitySelection(e));
+        this.searchInput.addEventListener('input', () => this._debounceSearch());
+        this.searchScope.addEventListener('change', () => this._performSearch());
         this.isInitialized = true;
+    }
+
+    _debounceSearch() {
+        clearTimeout(this.searchDebounceTimer);
+        this.searchDebounceTimer = setTimeout(() => this._performSearch(), 300);
+    }
+
+    async _performSearch() {
+        const query = this.searchInput.value.trim();
+        const scope = this.searchScope.value;
+
+        if (!query) {
+            this._showInspector();
+            return;
+        }
+
+        this._showSearchResults();
+        this.searchResultsView.innerHTML = '<div class="spinner"></div>';
+        try {
+            const results = await apiCall(`/api/search?q=${encodeURIComponent(query)}&scope=${scope}`);
+            this._renderSearchResults(results);
+        } catch (error) {
+            this.searchResultsView.innerHTML = '<p class="error">Search failed to execute.</p>';
+        }
+    }
+
+    _renderSearchResults(results) {
+        this.searchResultsView.innerHTML = '';
+        if (!results || results.length === 0) {
+            this.searchResultsView.innerHTML = `<p>No results found for "${this.searchInput.value}".</p>`;
+            return;
+        }
+        results.forEach(result => {
+            const cardHtml = this._createChunkCardHTML(result, true);
+            this.searchResultsView.insertAdjacentHTML('beforeend', cardHtml);
+        });
+    }
+
+    _showInspector() {
+        this.searchResultsView.style.display = 'none';
+        if (this.selectedKb) {
+            this.inspector.style.display = 'block';
+            this.content.style.display = 'flex';
+            this.placeholder.style.display = 'none';
+        } else {
+            this.inspector.style.display = 'block';
+            this.content.style.display = 'none';
+            this.placeholder.style.display = 'flex';
+        }
+    }
+
+    _showSearchResults() {
+        this.content.style.display = 'none';
+        this.placeholder.style.display = 'none';
+        this.searchResultsView.style.display = 'flex';
     }
 
     _preventDefaults(e) {
@@ -117,16 +179,32 @@ export class LibraryHub {
     }
 
     async showKbDetails(kb) {
-        if (this.selectedKb?.name === kb.name) return;
         this.selectedKb = kb;
-        this.kbDataCache[kb.name] = {}; // Clear cache for new selection
+        this._updateSearchScope();
+
+        if (this.searchInput.value.trim()) {
+            this._performSearch();
+        } else {
+            this._showInspector();
+        }
 
         this.listEl.querySelectorAll('li').forEach(li => {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
-        this.placeholder.style.display = 'none';
-        this.content.style.display = 'flex';
+
+        this.kbDataCache[kb.name] = {};
         this.switchTab('dashboard');
+    }
+
+    _updateSearchScope() {
+        this.searchScope.innerHTML = '<option value="all">All Knowledge</option>';
+        if (this.selectedKb) {
+            const option = document.createElement('option');
+            option.value = this.selectedKb.name;
+            option.textContent = `Current: ${this.selectedKb.name}`;
+            this.searchScope.appendChild(option);
+            this.searchScope.value = this.selectedKb.name;
+        }
     }
 
     async renderDashboard() {
@@ -190,7 +268,7 @@ export class LibraryHub {
     }
 
     async renderContentView() {
-        const wrapper = this.contentView.querySelector('.hub-pane-wrapper');
+        const wrapper = this.contentListEl;
         wrapper.innerHTML = '<div class="spinner"></div>';
         const data = await this._getKbExploreData();
         wrapper.innerHTML = '';
@@ -263,18 +341,24 @@ export class LibraryHub {
         }
     }
 
-    _createChunkCardHTML(doc) {
+    _createChunkCardHTML(result, isSearchResult = false) {
+        const doc = isSearchResult ? { ...result.metadata, document: result.document } : result;
         const label = doc.label || 'PROSE';
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
         const hasStats = doc.structured_stats && Object.keys(JSON.parse(doc.structured_stats)).length > 0;
 
+        const sourceInfo = isSearchResult
+            ? `<span class="search-result-source">${result.kb_name}</span>
+               <span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>`
+            : `<span>${doc.source_file} (p. ${doc.page_start})</span>`;
+
         return `
-        <div class="text-chunk-card">
+        <div class="text-chunk-card ${isSearchResult ? 'search-result-card' : ''}">
             <div class="text-chunk-header">
                 <span class="text-chunk-label">${label}</span>
-                <span>${doc.source_file} (p. ${doc.page_start})</span>
+                <div>${sourceInfo}</div>
             </div>
             <pre class="text-chunk-content">${doc.document}</pre>
             <div class="text-chunk-footer">
@@ -399,7 +483,9 @@ export class LibraryHub {
                 if (this.selectedKb && this.selectedKb.name === kbName) {
                     this.placeholder.style.display = 'flex';
                     this.content.style.display = 'none';
+                    this.searchResultsView.style.display = 'none';
                     this.selectedKb = null;
+                    this._updateSearchScope();
                 }
                 await this.loadKnowledgeBases();
             }
