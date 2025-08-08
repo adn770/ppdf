@@ -44,10 +44,25 @@
                         </div>
                     </div>
                     <div id="library-content-view" class="hub-tab-pane">
-                        <div class="hub-pane-wrapper"></div>
+                        <div class="hub-pane-wrapper" id="content-explorer-list"></div>
                     </div>
                     <div id="library-entities-view" class="hub-tab-pane">
-                        <div class="hub-pane-wrapper"></div>
+                        <div class="entity-explorer-container">
+                            <div class="entity-list-panel">
+                                <input type="search" id="entity-filter-input"
+                                    placeholder="Filter entities...">
+                                <ul id="entity-master-list" class="item-list"></ul>
+                            </div>
+                            <div id="entity-details-panel" class="entity-details-panel">
+                                <div id="entity-details-placeholder"
+                                    class="placeholder-pane">
+                                    <p>Select an entity to see related content.</p>
+                                </div>
+                                <div id="entity-related-chunks"
+                                    class="hub-pane-wrapper" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div id="library-assets-view" class="hub-tab-pane">
                         <div class="hub-pane-wrapper">

@@ -53,26 +53,30 @@
     width: 100%;
 }
 
+/* --- Redesigned Chunk Card --- */
 .text-chunk-card {
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 12px;
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .text-chunk-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 8px;
     color: #aaa;
     font-size: 0.8em;
+    font-family: var(--font-family-mono);
 }
 
 .text-chunk-label {
     display: inline-block;
-    background-color: var(--border-color);
-    color: var(--text-color);
+    background-color: var(--accent-color);
+    color: var(--bg-color);
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: bold;
@@ -85,8 +89,39 @@
     font-family: var(--font-family-mono);
     font-size: 0.9em;
     color: #ccc;
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
+    background-color: var(--panel-bg);
+    padding: 12px;
+    border-radius: 4px;
+}
+
+.text-chunk-footer {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.key-terms-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-grow: 1;
+}
+
+.key-term-chip {
+    background-color: var(--panel-bg);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
+
+.metadata-icons {
+    display: flex;
+    gap: 8px;
+    font-size: 1.2em;
 }
 
 .asset-dropzone {
@@ -113,7 +148,7 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 24px;
     padding-right: 8px;
-    grid-auto-rows: min-content; /* ADDED: This is the fix for stacking */
+    grid-auto-rows: min-content;
 }
 
 .asset-card {
@@ -125,7 +160,6 @@
     position: relative;
     transition: box-shadow 0.2s ease-in-out;
     aspect-ratio: 1 / 1.41;
-    /* RE-ADDED: This restores the A4 shape */
     display: grid;
     grid-template-rows: 1fr auto;
     overflow: hidden;
@@ -240,4 +274,36 @@
 
 .word-cloud span {
     cursor: default;
+}
+
+/* --- New Entity Explorer Styles --- */
+.entity-explorer-container {
+    display: flex;
+    height: 100%;
+    gap: 24px;
+}
+
+.entity-list-panel {
+    flex: 1;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+
+.entity-list-panel input {
+    flex-shrink: 0;
+}
+
+.entity-list-panel .item-list {
+    flex-grow: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.entity-details-panel {
+    flex: 3;
+    min-width: 0;
 }

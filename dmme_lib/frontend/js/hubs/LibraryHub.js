@@ -8,6 +8,7 @@ export class LibraryHub {
         this.lightbox = lightboxInstance;
         this.isInitialized = false;
         this.selectedKb = null;
+        this.kbDataCache = {}; // Cache for explore and entity data
     }
 
     _setupElements() {
@@ -19,14 +20,21 @@ export class LibraryHub {
         this.tabs = this.inspector.querySelectorAll('.hub-tab-btn');
         this.panes = this.inspector.querySelectorAll('.hub-tab-pane');
 
-        // New Dashboard elements
         this.dashboardView = document.getElementById('library-dashboard-view');
         this.chunkCountEl = document.getElementById('dashboard-chunk-count');
         this.entityChartEl = document.getElementById('dashboard-entity-chart');
         this.wordCloudEl = document.getElementById('dashboard-word-cloud');
 
-        // Old view elements (for future milestones)
         this.contentView = document.getElementById('library-content-view');
+        this.contentListEl = document.getElementById('content-explorer-list');
+
+        this.entitiesView = document.getElementById('library-entities-view');
+        this.entityFilterInput = document.getElementById('entity-filter-input');
+        this.entityMasterList = document.getElementById('entity-master-list');
+        this.entityDetailsPanel = document.getElementById('entity-details-panel');
+        this.entityDetailsPlaceholder = document.getElementById('entity-details-placeholder');
+        this.entityRelatedChunks = document.getElementById('entity-related-chunks');
+
         this.assetsView = document.getElementById('library-assets-view');
         this.assetGrid = document.getElementById('asset-grid-container');
         this.dropzone = document.getElementById('asset-upload-dropzone');
@@ -42,6 +50,8 @@ export class LibraryHub {
         this._addDragDropListeners();
         this.listEl.addEventListener('click', (e) => this._handleKbListInteraction(e));
         this.assetGrid.addEventListener('click', (e) => this._handleAssetInteraction(e));
+        this.entityFilterInput.addEventListener('input', () => this._filterEntityList());
+        this.entityMasterList.addEventListener('click', (e) => this._handleEntitySelection(e));
         this.isInitialized = true;
     }
 
@@ -107,14 +117,16 @@ export class LibraryHub {
     }
 
     async showKbDetails(kb) {
+        if (this.selectedKb?.name === kb.name) return;
         this.selectedKb = kb;
+        this.kbDataCache[kb.name] = {}; // Clear cache for new selection
+
         this.listEl.querySelectorAll('li').forEach(li => {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
         this.placeholder.style.display = 'none';
         this.content.style.display = 'flex';
-        this.switchTab('dashboard'); // Default to dashboard view
-        this.renderDashboard();
+        this.switchTab('dashboard');
     }
 
     async renderDashboard() {
@@ -170,7 +182,6 @@ export class LibraryHub {
         terms.forEach(term => {
             const span = document.createElement('span');
             span.textContent = term.text;
-            // Normalize font size between a min and max
             const weight = (term.value - min) / (max - min || 1);
             const fontSize = 0.8 + weight * 1.2; // From 0.8rem to 2.0rem
             span.style.fontSize = `${fontSize}rem`;
@@ -178,35 +189,127 @@ export class LibraryHub {
         });
     }
 
-    // This logic will be fully implemented in a later milestone
     async renderContentView() {
         const wrapper = this.contentView.querySelector('.hub-pane-wrapper');
         wrapper.innerHTML = '<div class="spinner"></div>';
-        const data = await apiCall(`/api/knowledge/explore/${this.selectedKb.name}`);
+        const data = await this._getKbExploreData();
         wrapper.innerHTML = '';
+
         if (!data.documents || data.documents.length === 0) {
             wrapper.innerHTML = `<p>No text documents found in this knowledge base.</p>`;
             return;
         }
         data.documents.forEach(doc => {
-            const card = document.createElement('div');
-            card.className = 'text-chunk-card';
-            // Placeholder for new rich card design
-            card.textContent = JSON.stringify(doc, null, 2);
-            wrapper.appendChild(card);
+            wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
         });
     }
 
-    // This logic will be fully implemented in a later milestone
+    async renderEntityView() {
+        const entities = await this._getKbEntityData();
+        this.entityMasterList.innerHTML = '';
+        this.entityDetailsPlaceholder.style.display = 'flex';
+        this.entityRelatedChunks.style.display = 'none';
+        this.entityFilterInput.value = '';
+
+        if (!entities || entities.length === 0) {
+            this.entityMasterList.innerHTML = '<li>No entities found.</li>';
+            return;
+        }
+
+        entities.forEach(entity => {
+            const li = document.createElement('li');
+            li.dataset.entityName = entity;
+            li.innerHTML = `<div class="item-main-content"><span>${entity}</span></div>`;
+            this.entityMasterList.appendChild(li);
+        });
+    }
+
+    _filterEntityList() {
+        const filter = this.entityFilterInput.value.toLowerCase();
+        this.entityMasterList.querySelectorAll('li').forEach(li => {
+            const name = li.dataset.entityName.toLowerCase();
+            li.style.display = name.includes(filter) ? '' : 'none';
+        });
+    }
+
+    async _handleEntitySelection(event) {
+        const li = event.target.closest('li[data-entity-name]');
+        if (!li) return;
+
+        this.entityMasterList.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
+        li.classList.add('selected');
+
+        const entityName = li.dataset.entityName;
+        const data = await this._getKbExploreData();
+        if (!data.documents) return;
+
+        const relatedChunks = data.documents.filter(doc => {
+            try {
+                const entities = JSON.parse(doc.entities || '{}');
+                return Object.keys(entities).includes(entityName);
+            } catch (e) { return false; }
+        });
+
+        this.entityDetailsPlaceholder.style.display = 'none';
+        this.entityRelatedChunks.style.display = 'flex';
+        this.entityRelatedChunks.innerHTML = '';
+
+        if (relatedChunks.length === 0) {
+            this.entityRelatedChunks.innerHTML = `<p>No chunks found for "${entityName}".</p>`;
+        } else {
+            relatedChunks.forEach(doc => {
+                this.entityRelatedChunks.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
+            });
+        }
+    }
+
+    _createChunkCardHTML(doc) {
+        const label = doc.label || 'PROSE';
+        const keyTerms = JSON.parse(doc.key_terms || '[]');
+        const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
+        const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
+        const hasStats = doc.structured_stats && Object.keys(JSON.parse(doc.structured_stats)).length > 0;
+
+        return `
+        <div class="text-chunk-card">
+            <div class="text-chunk-header">
+                <span class="text-chunk-label">${label}</span>
+                <span>${doc.source_file} (p. ${doc.page_start})</span>
+            </div>
+            <pre class="text-chunk-content">${doc.document}</pre>
+            <div class="text-chunk-footer">
+                <div class="key-terms-list">${keyTermsHTML}</div>
+                <div class="metadata-icons">
+                    ${hasLinks ? '<span title="Has linked content">🔗</span>' : ''}
+                    ${hasStats ? '<span title="Has structured data">📊</span>' : ''}
+                </div>
+            </div>
+        </div>`;
+    }
+
     async renderAssetsView() {
         this.assetGrid.innerHTML = '<div class="spinner"></div>';
-        const data = await apiCall(`/api/knowledge/explore/${this.selectedKb.name}`);
+        const data = await this._getKbExploreData();
         this.assetGrid.innerHTML = '';
         if (!data.assets || data.assets.length === 0) {
             this.assetGrid.innerHTML = `<p>${this.app.i18n.t('noAssetsFound')}</p>`;
             return;
         }
         data.assets.forEach(asset => this._addAssetToGrid(asset, false));
+    }
+
+    async _getKbExploreData() {
+        if (!this.kbDataCache[this.selectedKb.name]?.explore) {
+            this.kbDataCache[this.selectedKb.name].explore = await apiCall(`/api/knowledge/explore/${this.selectedKb.name}`);
+        }
+        return this.kbDataCache[this.selectedKb.name].explore;
+    }
+
+    async _getKbEntityData() {
+        if (!this.kbDataCache[this.selectedKb.name]?.entities) {
+            this.kbDataCache[this.selectedKb.name].entities = await apiCall(`/api/knowledge/entities/${this.selectedKb.name}`);
+        }
+        return this.kbDataCache[this.selectedKb.name].entities;
     }
 
     _addAssetToGrid(asset, isNew = true) {
@@ -330,9 +433,11 @@ export class LibraryHub {
             const paneId = `library-${paneName}-view`;
             pane.classList.toggle('active', pane.id === paneId);
         });
-        // Lazy-load content for non-dashboard tabs
+
         if (this.selectedKb) {
+            if (paneName === 'dashboard') this.renderDashboard();
             if (paneName === 'content') this.renderContentView();
+            if (paneName === 'entities') this.renderEntityView();
             if (paneName === 'assets') this.renderAssetsView();
         }
     }
