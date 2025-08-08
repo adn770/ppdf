@@ -115,13 +115,21 @@ def query_text_llm(
             return _stream_generator(response)
         else:
             data = response.json()
-            duration = time.monotonic() - start_time
-            response_text = data.get("response", "").strip()
+            # Performance Metrics Calculation
+            eval_ns = data.get("eval_duration", 0)
+            eval_count = data.get("eval_count", 0)
+            eval_sec = eval_ns / 1_000_000_000
+            tps = (eval_count / eval_sec) if eval_sec > 0 else 0
+            duration_sec = data.get("total_duration", 0) / 1_000_000_000
+            # Log rich performance data in a single line
             log_llm.debug(
-                "LLM response received:\n  - Model: %s\n  - Duration: %.2fs\n  - Response: %s",
+                "LLM Query OK: model=%s duration=%.2fs prompt_tk=%d response_tk=%d tps=%.1f response=%s",
                 model,
-                duration,
-                _format_text_for_log(response_text),
+                duration_sec,
+                data.get("prompt_eval_count", 0),
+                eval_count,
+                tps,
+                _format_text_for_log(data.get("response", "").strip()),
             )
             return data
 

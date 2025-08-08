@@ -8,6 +8,7 @@ import uuid
 from PIL import Image
 from io import BytesIO
 from flask import current_app
+from collections import defaultdict
 from .vector_store_service import VectorStoreService
 from core.llm_utils import (
     get_semantic_label,
@@ -50,65 +51,121 @@ class IngestionService:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
         return f'"{single_line_text}"'
 
+    def _extract_key_terms_from_chunk(self, chunk: str, label: str) -> list[str]:
+        """
+        Extracts key terms from a chunk.
+        For stat blocks, it extracts the title. For others, it extracts bolded text.
+        """
+        if label == "stat_block":
+            first_line = chunk.split("\n", 1)[0]
+            # Remove markdown bolding and any leading/trailing whitespace
+            cleaned_name = re.sub(r"[\*#]", "", first_line).strip()
+            if cleaned_name:
+                return [cleaned_name]
+            return []
+        else:
+            # Find all non-overlapping matches of text between double asterisks
+            return re.findall(r"\*\*(.*?)\*\*", chunk)
+
+    def _parse_stat_block(self, chunk: str, lang: str) -> dict:
+        """Uses an LLM to parse a stat block string into a structured dictionary."""
+        log.debug("Parsing stat block with LLM...")
+        prompt = self._get_prompt("STAT_BLOCK_PARSER", lang)
+        try:
+            response_data = query_text_llm(
+                prompt, chunk, self.ollama_url, self.utility_model, temperature=0.0
+            )
+            response_str = response_data.get("response", "").strip()
+            return json.loads(response_str)
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning("Could not parse stat block JSON from LLM: %s", e)
+            return {}
+
     def ingest_markdown(self, file_content: str, metadata: dict):
         """Processes and ingests a Markdown file's content, yielding progress."""
         kb_name = metadata.get("kb_name")
         lang = metadata.get("language", "en")
+        kb_type = metadata.get("kb_type", "module")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
 
         msg = f"✔ Starting Markdown processing for KB '{kb_name}' in '{lang}'."
         log.info(msg)
         yield msg
-        chunks = [c.strip() for c in re.split(r"\n{2,}", file_content) if c.strip()]
-        msg = f"Splitting file into {len(chunks)} raw chunks."
+
+        # Split content into sections based on Markdown headers
+        sections = re.split(r"\n(?=#+ )", file_content)
+        msg = f"Splitting file into {len(sections)} logical sections based on headers."
         log.info(msg)
         yield msg
 
-        labeler_prompt = self._get_prompt("SEMANTIC_LABELER", lang).format(
-            kickoff_cue="No hint provided."
+        prompt_key = (
+            "SEMANTIC_LABELER_RULES" if kb_type == "rules" else "SEMANTIC_LABELER_ADVENTURE"
         )
-        documents, metadatas = [], []
+        labeler_prompt_template = self._get_prompt(prompt_key, lang)
+        log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
+        labeler_prompt = labeler_prompt_template.format(kickoff_cue="No hint provided.")
 
-        valid_chunks = [c for c in chunks if len(c) >= 50]
-        num_valid = len(valid_chunks)
+        processed_chunks = []
+        chunk_id_counter = 0
 
-        for i, chunk in enumerate(valid_chunks):
-            msg = f"  -> Applying semantic label to chunk {i + 1}/{num_valid}..."
-            log.info(msg)
-            yield msg
-            label = get_semantic_label(
-                chunk, labeler_prompt, self.ollama_url, self.utility_model
-            )
-            log.debug(
-                "Semantic Labeling:\n" "  - Model: %s\n" "  - Input: %s\n" "  - Label: %s",
-                self.utility_model,
-                self._format_text_for_log(chunk),
-                label,
-            )
+        for section_text in sections:
+            if not section_text.strip():
+                continue
 
-            documents.append(chunk)
-            metadatas.append(
-                {
-                    "source_file": metadata.get("filename", "unknown.md"),
-                    "chunk_id": i,
-                    "label": label,
-                }
-            )
+            lines = section_text.strip().split("\n")
+            title = lines[0].lstrip("# ").strip()
+            content = "\n".join(lines[1:])
 
-        if not documents:
+            chunks = [
+                c.strip() for c in re.split(r"\n{2,}", content) if c.strip() and len(c) >= 50
+            ]
+
+            for chunk in chunks:
+                msg = f"  -> Labeling chunk from section '{title}'..."
+                log.info(msg)
+                yield msg
+                label = get_semantic_label(
+                    chunk, labeler_prompt, self.ollama_url, self.utility_model
+                )
+                key_terms = self._extract_key_terms_from_chunk(chunk, label)
+
+                processed_chunks.append(
+                    {
+                        "text": chunk,
+                        "metadata": {
+                            "source_file": metadata.get("filename", "unknown.md"),
+                            "section_title": title,
+                            "chunk_id": chunk_id_counter,
+                            "label": label,
+                            "key_terms": json.dumps(key_terms),
+                        },
+                    }
+                )
+                chunk_id_counter += 1
+
+        if not processed_chunks:
             msg = "✔ No valid text chunks found to ingest."
             log.info(msg)
             yield msg
             return
 
-        msg = f"✔ Processing complete. Found {len(documents)} valid chunks."
+        # Post-processing for entity linking
+        msg = f"✔ Found {len(processed_chunks)} valid chunks. Starting entity linking..."
         log.info(msg)
         yield msg
+        final_metadatas = self._link_entities_in_document(processed_chunks, lang)
+        documents = [chunk["text"] for chunk in processed_chunks]
+
+        for meta in final_metadatas:
+            meta["entities"] = json.dumps(meta.get("entities", {}))
+            meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
+            meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
+
         msg = "Generating embeddings and saving to vector store..."
         log.info(msg)
         yield msg
-        self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
+        self.vector_store.add_to_kb(kb_name, documents, final_metadatas, kb_metadata=metadata)
         msg = "✔ Saved to vector store."
         log.info(msg)
         yield msg
@@ -161,6 +218,58 @@ class IngestionService:
             if chunk:
                 yield chunk
 
+    def _link_entities_in_document(self, processed_chunks: list[dict], lang: str):
+        """Post-processes chunks to extract and link named entities."""
+        entity_extractor_prompt = self._get_prompt("ENTITY_EXTRACTOR", lang)
+        entity_map = defaultdict(list)
+
+        # Stage 1: Extract entities and structured stats from all chunks
+        log.info("  -> Starting entity extraction for %d chunks...", len(processed_chunks))
+        for i, chunk_data in enumerate(processed_chunks):
+            metadata = chunk_data["metadata"]
+
+            # Deep parse stat blocks if applicable
+            if metadata.get("label") == "stat_block":
+                stats = self._parse_stat_block(chunk_data["text"], lang)
+                metadata["structured_stats"] = stats
+
+            key_terms = json.loads(metadata.get("key_terms", "[]"))
+            if not key_terms:
+                continue
+
+            log.debug("Extracting entities from terms: %s", key_terms)
+            try:
+                response_data = query_text_llm(
+                    entity_extractor_prompt,
+                    json.dumps(key_terms),
+                    self.ollama_url,
+                    self.utility_model,
+                    temperature=0.0,
+                )
+                response_str = response_data.get("response", "").strip()
+                entities = json.loads(response_str)
+                metadata["entities"] = entities
+                for entity_name in entities.keys():
+                    entity_map[entity_name].append(metadata["chunk_id"])
+            except (json.JSONDecodeError, TypeError) as e:
+                log.warning("Could not parse entity JSON from LLM: %s", e)
+            except Exception as e:
+                log.error("Unexpected error during entity extraction: %s", e)
+
+        # Stage 2: Create links based on the entity map
+        log.info("  -> Building relational links between chunks...")
+        for chunk_data in processed_chunks:
+            metadata = chunk_data["metadata"]
+            linked_chunk_ids = set()
+            if "entities" in metadata:
+                for entity_name in metadata["entities"].keys():
+                    for chunk_id in entity_map[entity_name]:
+                        if chunk_id != metadata["chunk_id"]:
+                            linked_chunk_ids.add(chunk_id)
+            metadata["linked_chunks"] = sorted(list(linked_chunk_ids))
+
+        return [chunk["metadata"] for chunk in processed_chunks]
+
     def ingest_pdf_text(
         self,
         pdf_path: str,
@@ -178,7 +287,7 @@ class IngestionService:
         msg = f"Analyzing PDF structure for '{kb_name}' (Pages: {pages_str})..."
         log.info(msg)
         yield msg
-        extraction_options = {"num_cols": "auto", "rm_footers": True, "style": False}
+        extraction_options = {"num_cols": "auto", "rm_footers": True, "style": True}
         sections, page_models = process_pdf_text(
             pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
         )
@@ -264,8 +373,14 @@ class IngestionService:
                 yield msg
 
         # --- Paragraph-level Reformatting and Semantic Labeling ---
-        labeler_prompt_template = self._get_prompt("SEMANTIC_LABELER", lang)
-        documents, metadatas = [], []
+        kb_type = metadata.get("kb_type", "module")
+        prompt_key = (
+            "SEMANTIC_LABELER_RULES" if kb_type == "rules" else "SEMANTIC_LABELER_ADVENTURE"
+        )
+        labeler_prompt_template = self._get_prompt(prompt_key, lang)
+        log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
+
+        processed_chunks = []
         chunk_id = 0
 
         for i, section in enumerate(content_sections):
@@ -298,25 +413,37 @@ class IngestionService:
                 label = get_semantic_label(
                     chunk, final_labeler_prompt, self.ollama_url, self.utility_model
                 )
-                # Enforce positional heuristic for kickoff
                 if label == "read_aloud_kickoff" and section.page_start > 10:
-                    log.info(
-                        "Overriding 'read_aloud_kickoff' due to positional heuristic (page %d > 10).",
-                        section.page_start,
-                    )
                     label = "read_aloud_text"
 
-                documents.append(chunk)
-                metadatas.append(
+                key_terms = self._extract_key_terms_from_chunk(chunk, label)
+                processed_chunks.append(
                     {
-                        "source_file": metadata.get("filename", "unknown.pdf"),
-                        "section_title": section.title or "Untitled",
-                        "page_start": section.page_start,
-                        "chunk_id": chunk_id,
-                        "label": label if label else "prose",
+                        "text": chunk,
+                        "metadata": {
+                            "source_file": metadata.get("filename", "unknown.pdf"),
+                            "section_title": section.title or "Untitled",
+                            "page_start": section.page_start,
+                            "chunk_id": chunk_id,
+                            "label": label if label else "prose",
+                            "key_terms": json.dumps(key_terms),
+                        },
                     }
                 )
                 chunk_id += 1
+
+        # --- Post-processing: Entity Extraction and Linking ---
+        msg = "Post-processing: Extracting entities and creating links..."
+        log.info(msg)
+        yield msg
+        final_metadatas = self._link_entities_in_document(processed_chunks, lang)
+        documents = [chunk["text"] for chunk in processed_chunks]
+
+        # Convert complex fields to JSON strings for storage
+        for meta in final_metadatas:
+            meta["entities"] = json.dumps(meta.get("entities", {}))
+            meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
+            meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
 
         msg = f"✔ Processing complete. Found {len(documents)} valid chunks."
         log.info(msg)
@@ -329,7 +456,7 @@ class IngestionService:
             log.info(msg)
             yield msg
             return
-        self.vector_store.add_to_kb(kb_name, documents, metadatas, kb_metadata=metadata)
+        self.vector_store.add_to_kb(kb_name, documents, final_metadatas, kb_metadata=metadata)
         msg = "✔ Saved to vector store."
         log.info(msg)
         yield msg

@@ -239,15 +239,17 @@ PROMPT_REGISTRY = {
             "La teva resposta ha de ser ÚNICAMENT el resum narratiu, i HA DE ser en català."
         ),
     },
-    "SEMANTIC_LABELER": {
+    "SEMANTIC_LABELER_ADVENTURE": {
         "en": (
-            "You are a semantic analysis engine. Analyze the text chunk and assign ONE "
-            "primary category label from the list. Use the user's cue to help guide your choice.\n\n"
+            "You are a semantic analysis engine for an adventure module. "
+            "Analyze the text chunk and assign ONE primary category label. "
+            "Pay close attention to stylistic cues like italics.\n\n"
             "USER KICKOFF CUE (Use this to identify the starting text):\n{kickoff_cue}\n\n"
             "LABEL DEFINITIONS:\n"
             "- `dm_knowledge`: Secret information FOR THE DM ONLY. Includes monster tactics, "
             "  trap mechanics, character motivations, plot secrets, or treasure details.\n"
-            "- `read_aloud_text`: Text explicitly boxed or quoted to be read VERBATIM to players.\n"
+            "- `read_aloud_text`: Text explicitly meant to be read VERBATIM to players. "
+            "  *Italicized paragraphs* are almost always this.\n"
             "- `read_aloud_kickoff`: The very first `read_aloud_text` that starts the adventure.\n"
             "- `adventure_hook`: A plot hook, rumor, or mission for players.\n"
             "- `stat_block`: A creature's or character's statistics for game mechanics.\n"
@@ -258,6 +260,72 @@ PROMPT_REGISTRY = {
             "- `dialogue`: Spoken words from a character, usually in quotes.\n"
             "- `prose`: General, non-secret narrative text that doesn't fit other categories.\n\n"
             "Respond with ONLY the chosen label and nothing else."
+        )
+    },
+    "SEMANTIC_LABELER_RULES": {
+        "en": (
+            "You are a semantic analysis engine for a rulebook. "
+            "Analyze the text chunk and assign ONE primary category label. "
+            "Pay close attention to stylistic cues like italics.\n\n"
+            "USER KICKOFF CUE (Use this to identify the starting text):\n{kickoff_cue}\n\n"
+            "LABEL DEFINITIONS:\n"
+            "- `dm_knowledge`: Secret information FOR THE DM ONLY.\n"
+            "- `read_aloud_text`: Text explicitly meant to be read VERBATIM to players.\n"
+            "- `read_aloud_kickoff`: The very first `read_aloud_text` that starts the adventure.\n"
+            "- `adventure_hook`: A plot hook, rumor, or mission for players.\n"
+            "- `stat_block`: A creature's or character's statistics for game mechanics.\n"
+            "- `item_description`: Description of a specific item.\n"
+            "- `location_description`: Description of a specific place.\n"
+            "- `mechanics`: Rules for how the game is played. *Italicized text* often "
+            "  highlights a specific rule, condition, or game term.\n"
+            "- `lore`: Background history or world-building information.\n"
+            "- `dialogue`: Spoken words from a character, usually in quotes.\n"
+            "- `prose`: General narrative text that doesn't fit other categories.\n\n"
+            "Respond with ONLY the chosen label and nothing else."
+        )
+    },
+    "STAT_BLOCK_PARSER": {
+        "en": (
+            "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
+            "raw text stat block and convert it into a structured JSON object. "
+            "The input format is inconsistent.\n\n"
+            "RULES:\n"
+            "1. Extract values for the following keys: `ca`, `dc`, `at`, `ba`, `mv`, "
+            "`ts`, `ml`, `al`, `px`, `na`, `tt`.\n"
+            "2. The value for `dc` should include any modifiers (e.g., '4*', '6+3*'). "
+            "Also extract the average hit points into a separate `pc` key if present.\n"
+            "3. The value for `ts` should be the full string (e.g., 'M12 V13 P14 A15 E16 (2)').\n"
+            "4. If a value is not present in the text, omit its key from the JSON.\n"
+            "5. Your response MUST be ONLY the single, valid JSON object and nothing else.\n\n"
+            "EXAMPLE INPUT:\n"
+            "CA 15, DC 6+1** (28 pc), AT 1×mossegada (1d10+petrifica), 1×mirada (petrifica), "
+            "BA +6, MV 60' (20'), TS M10 V11 P12 A13 E14 (6), ML 9, AL neutral, PX 950, "
+            "NA 1d6 (1d6), TT F\n\n"
+            "EXAMPLE OUTPUT:\n"
+            '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×mossegada (1d10+petrifica), '
+            '1×mirada (petrifica)", "ba": "+6", "mv": "60\' (20\')", '
+            '"ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "neutral", "px": 950, '
+            '"na": "1d6 (1d6)", "tt": "F"}'
+        )
+    },
+    "ENTITY_EXTRACTOR": {
+        "en": (
+            "You are a Named Entity Recognition (NER) engine for a TTRPG. "
+            "Your task is to analyze a list of key terms extracted from a document "
+            "and classify each one into a specific entity type.\n\n"
+            "ENTITY TYPES:\n"
+            "- `creature`: A monster, animal, or non-player character (NPC) with stats.\n"
+            "- `character`: An important named NPC, often without full stats.\n"
+            "- `location`: A specific place, area, room, or geographical feature.\n"
+            "- `item`: A specific object, treasure, or piece of equipment.\n"
+            "- `organization`: A faction, guild, or group of people.\n"
+            "- `other`: A term that does not fit into the other categories.\n\n"
+            "INPUT: A JSON list of strings.\n"
+            '["Goblin", "Cragmaw Hideout", "Sildar Hallwinter", "Potion of Healing"]\n\n'
+            "OUTPUT: Your response MUST be a single, valid JSON object mapping each "
+            "input term to its classified entity type. Do not include any other text.\n"
+            '{"Goblin": "creature", "Cragmaw Hideout": "location", '
+            '"Sildar Hallwinter": "character", "Potion of Healing": "item"}'
         )
     },
     "SECTION_CLASSIFIER": {
