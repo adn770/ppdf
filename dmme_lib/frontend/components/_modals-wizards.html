@@ -1,9 +1,11 @@
+# --- dmme_lib/frontend/components/_modals-wizards.html ---
 <div id="modal-overlay" class="modal-overlay"></div>
 
 <div id="load-campaign-modal" class="modal modal-lg">
     <div class="modal-header">
         <h2 data-i18n-key="loadCampaignTitle">Load Campaign</h2>
-        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title"
+            title="Close">&times;</button>
     </div>
     <div class="modal-body load-campaign-body">
         <div class="load-campaign-list-panel">
@@ -11,32 +13,39 @@
             <ul id="campaign-list" class="item-list"></ul>
         </div>
         <div class="load-campaign-details-panel">
-            <div id="campaign-details-content" class="campaign-details-content placeholder">
-                <p data-i18n-key="selectCampaignPrompt">Select a campaign to see details.</p>
+            <div id="campaign-details-content"
+                class="campaign-details-content placeholder">
+                <p data-i18n-key="selectCampaignPrompt">Select a campaign to see
+                    details.</p>
             </div>
         </div>
     </div>
     <div class="modal-footer">
-        <button id="load-campaign-btn-confirm" class="accent-btn" data-i18n-key="loadBtn" disabled>Load</button>
+        <button id="load-campaign-btn-confirm" class="accent-btn" data-i18n-key="loadBtn"
+            disabled>Load</button>
     </div>
 </div>
 <div id="session-recap-modal" class="modal modal-md">
     <div class="modal-header">
         <h2 data-i18n-key="sessionRecapTitle">Session Recap</h2>
-        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title"
+            title="Close">&times;</button>
     </div>
     <div class="modal-body session-recap-body">
         <h3 id="recap-header"></h3>
         <div id="recap-content" class="recap-content"></div>
     </div>
     <div class="modal-footer">
-        <button id="recap-continue-btn" class="accent-btn" data-i18n-key="continueCampaign">Continue Campaign</button>
+        <button id="recap-continue-btn" class="accent-btn"
+            data-i18n-key="continueCampaign">Continue Campaign</button>
     </div>
 </div>
 <div id="import-wizard-modal" class="modal modal-lg">
     <div class="modal-header">
-        <h2 id="import-wizard-title" data-i18n-key="importWizardTitle">Import Knowledge Wizard</h2>
-        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        <h2 id="import-wizard-title" data-i18n-key="importWizardTitle">Import Knowledge
+            Wizard</h2>
+        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title"
+            title="Close">&times;</button>
     </div>
     <div class="modal-body">
         <div class="wizard-pane active" id="wizard-pane-0">
@@ -47,15 +56,23 @@
                         <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
                             Drag & Drop a PDF or Markdown file here, or click to select
                         </p>
-                        <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md,.json">
+                        <input type="file" id="wizard-upload-input" style="display: none;"
+                            accept=".pdf,.md,.json">
                     </div>
                     <div class="form-group" id="pdf-pages-group">
-                        <label for="pdf-pages-input" data-i18n-key="pdfPagesLabel">Pages to Ingest</label>
-                        <input type="text" id="pdf-pages-input" autocomplete="off" data-i18n-key="pdfPagesPlaceholder" data-i18n-target="placeholder" placeholder="e.g., all, 1, 5, 8-12" disabled>
+                        <label for="pdf-pages-input" data-i18n-key="pdfPagesLabel">Pages
+                            to Ingest</label>
+                        <input type="text" id="pdf-pages-input" autocomplete="off"
+                            data-i18n-key="pdfPagesPlaceholder"
+                            data-i18n-target="placeholder"
+                            placeholder="e.g., all, 1, 5, 8-12" disabled>
                     </div>
                     <div class="form-group form-group-checkbox">
-                        <input type="checkbox" id="extract-images-checkbox" checked disabled>
-                        <label for="extract-images-checkbox" data-i18n-key="extractImagesLabel">Extract and process images</label>
+                        <input type="checkbox" id="extract-images-checkbox" checked
+                            disabled>
+                        <label for="extract-images-checkbox"
+                            data-i18n-key="extractImagesLabel">Extract and process
+                            images</label>
                     </div>
                 </div>
                 <hr class="wizard-divider-vertical">
@@ -64,45 +81,70 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="kb-name" data-i18n-key="formName">Name</label>
-                            <input type="text" id="kb-name" autocomplete="off" data-i18n-key="formNamePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Core Rules v5.1">
+                            <input type="text" id="kb-name" autocomplete="off"
+                                data-i18n-key="formNamePlaceholder"
+                                data-i18n-target="placeholder"
+                                placeholder="e.g., Core Rules v5.1">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="kb-type" data-i18n-key="formType">Type</label>
                             <select id="kb-type" name="kb-type">
-                                <option value="module" data-i18n-key="formTypeModule" selected>Module</option>
-                                <option value="setting" data-i18n-key="formTypeSetting">Setting</option>
-                                <option value="rules" data-i18n-key="formTypeRules">Rules</option>
-                                <option value="adapter" data-i18n-key="formTypeAdapter">Adapter</option>
+                                <option value="module" data-i18n-key="formTypeModule"
+                                    selected>Module</option>
+                                <option value="setting"
+                                    data-i18n-key="formTypeSetting">Setting</option>
+                                <option value="rules"
+                                    data-i18n-key="formTypeRules">Rules</option>
+                                <option value="adapter"
+                                    data-i18n-key="formTypeAdapter">Adapter</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="kb-lang" data-i18n-key="formLanguage">Language</label>
+                            <label for="kb-lang"
+                                data-i18n-key="formLanguage">Language</label>
                             <select id="kb-lang" name="kb-lang">
-                                <option value="en" data-i18n-key="formLangEn" selected>English</option>
-                                <option value="es" data-i18n-key="formLangEs">Spanish</option>
-                                <option value="ca" data-i18n-key="formLangCa">Catalan</option>
+                                <option value="en" data-i18n-key="formLangEn" selected>
+                                    English</option>
+                                <option value="es"
+                                    data-i18n-key="formLangEs">Spanish</option>
+                                <option value="ca"
+                                    data-i18n-key="formLangCa">Catalan</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="kb-desc" data-i18n-key="formDescription">Description</label>
-                        <textarea id="kb-desc" rows="3" data-i18n-key="formDescriptionPlaceholder" data-i18n-target="placeholder" placeholder="Optional short summary of the content." autocomplete="off"></textarea>
+                        <label for="kb-desc"
+                            data-i18n-key="formDescription">Description</label>
+                        <textarea id="kb-desc" rows="3"
+                            data-i18n-key="formDescriptionPlaceholder"
+                            data-i18n-target="placeholder"
+                            placeholder="Optional short summary of the content."
+                            autocomplete="off"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="kb-kickoff-cue" data-i18n-key="formKickoffCue">Kickoff Cue (Optional)</label>
-                        <textarea id="kb-kickoff-cue" rows="3" data-i18n-key="formKickoffCuePlaceholder" data-i18n-target="placeholder" placeholder="e.g., Adventure starts with the 'A Plea for Help' section and the local rumors table." autocomplete="off"></textarea>
+                        <label for="kb-kickoff-cue"
+                            data-i18n-key="formKickoffCue">Kickoff Cue
+                            (Optional)</label>
+                        <textarea id="kb-kickoff-cue" rows="3"
+                            data-i18n-key="formKickoffCuePlaceholder"
+                            data-i18n-target="placeholder"
+                            placeholder="e.g., Adventure starts with the 'A Plea for Help' section and the local rumors table."
+                            autocomplete="off"></textarea>
                     </div>
                 </div>
             </div>
         </div>
         <div class="wizard-pane" id="wizard-pane-1">
             <div class="wizard-pane-header">
-                <h3 data-i18n-key="wizardPaneReviewTitle">Step 2: Review Document Sections</h3>
+                <h3 data-i18n-key="wizardPaneReviewTitle">Step 2: Review Document
+                    Sections</h3>
                 <div class="section-review-controls">
-                    <button id="wizard-select-all-sections" class="secondary-btn" data-i18n-key="selectAll">Select All</button>
-                    <button id="wizard-deselect-all-sections" class="secondary-btn" data-i18n-key="deselectAll">Deselect All</button>
+                    <button id="wizard-select-all-sections" class="secondary-btn"
+                        data-i18n-key="selectAll">Select All</button>
+                    <button id="wizard-deselect-all-sections" class="secondary-btn"
+                        data-i18n-key="deselectAll">Deselect All</button>
                 </div>
             </div>
             <div id="wizard-section-list" class="section-review-list">
@@ -125,25 +167,40 @@
                     <button id="image-prev-btn" class="image-nav-btn prev">&lt;</button>
                     <button id="image-next-btn" class="image-nav-btn next">&gt;</button>
                     <p id="image-review-counter"></p>
-                    <button id="discard-image-btn" class="contextual-delete-btn slide-in-bottom">
+                    <button id="discard-image-btn"
+                        class="contextual-delete-btn slide-in-bottom">
                         <span class="icon">&times;</span>
                         <span data-i18n-key="discardImage">Delete</span>
                     </button>
                 </div>
                 <div class="image-metadata-editor">
                     <div class="form-group form-group-fill">
-                        <label for="image-description" data-i18n-key="imageDescription">Description</label>
+                        <label for="image-description"
+                            data-i18n-key="imageDescription">Description</label>
                         <textarea id="image-description" autocomplete="off"></textarea>
                     </div>
                     <div class="form-group">
-                        <label data-i18n-key="imageClassification">Classification</label>
+                        <label
+                            data-i18n-key="imageClassification">Classification</label>
                         <div class="radio-group image-classification-group">
-                            <label><input type="radio" name="image-classification" value="cover"> <span data-i18n-key="imgClassCover">Cover</span></label>
-                            <label><input type="radio" name="image-classification" value="art" checked> <span data-i18n-key="imgClassArt">Art</span></label>
-                            <label><input type="radio" name="image-classification" value="handout"> <span data-i18n-key="imgClassHandout">Handout</span></label>
-                            <label><input type="radio" name="image-classification" value="map"> <span data-i18n-key="imgClassMap">Map</span></label>
-                            <label><input type="radio" name="image-classification" value="decoration"> <span data-i18n-key="imgClassDecoration">Decoration</span></label>
-                            <label><input type="radio" name="image-classification" value="other"> <span data-i18n-key="imgClassOther">Other</span></label>
+                            <label><input type="radio" name="image-classification"
+                                    value="cover"> <span
+                                    data-i18n-key="imgClassCover">Cover</span></label>
+                            <label><input type="radio" name="image-classification"
+                                    value="art" checked> <span
+                                    data-i18n-key="imgClassArt">Art</span></label>
+                            <label><input type="radio" name="image-classification"
+                                    value="handout"> <span
+                                    data-i18n-key="imgClassHandout">Handout</span></label>
+                            <label><input type="radio" name="image-classification"
+                                    value="map"> <span
+                                    data-i18n-key="imgClassMap">Map</span></label>
+                            <label><input type="radio" name="image-classification"
+                                    value="decoration"> <span
+                                    data-i18n-key="imgClassDecoration">Decoration</span></label>
+                            <label><input type="radio" name="image-classification"
+                                    value="other"> <span
+                                    data-i18n-key="imgClassOther">Other</span></label>
                         </div>
                     </div>
                 </div>
@@ -151,21 +208,26 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button id="import-wizard-back-btn" class="secondary-btn" data-i18n-key="wizardBack">Back</button>
-        <button id="import-wizard-next-btn" class="accent-btn" data-i18n-key="wizardNext">Next</button>
+        <button id="import-wizard-back-btn" class="secondary-btn"
+            data-i18n-key="wizardBack">Back</button>
+        <button id="import-wizard-next-btn" class="accent-btn"
+            data-i18n-key="wizardNext">Next</button>
     </div>
 </div>
 <div id="new-game-wizard-modal" class="modal modal-md">
     <div class="modal-header">
         <h2 data-i18n-key="newGameWizardTitle">New Game Setup</h2>
-        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title"
+            title="Close">&times;</button>
     </div>
     <div class="modal-body wizard-body">
         <div class="form-group">
             <label data-i18n-key="gameMode">Game Mode</label>
             <div class="radio-group">
-                <label><input type="radio" name="game-mode" value="module" checked> <span data-i18n-key="gameModeModule">Adventure Module</span></label>
-                <label><input type="radio" name="game-mode" value="freestyle"> <span data-i18n-key="gameModeFreestyle">Freestyle</span></label>
+                <label><input type="radio" name="game-mode" value="module" checked> <span
+                        data-i18n-key="gameModeModule">Adventure Module</span></label>
+                <label><input type="radio" name="game-mode" value="freestyle"> <span
+                        data-i18n-key="gameModeFreestyle">Freestyle</span></label>
             </div>
         </div>
         <div class="form-group">
@@ -173,7 +235,8 @@
             <select id="game-rules-kb"></select>
         </div>
         <div id="game-module-group" class="form-group">
-            <label for="game-module-kb" data-i18n-key="advModule">Adventure Module</label>
+            <label for="game-module-kb" data-i18n-key="advModule">Adventure
+                Module</label>
             <select id="game-module-kb"></select>
         </div>
         <div id="game-setting-group" class="form-group" style="display: none;">
@@ -190,104 +253,318 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button id="start-game-btn" class="accent-btn" data-i18n-key="startGame">Start Game</button>
+        <button id="start-game-btn" class="accent-btn" data-i18n-key="startGame">Start
+            Game</button>
     </div>
 </div>
+
 <div id="settings-modal" class="modal modal-lg">
     <div class="modal-header">
         <h2 data-i18n-key="settingsTitle">Settings</h2>
-        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title"
+            title="Close">&times;</button>
     </div>
     <div class="modal-body">
         <div class="settings-body">
             <div class="wizard-tabs">
-                <button class="wizard-tab-btn active" data-pane="general" data-i18n-key="settingsTabGeneral">General</button>
-                <button class="wizard-tab-btn" data-pane="appearance" data-i18n-key="settingsTabAppearance">Appearance</button>
+                <button class="wizard-tab-btn active" data-pane="general"
+                    data-i18n-key="settingsTabGeneral">General</button>
+                <button class="wizard-tab-btn" data-pane="appearance"
+                    data-i18n-key="settingsTabAppearance">Appearance</button>
+                <button class="wizard-tab-btn" data-pane="game-llm"
+                    data-i18n-key="settingsTabGameLlm">Game LLM</button>
+                <button class="wizard-tab-btn" data-pane="ingestion-llm"
+                    data-i18n-key="settingsTabIngestionLlm">Ingestion LLM</button>
             </div>
             <div class="settings-content">
-                <div class="settings-pane" id="pane-appearance">
-                    <h3 data-i18n-key="appearanceTitle">Appearance</h3>
-                    <div class="form-group">
-                        <label for="theme-selector" data-i18n-key="theme">Theme</label>
-                        <select id="theme-selector" data-section="Appearance" data-key="theme">
-                            <option value="default" data-i18n-key="themeDefault">Default</option>
-                            <option value="vibrant-focus" data-i18n-key="themeVibrant">Vibrant Focus</option>
-                            <option value="high-contrast" data-i18n-key="themeContrast">High Contrast</option>
-                            <option value="crt-green" data-i18n-key="themeCrt">CRT Green Phosphorus</option>
-                            <option value="ocean-blue" data-i18n-key="themeOcean">Ocean Blue</option>
-                            <option value="forest-green" data-i18n-key="themeForest">Forest Green</option>
-                            <option value="warm-sepia" data-i18n-key="themeSepia">Warm Sepia</option>
-                            <option value="cyberpunk" data-i18n-key="themeCyberpunk">Cyberpunk</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="language-selector" data-i18n-key="formLanguage">Language</label>
-                        <select id="language-selector" data-section="Appearance" data-key="language">
-                            <option value="en" data-i18n-key="formLangEn">English</option>
-                            <option value="es" data-i18n-key="formLangEs">Spanish</option>
-                            <option value="ca" data-i18n-key="formLangCa">Catalan</option>
-                        </select>
-                    </div>
-                </div>
                 <div class="settings-pane active" id="pane-general">
                     <h3 data-i18n-key="gameConfigTitle">Game Configuration</h3>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="game-default-ruleset" data-i18n-key="defaultRuleset">Default Preferred Ruleset</label>
-                            <input type="text" id="game-default-ruleset" list="kb-list" data-section="Game" data-key="default_ruleset" autocomplete="off">
+                            <label for="game-default-ruleset"
+                                data-i18n-key="defaultRuleset">Default Preferred
+                                Ruleset</label>
+                            <input type="text" id="game-default-ruleset" list="kb-list"
+                                data-section="Game" data-key="default_ruleset"
+                                autocomplete="off">
                         </div>
                         <div class="form-group">
-                            <label for="game-default-setting" data-i18n-key="defaultSetting">Default Preferred Setting</label>
-                            <input type="text" id="game-default-setting" list="kb-list" data-section="Game" data-key="default_setting" autocomplete="off">
+                            <label for="game-default-setting"
+                                data-i18n-key="defaultSetting">Default Preferred
+                                Setting</label>
+                            <input type="text" id="game-default-setting" list="kb-list"
+                                data-section="Game" data-key="default_setting"
+                                autocomplete="off">
                         </div>
                     </div>
-                    <h3 data-i18n-key="ollamaConfigTitle">Ollama Configuration</h3>
-                    <div class="form-group">
-                        <label for="ollama-url" data-i18n-key="ollamaUrl">Server URL</label>
-                        <input type="text" id="ollama-url" data-section="Ollama" autocomplete="off" data-key="url" data-i18n-key="ollamaUrlPlaceholder" data-i18n-target="placeholder" placeholder="http://localhost:11434">
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="ollama-dm-model" data-i18n-key="ollamaDmModel">DM Model</label>
-                            <input type="text" id="ollama-dm-model" list="ollama-text-models-list" data-section="Ollama" data-key="dm_model" autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label for="ollama-utility-model" data-i18n-key="ollamaUtilityModel">Utility Model</label>
-                            <input type="text" id="ollama-utility-model" list="ollama-text-models-list" data-section="Ollama" data-key="utility_model" autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label for="ollama-vision-model" data-i18n-key="ollamaVisionModel">Image Analysis Model</label>
-                            <input type="text" id="ollama-vision-model" list="ollama-vision-models-list" data-section="Ollama" data-key="vision_model" autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label for="ollama-embedding-model" data-i18n-key="ollamaEmbeddingModel">Embedding Model</label>
-                            <input type="text" id="ollama-embedding-model" autocomplete="off" list="ollama-embedding-models-list" data-section="Ollama" data-key="embedding_model">
-                        </div>
-                    </div>
-                    <datalist id="ollama-text-models-list"></datalist>
-                    <datalist id="ollama-vision-models-list"></datalist>
-                    <datalist id="ollama-embedding-models-list"></datalist>
-                    <datalist id="kb-list"></datalist>
                 </div>
+                <div class="settings-pane" id="pane-appearance">
+                    <h3 data-i18n-key="appearanceTitle">Appearance</h3>
+                    <div class="form-group">
+                        <label for="theme-selector" data-i18n-key="theme">Theme</label>
+                        <select id="theme-selector" data-section="Appearance"
+                            data-key="theme">
+                            <option value="default"
+                                data-i18n-key="themeDefault">Default</option>
+                            <option value="vibrant-focus"
+                                data-i18n-key="themeVibrant">Vibrant Focus</option>
+                            <option value="high-contrast"
+                                data-i18n-key="themeContrast">High Contrast</option>
+                            <option value="crt-green" data-i18n-key="themeCrt">CRT Green
+                                Phosphorus</option>
+                            <option value="ocean-blue"
+                                data-i18n-key="themeOcean">Ocean Blue</option>
+                            <option value="forest-green"
+                                data-i18n-key="themeForest">Forest Green</option>
+                            <option value="warm-sepia"
+                                data-i18n-key="themeSepia">Warm Sepia</option>
+                            <option value="cyberpunk"
+                                data-i18n-key="themeCyberpunk">Cyberpunk</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language-selector"
+                            data-i18n-key="formLanguage">Language</label>
+                        <select id="language-selector" data-section="Appearance"
+                            data-key="language">
+                            <option value="en"
+                                data-i18n-key="formLangEn">English</option>
+                            <option value="es"
+                                data-i18n-key="formLangEs">Spanish</option>
+                            <option value="ca"
+                                data-i18n-key="formLangCa">Catalan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="settings-pane" id="pane-game-llm">
+                    <h3 data-i18n-key="ollamaGameUrl">Ollama Game Server URL</h3>
+                    <div class="form-group">
+                        <input type="text" data-section="OllamaGame" data-key="url"
+                            autocomplete="off" data-i18n-key="ollamaUrlPlaceholder"
+                            data-i18n-target="placeholder"
+                            placeholder="http://localhost:11434">
+                    </div>
+                    <div class="config-group">
+                        <h4 data-i18n-key="dmModelTitle">DM Model</h4>
+                        <div class="config-controls">
+                            <div class="form-group"><label
+                                    data-i18n-key="model">Model</label><input type="text"
+                                    data-section="OllamaGame" data-role="dm"
+                                    data-key="model" list="ollama-text-models-list">
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="temperature">Temperature</label>
+                                <div class="slider-container"><input type="range"
+                                        data-section="OllamaGame" data-role="dm"
+                                        data-key="temp" min="0" max="1.5" step="0.1"
+                                        value="0.7"><span class="slider-value">0.7</span>
+                                </div>
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="contextWindow">Context
+                                    Window</label><select data-section="OllamaGame"
+                                    data-role="dm" data-key="ctx">
+                                    <option value="2048">2K</option>
+                                    <option value="4096">4K</option>
+                                    <option value="8192" selected>8K</option>
+                                    <option value="16384">16K</option>
+                                    <option value="32768">32K</option>
+                                    <option value="49152">48K</option>
+                                    <option value="65536">64K</option>
+                                    <option value="81920">80K</option>
+                                    <option value="98304">96K</option>
+                                    <option value="114688">112K</option>
+                                    <option value="131072">128K</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <h4 data-i18n-key="charCreationModelTitle">Character Creation
+                            Model</h4>
+                        <div class="config-controls">
+                            <div class="form-group"><label
+                                    data-i18n-key="model">Model</label><input type="text"
+                                    data-section="OllamaGame" data-role="char"
+                                    data-key="model" list="ollama-text-models-list">
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="temperature">Temperature</label>
+                                <div class="slider-container"><input type="range"
+                                        data-section="OllamaGame" data-role="char"
+                                        data-key="temp" min="0" max="1.5" step="0.1"
+                                        value="0.8"><span class="slider-value">0.8</span>
+                                </div>
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="contextWindow">Context
+                                    Window</label><select data-section="OllamaGame"
+                                    data-role="char" data-key="ctx">
+                                    <option value="2048">2K</option>
+                                    <option value="4096">4K</option>
+                                    <option value="8192" selected>8K</option>
+                                    <option value="16384">16K</option>
+                                    <option value="32768">32K</option>
+                                    <option value="49152">48K</option>
+                                    <option value="65536">64K</option>
+                                    <option value="81920">80K</option>
+                                    <option value="98304">96K</option>
+                                    <option value="114688">112K</option>
+                                    <option value="131072">128K</option>
+                                </select></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-pane" id="pane-ingestion-llm">
+                    <h3 data-i18n-key="ollamaIngestionUrl">Ollama Ingestion Server URL
+                    </h3>
+                    <div class="form-group">
+                        <input type="text" data-section="OllamaIngestion" data-key="url"
+                            autocomplete="off" data-i18n-key="ollamaUrlPlaceholder"
+                            data-i18n-target="placeholder"
+                            placeholder="http://localhost:11434">
+                    </div>
+                    <div class="config-group">
+                        <h4 data-i18n-key="pdfFormattingModelTitle">PDF Formatting Model
+                        </h4>
+                        <div class="config-controls">
+                            <div class="form-group"><label
+                                    data-i18n-key="model">Model</label><input type="text"
+                                    data-section="OllamaIngestion" data-role="format"
+                                    data-key="model" list="ollama-text-models-list">
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="temperature">Temperature</label>
+                                <div class="slider-container"><input type="range"
+                                        data-section="OllamaIngestion" data-role="format"
+                                        data-key="temp" min="0" max="1.5" step="0.1"
+                                        value="0.1"><span class="slider-value">0.1</span>
+                                </div>
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="contextWindow">Context
+                                    Window</label><select data-section="OllamaIngestion"
+                                    data-role="format" data-key="ctx">
+                                    <option value="2048">2K</option>
+                                    <option value="4096">4K</option>
+                                    <option value="8192" selected>8K</option>
+                                    <option value="16384">16K</option>
+                                    <option value="32768">32K</option>
+                                    <option value="49152">48K</option>
+                                    <option value="65536">64K</option>
+                                    <option value="81920">80K</option>
+                                    <option value="98304">96K</option>
+                                    <option value="114688">112K</option>
+                                    <option value="131072">128K</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <h4 data-i18n-key="classificationModelTitle">Classification &
+                            Labeling Model</h4>
+                        <div class="config-controls">
+                            <div class="form-group"><label
+                                    data-i18n-key="model">Model</label><input type="text"
+                                    data-section="OllamaIngestion" data-role="classify"
+                                    data-key="model" list="ollama-text-models-list">
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="temperature">Temperature</label>
+                                <div class="slider-container"><input type="range"
+                                        data-section="OllamaIngestion"
+                                        data-role="classify" data-key="temp" min="0"
+                                        max="1.5" step="0.1" value="0.1"><span
+                                        class="slider-value">0.1</span></div>
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="contextWindow">Context
+                                    Window</label><select data-section="OllamaIngestion"
+                                    data-role="classify" data-key="ctx">
+                                    <option value="2048">2K</option>
+                                    <option value="4096">4K</option>
+                                    <option value="8192" selected>8K</option>
+                                    <option value="16384">16K</option>
+                                    <option value="32768">32K</option>
+                                    <option value="49152">48K</option>
+                                    <option value="65536">64K</option>
+                                    <option value="81920">80K</option>
+                                    <option value="98304">96K</option>
+                                    <option value="114688">112K</option>
+                                    <option value="131072">128K</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <h4 data-i18n-key="ollamaVisionModel">Image Analysis Model</h4>
+                        <div class="config-controls">
+                            <div class="form-group"><label
+                                    data-i18n-key="model">Model</label><input type="text"
+                                    data-section="OllamaIngestion" data-role="vision"
+                                    data-key="model" list="ollama-vision-models-list">
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="temperature">Temperature</label>
+                                <div class="slider-container"><input type="range"
+                                        data-section="OllamaIngestion" data-role="vision"
+                                        data-key="temp" min="0" max="1.5" step="0.1"
+                                        value="0.2"><span class="slider-value">0.2</span>
+                                </div>
+                            </div>
+                            <div class="form-group"><label
+                                    data-i18n-key="contextWindow">Context
+                                    Window</label><select data-section="OllamaIngestion"
+                                    data-role="vision" data-key="ctx">
+                                    <option value="2048">2K</option>
+                                    <option value="4096" selected>4K</option>
+                                    <option value="8192">8K</option>
+                                    <option value="16384">16K</option>
+                                    <option value="32768">32K</option>
+                                    <option value="49152">48K</option>
+                                    <option value="65536">64K</option>
+                                    <option value="81920">80K</option>
+                                    <option value="98304">96K</option>
+                                    <option value="114688">112K</option>
+                                    <option value="131072">128K</option>
+                                </select></div>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <h4 data-i18n-key="ollamaEmbeddingModel">Embedding Model</h4>
+                        <div class="config-controls">
+                            <div class="form-group"><label
+                                    data-i18n-key="model">Model</label><input type="text"
+                                    data-section="OllamaIngestion" data-role="embed"
+                                    data-key="model" list="ollama-embedding-models-list">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <datalist id="ollama-text-models-list"></datalist>
+                <datalist id="ollama-vision-models-list"></datalist>
+                <datalist id="ollama-embedding-models-list"></datalist>
+                <datalist id="kb-list"></datalist>
             </div>
         </div>
     </div>
     <div class="modal-footer">
         <span id="settings-save-status"></span>
         <div class="modal-footer-spacer"></div>
-        <button id="settings-cancel-btn" data-i18n-key="settingsCancel">Cancel</button>
-        <button id="settings-save-btn" class="accent-btn" data-i18n-key="settingsSave">Save Changes</button>
+        <button id="settings-cancel-btn"
+            data-i18n-key="settingsCancel">Cancel</button>
+        <button id="settings-save-btn" class="accent-btn"
+            data-i18n-key="settingsSave">Save Changes</button>
     </div>
 </div>
 <div id="dm-insight-modal" class="modal modal-lg">
     <div class="modal-header">
         <h2 data-i18n-key="dmInsightTitle">DM's Insight</h2>
-        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title" title="Close">&times;</button>
+        <button class="close-btn" data-i18n-key="modalClose" data-i18n-target="title"
+            title="Close">&times;</button>
     </div>
     <div class="modal-body wizard-body">
         <h3 data-i18n-key="dmInsightHeader">RAG Context</h3>
         <p data-i18n-key="dmInsightMsg">
-            This is the raw context retrieved from the knowledge bases that the AI used to generate its last response.
+            This is the raw context retrieved from the knowledge bases that the AI used to
+            generate its last response.
         </p>
         <div id="dm-insight-content" class="dm-insight-content-box"></div>
     </div>
@@ -304,7 +581,9 @@
         <p id="confirmation-message" data-i18n-key="confirmMsg">Are you sure?</p>
     </div>
     <div class="modal-footer">
-        <button id="confirmation-cancel-btn" data-i18n-key="confirmCancel">Cancel</button>
-        <button id="confirmation-confirm-btn" class="danger-btn" data-i18n-key="confirmConfirm">Confirm</button>
+        <button id="confirmation-cancel-btn"
+            data-i18n-key="confirmCancel">Cancel</button>
+        <button id="confirmation-confirm-btn" class="danger-btn"
+            data-i18n-key="confirmConfirm">Confirm</button>
     </div>
 </div>

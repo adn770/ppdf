@@ -49,3 +49,42 @@
 .settings-pane h3:not(:first-child) {
     margin-top: 32px;
 }
+
+.config-group {
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    margin-top: 24px;
+}
+
+.config-group h4 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #ccc;
+}
+
+.config-controls {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px 24px;
+    align-items: end;
+}
+
+.config-controls .form-group {
+    margin-bottom: 0;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.slider-container input[type="range"] {
+    flex-grow: 1;
+}
+
+.slider-container .slider-value {
+    font-family: var(--font-family-mono);
+    min-width: 3ch;
+    text-align: right;
+}
