@@ -11,7 +11,6 @@ export class NewGameWizard {
         this.rulesSelect = document.getElementById('game-rules-kb');
         this.moduleSelect = document.getElementById('game-module-kb');
         this.settingSelect = document.getElementById('game-setting-kb');
-        this.modelSelect = document.getElementById('game-llm-model');
         this.partySelect = document.getElementById('game-party-selector');
         this.moduleGroup = document.getElementById('game-module-group');
         this.settingGroup = document.getElementById('game-setting-group');
@@ -42,16 +41,15 @@ export class NewGameWizard {
     }
 
     async populateSelectors() {
-        const [kbs, parties, models] = await Promise.all([
+        const [kbs, parties] = await Promise.all([
             apiCall('/api/knowledge/'),
             apiCall('/api/parties/'),
-            apiCall('/api/ollama/models')
         ]);
 
         // Clear existing options
         [
             this.rulesSelect, this.moduleSelect, this.settingSelect,
-            this.partySelect, this.modelSelect
+            this.partySelect
         ].forEach(sel => sel.innerHTML = '');
 
         // Populate KBs filtered by type
@@ -62,16 +60,12 @@ export class NewGameWizard {
             if (kb.metadata?.kb_type === 'setting') this.settingSelect.add(option.cloneNode(true));
         });
 
-        // Populate models
-        models.forEach(modelName => {
-            this.modelSelect.add(new Option(modelName, modelName));
-        });
-
         // Set defaults from settings
         const defaultRuleset = this.app.settings?.Game?.default_ruleset;
         if (defaultRuleset) this.rulesSelect.value = defaultRuleset;
-        const defaultModel = this.app.settings?.Ollama?.main_model;
-        if (defaultModel) this.modelSelect.value = defaultModel;
+        
+        const defaultSetting = this.app.settings?.Game?.default_setting;
+        if (defaultSetting) this.settingSelect.value = defaultSetting;
 
         if (parties.length === 0) {
             const key = 'noParties';
@@ -104,10 +98,10 @@ export class NewGameWizard {
             party: this.partySelect.value,
             module: selectedMode === 'module' ? this.moduleSelect.value : null,
             setting: selectedMode === 'freestyle' ? this.settingSelect.value : null,
-            llm_model: this.modelSelect.value,
             language: this.app.settings.Appearance.language || 'en'
         };
-        if (!gameConfig.rules || !gameConfig.party || !gameConfig.llm_model) {
+
+        if (!gameConfig.rules || !gameConfig.party) {
             status.setText("errorStartGame", true);
             return;
         }

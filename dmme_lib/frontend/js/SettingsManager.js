@@ -1,6 +1,6 @@
 // dmme_lib/frontend/js/SettingsManager.js
 import { apiCall } from './wizards/ApiHelper.js';
-import { status, confirmationModal } from './ui.js';
+import { status } from './ui.js';
 
 export class SettingsManager {
     constructor(appInstance) {
@@ -20,7 +20,8 @@ export class SettingsManager {
         this.statusEl = document.getElementById('settings-save-status');
         this.tabs = this.modal.querySelectorAll('.wizard-tab-btn');
         this.panes = this.modal.querySelectorAll('.settings-pane');
-        this.inputs = this.modal.querySelectorAll('[data-section][data-key]');
+
+        // Datalists for suggestions
         this.textModelsDatalist = document.getElementById('ollama-text-models-list');
         this.visionModelsDatalist = document.getElementById('ollama-vision-models-list');
         this.embeddingModelsDatalist = document.getElementById('ollama-embedding-models-list');
@@ -33,6 +34,16 @@ export class SettingsManager {
         this.saveBtn.addEventListener('click', () => this.saveSettings());
         this.tabs.forEach(tab => {
             tab.addEventListener('click', (e) => this._switchPane(e));
+        });
+
+        // Add listeners for sliders to update their displayed value
+        this.modal.querySelectorAll('input[type="range"]').forEach(slider => {
+            const valueEl = slider.nextElementSibling;
+            if (valueEl && valueEl.classList.contains('slider-value')) {
+                slider.addEventListener('input', () => {
+                    valueEl.textContent = slider.value;
+                });
+            }
         });
     }
 
@@ -63,14 +74,94 @@ export class SettingsManager {
 
     async loadSettings() {
         this.settings = await apiCall('/api/settings/');
-        this.inputs.forEach(input => {
-            const section = input.dataset.section;
-            const key = input.dataset.key;
-            if (this.settings[section] && this.settings[section][key] !== undefined) {
-                input.value = this.settings[section][key];
+
+        // --- Simple Key-Value Sections ---
+        ['Appearance', 'Game'].forEach(section => {
+            const sectionSettings = this.settings[section] || {};
+            for (const key in sectionSettings) {
+                const input = this.modal.querySelector(
+                    `[data-section="${section}"][data-key="${key}"]`
+                );
+                if (input) input.value = sectionSettings[key];
             }
         });
+
+        // --- Complex, Role-Based LLM Sections ---
+        ['OllamaGame', 'OllamaIngestion'].forEach(section => {
+            const sectionSettings = this.settings[section] || {};
+            const urlInput = this.modal.querySelector(`[data-section="${section}"][data-key="url"]`);
+            if (urlInput) urlInput.value = sectionSettings.url || '';
+
+            try {
+                const models = JSON.parse(sectionSettings.models_json || '{}');
+                for (const role in models) {
+                    for (const key in models[role]) {
+                        const input = this.modal.querySelector(
+                            `[data-section="${section}"][data-role="${role}"][data-key="${key}"]`
+                        );
+                        if (input) {
+                            input.value = models[role][key];
+                            if (input.type === 'range') {
+                                const valueEl = input.nextElementSibling;
+                                if (valueEl) valueEl.textContent = models[role][key];
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to parse models_json for ${section}:`, e);
+            }
+        });
+
         return this.settings;
+    }
+
+    async saveSettings() {
+        this.statusEl.textContent = this.app.i18n.t('savingStatus');
+        const newSettings = {};
+
+        // --- Simple Key-Value Sections ---
+        ['Appearance', 'Game'].forEach(section => {
+            newSettings[section] = {};
+            this.modal.querySelectorAll(`[data-section="${section}"]`).forEach(input => {
+                newSettings[section][input.dataset.key] = input.value;
+            });
+        });
+
+        // --- Complex, Role-Based LLM Sections ---
+        ['OllamaGame', 'OllamaIngestion'].forEach(section => {
+            newSettings[section] = {};
+            const urlInput = this.modal.querySelector(`[data-section="${section}"][data-key="url"]`);
+            newSettings[section].url = urlInput ? urlInput.value : '';
+
+            const models = {};
+            const roles = new Set(Array.from(
+                this.modal.querySelectorAll(`[data-section="${section}"][data-role]`)
+            ).map(el => el.dataset.role));
+
+            roles.forEach(role => {
+                models[role] = {};
+                this.modal.querySelectorAll(
+                    `[data-section="${section}"][data-role="${role}"]`
+                ).forEach(input => {
+                    models[role][input.dataset.key] = input.value;
+                });
+            });
+            newSettings[section].models_json = JSON.stringify(models);
+        });
+
+        await apiCall('/api/settings/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newSettings),
+        });
+
+        this.app.settings = newSettings; // Update the global app settings
+        this.applyTheme(this.app.settings.Appearance.theme);
+        this.app.i18n.setLanguage(this.app.settings.Appearance.language);
+
+        this.statusEl.textContent = this.app.i18n.t('settingsSaveStatus');
+        setTimeout(() => this.close(), 1000);
     }
 
     async _populateModelSuggestions() {
@@ -114,33 +205,6 @@ export class SettingsManager {
         } catch (error) {
             console.error("Failed to populate knowledge base suggestions:", error);
         }
-    }
-
-    async saveSettings() {
-        this.statusEl.textContent = this.app.i18n.t('imageSaveStatusSaving');
-        const newSettings = {
-            Appearance: {},
-            Ollama: {},
-            Game: {}
-        };
-        this.inputs.forEach(input => {
-            const section = input.dataset.section;
-            const key = input.dataset.key;
-            if (!newSettings[section]) {
-                newSettings[section] = {};
-            }
-            newSettings[section][key] = input.value;
-        });
-        await apiCall('/api/settings/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newSettings),
-        });
-        this.app.settings = newSettings; // Update the global app settings
-        this.applyTheme(this.app.settings.Appearance.theme);
-        this.app.i18n.setLanguage(this.app.settings.Appearance.language);
-        this.statusEl.textContent = this.app.i18n.t('settingsSaveStatus');
-        setTimeout(() => this.close(), 1000);
     }
 
     applyTheme(themeName) {
