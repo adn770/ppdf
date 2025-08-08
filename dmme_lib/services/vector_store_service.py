@@ -71,14 +71,41 @@ class VectorStoreService:
                 query_texts=[query_text],
                 n_results=n_results,
                 where=where_filter,
-                include=["metadatas", "documents"],
+                include=["metadatas", "documents", "distances"],
             )
             docs = results.get("documents", [[]])[0]
             metas = results.get("metadatas", [[]])[0]
-            return docs, metas
+            dists = results.get("distances", [[]])[0]
+            return docs, metas, dists
         except Exception as e:
             log.error("Failed to query knowledge base '%s': %s", kb_name, e)
             raise
+
+    def search_collections(
+        self, query_text: str, scope: str, n_results: int = 15
+    ) -> list[dict]:
+        """Performs a vector search across one or all knowledge bases."""
+        search_targets = []
+        if scope.lower() == "all":
+            search_targets = [c.name for c in self.list_collections()]
+        else:
+            search_targets = [scope]
+
+        all_results = []
+        for kb_name in search_targets:
+            docs, metas, dists = self.query(kb_name, query_text, n_results=n_results)
+            for i in range(len(docs)):
+                all_results.append(
+                    {
+                        "document": docs[i],
+                        "metadata": metas[i],
+                        "distance": dists[i],
+                        "kb_name": kb_name,
+                    }
+                )
+
+        # Sort all combined results by their distance (lower is better)
+        return sorted(all_results, key=lambda x: x["distance"])[:n_results]
 
     def get_all_documents_and_metadata(self, kb_name: str) -> dict:
         """Retrieves all documents and their metadata from a knowledge base."""
