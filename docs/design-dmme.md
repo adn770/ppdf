@@ -200,6 +200,11 @@ The RAG system is built upon four types of knowledge bases:
         allowing users to add their own images to a KB via drag-and-drop. The
         system automatically generates a description, classification, and thumbnail for
         the uploaded asset.
+    -   **Tiered LLM Configuration Panel**: An advanced settings panel that allows
+        for fine-grained control over LLM configurations. It features a "Simple Mode"
+        for basic setup and an "Expert Mode" that enables users to assign different
+        models and Ollama server endpoints for distinct workloads (e.g., Game vs.
+        Ingestion).
 
 ---
 
@@ -219,7 +224,7 @@ application data besides the vector stores.
 ├── chroma/
 │   └── ...                  (*ChromaDB persistent vector storage*)
 ├── dmme.db                    (*SQLite database for campaigns, sessions, etc.*)
-└── dmme.cfg
+└── dmme.cfg                   (*INI file for user settings, including LLM configs*)
 
 ---
 
@@ -284,21 +289,33 @@ game state, and interacts with the LLM.
 -   **Data Persistence**: All application data is stored in a unified **SQLite
     database** (`dmme.db`) with tables for `campaigns`, `sessions`, `parties`, and
     `characters`.
+-   **Configuration Persistence**: User settings are stored in an INI file at
+    `~/.dmme/dmme.cfg`. A dedicated **`ConfigService`** is responsible for reading and
+    writing these settings, including the tiered Simple/Advanced LLM configurations.
 -   **Knowledge Ingestion**: Provides an API to support the frontend's **Library
     Hub**. It will invoke `ppdf_lib` for a two-stage process: first to
     `analyze` a document's structure, and second to perform the final `ingestion`
     based on user-provided section configurations.
 -   **RAG & LLM Logic**: The core RAG service will query the ChromaDB collections,
-    leveraging semantic labels for precision. It will also contain the logic for
-    generating Journal Recaps and ASCII Scene Maps.
--   **REST API**:
+    leveraging semantic labels for precision. It will request its model configuration
+    (e.g., for the 'DM Narration' task) from the `ConfigService` before making any
+    LLM calls.
+-   **REST API (Enhanced)**:
     -   **Campaigns**: Full CRUD APIs for managing campaigns.
     -   **Parties**: Full CRUD APIs for managing saved parties.
     -   **Knowledge**: APIs to orchestrate the multi-step ingestion process,
         including `POST /api/knowledge/analyze` and
         `POST /api/knowledge/<kb_name>/upload-asset`.
+        -   `GET /api/knowledge/dashboard/<kb_name>` for aggregated KB stats.
+        -   `GET /api/knowledge/entities/<kb_name>` for a list of all unique entities.
     -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
         images, and maps).
+    -   **Settings**: `GET` and `POST` APIs for the `ConfigService` to manage the
+        `dmme.cfg` file.
+    -   **Ollama**: `GET /api/ollama/models` to list available models, which will be
+        enhanced to return a `type_hint` for each model to aid frontend filtering.
+    -   **Search**: `GET /api/search` with `q` and `scope` parameters to perform
+        vector searches across one or all knowledge bases.
 
 ### 3.3. `dmme-eval` - The Evaluation Utility
 
@@ -397,13 +414,28 @@ The main gameplay interface is a **two-column layout**:
     -   **Narrative View:** The main log displaying the game's story.
     -   **Input Panel:** The text area for user commands.
 
-#### 4.3.2. Library Hub
+#### 4.3.2. Library Hub (Enhanced)
 
-A two-panel layout for all KB-related tasks:
+A two-panel layout for all KB-related tasks.
 
--   **Left Panel:** A searchable list of all created KBs.
--   **Right Panel (KB Inspector):** A tabbed interface for the selected KB, also
-    containing the integrated **Ingestion Wizard** and content/asset explorers.
+-   **Left Panel:**
+    -   **Global Search Utility**: A new component at the top with a search bar and a
+        scope selector (`All Knowledge` vs. `Current Collection`).
+    -   **KB List**: A searchable list of all created KBs.
+
+-   **Right Panel (KB Inspector / Search Results):** This panel is now dynamic.
+    -   **Default State (Inspector):** A multi-tab interface for the selected KB:
+        -   **Dashboard:** An overview with stats, an entity distribution chart, and a
+            key terms word cloud.
+        -   **Content Explorer:** A view of all text chunks, presented in enhanced
+            cards that display semantic labels, key terms, and icons for links or
+            structured data.
+        -   **Entity Explorer:** A master list of all unique entities (creatures,
+            locations, items). Selecting an entity shows all chunks that reference it.
+        -   **Asset Explorer:** The existing grid view for visual assets.
+    -   **Search State:** When a search is performed, this panel displays a list of
+        rich result cards, each showing a content snippet, source KB, and other
+        metadata.
 
 #### 4.3.3. Party Hub
 
@@ -421,7 +453,35 @@ A two-panel layout for all party and character management:
     modal displays the raw RAG context used for that specific generation.
 -   **Image Lightbox Modal**: A simple, reusable modal overlay that displays a
     full-resolution image when a thumbnail in the narrative view is clicked.
--   **Settings Panel:** A multi-pane modal for application configuration.
+
+#### 4.4.1. Settings Panel (Granular LLM Configuration)
+
+The main settings modal is a multi-pane interface for application configuration,
+featuring a powerful tab-based system for granular LLM control. It will contain
+four tabs: `General`, `Appearance`, `Game LLM`, and `Ingestion LLM`.
+
+-   **General Tab**: Contains application-level settings, such as the "Default
+    Preferred Ruleset" for the AI Character Creator.
+-   **Appearance Tab**: Contains all theming and language selection options.
+
+-   **Game LLM Tab**:
+    -   **Ollama Server URL**: A text input for the endpoint serving gameplay models.
+    -   **DM Model Group**:
+        -   **Model**: A text input with a datalist for model selection.
+        -   **Temperature**: A slider for tuning creativity.
+        -   **Context Window**: A dropdown with options (2K, 4K, 8K, 16K, 32K, 48K, 64K,
+            80K, 96K, 112K, 128K).
+    -   **Character Creation Model Group**:
+        -   Contains the same three controls (Model, Temperature, Context Window).
+
+-   **Ingestion LLM Tab**:
+    -   **Ollama Server URL**: A separate text input for the endpoint serving
+        ingestion and utility models.
+    -   **PDF Formatting Model Group**: Controls for Model, Temperature, Context Window.
+    -   **Classification & Labeling Model Group**: Controls for Model, Temperature,
+        Context Window.
+    -   **Vision Model Group**: Controls for Model, Temperature, Context Window.
+    -   **Embedding Model Group**: A single Model selection input.
 
 ---
 
@@ -454,9 +514,9 @@ root, a shared `core` library, and dedicated libraries for each application.
     ├── `app.py`: The Flask app factory (`create_app`) and service initialization.
     ├── `constants.py`: Stores DM persona presets and all internationalized prompts.
     ├── `api/`: Contains all Flask Blueprints for the REST API (e.g., `game.py`, `knowledge.py`).
-    ├── `services/`: Contains all backend business logic (`storage_service.py`, `rag_service.py`, etc.).
+    ├── `services/`: Contains all backend business logic (`storage_service.py`, `rag_service.py`, `config_service.py`, etc.).
     └── `frontend/`: All frontend code for the web UI, built with ES6 modules.
-        ├── `js/`: Main application logic (`main.js`), handlers, hubs, and wizards.
+        ├── `js/`: Main application logic (`main.js`), handlers, hubs (`SettingsManager.js`), and wizards.
         ├── `css/`: All stylesheets, including base styles and component modules.
         └── `locales/`: JSON files for internationalization (`en.json`, `es.json`, etc.).
 
@@ -1353,6 +1413,157 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The AI DM's responses become much more consistent and contextually
         aware within a single location. This also reduces latency, as expensive
         vector searches are performed less frequently during exploration scenes.
+
+### Phase 18: Settings Panel Enhancements
+
+-   **Milestone 60: Implement Smart Model Suggestions**
+    -   **Goal**: Improve the user experience in the settings panel by providing
+        intelligent, filtered suggestions for each model selection field.
+    -   **Description**: This enhancement refines the model selection UI. Instead of
+        showing a generic list of all available Ollama models for every input, the
+        backend will analyze the model names to infer their capabilities (e.g., vision,
+        embedding). The frontend will then use these hints to provide clearer and more
+        relevant suggestions to the user for each specific role.
+    -   **Key Tasks**:
+        1.  **Backend**: Modify the `GET /api/ollama/models` endpoint. It will now return a
+            list of JSON objects, each containing the model's `name` and a `type_hint`
+            (e.g., 'vision', 'embedding', 'text'). The logic will use common
+            substrings (like 'llava', 'embed') to generate these hints.
+        2.  **Frontend**: Refactor the `_populateModelSuggestions` method in
+            `SettingsManager.js` to handle the new API response structure.
+        3.  **Frontend**: Update the datalist population logic. For specialized inputs
+            like "Vision Model" or "Embedding Model", the suggestions will be filtered
+            to show only models with the relevant `type_hint`, making selection easier
+            and less error-prone.
+    -   **Outcome**: The settings panel becomes significantly more user-friendly. When a
+        user interacts with the "Vision Model" input, the dropdown suggestions are
+        filtered to relevant models like `llava:latest`, improving clarity and
+        configuration speed.
+
+### Phase 19 (Reworked): Granular LLM Configuration
+
+-   **Milestone 61: Backend Configuration Service Rework**
+    -   **Goal:** Rework the backend to handle the new granular, role-based LLM
+        configuration schema.
+    -   **Description**: This milestone refactors the `ConfigService` to handle new
+        `[OllamaGame]` and `[OllamaIngestion]` sections in `dmme.cfg`. The service must
+        correctly load the settings for each workload, including per-model tuning, and
+        provide the correct configuration for any given task.
+    -   **Key Tasks**:
+        1.  Modify `dmme_lib/services/config_service.py` to create, read, and write the
+            new `.ini` structure with `[OllamaGame]` and `[OllamaIngestion]` sections.
+        2.  Implement logic to store and parse a JSON object within each new section
+            containing the granular settings for each model role.
+        3.  Rework the `get_model_config(task_name)` method to retrieve the full
+            configuration (model, URL, temperature, context) for a specific task.
+        4.  Update services like `RAGService` and `IngestionService` to use this new
+            method for all LLM calls.
+    -   **Outcome**: The backend can serve and utilize distinct, fully-specified
+        configurations for every LLM task based on the new settings structure.
+
+-   **Milestone 62: Frontend Settings UI Rework**
+    -   **Goal**: Build the new tabbed user interface for the Granular LLM Configuration
+        Panel.
+    -   **Description**: This milestone implements the full user interface for the
+        settings modal, including the new "Game LLM" and "Ingestion LLM" tabs and all
+        their associated controls.
+    -   **Key Tasks**:
+        1.  Add two new tabs to the settings modal structure: "Game LLM" and "Ingestion
+            LLM", resulting in four total tabs (General, Appearance, Game LLM, Ingestion
+            LLM).
+        2.  Populate the "Game LLM" and "Ingestion LLM" tabs with all specified controls:
+            URL inputs, and groups for each model role containing a model selector, a
+            temperature slider, and a context window dropdown.
+    -   **Outcome**: A visually complete but non-interactive settings panel that
+        accurately reflects the new four-tab, role-based design.
+
+-   **Milestone 63: Frontend Logic and API Integration Rework**
+    -   **Goal**: Implement the client-side logic to make the new settings panel fully
+        interactive and persistent.
+    -   **Description**: This involves rewriting `SettingsManager.js` to handle the new UI,
+        manage the complex state object, and communicate with the updated backend API.
+    -   **Key Tasks**:
+        1.  In `SettingsManager.js`, update the tab switching logic to handle all four tabs.
+        2.  Rewrite the `saveSettings` and `loadSettings` methods to handle the deeply
+            nested JSON object required for the new granular configuration.
+    -   **Outcome**: A fully functional and interactive LLM settings panel where users can
+        granularly configure all model roles, with choices persisting across sessions.
+
+### Phase 20: Library Hub Overhaul
+
+-   **Milestone 64: Backend - Dashboard & Entity Endpoints**
+    -   **Goal**: Create the backend APIs to support the new Library Hub dashboard and
+        entity explorer views.
+    -   **Description**: These endpoints will provide the aggregated data needed for the
+        new high-level overview and entity Browse features, serving as the foundation
+        for the frontend overhaul.
+    -   **Key Tasks**:
+        -   Implement `GET /api/knowledge/dashboard/<kb_name>` to aggregate and return
+            stats like chunk counts, entity distribution, and key term frequencies.
+        -   Implement `GET /api/knowledge/entities/<kb_name>` to return a complete,
+            sorted list of all unique named entities in a KB.
+    -   **Outcome**: Two new, functional backend endpoints that provide the necessary
+        data to populate the enhanced Library Hub views.
+
+-   **Milestone 65: Backend - Global Search Endpoint**
+    -   **Goal**: Implement a powerful search API capable of querying across the entire
+        library or a specific collection.
+    -   **Description**: This creates the core of the new search utility, allowing the
+        frontend to perform flexible and precise vector searches against the knowledge
+        bases.
+    -   **Key Tasks**:
+        -   Create the `GET /api/search` endpoint with `q` (query) and `scope`
+            (`all` or `<kb_name>`) parameters.
+        -   Implement the service logic to perform a vector search against the
+            appropriate ChromaDB collection(s).
+        -   Structure the response to include rich metadata for each result.
+    -   **Outcome**: A functional, high-performance search endpoint that the frontend
+        can use to query all ingested knowledge.
+
+-   **Milestone 66: Frontend - UI Scaffolding & Dashboard**
+    -   **Goal**: Build the new multi-tab layout for the Library Hub Inspector and
+        implement the Dashboard view.
+    -   **Description**: This milestone creates the new frontend structure for the hub
+        and wires up the first new feature, providing users with an immediate high-level
+        overview of their knowledge bases.
+    -   **Key Tasks**:
+        -   Refactor `_library-hub.html` to include the new four-tab structure
+            (Dashboard, Content, Entities, Assets).
+        -   Build the UI components for the Dashboard tab (stats cards, charts).
+        -   Wire up the Dashboard to the `/api/knowledge/dashboard/` endpoint.
+    -   **Outcome**: The Library Hub features a new, modern tabbed layout, and the
+        Dashboard tab is fully functional, displaying aggregated statistics for any
+        selected KB.
+
+-   **Milestone 67: Frontend - Enhanced Content & Entity Explorers**
+    -   **Goal**: Implement the redesigned Content Explorer and the new Entity Explorer to
+        fully expose all ingested metadata.
+    -   **Description**: This milestone completes the data visualization aspect of the
+        overhaul, allowing users to deeply inspect the semantic structure of their
+        knowledge.
+    -   **Key Tasks**:
+        -   Redesign the "chunk card" in `LibraryHub.js` to clearly display semantic
+            labels, key terms, and icons for linked data.
+        -   Build the UI for the Entity Explorer tab, including the filterable list of
+            all unique entities.
+        -   Implement the logic to display all related chunks when an entity is selected.
+    -   **Outcome**: Users can browse KB content via enhanced, metadata-rich cards and
+        can explore a master list of all extracted entities to see their connections.
+
+-   **Milestone 68: Frontend - Search Utility Integration**
+    -   **Goal**: Implement the complete, user-facing global search functionality.
+    -   **Description**: This final milestone integrates the search backend with the UI,
+        delivering the new headline feature of the Library Hub overhaul.
+    -   **Key Tasks**:
+        -   Add the search bar and scope selector components to the Library Hub's left
+            panel UI.
+        -   Write the JavaScript logic in `LibraryHub.js` to call the `/api/search`
+            endpoint and handle the response.
+        -   Create the UI view for rendering the rich search results in the hub's right
+            panel.
+    -   **Outcome**: A fully functional search utility is integrated into the Library Hub,
+        allowing users to perform fast and accurate searches across their entire
+        ingested library.
 
 ---
 
