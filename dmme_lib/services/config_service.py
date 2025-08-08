@@ -72,23 +72,31 @@ class ConfigService:
         ingest_models = json.loads(settings["OllamaIngestion"]["models_json"])
 
         task_map = {
-            "dm": (settings["OllamaGame"]["url"], game_models["dm"]),
-            "char": (settings["OllamaGame"]["url"], game_models["char"]),
-            "format": (settings["OllamaIngestion"]["url"], ingest_models["format"]),
-            "classify": (settings["OllamaIngestion"]["url"], ingest_models["classify"]),
-            "vision": (settings["OllamaIngestion"]["url"], ingest_models["vision"]),
-            "embed": (settings["OllamaIngestion"]["url"], ingest_models["embed"]),
+            "dm": (settings["OllamaGame"]["url"], game_models.get("dm", {})),
+            "char": (settings["OllamaGame"]["url"], game_models.get("char", {})),
+            "format": (settings["OllamaIngestion"]["url"], ingest_models.get("format", {})),
+            "classify": (
+                settings["OllamaIngestion"]["url"],
+                ingest_models.get("classify", {}),
+            ),
+            "vision": (settings["OllamaIngestion"]["url"], ingest_models.get("vision", {})),
+            "embed": (settings["OllamaIngestion"]["url"], ingest_models.get("embed", {})),
         }
 
         if task_name not in task_map:
             raise ValueError(f"Unknown model task name: {task_name}")
 
         url, model_details = task_map[task_name]
+
+        # Embedding models have a simplified configuration and do not use temp/ctx.
+        if task_name == "embed":
+            return {"url": url, "model": model_details.get("model")}
+
         return {
             "url": url,
-            "model": model_details["model"],
-            "temperature": float(model_details["temp"]),
-            "context_window": int(model_details["ctx"]),
+            "model": model_details.get("model"),
+            "temperature": float(model_details.get("temp", 0.7)),
+            "context_window": int(model_details.get("ctx", 8192)),
         }
 
     def _config_to_dict(self, config: configparser.ConfigParser) -> dict:
