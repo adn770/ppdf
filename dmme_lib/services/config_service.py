@@ -1,6 +1,7 @@
 # --- dmme_lib/services/config_service.py ---
 import configparser
 import logging
+import json
 
 log = logging.getLogger("dmme.config")
 
@@ -11,20 +12,27 @@ class ConfigService:
     def __init__(self, config_path: str):
         self.config_path = config_path
         self.defaults = {
-            "Appearance": {
-                "theme": "high-contrast",
-                "language": "en",
-            },
-            "Ollama": {
+            "Appearance": {"theme": "high-contrast", "language": "en"},
+            "Game": {"default_ruleset": "", "default_setting": ""},
+            "OllamaGame": {
                 "url": "http://localhost:11434",
-                "dm_model": "llama3.1:latest",
-                "vision_model": "llava:latest",
-                "utility_model": "llama3.1:latest",
-                "embedding_model": "mxbai-embed-large",
+                "models_json": json.dumps(
+                    {
+                        "dm": {"model": "llama3.1:latest", "temp": 0.7, "ctx": 8192},
+                        "char": {"model": "llama3.1:latest", "temp": 0.8, "ctx": 8192},
+                    }
+                ),
             },
-            "Game": {
-                "default_ruleset": "",
-                "default_setting": "",
+            "OllamaIngestion": {
+                "url": "http://localhost:11434",
+                "models_json": json.dumps(
+                    {
+                        "format": {"model": "llama3.1:latest", "temp": 0.1, "ctx": 8192},
+                        "classify": {"model": "llama3.1:latest", "temp": 0.1, "ctx": 8192},
+                        "vision": {"model": "llava:latest", "temp": 0.2, "ctx": 4096},
+                        "embed": {"model": "mxbai-embed-large", "temp": 0.0, "ctx": 0},
+                    }
+                ),
             },
         }
 
@@ -54,6 +62,34 @@ class ConfigService:
             log.info("Settings successfully saved to %s", self.config_path)
         except IOError as e:
             log.error("Failed to write settings to %s: %s", self.config_path, e)
+
+    def get_model_config(self, task_name: str) -> dict:
+        """
+        Gets the full configuration for a specific model role.
+        """
+        settings = self.get_settings()
+        game_models = json.loads(settings["OllamaGame"]["models_json"])
+        ingest_models = json.loads(settings["OllamaIngestion"]["models_json"])
+
+        task_map = {
+            "dm": (settings["OllamaGame"]["url"], game_models["dm"]),
+            "char": (settings["OllamaGame"]["url"], game_models["char"]),
+            "format": (settings["OllamaIngestion"]["url"], ingest_models["format"]),
+            "classify": (settings["OllamaIngestion"]["url"], ingest_models["classify"]),
+            "vision": (settings["OllamaIngestion"]["url"], ingest_models["vision"]),
+            "embed": (settings["OllamaIngestion"]["url"], ingest_models["embed"]),
+        }
+
+        if task_name not in task_map:
+            raise ValueError(f"Unknown model task name: {task_name}")
+
+        url, model_details = task_map[task_name]
+        return {
+            "url": url,
+            "model": model_details["model"],
+            "temperature": float(model_details["temp"]),
+            "context_window": int(model_details["ctx"]),
+        }
 
     def _config_to_dict(self, config: configparser.ConfigParser) -> dict:
         """Converts a ConfigParser object to a nested dictionary."""

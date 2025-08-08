@@ -32,11 +32,6 @@ def create_app(config_overrides=None):
         CONFIG_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "dmme.cfg"),
         CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
         ASSETS_PATH=ASSETS_DIR,
-        OLLAMA_URL="http://localhost:11434",
-        DM_MODEL="llama3.1:latest",
-        VISION_MODEL="llava:latest",
-        UTILITY_MODEL="llama3.1:latest",
-        EMBEDDING_MODEL="mxbai-embed-large",
     )
 
     if config_overrides:
@@ -48,31 +43,19 @@ def create_app(config_overrides=None):
     try:
         app.storage = StorageService(app.config["DATABASE"])
         app.config_service = ConfigService(app.config["CONFIG_PATH"])
-        # Load managed settings and update app config
+        # Load managed settings into app.config for services that need it
         managed_settings = app.config_service.get_settings()
-        app.config.update(
-            OLLAMA_URL=managed_settings["Ollama"]["url"],
-            DM_MODEL=managed_settings["Ollama"]["dm_model"],
-            VISION_MODEL=managed_settings["Ollama"]["vision_model"],
-            UTILITY_MODEL=managed_settings["Ollama"]["utility_model"],
-            EMBEDDING_MODEL=managed_settings["Ollama"]["embedding_model"],
-        )
 
+        embed_config = app.config_service.get_model_config("embed")
         app.vector_store = VectorStoreService(
-            app.config["CHROMA_PATH"], app.config["OLLAMA_URL"], app.config["EMBEDDING_MODEL"]
+            app.config["CHROMA_PATH"], embed_config["url"], embed_config["model"]
         )
         app.ingestion_service = IngestionService(
-            vector_store=app.vector_store,
-            ollama_url=app.config["OLLAMA_URL"],
-            dm_model=app.config["DM_MODEL"],
-            vision_model=app.config["VISION_MODEL"],
-            utility_model=app.config["UTILITY_MODEL"],
+            vector_store=app.vector_store, config_service=app.config_service
         )
         app.rag_service = RAGService(
             vector_store=app.vector_store,
-            ollama_url=app.config["OLLAMA_URL"],
-            dm_model=app.config["DM_MODEL"],
-            utility_model=app.config["UTILITY_MODEL"],
+            config_service=app.config_service,
             assets_path=app.config["ASSETS_PATH"],
         )
         with app.app_context():

@@ -10,6 +10,7 @@ from io import BytesIO
 from flask import current_app
 from collections import defaultdict
 from .vector_store_service import VectorStoreService
+from .config_service import ConfigService
 from core.llm_utils import (
     get_semantic_label,
     query_text_llm,
@@ -28,16 +29,10 @@ class IngestionService:
     def __init__(
         self,
         vector_store: VectorStoreService,
-        ollama_url: str,
-        dm_model: str,
-        vision_model: str,
-        utility_model: str,
+        config_service: ConfigService,
     ):
         self.vector_store = vector_store
-        self.ollama_url = ollama_url
-        self.dm_model = dm_model
-        self.vision_model = vision_model
-        self.utility_model = utility_model
+        self.config_service = config_service
         log.info("IngestionService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
@@ -72,8 +67,13 @@ class IngestionService:
         log.debug("Parsing stat block with LLM...")
         prompt = self._get_prompt("STAT_BLOCK_PARSER", lang)
         try:
+            util_config = self.config_service.get_model_config("classify")
             response_data = query_text_llm(
-                prompt, chunk, self.ollama_url, self.utility_model, temperature=0.0
+                prompt,
+                chunk,
+                util_config["url"],
+                util_config["model"],
+                temperature=0.0,
             )
             response_str = response_data.get("response", "").strip()
             return json.loads(response_str)
@@ -105,6 +105,7 @@ class IngestionService:
         labeler_prompt_template = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         labeler_prompt = labeler_prompt_template.format(kickoff_cue="No hint provided.")
+        util_config = self.config_service.get_model_config("classify")
 
         processed_chunks = []
         chunk_id_counter = 0
@@ -126,7 +127,7 @@ class IngestionService:
                 log.info(msg)
                 yield msg
                 label = get_semantic_label(
-                    chunk, labeler_prompt, self.ollama_url, self.utility_model
+                    chunk, labeler_prompt, util_config["url"], util_config["model"]
                 )
                 key_terms = self._extract_key_terms_from_chunk(chunk, label)
 
@@ -205,10 +206,7 @@ class IngestionService:
                 log.debug("Could not find anchor for a paragraph in '%s'.", section.title)
 
         if not para_starts:
-            log.warning(
-                "Could not find any paragraph boundaries in '%s'. Yielding as one chunk.",
-                section.title,
-            )
+            log.warning("Could not find paragraph boundaries in '%s'.", section.title)
             yield formatted_text
             return
 
@@ -221,6 +219,7 @@ class IngestionService:
     def _link_entities_in_document(self, processed_chunks: list[dict], lang: str):
         """Post-processes chunks to extract and link named entities."""
         entity_extractor_prompt = self._get_prompt("ENTITY_EXTRACTOR", lang)
+        util_config = self.config_service.get_model_config("classify")
         entity_map = defaultdict(list)
 
         # Stage 1: Extract entities and structured stats from all chunks
@@ -242,8 +241,8 @@ class IngestionService:
                 response_data = query_text_llm(
                     entity_extractor_prompt,
                     json.dumps(key_terms),
-                    self.ollama_url,
-                    self.utility_model,
+                    util_config["url"],
+                    util_config["model"],
                     temperature=0.0,
                 )
                 response_str = response_data.get("response", "").strip()
@@ -308,23 +307,18 @@ class IngestionService:
         valid_llm_tags = valid_section_tags.union(
             {"preface", "table_of_contents", "legal", "credits", "index"}
         )
-
-        model_details = get_model_details(self.ollama_url, self.utility_model)
-        ctx = model_details.get("context_length", 4096)  # Default to 4k if lookup fails
+        util_config = self.config_service.get_model_config("classify")
+        model_details = get_model_details(util_config["url"], util_config["model"])
+        ctx = model_details.get("context_length", 4096)
         target_chars = int(ctx * 0.8)
-        msg = (
-            f"Classifying {len(sections)} sections using '{self.utility_model}' "
-            f"(context: {target_chars} chars)..."
-        )
+        msg = f"Classifying {len(sections)} sections using '{util_config['model']}'..."
         log.info(msg)
         yield msg
 
         for i, section in enumerate(sections):
             if not section.paragraphs:
                 continue
-
-            context_parts = []
-            current_chars = 0
+            context_parts, current_chars = [], 0
             if section.title:
                 title_text = f"Title: {section.title}\n\n"
                 context_parts.append(title_text)
@@ -338,13 +332,11 @@ class IngestionService:
                 current_chars += len(para_text) + 2
 
             representative_text = "\n\n".join(context_parts)
-            hint_tag = page_type_map.get(section.page_start, "content")
-
             response_data = query_text_llm(
                 classifier_prompt,
                 representative_text,
-                self.ollama_url,
-                self.utility_model,
+                util_config["url"],
+                util_config["model"],
                 temperature=0.1,
             )
             final_tag = response_data.get("response", "").strip()
@@ -379,14 +371,12 @@ class IngestionService:
         )
         labeler_prompt_template = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
-
-        processed_chunks = []
-        chunk_id = 0
+        processed_chunks, chunk_id = [], 0
+        fmt_config = self.config_service.get_model_config("format")
 
         for i, section in enumerate(content_sections):
             if not section.paragraphs or not any(p.lines for p in section.paragraphs):
                 continue
-
             msg = (
                 f"Reformatting section {i + 1}/{len(content_sections)} ('{section.title}')..."
             )
@@ -395,8 +385,8 @@ class IngestionService:
             stream = reformat_section_with_llm(
                 section=section,
                 system_prompt=PROMPT_STRICT,
-                ollama_url=self.ollama_url,
-                model=self.utility_model,
+                ollama_url=fmt_config["url"],
+                model=fmt_config["model"],
                 chunk_size=4000,
             )
             formatted_section_text = "".join(list(stream))
@@ -411,7 +401,7 @@ class IngestionService:
 
             for chunk in recovered_chunks:
                 label = get_semantic_label(
-                    chunk, final_labeler_prompt, self.ollama_url, self.utility_model
+                    chunk, final_labeler_prompt, util_config["url"], util_config["model"]
                 )
                 if label == "read_aloud_kickoff" and section.page_start > 10:
                     label = "read_aloud_text"
@@ -478,13 +468,14 @@ class IngestionService:
 
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
-
+        vision_config = self.config_service.get_model_config("vision")
+        util_config = self.config_service.get_model_config("classify")
         yield from process_pdf_images(
             pdf_path=pdf_path,
             output_dir=review_dir,
-            ollama_url=self.ollama_url,
-            vision_model=self.vision_model,
-            utility_model=self.utility_model,
+            ollama_url=vision_config["url"],
+            vision_model=vision_config["model"],
+            utility_model=util_config["model"],
             describe_prompt=describe_prompt,
             classify_prompt=classify_prompt,
             pages_str=pages_str,
@@ -610,17 +601,19 @@ class IngestionService:
 
         kb_metadata = self.vector_store.get_kb_metadata(kb_name)
         lang = kb_metadata.get("language", "en")
+        vision_config = self.config_service.get_model_config("vision")
+        util_config = self.config_service.get_model_config("classify")
 
         # Stage 1: Describe with vision model
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         description = query_multimodal_llm(
-            describe_prompt, image_bytes, self.ollama_url, self.vision_model
+            describe_prompt, image_bytes, vision_config["url"], vision_config["model"]
         )
 
         # Stage 2: Classify description with utility model
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
         classification_data = query_text_llm(
-            classify_prompt, description, self.ollama_url, self.utility_model, 0.1
+            classify_prompt, description, util_config["url"], util_config["model"], 0.1
         )
         classification = classification_data.get("response", "").strip()
 
@@ -688,14 +681,7 @@ class IngestionService:
 
         thumb_path = os.path.join(assets_dir, thumb_filename)
         image_path = os.path.join(assets_dir, image_filename)
-
-        log.info(
-            "Deleting asset files for %s: %s, %s, %s",
-            kb_name,
-            image_filename,
-            thumb_filename,
-            json_filename,
-        )
+        log.info("Deleting asset files for %s: %s", kb_name, image_filename)
 
         # Delete the files, ignoring errors if they're already gone
         for path in [image_path, thumb_path, json_path]:

@@ -5,6 +5,7 @@ import json
 import os
 from flask import current_app
 from .vector_store_service import VectorStoreService
+from .config_service import ConfigService
 from core.llm_utils import query_text_llm
 from dmme_lib.constants import PROMPT_REGISTRY
 
@@ -15,15 +16,11 @@ class RAGService:
     def __init__(
         self,
         vector_store: VectorStoreService,
-        ollama_url: str,
-        dm_model: str,
-        utility_model: str,
+        config_service: ConfigService,
         assets_path: str,
     ):
         self.vector_store = vector_store
-        self.ollama_url = ollama_url
-        self.dm_model = dm_model
-        self.utility_model = utility_model
+        self.config_service = config_service
         self.assets_path = assets_path
         self.context_cache = {}
         self.current_location = None
@@ -145,9 +142,14 @@ class RAGService:
             prompt_content = f"[PREVIOUS SESSION RECAP]\n{recap}\n\n{prompt_content}"
 
         kickoff_prompt = self._get_prompt("KICKOFF_ADVENTURE", lang)
-        session_model = game_config.get("llm_model", self.dm_model)
+        dm_config = self.config_service.get_model_config("dm")
         llm_stream = query_text_llm(
-            kickoff_prompt, prompt_content, self.ollama_url, session_model, stream=True
+            kickoff_prompt,
+            prompt_content,
+            dm_config["url"],
+            dm_config["model"],
+            stream=True,
+            temperature=dm_config["temperature"],
         )
         for chunk_data in llm_stream:
             yield {"type": "narrative_chunk", "content": chunk_data.get("response", "")}
@@ -184,36 +186,50 @@ class RAGService:
 
         # --- Stage 1: Expand player command into multiple search queries ---
         expander_prompt = self._get_prompt("QUERY_EXPANDER", lang)
-        expander_user_content = expander_prompt.format(history=history_str, command=player_command)
+        expander_user_content = expander_prompt.format(
+            history=history_str, command=player_command
+        )
         queries = [player_command]
         try:
+            util_config = self.config_service.get_model_config("classify")
             response_data = query_text_llm(
-                "", expander_user_content, self.ollama_url, self.utility_model, stream=False
+                "",
+                expander_user_content,
+                util_config["url"],
+                util_config["model"],
+                stream=False,
+                temperature=util_config["temperature"],
             )
             expanded_queries = json.loads(response_data.get("response", "[]"))
             if isinstance(expanded_queries, list):
                 queries.extend(expanded_queries)
             log.info("Expanded into %d search queries: %s", len(queries), queries)
         except (json.JSONDecodeError, TypeError) as e:
-            log.warning("Could not parse query expansion response, using original command. Error: %s", e)
+            log.warning("Could not parse query expansion response. Error: %s", e)
 
         # --- Stage 2: Execute all queries and check for cacheable location ---
         narrative_filter = {"label": {"$ne": "dm_knowledge"}}
 
         # We query for insight first to identify a primary location
-        insight_module_docs, insight_module_metas = execute_queries(module_kb, queries, n_results=3)
+        insight_module_docs, insight_module_metas = execute_queries(
+            module_kb, queries, n_results=3
+        )
         primary_location = self._find_primary_location(insight_module_metas)
 
         # --- Stage 3: Build Context (Cache or Live) ---
         if primary_location and primary_location["name"] == self.current_location:
-            log.info("CACHE HIT: Using cached context for location: '%s'", self.current_location)
+            log.info(
+                "CACHE HIT: Using cached context for location: '%s'", self.current_location
+            )
             cache_entry = self.context_cache[self.current_location]
             narrative_context_str = cache_entry["narrative_context"]
             insight_data = cache_entry["insight_data"]
         else:
             log.info("CACHE MISS: Building live context.")
             if primary_location:
-                log.info("New location detected: '%s'. Building context cache.", primary_location["name"])
+                log.info(
+                    "New location detected: '%s'. Building cache.", primary_location["name"]
+                )
                 self.current_location = primary_location["name"]
 
                 # Build player-safe context for the new location
@@ -223,9 +239,13 @@ class RAGService:
                 narrative_context_str = "\n\n---\n\n".join(narrative_docs)
 
                 # Build full insight context for the new location
-                full_docs, full_metas = self._get_full_section(module_kb, primary_location["meta"])
-                insight_data = [{"text": d, "label": m.get("label", "prose")} for d, m in zip(full_docs, full_metas)]
-
+                full_docs, full_metas = self._get_full_section(
+                    module_kb, primary_location["meta"]
+                )
+                insight_data = [
+                    {"text": d, "label": m.get("label", "prose")}
+                    for d, m in zip(full_docs, full_metas)
+                ]
                 # Store both in cache
                 self.context_cache[self.current_location] = {
                     "narrative_context": narrative_context_str,
@@ -234,8 +254,10 @@ class RAGService:
             else:
                 # No primary location, use multi-query results directly and clear cache
                 self.current_location = None
-                log.info("No primary location detected. Using merged query results.")
-                narrative_module_docs, _ = execute_queries(module_kb, queries, filter=narrative_filter)
+                log.info("No primary location. Using merged query results.")
+                narrative_module_docs, _ = execute_queries(
+                    module_kb, queries, filter=narrative_filter
+                )
                 rules_docs, _ = execute_queries(rules_kb, queries, n_results=3)
 
                 context_blocks = []
@@ -247,8 +269,13 @@ class RAGService:
 
                 # Rebuild insight data from live query
                 insight_rules_docs, _ = execute_queries(rules_kb, queries, n_results=3)
-                insight_data = [{"text": d, "label": m.get("label", "prose")} for d, m in zip(insight_module_docs, insight_module_metas)]
-                insight_data.extend([{"text": doc, "label": "mechanics"} for doc in insight_rules_docs])
+                insight_data = [
+                    {"text": d, "label": m.get("label", "prose")}
+                    for d, m in zip(insight_module_docs, insight_module_metas)
+                ]
+                insight_data.extend(
+                    [{"text": doc, "label": "mechanics"} for doc in insight_rules_docs]
+                )
 
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
@@ -259,9 +286,14 @@ class RAGService:
             f"[PLAYER ACTION]\n{player_command}"
         )
         game_master_prompt = self._get_prompt("GAME_MASTER", lang)
-        session_model = game_config.get("llm_model", self.dm_model)
+        dm_config = self.config_service.get_model_config("dm")
         llm_stream = query_text_llm(
-            game_master_prompt, user_prompt, self.ollama_url, session_model, stream=True
+            game_master_prompt,
+            user_prompt,
+            dm_config["url"],
+            dm_config["model"],
+            stream=True,
+            temperature=dm_config["temperature"],
         )
         full_narrative = ""
         for chunk_data in llm_stream:
@@ -277,7 +309,7 @@ class RAGService:
                     player_command, full_narrative, module_kb
                 )
             if show_ascii:
-                yield from self._find_and_yield_ascii_map(full_narrative, game_config)
+                yield from self._find_and_yield_ascii_map(full_narrative, lang)
 
     def _find_and_yield_cover_mosaic(self, kb_name: str):
         """Finds up to 4 cover images from the manifest and yields them as a mosaic."""
@@ -309,9 +341,7 @@ class RAGService:
                         )
 
                 if cover_assets_data:
-                    log.info(
-                        "Found %d cover images in manifest for mosaic.", len(cover_assets_data)
-                    )
+                    log.info("Found %d cover images for mosaic.", len(cover_assets_data))
                     yield {"type": "cover_mosaic", "assets": cover_assets_data}
         except Exception as e:
             log.error("Failed during cover mosaic manifest processing: %s", e)
@@ -343,14 +373,18 @@ class RAGService:
         except Exception as e:
             log.error("Failed during visual aid search: %s", e)
 
-    def _find_and_yield_ascii_map(self, narrative, game_config):
+    def _find_and_yield_ascii_map(self, narrative, lang: str):
         """Generates an ASCII map from a narrative and yields it."""
         log.debug("Generating ASCII map for narrative.")
         try:
-            lang = game_config.get("language", "en")
-            prompt = self._get_prompt("ASCII_MAP_GENERATOR", lang)
+            prompt = self._get_prompt("ASCII_MAP_GENERATOR", "en")
+            util_config = self.config_service.get_model_config("classify")
             response_data = query_text_llm(
-                prompt, narrative, self.ollama_url, self.utility_model
+                prompt,
+                narrative,
+                util_config["url"],
+                util_config["model"],
+                temperature=util_config["temperature"],
             )
             map_response = response_data.get("response", "").strip()
             if map_response:
@@ -366,9 +400,17 @@ class RAGService:
         """
         log.info("Generating journal recap in '%s'.", lang)
         prompt = self._get_prompt("SUMMARIZE_SESSION", lang)
-        response_data = query_text_llm(prompt, session_log, self.ollama_url, self.dm_model)
+        dm_config = self.config_service.get_model_config("dm")
+        response_data = query_text_llm(
+            prompt,
+            session_log,
+            dm_config["url"],
+            dm_config["model"],
+            temperature=dm_config["temperature"],
+        )
         summary = response_data.get("response", "").strip()
         return summary
+
 
 def execute_queries(kb_name, queries, filter=None, n_results=2):
     """Helper function to run a list of queries against a KB and return unique results."""
