@@ -4,6 +4,7 @@ import os
 import shutil
 import logging
 import uuid
+from collections import defaultdict, Counter
 from flask import Blueprint, request, jsonify, current_app, Response
 from ppdf_lib.api import analyze_pdf_structure
 
@@ -66,6 +67,69 @@ def explore_knowledge_base(kb_name):
     except Exception as e:
         log.error("Failed to explore knowledge base '%s': %s", kb_name, e, exc_info=True)
         return jsonify({"error": f"Could not explore knowledge base: {e}"}), 500
+
+
+@bp.route("/dashboard/<kb_name>", methods=["GET"])
+def get_dashboard_stats(kb_name):
+    """Retrieves aggregated statistics for a knowledge base dashboard."""
+    try:
+        results = current_app.vector_store.get_all_documents_and_metadata(kb_name)
+        metadatas = results.get("metadatas", [])
+        chunk_count = len(metadatas)
+        entity_distribution = defaultdict(int)
+        key_terms_counter = Counter()
+
+        for meta in metadatas:
+            try:
+                entities = json.loads(meta.get("entities", "{}"))
+                for entity_type in entities.values():
+                    entity_distribution[entity_type] += 1
+            except (json.JSONDecodeError, TypeError):
+                continue  # Skip malformed entity JSON
+
+            try:
+                key_terms = json.loads(meta.get("key_terms", "[]"))
+                key_terms_counter.update(key_terms)
+            except (json.JSONDecodeError, TypeError):
+                continue  # Skip malformed key_terms JSON
+
+        # Format for word cloud (e.g., [{ text: 'goblin', value: 15 }, ...])
+        key_terms_word_cloud = [
+            {"text": term, "value": count}
+            for term, count in key_terms_counter.most_common(100)
+        ]
+
+        return jsonify(
+            {
+                "chunk_count": chunk_count,
+                "entity_distribution": dict(entity_distribution),
+                "key_terms_word_cloud": key_terms_word_cloud,
+            }
+        )
+    except Exception as e:
+        log.error("Failed to get dashboard stats for '%s': %s", kb_name, e, exc_info=True)
+        return jsonify({"error": f"Could not retrieve dashboard data: {e}"}), 500
+
+
+@bp.route("/entities/<kb_name>", methods=["GET"])
+def get_entities(kb_name):
+    """Retrieves a list of all unique named entities in a knowledge base."""
+    try:
+        results = current_app.vector_store.get_all_documents_and_metadata(kb_name)
+        metadatas = results.get("metadatas", [])
+        all_entities = set()
+
+        for meta in metadatas:
+            try:
+                entities = json.loads(meta.get("entities", "{}"))
+                all_entities.update(entities.keys())
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+        return jsonify(sorted(list(all_entities)))
+    except Exception as e:
+        log.error("Failed to get entities for '%s': %s", kb_name, e, exc_info=True)
+        return jsonify({"error": f"Could not retrieve entity list: {e}"}), 500
 
 
 @bp.route("/<kb_name>", methods=["DELETE"])

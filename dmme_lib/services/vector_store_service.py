@@ -80,15 +80,24 @@ class VectorStoreService:
             log.error("Failed to query knowledge base '%s': %s", kb_name, e)
             raise
 
+    def get_all_documents_and_metadata(self, kb_name: str) -> dict:
+        """Retrieves all documents and their metadata from a knowledge base."""
+        try:
+            log.debug("Retrieving all documents and metadata from KB '%s'", kb_name)
+            collection = self.client.get_collection(name=kb_name)
+            if collection.count() == 0:
+                return {}
+            return collection.get(include=["metadatas", "documents"])
+        except Exception as e:
+            log.error("Failed to retrieve all from KB '%s': %s", kb_name, e)
+            raise
+
     def get_all_from_kb(self, kb_name: str) -> list[dict]:
         """Retrieves all documents and their metadata from a knowledge base."""
         try:
-            log.debug("Retrieving all documents from KB '%s'", kb_name)
-            collection = self.client.get_collection(name=kb_name)
-            if collection.count() == 0:
+            results = self.get_all_documents_and_metadata(kb_name)
+            if not results:
                 return []
-
-            results = collection.get(include=["metadatas", "documents"])
 
             # Combine documents and metadatas into a single list of dicts
             combined = [
@@ -99,6 +108,15 @@ class VectorStoreService:
         except Exception as e:
             log.error("Failed to retrieve all documents from KB '%s': %s", kb_name, e)
             raise
+
+    def get_kb_metadata(self, kb_name: str) -> dict:
+        """Retrieves the collection-level metadata for a knowledge base."""
+        try:
+            collection = self.client.get_collection(name=kb_name)
+            return collection.metadata or {}
+        except Exception as e:
+            log.error("Failed to retrieve metadata for KB '%s': %s", kb_name, e)
+            return {}
 
     def delete_kb(self, kb_name: str):
         """Deletes an entire knowledge base (collection)."""
