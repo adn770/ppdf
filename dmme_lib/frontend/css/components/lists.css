@@ -21,6 +21,11 @@
     overflow: hidden;
 }
 
+.item-list li .item-main-content {
+    flex-grow: 1;
+    min-width: 0; /* Prevents long text from breaking flex layout */
+}
+
 .item-list li:hover {
     background-color: #3e3e42;
 }
@@ -31,10 +36,17 @@
     font-weight: bold;
 }
 
-.item-list li .char-info { font-weight: bold; }
-.item-list li .char-details { font-size: 0.9em; color: #aaa; margin-left: 8px; }
+.item-list li .char-info {
+    font-weight: bold;
+}
 
-.item-list li:hover > .contextual-delete-btn.slide-in-right {
+.item-list li .char-details {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-left: 8px;
+}
+
+.item-list li:hover>.contextual-delete-btn.slide-in-right {
     opacity: 1;
     transform: translateY(-50%) translateX(0);
 }

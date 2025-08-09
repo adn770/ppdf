@@ -57,3 +57,24 @@
     min-width: 0;
     /* Prevents flexbox overflow */
 }
+
+/* --- Shared Split Panel Layout --- */
+.hub-left-panel-split {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.hub-left-panel-top,
+.hub-left-panel-bottom {
+    flex: 1;
+    min-height: 0;
+    /* Important for flexbox scrolling */
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+.hub-left-panel-top {
+    border-bottom: 1px solid var(--border-color);
+}

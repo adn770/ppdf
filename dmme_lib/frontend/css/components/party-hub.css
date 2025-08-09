@@ -3,25 +3,6 @@
     --subtle-border-color: #3a3a3a;
 }
 
-.hub-left-panel-split {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.hub-left-panel-top,
-.hub-left-panel-bottom {
-    flex: 1;
-    min-height: 0; /* Important for flexbox scrolling */
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-}
-
-.hub-left-panel-top {
-    border-bottom: 1px solid var(--border-color);
-}
-
 .hub-left-panel-bottom {
     padding-top: 16px;
 }
@@ -108,7 +89,8 @@
 }
 
 .primary-stat-value {
-    display: inline-block; /* Allows for padding and sizing */
+    display: inline-block;
+    /* Allows for padding and sizing */
     padding: 4px 8px;
     border-radius: 6px;
     transition: all 0.2s ease-in-out;
@@ -203,10 +185,12 @@
     gap: 4px;
 }
 
-/* fixed label | fixed score | fixed gap | fixed modifier */
+/* fixed label |
+ fixed score | fixed gap | fixed modifier */
 .ability-score-row { grid-template-columns: 12ch 5ch 3ch auto; }
 
-/* fixed label | fixed score */
+/* fixed label |
+ fixed score */
 .save-row { grid-template-columns: 16ch 5ch; }
 
 .ability-score-row label, .save-row label {
@@ -225,7 +209,8 @@
     border-bottom: 1px solid var(--subtle-border-color);
     background: transparent;
     border-radius: 0;
-    width: 100%; /* Fill the grid column */
+    width: 100%;
+    /* Fill the grid column */
     margin: 0;
 }
 .score-input::-webkit-outer-spin-button,
@@ -276,7 +261,8 @@
 
 .form-group-name { flex: 3; }
 .form-group-class { flex: 2; }
-.form-group-alignment { flex: 2; }
+.form-group-alignment { flex: 2;
+}
 
 .panel-header {
     position: relative;
@@ -346,7 +332,8 @@
 .drag-handle:hover { color: #ccc; }
 .delete-row-btn:hover { color: var(--danger-color); }
 .dragging { opacity: 0.4 !important; background: #333; }
-.drop-placeholder { height: 38px; background: var(--focus-color); border-radius: 4px; }
+.drop-placeholder { height: 38px;
+ background: var(--focus-color); border-radius: 4px; }
 
 .equipment-header-row {
     display: grid;
@@ -382,7 +369,8 @@
 #ammunition-grid > .ammunition-row,
 #inventory-grid > .inventory-row,
 #spell-list-grid > .spell-list-row {
-    display: contents; /* Children become direct grid items */
+    display: contents;
+    /* Children become direct grid items */
 }
 
 .equipment-header-row span {

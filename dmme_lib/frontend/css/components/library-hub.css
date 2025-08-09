@@ -54,17 +54,13 @@
 }
 
 /* --- Search Utility --- */
-.hub-search-utility {
+.hub-search-toolbar {
     padding: 16px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-
-.hub-search-utility input,
-.hub-search-utility select {
-    width: 100%;
+    gap: 12px;
+    background-color: var(--bg-color);
 }
 
 /* --- Redesigned Chunk Card --- */
@@ -137,6 +133,13 @@
     gap: 8px;
     font-size: 1.2em;
 }
+
+.metadata-icons [data-structured-stats] {
+    cursor: help;
+    font-weight: bold;
+    font-family: var(--font-family-mono);
+}
+
 
 /* --- Search Results --- */
 .search-result-card .text-chunk-header {
@@ -306,11 +309,10 @@
     cursor: default;
 }
 
-/* --- New Entity Explorer Styles --- */
+/* --- Refined Entity Explorer Styles --- */
 .entity-explorer-container {
     display: flex;
     height: 100%;
-    gap: 24px;
 }
 
 .entity-list-panel {
@@ -318,23 +320,61 @@
     max-width: 300px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
     min-width: 0;
+    border-right: 1px solid var(--border-color);
+    padding-right: 24px;
+}
+
+.entity-list-panel h4 {
+    margin: 0 0 16px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#entity-list-kb-name {
+    color: var(--accent-color);
+    font-style: italic;
 }
 
 .entity-list-panel input {
     flex-shrink: 0;
+    margin-bottom: 16px;
 }
 
 .entity-list-panel .item-list {
     flex-grow: 1;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 8px;
 }
 
 .entity-details-panel {
     flex: 3;
     min-width: 0;
     overflow-y: auto;
+    padding-left: 24px;
+}
+
+/* --- Data Tooltip --- */
+.data-tooltip {
+    position: fixed;
+    display: none;
+    background-color: var(--bg-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--font-family-mono);
+    font-size: 0.8em;
+    max-width: 450px;
+    max-height: 400px;
+    overflow: auto;
+    z-index: 1010;
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.data-tooltip pre {
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
 }

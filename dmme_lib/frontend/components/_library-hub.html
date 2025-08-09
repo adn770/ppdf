@@ -1,17 +1,28 @@
 <div id="library-view" class="view-container">
+    <div id="data-tooltip" class="data-tooltip" style="display: none;"><pre></pre></div>
     <div class="hub-container">
-        <div class="hub-left-panel">
-            <div id="library-search-utility" class="hub-search-utility">
-                <input type="search" id="library-search-input"
-                    placeholder="Search all knowledge...">
-                <select id="library-search-scope">
-                    <option value="all">All Knowledge</option>
-                </select>
+        <div class="hub-left-panel hub-left-panel-split">
+            <div class="hub-left-panel-top">
+                <div id="library-search-utility" class="hub-search-toolbar">
+                    <input type="search" id="library-search-input"
+                        placeholder="Search all knowledge...">
+                    <select id="library-search-scope">
+                        <option value="all">All Knowledge</option>
+                    </select>
+                </div>
+                <div class="panel-header">
+                    <h4 data-i18n-key="kbMgmtTitle">Knowledge Bases</h4>
+                </div>
+                <ul id="kb-list-hub" class="item-list hub-item-list"></ul>
             </div>
-            <div class="panel-header">
-                <h4 data-i18n-key="kbMgmtTitle">Knowledge Bases</h4>
+            <div class="hub-left-panel-bottom">
+                <div class="panel-header">
+                    <h4 id="entity-list-header">Entities in <span
+                            id="entity-list-kb-name"></span></h4>
+                </div>
+                <input type="search" id="entity-filter-input" placeholder="Filter entities...">
+                <ul id="entity-master-list" class="item-list"></ul>
             </div>
-            <ul id="kb-list-hub" class="item-list hub-item-list"></ul>
         </div>
         <div id="library-inspector" class="hub-right-panel">
             <div id="library-inspector-placeholder" class="placeholder-pane">
@@ -50,21 +61,11 @@
                         <div class="hub-pane-wrapper" id="content-explorer-list"></div>
                     </div>
                     <div id="library-entities-view" class="hub-tab-pane">
-                        <div class="entity-explorer-container">
-                            <div class="entity-list-panel">
-                                <input type="search" id="entity-filter-input"
-                                    placeholder="Filter entities...">
-                                <ul id="entity-master-list" class="item-list"></ul>
-                            </div>
-                            <div id="entity-details-panel" class="entity-details-panel">
-                                <div id="entity-details-placeholder"
-                                    class="placeholder-pane">
-                                    <p>Select an entity to see related content.</p>
-                                </div>
-                                <div id="entity-related-chunks"
-                                    class="hub-pane-wrapper" style="display: none;">
-                                </div>
-                            </div>
+                        <div id="entity-details-placeholder" class="placeholder-pane">
+                            <p>Select an entity to see related content.</p>
+                        </div>
+                        <div id="entity-related-chunks" class="hub-pane-wrapper"
+                            style="display: none;">
                         </div>
                     </div>
                     <div id="library-assets-view" class="hub-tab-pane">

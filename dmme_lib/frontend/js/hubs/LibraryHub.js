@@ -8,12 +8,14 @@ export class LibraryHub {
         this.lightbox = lightboxInstance;
         this.isInitialized = false;
         this.selectedKb = null;
+        this.selectedEntity = null;
         this.kbDataCache = {};
         this.searchDebounceTimer = null;
     }
 
     _setupElements() {
         this.view = document.getElementById('library-view');
+        this.tooltip = document.getElementById('data-tooltip');
         this.listEl = document.getElementById('kb-list-hub');
         this.inspector = document.getElementById('library-inspector');
         this.placeholder = document.getElementById('library-inspector-placeholder');
@@ -30,9 +32,10 @@ export class LibraryHub {
         this.contentListEl = document.getElementById('content-explorer-list');
 
         this.entitiesView = document.getElementById('library-entities-view');
+        this.entityListHeader = document.getElementById('entity-list-header');
+        this.entityListKbNameEl = document.getElementById('entity-list-kb-name');
         this.entityFilterInput = document.getElementById('entity-filter-input');
         this.entityMasterList = document.getElementById('entity-master-list');
-        this.entityDetailsPanel = document.getElementById('entity-details-panel');
         this.entityDetailsPlaceholder = document.getElementById('entity-details-placeholder');
         this.entityRelatedChunks = document.getElementById('entity-related-chunks');
 
@@ -50,7 +53,7 @@ export class LibraryHub {
         this._setupElements();
         this.loadKnowledgeBases();
         this.tabs.forEach(tab => {
-            tab.addEventListener('click', () => this.switchTab(tab.dataset.pane));
+            tab.addEventListener('click', (e) => this._handleTabClick(e));
         });
         this._addDragDropListeners();
         this.listEl.addEventListener('click', (e) => this._handleKbListInteraction(e));
@@ -59,8 +62,71 @@ export class LibraryHub {
         this.entityMasterList.addEventListener('click', (e) => this._handleEntitySelection(e));
         this.searchInput.addEventListener('input', () => this._debounceSearch());
         this.searchScope.addEventListener('change', () => this._performSearch());
+        this._addTooltipListeners();
         this.isInitialized = true;
     }
+
+    _addTooltipListeners() {
+        const inspectorContent = this.inspector.querySelector('.hub-tab-content');
+        const searchContent = this.searchResultsView;
+
+        [inspectorContent, searchContent].forEach(el => {
+            el.addEventListener('mouseover', (e) => this._handleTooltipShow(e));
+            el.addEventListener('mouseout', (e) => this._handleTooltipHide(e));
+            el.addEventListener('mousemove', (e) => this._updateTooltipPosition(e));
+        });
+    }
+
+    _handleTooltipShow(event) {
+        const target = event.target.closest('[data-structured-stats]');
+        if (!target || !this.tooltip) return;
+
+        try {
+            const statsRaw = target.dataset.structuredStats;
+            const statsObj = JSON.parse(statsRaw);
+            const formattedJson = JSON.stringify(statsObj, null, 2);
+            this.tooltip.querySelector('pre').textContent = formattedJson;
+            this.tooltip.style.display = 'block';
+            this._updateTooltipPosition(event); // Position immediately on show
+        } catch (e) {
+            console.error("Failed to parse structured stats JSON:", e);
+            this.tooltip.querySelector('pre').textContent = "Error: Invalid JSON data.";
+            this.tooltip.style.display = 'block';
+        }
+    }
+
+    _handleTooltipHide(event) {
+        const target = event.target.closest('[data-structured-stats]');
+        if (target && this.tooltip) {
+            this.tooltip.style.display = 'none';
+        }
+    }
+
+    _updateTooltipPosition(event) {
+        if (!this.tooltip || this.tooltip.style.display !== 'block') return;
+
+        const offsetX = 15;
+        const offsetY = 15;
+        const tooltipRect = this.tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let top = event.clientY + offsetY;
+        let left = event.clientX + offsetX;
+
+        if (left + tooltipRect.width > viewportWidth) {
+            left = event.clientX - tooltipRect.width - offsetX;
+        }
+        if (top + tooltipRect.height > viewportHeight) {
+            top = event.clientY - tooltipRect.height - offsetY;
+        }
+        if (left < 0) left = offsetX;
+        if (top < 0) top = offsetY;
+
+        this.tooltip.style.left = `${left}px`;
+        this.tooltip.style.top = `${top}px`;
+    }
+
 
     _debounceSearch() {
         clearTimeout(this.searchDebounceTimer);
@@ -179,7 +245,11 @@ export class LibraryHub {
     }
 
     async showKbDetails(kb) {
+        if (this.selectedKb?.name === kb.name && !this.searchInput.value.trim()) return;
+
         this.selectedKb = kb;
+        this.selectedEntity = null;
+        this.kbDataCache[kb.name] = {};
         this._updateSearchScope();
 
         if (this.searchInput.value.trim()) {
@@ -192,8 +262,9 @@ export class LibraryHub {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
 
-        this.kbDataCache[kb.name] = {};
         this.switchTab('dashboard');
+        this.renderDashboard();
+        this._loadAndRenderEntityList();
     }
 
     _updateSearchScope() {
@@ -213,6 +284,7 @@ export class LibraryHub {
         this.wordCloudEl.innerHTML = '<div class="spinner"></div>';
         try {
             const data = await apiCall(`/api/knowledge/dashboard/${this.selectedKb.name}`);
+            this.kbDataCache[this.selectedKb.name].dashboard = data;
             this.chunkCountEl.textContent = data.chunk_count.toLocaleString();
             this._renderEntityChart(data.entity_distribution);
             this._renderWordCloud(data.key_terms_word_cloud);
@@ -261,7 +333,7 @@ export class LibraryHub {
             const span = document.createElement('span');
             span.textContent = term.text;
             const weight = (term.value - min) / (max - min || 1);
-            const fontSize = 0.8 + weight * 1.2; // From 0.8rem to 2.0rem
+            const fontSize = 0.8 + weight * 1.2;
             span.style.fontSize = `${fontSize}rem`;
             this.wordCloudEl.appendChild(span);
         });
@@ -271,6 +343,7 @@ export class LibraryHub {
         const wrapper = this.contentListEl;
         wrapper.innerHTML = '<div class="spinner"></div>';
         const data = await this._getKbExploreData();
+        this.kbDataCache[this.selectedKb.name].content = data.documents;
         wrapper.innerHTML = '';
 
         if (!data.documents || data.documents.length === 0) {
@@ -282,11 +355,11 @@ export class LibraryHub {
         });
     }
 
-    async renderEntityView() {
+    async _loadAndRenderEntityList() {
+        this.entityListKbNameEl.textContent = `'${this.selectedKb.name}'`;
+        this.entityMasterList.innerHTML = '<div class="spinner"></div>';
         const entities = await this._getKbEntityData();
         this.entityMasterList.innerHTML = '';
-        this.entityDetailsPlaceholder.style.display = 'flex';
-        this.entityRelatedChunks.style.display = 'none';
         this.entityFilterInput.value = '';
 
         if (!entities || entities.length === 0) {
@@ -305,6 +378,7 @@ export class LibraryHub {
     _filterEntityList() {
         const filter = this.entityFilterInput.value.toLowerCase();
         this.entityMasterList.querySelectorAll('li').forEach(li => {
+            if (!li.dataset.entityName) return;
             const name = li.dataset.entityName.toLowerCase();
             li.style.display = name.includes(filter) ? '' : 'none';
         });
@@ -314,26 +388,26 @@ export class LibraryHub {
         const li = event.target.closest('li[data-entity-name]');
         if (!li) return;
 
+        this.selectedEntity = li.dataset.entityName;
         this.entityMasterList.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
         li.classList.add('selected');
 
-        const entityName = li.dataset.entityName;
+        this.entityRelatedChunks.innerHTML = '<div class="spinner"></div>';
+        this.switchTab('entities');
+
         const data = await this._getKbExploreData();
         if (!data.documents) return;
 
         const relatedChunks = data.documents.filter(doc => {
             try {
                 const entities = JSON.parse(doc.entities || '{}');
-                return Object.keys(entities).includes(entityName);
+                return Object.keys(entities).includes(this.selectedEntity);
             } catch (e) { return false; }
         });
 
-        this.entityDetailsPlaceholder.style.display = 'none';
-        this.entityRelatedChunks.style.display = 'flex';
         this.entityRelatedChunks.innerHTML = '';
-
         if (relatedChunks.length === 0) {
-            this.entityRelatedChunks.innerHTML = `<p>No chunks found for "${entityName}".</p>`;
+            this.entityRelatedChunks.innerHTML = `<p>No chunks found for "${this.selectedEntity}".</p>`;
         } else {
             relatedChunks.forEach(doc => {
                 this.entityRelatedChunks.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
@@ -347,12 +421,15 @@ export class LibraryHub {
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
-        const hasStats = doc.structured_stats && Object.keys(JSON.parse(doc.structured_stats)).length > 0;
+        const statsStr = doc.structured_stats || '{}';
+        const hasStats = statsStr && Object.keys(JSON.parse(statsStr || '{}')).length > 0;
 
         const sourceInfo = isSearchResult
             ? `<span class="search-result-source">${result.kb_name}</span>
                <span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>`
-            : `<span>${doc.source_file} (p. ${doc.page_start})</span>`;
+            : `<span>${doc.source_file} (p. ${doc.page_start || 'N/A'})</span>`;
+
+        const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
 
         return `
         <div class="text-chunk-card ${isSearchResult ? 'search-result-card' : ''}">
@@ -365,7 +442,7 @@ export class LibraryHub {
                 <div class="key-terms-list">${keyTermsHTML}</div>
                 <div class="metadata-icons">
                     ${hasLinks ? '<span title="Has linked content">🔗</span>' : ''}
-                    ${hasStats ? '<span title="Has structured data">📊</span>' : ''}
+                    ${hasStats ? `<span title="Show structured data" ${statsAttr}>{}</span>` : ''}
                 </div>
             </div>
         </div>`;
@@ -374,6 +451,7 @@ export class LibraryHub {
     async renderAssetsView() {
         this.assetGrid.innerHTML = '<div class="spinner"></div>';
         const data = await this._getKbExploreData();
+        this.kbDataCache[this.selectedKb.name].assets = data.assets;
         this.assetGrid.innerHTML = '';
         if (!data.assets || data.assets.length === 0) {
             this.assetGrid.innerHTML = `<p>${this.app.i18n.t('noAssetsFound')}</p>`;
@@ -383,17 +461,19 @@ export class LibraryHub {
     }
 
     async _getKbExploreData() {
-        if (!this.kbDataCache[this.selectedKb.name]?.explore) {
-            this.kbDataCache[this.selectedKb.name].explore = await apiCall(`/api/knowledge/explore/${this.selectedKb.name}`);
+        const cacheKey = this.selectedKb.name;
+        if (!this.kbDataCache[cacheKey]?.explore) {
+            this.kbDataCache[cacheKey].explore = await apiCall(`/api/knowledge/explore/${cacheKey}`);
         }
-        return this.kbDataCache[this.selectedKb.name].explore;
+        return this.kbDataCache[cacheKey].explore;
     }
 
     async _getKbEntityData() {
-        if (!this.kbDataCache[this.selectedKb.name]?.entities) {
-            this.kbDataCache[this.selectedKb.name].entities = await apiCall(`/api/knowledge/entities/${this.selectedKb.name}`);
+        const cacheKey = this.selectedKb.name;
+        if (!this.kbDataCache[cacheKey]?.entities) {
+            this.kbDataCache[cacheKey].entities = await apiCall(`/api/knowledge/entities/${cacheKey}`);
         }
-        return this.kbDataCache[this.selectedKb.name].entities;
+        return this.kbDataCache[cacheKey].entities;
     }
 
     _addAssetToGrid(asset, isNew = true) {
@@ -485,6 +565,8 @@ export class LibraryHub {
                     this.content.style.display = 'none';
                     this.searchResultsView.style.display = 'none';
                     this.selectedKb = null;
+                    this.entityMasterList.innerHTML = '';
+                    this.entityListKbNameEl.textContent = '';
                     this._updateSearchScope();
                 }
                 await this.loadKnowledgeBases();
@@ -511,7 +593,30 @@ export class LibraryHub {
         }
     }
 
+    _handleTabClick(event) {
+        const paneName = event.target.dataset.pane;
+        this.switchTab(paneName);
+
+        if (this.selectedKb) {
+            const kbName = this.selectedKb.name;
+            const cache = this.kbDataCache[kbName];
+
+            if (paneName === 'content' && !cache.content) {
+                this.renderContentView();
+            } else if (paneName === 'assets' && !cache.assets) {
+                this.renderAssetsView();
+            }
+        }
+    }
+
     switchTab(paneName) {
+        if (this.searchInput.value.trim()) {
+            this._showSearchResults();
+            return;
+        } else {
+            this._showInspector();
+        }
+
         this.tabs.forEach(tab => {
             tab.classList.toggle('active', tab.dataset.pane === paneName);
         });
@@ -520,11 +625,14 @@ export class LibraryHub {
             pane.classList.toggle('active', pane.id === paneId);
         });
 
-        if (this.selectedKb) {
-            if (paneName === 'dashboard') this.renderDashboard();
-            if (paneName === 'content') this.renderContentView();
-            if (paneName === 'entities') this.renderEntityView();
-            if (paneName === 'assets') this.renderAssetsView();
+        if (this.selectedKb && paneName === 'entities') {
+            if (this.selectedEntity) {
+                this.entityDetailsPlaceholder.style.display = 'none';
+                this.entityRelatedChunks.style.display = 'flex';
+            } else {
+                this.entityDetailsPlaceholder.style.display = 'flex';
+                this.entityRelatedChunks.style.display = 'none';
+            }
         }
     }
 }
