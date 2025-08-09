@@ -1628,6 +1628,65 @@ This implementation plan details the incremental steps to build the `dmme` appli
         presenting an interactive, graphical visualization of the selected
         document's sections and their entity-based relationships.
 
+### Phase 22: Advanced Game & Ingestion Configuration
+
+-   **Milestone 72: Implement Per-Session Configuration UI**
+    -   **Goal**: Allow users to override the default DM Model and Language for each new game.
+    -   **Description**: This enhances the New Game Wizard with new controls, providing more
+        flexibility for starting games without changing global settings.
+    -   **Key Tasks**:
+        -   Add "DM Model" and "Language" dropdowns to the New Game Wizard modal HTML.
+        -   Update `NewGameWizard.js` to populate the new dropdowns (models from the
+            Ollama API, languages from the i18n config).
+        -   Modify the `startGame` method in `NewGameWizard.js` to include the selected
+            `llm_model` and `language` in the `gameConfig` object.
+    -   **Outcome**: The New Game Wizard displays and captures session-specific overrides
+        for the DM model and language.
+
+-   **Milestone 73: Implement Backend Logic for Session Overrides**
+    -   **Goal**: Make the backend RAG service respect the new per-session overrides.
+    -   **Description**: This connects the new frontend options to the backend logic,
+        ensuring the user's choices for a specific session are honored by the LLM.
+    -   **Key Tasks**:
+        -   In `dmme_lib/services/rag_service.py`, modify the `generate_response` and
+            `generate_kickoff_narration` methods.
+        -   The methods will now first check the incoming `game_config` object for
+            `llm_model` and `language` keys.
+        -   If present, these values will be used; otherwise, the service will fall back
+            to the global settings from the `ConfigService`.
+        -   Update `GameplayHandler.js` to display the session-specific model if set.
+    -   **Outcome**: The backend correctly uses the overridden DM model and language for
+        gameplay when they are provided in the game configuration.
+
+-   **Milestone 74: Implement Structural Table Secrecy**
+    -   **Goal**: Automatically classify all content from structurally-identified PDF
+        tables as `dm_knowledge`.
+    -   **Description**: This enhances the ingestion pipeline to be more secure by
+        default. It leverages the structural analysis from `ppdf_lib` to enforce a
+        rule that table content is for the DM's eyes only.
+    -   **Key Tasks**:
+        -   Modify the `ingest_pdf_text` method in `dmme_lib/services/ingestion_service.py`.
+        -   Before sending chunks to the semantic labeler, check if their source
+            `Paragraph` object has the `is_table` flag set to `True`.
+        -   If it does, directly assign the label `dm_knowledge` to the chunk and skip
+            the LLM-based labeling for it.
+    -   **Outcome**: All table content from ingested PDFs is reliably and automatically
+        classified as `dm_knowledge` without requiring an LLM call.
+
+-   **Milestone 75: Implement Semantic Stat Block Secrecy**
+    -   **Goal**: Automatically re-classify any content identified as a stat block to be
+        `dm_knowledge`.
+    -   **Description**: This adds a second layer of security to the ingestion pipeline.
+        It uses the LLM to identify stat blocks semantically, then applies a hard rule
+        to ensure they are treated as secret information.
+    -   **Key Tasks**:
+        -   Modify the ingestion logic in `dmme_lib/services/ingestion_service.py` for
+            both PDF and Markdown files.
+        -   After a chunk receives its label from the LLM, add a check: if the returned
+            label is `stat_block`, overwrite it with `dm_knowledge`.
+    -   **Outcome**: All chunks identified as stat blocks by the LLM are correctly
+        re-classified as `dm_knowledge` for RAG security purposes.
+
 ---
 
 ## 7. Potential Future Extensions
