@@ -173,51 +173,6 @@ class IngestionService:
         log.info(msg)
         yield msg
 
-    def _chunk_reformatted_section(self, section: Section, formatted_text: str):
-        """
-        Applies heuristics to chunk a reformatted section into contextually-rich documents.
-        """
-        # Heuristic 1: Ingest small sections as a single chunk.
-        if len(formatted_text) < 1500:
-            log.debug("Applying 'small section' heuristic to '%s'.", section.title)
-            yield formatted_text
-            return
-
-        # Heuristic 2: Ingest sections with only a table as a single chunk.
-        if len(section.paragraphs) == 1 and section.paragraphs[0].is_table:
-            log.debug("Applying 'table-only section' heuristic to '%s'.", section.title)
-            yield formatted_text
-            return
-
-        # Heuristic 3: Chunk based on original paragraph boundaries.
-        log.debug("Applying 'paragraph boundary' chunking to '%s'.", section.title)
-        para_starts = []
-        search_offset = 0
-        for para in section.paragraphs:
-            if not para.lines or not para.lines[0].strip():
-                continue
-
-            # Use the start of the first line (first 30 chars) as a unique anchor.
-            anchor = para.lines[0].strip()[:30]
-            try:
-                # Find this anchor in the formatted text.
-                pos = formatted_text.index(anchor, search_offset)
-                para_starts.append(pos)
-                search_offset = pos + 1
-            except ValueError:
-                log.debug("Could not find anchor for a paragraph in '%s'.", section.title)
-
-        if not para_starts:
-            log.warning("Could not find paragraph boundaries in '%s'.", section.title)
-            yield formatted_text
-            return
-
-        for i, start_index in enumerate(para_starts):
-            end_index = para_starts[i + 1] if i + 1 < len(para_starts) else len(formatted_text)
-            chunk = formatted_text[start_index:end_index].strip()
-            if chunk:
-                yield chunk
-
     def _link_entities_in_document(self, processed_chunks: list[dict], lang: str):
         """Post-processes chunks to extract and link named entities."""
         entity_extractor_prompt = self._get_prompt("ENTITY_EXTRACTOR", lang)
@@ -374,53 +329,57 @@ class IngestionService:
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         processed_chunks, chunk_id = [], 0
         fmt_config = self.config_service.get_model_config("format")
+        final_labeler_prompt = labeler_prompt_template.format(
+            kickoff_cue=kickoff_cue or "No hint provided."
+        )
 
         for i, section in enumerate(content_sections):
-            if not section.paragraphs or not any(p.lines for p in section.paragraphs):
+            if not section.paragraphs:
                 continue
-            msg = (
-                f"Reformatting section {i + 1}/{len(content_sections)} ('{section.title}')..."
-            )
+            msg = f"Processing section {i + 1}/{len(content_sections)} ('{section.title}')..."
             log.info(msg)
             yield msg
-            stream = reformat_section_with_llm(
-                section=section,
-                system_prompt=PROMPT_STRICT,
-                ollama_url=fmt_config["url"],
-                model=fmt_config["model"],
-                chunk_size=4000,
-            )
-            formatted_section_text = "".join(list(stream))
 
-            msg = "  -> Chunking and labeling reformatted text..."
-            log.info(msg)
-            yield msg
-            recovered_chunks = self._chunk_reformatted_section(section, formatted_section_text)
-            final_labeler_prompt = labeler_prompt_template.format(
-                kickoff_cue=kickoff_cue or "No hint provided."
-            )
-
-            for chunk in recovered_chunks:
-                label = get_semantic_label(
-                    chunk, final_labeler_prompt, util_config["url"], util_config["model"]
+            for para in section.paragraphs:
+                # Create a temporary section with just this paragraph for reformatting
+                temp_section = Section()
+                temp_section.add_paragraph(para)
+                stream = reformat_section_with_llm(
+                    section=temp_section,
+                    system_prompt=PROMPT_STRICT,
+                    ollama_url=fmt_config["url"],
+                    model=fmt_config["model"],
+                    chunk_size=4000,
                 )
-                if label == "read_aloud_kickoff" and section.page_start > 10:
-                    label = "read_aloud_text"
+                chunk = "".join(list(stream))
+                if not chunk.strip():
+                    continue
+
+                label = ""
+                # Structural check for tables
+                if para.is_table:
+                    label = "dm_knowledge"
+                    log.debug("Applying structural rule: Labeled table as dm_knowledge.")
+                else:
+                    # Semantic check for other content
+                    label = get_semantic_label(
+                        chunk, final_labeler_prompt, util_config["url"], util_config["model"]
+                    )
+                    if label == "read_aloud_kickoff" and section.page_start > 10:
+                        label = "read_aloud_text"
 
                 key_terms = self._extract_key_terms_from_chunk(chunk, label)
-                processed_chunks.append(
-                    {
-                        "text": chunk,
-                        "metadata": {
-                            "source_file": metadata.get("filename", "unknown.pdf"),
-                            "section_title": section.title or "Untitled",
-                            "page_start": section.page_start,
-                            "chunk_id": chunk_id,
-                            "label": label if label else "prose",
-                            "key_terms": json.dumps(key_terms),
-                        },
-                    }
-                )
+                processed_chunks.append({
+                    "text": chunk,
+                    "metadata": {
+                        "source_file": metadata.get("filename", "unknown.pdf"),
+                        "section_title": section.title or "Untitled",
+                        "page_start": section.page_start,
+                        "chunk_id": chunk_id,
+                        "label": label if label else "prose",
+                        "key_terms": json.dumps(key_terms),
+                    },
+                })
                 chunk_id += 1
 
         # --- Post-processing: Entity Extraction and Linking ---
