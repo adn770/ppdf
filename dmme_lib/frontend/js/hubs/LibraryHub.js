@@ -29,6 +29,9 @@ export class LibraryHub {
         this.wordCloudEl = document.getElementById('dashboard-word-cloud');
 
         this.contentView = document.getElementById('library-content-view');
+        this.contentFilterStatus = document.getElementById('content-filter-status');
+        this.filterStatusTerm = document.getElementById('filter-status-term');
+        this.clearContentFilterBtn = document.getElementById('clear-content-filter-btn');
         this.contentListEl = document.getElementById('content-explorer-list');
 
         this.entitiesView = document.getElementById('library-entities-view');
@@ -63,6 +66,10 @@ export class LibraryHub {
         this.searchInput.addEventListener('input', () => this._debounceSearch());
         this.searchScope.addEventListener('change', () => this._performSearch());
         this._addTooltipListeners();
+        const contentArea = this.inspector.querySelector('.hub-tab-content');
+        contentArea.addEventListener('click', (e) => this._handleBreadcrumbClick(e));
+        this.searchResultsView.addEventListener('click', (e) => this._handleBreadcrumbClick(e));
+        this.clearContentFilterBtn.addEventListener('click', () => this._clearContentFilter());
         this.isInitialized = true;
     }
 
@@ -87,7 +94,7 @@ export class LibraryHub {
             const formattedJson = JSON.stringify(statsObj, null, 2);
             this.tooltip.querySelector('pre').textContent = formattedJson;
             this.tooltip.style.display = 'block';
-            this._updateTooltipPosition(event); // Position immediately on show
+            this._updateTooltipPosition(event);
         } catch (e) {
             console.error("Failed to parse structured stats JSON:", e);
             this.tooltip.querySelector('pre').textContent = "Error: Invalid JSON data.";
@@ -127,6 +134,31 @@ export class LibraryHub {
         this.tooltip.style.top = `${top}px`;
     }
 
+    _handleBreadcrumbClick(event) {
+        const target = event.target.closest('[data-action="breadcrumb-search"]');
+        if (!target) return;
+
+        const sectionTitle = target.dataset.sectionQuery;
+        this.contentFilterStatus.style.display = 'flex';
+        this.filterStatusTerm.textContent = sectionTitle;
+        this.switchTab('content');
+
+        this.contentListEl.querySelectorAll('.text-chunk-card').forEach(card => {
+            const cardSection = card.querySelector('.breadcrumb-link')?.dataset.sectionQuery;
+            if (cardSection === sectionTitle) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    _clearContentFilter() {
+        this.contentFilterStatus.style.display = 'none';
+        this.contentListEl.querySelectorAll('.text-chunk-card').forEach(card => {
+            card.style.display = 'flex';
+        });
+    }
 
     _debounceSearch() {
         clearTimeout(this.searchDebounceTimer);
@@ -139,6 +171,7 @@ export class LibraryHub {
 
         if (!query) {
             this._showInspector();
+            this._clearContentFilter();
             return;
         }
 
@@ -262,6 +295,7 @@ export class LibraryHub {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
 
+        this._clearContentFilter();
         this.switchTab('dashboard');
         this.renderDashboard();
         this._loadAndRenderEntityList();
@@ -340,6 +374,7 @@ export class LibraryHub {
     }
 
     async renderContentView() {
+        this._clearContentFilter();
         const wrapper = this.contentListEl;
         wrapper.innerHTML = '<div class="spinner"></div>';
         const data = await this._getKbExploreData();
@@ -388,6 +423,7 @@ export class LibraryHub {
         const li = event.target.closest('li[data-entity-name]');
         if (!li) return;
 
+        this.searchInput.value = ''; // Clear search when selecting an entity
         this.selectedEntity = li.dataset.entityName;
         this.entityMasterList.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
         li.classList.add('selected');
@@ -417,22 +453,32 @@ export class LibraryHub {
 
     _createChunkCardHTML(result, isSearchResult = false) {
         const doc = isSearchResult ? { ...result.metadata, document: result.document } : result;
+        const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
         const label = doc.label || 'PROSE';
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
         const statsStr = doc.structured_stats || '{}';
         const hasStats = statsStr && Object.keys(JSON.parse(statsStr || '{}')).length > 0;
+        const sectionTitle = doc.section_title || 'Untitled Section';
 
         const sourceInfo = isSearchResult
-            ? `<span class="search-result-source">${result.kb_name}</span>
-               <span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>`
-            : `<span>${doc.source_file} (p. ${doc.page_start || 'N/A'})</span>`;
+            ? `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>`
+            : `<span>p. ${doc.page_start || 'N/A'}</span>`;
 
         const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
 
         return `
         <div class="text-chunk-card ${isSearchResult ? 'search-result-card' : ''}">
+            <div class="chunk-breadcrumb">
+                <span>${kbName} > </span>
+                <span class="breadcrumb-link"
+                      data-action="breadcrumb-search"
+                      data-kb-scope="${kbName}"
+                      data-section-query="${sectionTitle}">
+                    ${sectionTitle}
+                </span>
+            </div>
             <div class="text-chunk-header">
                 <span class="text-chunk-label">${label}</span>
                 <div>${sourceInfo}</div>
@@ -449,6 +495,7 @@ export class LibraryHub {
     }
 
     async renderAssetsView() {
+        this._clearContentFilter();
         this.assetGrid.innerHTML = '<div class="spinner"></div>';
         const data = await this._getKbExploreData();
         this.kbDataCache[this.selectedKb.name].assets = data.assets;
