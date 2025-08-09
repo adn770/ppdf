@@ -128,10 +128,16 @@ class IngestionService:
                 msg = f"  -> Labeling chunk from section '{title}'..."
                 log.info(msg)
                 yield msg
-                label = get_semantic_label(
+                original_label = get_semantic_label(
                     chunk, labeler_prompt, util_config["url"], util_config["model"]
                 )
-                key_terms = self._extract_key_terms_from_chunk(chunk, label)
+                final_label = original_label
+                # Apply secrecy rule for stat blocks
+                if original_label == "stat_block":
+                    final_label = "dm_knowledge"
+                    log.debug("Applying semantic rule: Re-labeled stat_block as dm_knowledge.")
+
+                key_terms = self._extract_key_terms_from_chunk(chunk, original_label)
 
                 processed_chunks.append(
                     {
@@ -140,7 +146,7 @@ class IngestionService:
                             "source_file": metadata.get("filename", "unknown.md"),
                             "section_title": title,
                             "chunk_id": chunk_id_counter,
-                            "label": label,
+                            "label": final_label,
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -185,7 +191,8 @@ class IngestionService:
             metadata = chunk_data["metadata"]
 
             # Deep parse stat blocks if applicable
-            if metadata.get("label") == "stat_block":
+            # Note: We check the original label before it was overwritten
+            if metadata.get("label") == "dm_knowledge" and '"stat_block"' in str(metadata):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
 
@@ -355,31 +362,38 @@ class IngestionService:
                 if not chunk.strip():
                     continue
 
-                label = ""
+                original_label = ""
                 # Structural check for tables
                 if para.is_table:
-                    label = "dm_knowledge"
+                    original_label = "dm_knowledge"
                     log.debug("Applying structural rule: Labeled table as dm_knowledge.")
                 else:
                     # Semantic check for other content
-                    label = get_semantic_label(
+                    original_label = get_semantic_label(
                         chunk, final_labeler_prompt, util_config["url"], util_config["model"]
                     )
-                    if label == "read_aloud_kickoff" and section.page_start > 10:
-                        label = "read_aloud_text"
+                    if original_label == "read_aloud_kickoff" and section.page_start > 10:
+                        original_label = "read_aloud_text"
 
-                key_terms = self._extract_key_terms_from_chunk(chunk, label)
-                processed_chunks.append({
-                    "text": chunk,
-                    "metadata": {
-                        "source_file": metadata.get("filename", "unknown.pdf"),
-                        "section_title": section.title or "Untitled",
-                        "page_start": section.page_start,
-                        "chunk_id": chunk_id,
-                        "label": label if label else "prose",
-                        "key_terms": json.dumps(key_terms),
-                    },
-                })
+                final_label = original_label
+                if original_label == "stat_block":
+                    final_label = "dm_knowledge"
+                    log.debug("Applying semantic rule: Re-labeled stat_block as dm_knowledge.")
+
+                key_terms = self._extract_key_terms_from_chunk(chunk, original_label)
+                processed_chunks.append(
+                    {
+                        "text": chunk,
+                        "metadata": {
+                            "source_file": metadata.get("filename", "unknown.pdf"),
+                            "section_title": section.title or "Untitled",
+                            "page_start": section.page_start,
+                            "chunk_id": chunk_id,
+                            "label": final_label,
+                            "key_terms": json.dumps(key_terms),
+                        },
+                    }
+                )
                 chunk_id += 1
 
         # --- Post-processing: Entity Extraction and Linking ---
