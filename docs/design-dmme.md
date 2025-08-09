@@ -1565,6 +1565,69 @@ This implementation plan details the incremental steps to build the `dmme` appli
         allowing users to perform fast and accurate searches across their entire
         ingested library.
 
+### Phase 21: Hierarchical Document Navigation
+
+-   **Milestone 69: Implement Context Breadcrumbs**
+    -   **Goal**: Enhance all chunk cards with a clickable breadcrumb trail to show
+        their structural origin.
+    -   **Description**: This provides immediate, in-place context for any piece of
+        information, showing the user exactly where it came from in the source
+        document's hierarchy.
+    -   **Key Tasks**:
+        -   **JS (`LibraryHub.js`)**: Modify the `_createChunkCardHTML` function to
+            add a new `div` for the breadcrumb in the card's header. It will
+            display `KB Name > Section Title`.
+        -   **CSS (`library-hub.css`)**: Add styling for the new breadcrumb
+            element, making the section title appear as a subtle, clickable link.
+        -   **JS (`LibraryHub.js`)**: Add an event listener to the breadcrumb's
+            section title link. On click, it will execute a search scoped to the
+            current KB for all content matching that `section_title`.
+    -   **Outcome**: Every chunk card in the UI will display its hierarchical
+        location. Users can click on a section title within a breadcrumb to
+        instantly view all related content from that section.
+
+-   **Milestone 70: Implement Section Flow View**
+    -   **Goal**: Create a new "Section Flow" display mode for the Content Explorer.
+    -   **Description**: This feature allows users to read the knowledge base content in
+        its original, linear order, grouped by section headers, providing a more
+        book-like reading experience.
+    -   **Key Tasks**:
+        -   **HTML/CSS**: Add a view-mode toggle icon (e.g., List / Flow) to the
+            Content Explorer tab. Add CSS to style the large section headers for
+            the new view.
+        -   **JS (`LibraryHub.js`)**:
+            -   Add state management to track the current view mode (`list` or `flow`).
+            -   Refactor the `renderContentView` function to handle both modes.
+            -   In "Flow" mode, the function will first get all unique, sorted
+                `section_title`s from the cached document data. It will then
+                iterate through the sections, creating a prominent header for each,
+                and appending the corresponding chunk cards below it.
+    -   **Outcome**: A new toggle in the Content Explorer allows users to switch
+        between the default flat list of chunks and a new "Section Flow" view that
+        groups chunks under their original section headers.
+
+-   **Milestone 71: Implement Semantic Mind Map Tab**
+    -   **Goal**: Add a new "Mind Map" tab to the Library Hub that visually represents
+        the document's structure and entity relationships.
+    -   **Description**: This provides a powerful, at-a-glance graphical overview of
+        the document, allowing users to discover and explore connections between
+        different topics in a novel way.
+    -   **Key Tasks**:
+        -   **Dependency**: Select and integrate a lightweight JavaScript library for
+            graph visualization (e.g., Mermaid.js).
+        -   **HTML**: Add the new "Mind Map" tab and its pane to `_library-hub.html`.
+        -   **JS (`LibraryHub.js`)**:
+            -   Create a `renderMindMapView` function that is lazy-loaded when the
+                tab is clicked.
+            -   This function will process all cached chunks for the selected KB to
+                build a graph data structure.
+            -   It will generate the necessary syntax for the charting library,
+                defining section titles as nodes and shared entities as links
+                between them, and render the resulting chart.
+    -   **Outcome**: A new "Mind Map" tab is available in the Library Hub,
+        presenting an interactive, graphical visualization of the selected
+        document's sections and their entity-based relationships.
+
 ---
 
 ## 7. Potential Future Extensions
