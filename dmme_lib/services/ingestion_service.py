@@ -30,9 +30,11 @@ class IngestionService:
         self,
         vector_store: VectorStoreService,
         config_service: ConfigService,
+        utility_model: str,
     ):
         self.vector_store = vector_store
         self.config_service = config_service
+        self.utility_model = utility_model
         log.info("IngestionService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
@@ -348,11 +350,10 @@ class IngestionService:
                 "Section Classification:\n"
                 "  - Model: %s\n"
                 "  - Title: '%s'\n"
-                "  - Hint: %s -> Final Tag: %s\n"
+                "  - Final Tag: %s\n"
                 "  - Input: %s",
                 self.utility_model,
                 section.title or "Untitled",
-                hint_tag,
                 final_tag,
                 self._format_text_for_log(representative_text),
             )

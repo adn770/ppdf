@@ -4,6 +4,8 @@ import re
 import json
 import os
 from flask import current_app
+from collections import defaultdict
+
 from .vector_store_service import VectorStoreService
 from .config_service import ConfigService
 from core.llm_utils import query_text_llm
@@ -50,7 +52,7 @@ class RAGService:
         base_where = {"section_title": section_title}
         final_where = {"$and": [base_where, where_filter]} if where_filter else base_where
 
-        docs, metas = self.vector_store.query(
+        docs, metas, _ = self.vector_store.query(
             kb_name,
             query_text=section_title,
             n_results=100,
@@ -86,7 +88,7 @@ class RAGService:
 
         for label in priority_labels:
             log.debug("Searching for kickoff content with priority label: '%s'", label)
-            docs, metas = self.vector_store.query(
+            docs, metas, _ = self.vector_store.query(
                 active_kb,
                 query_text=f"Text for starting an adventure, like a {label.replace('_', ' ')}",
                 n_results=1,
@@ -119,7 +121,7 @@ class RAGService:
         # Fallback: General search if no priority content was found
         if not found_docs:
             log.debug("No high-priority content found. Falling back to general search.")
-            docs, metas = self.vector_store.query(
+            docs, metas, _ = self.vector_store.query(
                 active_kb, "adventure introduction, summary, or starting location", n_results=1
             )
             if docs:
@@ -200,7 +202,14 @@ class RAGService:
                 stream=False,
                 temperature=util_config["temperature"],
             )
-            expanded_queries = json.loads(response_data.get("response", "[]"))
+            response_str = response_data.get("response", "[]")
+            json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                expanded_queries = json.loads(json_str)
+            else:
+                expanded_queries = []
+
             if isinstance(expanded_queries, list):
                 queries.extend(expanded_queries)
             log.info("Expanded into %d search queries: %s", len(queries), queries)
@@ -212,7 +221,7 @@ class RAGService:
 
         # We query for insight first to identify a primary location
         insight_module_docs, insight_module_metas = execute_queries(
-            module_kb, queries, n_results=3
+            self.vector_store, module_kb, queries, n_results=3
         )
         primary_location = self._find_primary_location(insight_module_metas)
 
@@ -256,9 +265,11 @@ class RAGService:
                 self.current_location = None
                 log.info("No primary location. Using merged query results.")
                 narrative_module_docs, _ = execute_queries(
-                    module_kb, queries, filter=narrative_filter
+                    self.vector_store, module_kb, queries, filter=narrative_filter
                 )
-                rules_docs, _ = execute_queries(rules_kb, queries, n_results=3)
+                rules_docs, _ = execute_queries(
+                    self.vector_store, rules_kb, queries, n_results=3
+                )
 
                 context_blocks = []
                 if narrative_module_docs:
@@ -267,8 +278,9 @@ class RAGService:
                     context_blocks.append("\n\n---\n\n".join(rules_docs))
                 narrative_context_str = "\n\n".join(context_blocks) or "No context found."
 
-                # Rebuild insight data from live query
-                insight_rules_docs, _ = execute_queries(rules_kb, queries, n_results=3)
+                insight_rules_docs, _ = execute_queries(
+                    self.vector_store, rules_kb, queries, n_results=3
+                )
                 insight_data = [
                     {"text": d, "label": m.get("label", "prose")}
                     for d, m in zip(insight_module_docs, insight_module_metas)
@@ -351,7 +363,7 @@ class RAGService:
         log.debug("Searching for relevant visual aid in '%s'.", kb_name)
         image_query = f"Scene described by: {command}. {narrative}"
         try:
-            docs, metas = self.vector_store.query(
+            docs, metas, _ = self.vector_store.query(
                 kb_name,
                 image_query,
                 n_results=1,
@@ -412,16 +424,15 @@ class RAGService:
         return summary
 
 
-def execute_queries(kb_name, queries, filter=None, n_results=2):
+def execute_queries(vector_store, kb_name, queries, filter=None, n_results=2):
     """Helper function to run a list of queries against a KB and return unique results."""
     if not kb_name:
         return [], []
     unique_docs = {}
     try:
         # Access the vector store from the current application context
-        vector_store = current_app.rag_service.vector_store
         for query in queries:
-            docs, metas = vector_store.query(
+            docs, metas, _ = vector_store.query(
                 kb_name, query, n_results=n_results, where_filter=filter
             )
             for doc, meta in zip(docs, metas):

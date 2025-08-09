@@ -43,15 +43,17 @@ def create_app(config_overrides=None):
     try:
         app.storage = StorageService(app.config["DATABASE"])
         app.config_service = ConfigService(app.config["CONFIG_PATH"])
-        # Load managed settings into app.config for services that need it
-        managed_settings = app.config_service.get_settings()
 
         embed_config = app.config_service.get_model_config("embed")
         app.vector_store = VectorStoreService(
             app.config["CHROMA_PATH"], embed_config["url"], embed_config["model"]
         )
+
+        util_config = app.config_service.get_model_config("classify")
         app.ingestion_service = IngestionService(
-            vector_store=app.vector_store, config_service=app.config_service
+            vector_store=app.vector_store,
+            config_service=app.config_service,
+            utility_model=util_config["model"],
         )
         app.rag_service = RAGService(
             vector_store=app.vector_store,
