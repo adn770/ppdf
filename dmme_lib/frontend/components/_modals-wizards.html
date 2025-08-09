@@ -1,4 +1,3 @@
-# --- dmme_lib/frontend/components/_modals-wizards.html ---
 <div id="modal-overlay" class="modal-overlay"></div>
 
 <div id="load-campaign-modal" class="modal modal-lg">
@@ -56,7 +55,8 @@
                         <p id="wizard-upload-text" data-i18n-key="wizardUploadArea">
                             Drag & Drop a PDF or Markdown file here, or click to select
                         </p>
-                        <input type="file" id="wizard-upload-input" style="display: none;" accept=".pdf,.md,.json">
+                        <input type="file" id="wizard-upload-input" style="display: none;"
+                            accept=".pdf,.md,.json">
                     </div>
                     <div class="form-group" id="pdf-pages-group">
                         <label for="pdf-pages-input" data-i18n-key="pdfPagesLabel">Pages
@@ -119,7 +119,8 @@
                         <textarea id="kb-desc" rows="3"
                             data-i18n-key="formDescriptionPlaceholder"
                             data-i18n-target="placeholder"
-                            placeholder="Optional short summary of the content." autocomplete="off"></textarea>
+                            placeholder="Optional short summary of the content."
+                            autocomplete="off"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="kb-kickoff-cue"
@@ -128,7 +129,8 @@
                         <textarea id="kb-kickoff-cue" rows="3"
                             data-i18n-key="formKickoffCuePlaceholder"
                             data-i18n-target="placeholder"
-                            placeholder="e.g., Adventure starts with the 'A Plea for Help' section and the local rumors table." autocomplete="off"></textarea>
+                            placeholder="e.g., Adventure starts with the 'A Plea for Help' section and the local rumors table."
+                            autocomplete="off"></textarea>
                     </div>
                 </div>
             </div>
@@ -541,10 +543,6 @@
     <div class="modal-footer">
         <span id="settings-save-status"></span>
         <div class="modal-footer-spacer"></div>
-        <button id="settings-cancel-btn"
-            data-i18n-key="settingsCancel">Cancel</button>
-        <button id="settings-save-btn" class="accent-btn"
-            data-i18n-key="settingsSave">Save Changes</button>
     </div>
 </div>
 <div id="dm-insight-modal" class="modal modal-lg">

@@ -6,6 +6,7 @@ export class SettingsManager {
     constructor(appInstance) {
         this.app = appInstance;
         this.settings = null;
+        this.saveDebounceTimer = null;
 
         this._setupElements();
         this._addEventListeners();
@@ -15,8 +16,6 @@ export class SettingsManager {
         this.modal = document.getElementById('settings-modal');
         this.overlay = document.getElementById('modal-overlay');
         this.closeBtn = this.modal.querySelector('.close-btn');
-        this.cancelBtn = document.getElementById('settings-cancel-btn');
-        this.saveBtn = document.getElementById('settings-save-btn');
         this.statusEl = document.getElementById('settings-save-status');
         this.tabs = this.modal.querySelectorAll('.wizard-tab-btn');
         this.panes = this.modal.querySelectorAll('.settings-pane');
@@ -30,12 +29,9 @@ export class SettingsManager {
 
     _addEventListeners() {
         this.closeBtn.addEventListener('click', () => this.close());
-        this.cancelBtn.addEventListener('click', () => this.close());
-        this.saveBtn.addEventListener('click', () => this.saveSettings());
         this.tabs.forEach(tab => {
             tab.addEventListener('click', (e) => this._switchPane(e));
         });
-
         // Add listeners for sliders to update their displayed value
         this.modal.querySelectorAll('input[type="range"]').forEach(slider => {
             const valueEl = slider.nextElementSibling;
@@ -44,6 +40,10 @@ export class SettingsManager {
                     valueEl.textContent = slider.value;
                 });
             }
+        });
+        // Add a single delegated listener for any change in the settings content
+        this.modal.querySelector('.settings-content').addEventListener('change', () => {
+            this._debounceSave();
         });
     }
 
@@ -74,7 +74,6 @@ export class SettingsManager {
 
     async loadSettings() {
         this.settings = await apiCall('/api/settings/');
-
         // --- Simple Key-Value Sections ---
         ['Appearance', 'Game'].forEach(section => {
             const sectionSettings = this.settings[section] || {};
@@ -85,7 +84,6 @@ export class SettingsManager {
                 if (input) input.value = sectionSettings[key];
             }
         });
-
         // --- Complex, Role-Based LLM Sections ---
         ['OllamaGame', 'OllamaIngestion'].forEach(section => {
             const sectionSettings = this.settings[section] || {};
@@ -116,8 +114,13 @@ export class SettingsManager {
         return this.settings;
     }
 
-    async saveSettings() {
+    _debounceSave() {
         this.statusEl.textContent = this.app.i18n.t('savingStatus');
+        clearTimeout(this.saveDebounceTimer);
+        this.saveDebounceTimer = setTimeout(() => this.saveSettings(), 500);
+    }
+
+    async saveSettings() {
         const newSettings = {};
 
         // --- Simple Key-Value Sections ---
@@ -127,7 +130,6 @@ export class SettingsManager {
                 newSettings[section][input.dataset.key] = input.value;
             });
         });
-
         // --- Complex, Role-Based LLM Sections ---
         ['OllamaGame', 'OllamaIngestion'].forEach(section => {
             newSettings[section] = {};
@@ -149,19 +151,16 @@ export class SettingsManager {
             });
             newSettings[section].models_json = JSON.stringify(models);
         });
-
         await apiCall('/api/settings/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newSettings),
         });
-
         this.app.settings = newSettings; // Update the global app settings
         this.applyTheme(this.app.settings.Appearance.theme);
         this.app.i18n.setLanguage(this.app.settings.Appearance.language);
-
         this.statusEl.textContent = this.app.i18n.t('settingsSaveStatus');
-        setTimeout(() => this.close(), 1000);
+        setTimeout(() => { this.statusEl.textContent = ''; }, 2000);
     }
 
     async _populateModelSuggestions() {
