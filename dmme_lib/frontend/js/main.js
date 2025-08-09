@@ -12,7 +12,6 @@ import { Lightbox } from './components/Lightbox.js';
 import { status, confirmationModal } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
-
 class App {
     constructor() {
         this.settings = null;
@@ -23,6 +22,7 @@ class App {
     async init() {
         status.setText('initializing');
         await this.loadComponents();
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
 
         // Initialize UI modules that depend on the now-loaded DOM
         confirmationModal.init();
@@ -64,7 +64,6 @@ class App {
             { file: 'components/_party-hub.html', target: mainContent },
             { file: 'components/_modals-wizards.html', target: body },
         ];
-
         await Promise.all(components.map(async (component) => {
             try {
                 const response = await fetch(component.file);

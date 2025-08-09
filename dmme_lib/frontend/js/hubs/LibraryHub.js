@@ -48,6 +48,9 @@ export class LibraryHub {
         this.assetGrid = document.getElementById('asset-grid-container');
         this.dropzone = document.getElementById('asset-upload-dropzone');
 
+        this.mindmapView = document.getElementById('library-mindmap-view');
+        this.mindmapContainer = document.getElementById('mindmap-container');
+
         this.searchResultsView = document.getElementById('library-search-results-view');
         this.searchInput = document.getElementById('library-search-input');
         this.searchScope = document.getElementById('library-search-scope');
@@ -285,7 +288,7 @@ export class LibraryHub {
 
         this.selectedKb = kb;
         this.selectedEntity = null;
-        this.contentViewMode = 'list'; // Reset to default view
+        this.contentViewMode = 'list';
         this.kbDataCache[kb.name] = {};
         this._updateSearchScope();
 
@@ -399,10 +402,7 @@ export class LibraryHub {
             const sections = data.documents.reduce((acc, doc) => {
                 const title = doc.section_title || 'Uncategorized';
                 if (!acc[title]) {
-                    acc[title] = {
-                        page: doc.page_start || 0,
-                        chunks: []
-                    };
+                    acc[title] = { page: doc.page_start || 0, chunks: [] };
                 }
                 acc[title].chunks.push(doc);
                 return acc;
@@ -684,6 +684,8 @@ export class LibraryHub {
                 this.renderContentView();
             } else if (paneName === 'assets' && !cache.assets) {
                 this.renderAssetsView();
+            } else if (paneName === 'mindmap' && !cache.mindmap) {
+                this.renderMindMapView();
             }
         }
     }
@@ -726,5 +728,79 @@ export class LibraryHub {
         this.contentViewToggleBtn.innerHTML = isFlow ?
             `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"></line><line x1="8" x2="21" y1="12" y2="12"></line><line x1="8" x2="21" y1="18" y2="18"></line><line x1="3" x2="3.01" y1="6" y2="6"></line><line x1="3" x2="3.01" y1="12" y2="12"></line><line x1="3" x2="3.01" y1="18" y2="18"></line></svg>` :
             `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="2"></rect><path d="M3 11h18M3 19h18"></path></svg>`;
+    }
+
+    async renderMindMapView() {
+        this.mindmapContainer.innerHTML = '<div class="spinner"></div>';
+        const data = await this._getKbExploreData();
+        this.kbDataCache[this.selectedKb.name].mindmap = true; // Mark as loaded
+
+        if (!data.documents || data.documents.length === 0) {
+            this.mindmapContainer.innerHTML = '<p>No content to generate a mind map.</p>';
+            return;
+        }
+
+        const { nodes, links } = this._buildGraphData(data.documents);
+        const mermaidSyntax = this._generateMermaidSyntax(nodes, links);
+
+        try {
+            const { svg } = await mermaid.render('mindmap-svg', mermaidSyntax);
+            this.mindmapContainer.innerHTML = svg;
+        } catch (e) {
+            this.mindmapContainer.innerHTML = '<p class="error">Error rendering mind map.</p>';
+            console.error("Mermaid rendering error:", e);
+        }
+    }
+
+    _buildGraphData(documents) {
+        const sections = {};
+        const entityToSections = {};
+
+        documents.forEach(doc => {
+            const title = doc.section_title || 'Uncategorized';
+            if (!sections[title]) {
+                sections[title] = { id: `s${Object.keys(sections).length}`, page: doc.page_start || 0 };
+            }
+            try {
+                const entities = JSON.parse(doc.entities || '{}');
+                for (const entityName of Object.keys(entities)) {
+                    if (!entityToSections[entityName]) entityToSections[entityName] = new Set();
+                    entityToSections[entityName].add(title);
+                }
+            } catch (e) { /* ignore */ }
+        });
+
+        const nodes = Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
+        const links = new Set();
+
+        for (const entity in entityToSections) {
+            const connectedSections = Array.from(entityToSections[entity]);
+            if (connectedSections.length > 1) {
+                for (let i = 0; i < connectedSections.length; i++) {
+                    for (let j = i + 1; j < connectedSections.length; j++) {
+                        const s1 = sections[connectedSections[i]].id;
+                        const s2 = sections[connectedSections[j]].id;
+                        links.add(`${s1} -- "${entity}" --> ${s2}`);
+                    }
+                }
+            }
+        }
+        return { nodes, links };
+    }
+
+    _generateMermaidSyntax(nodes, links) {
+        let syntax = 'graph TD;\n';
+        nodes.forEach(([title, data], index) => {
+            const safeTitle = title.replace(/"/g, '#quot;');
+            syntax += `    ${data.id}["${safeTitle}"];\n`;
+            if (index > 0) {
+                const prevId = nodes[index - 1][1].id;
+                syntax += `    ${prevId} --> ${data.id};\n`;
+            }
+        });
+        links.forEach(link => {
+            syntax += `    ${link};\n`;
+        });
+        return syntax;
     }
 }
