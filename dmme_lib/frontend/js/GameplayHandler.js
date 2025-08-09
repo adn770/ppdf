@@ -17,7 +17,6 @@ export class GameplayHandler {
         this.showVisualAids = false;
         this.showAsciiScene = false;
         this.lastInsightContent = '';
-
         // Toolbar controls
         this.quickThemeSelector = document.getElementById('quick-theme-selector');
         this.fontSizeSlider = document.getElementById('font-size-slider');
@@ -37,10 +36,8 @@ export class GameplayHandler {
         this._applyInitialStyles();
         this._updateToolbarState();
         await this._populatePartyStatusPanel();
-
         // Make the main game content visible
         document.getElementById('game-view-content').style.display = 'flex';
-
         if (recoveredState) {
             this.loadState(recoveredState);
         } else {
@@ -57,7 +54,6 @@ export class GameplayHandler {
                 this._sendCommandFromInput();
             }
         });
-
         this.quickThemeSelector.addEventListener('change', (e) => this._applyQuickTheme(e));
         this.fontSizeSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
         this.lineHeightSlider.addEventListener('input', (e) => this._updateNarrativeStyle(e));
@@ -103,7 +99,6 @@ export class GameplayHandler {
             item.appendChild(body);
             this.partyAccordionContainer.appendChild(item);
         });
-
         // Add event listeners to the newly created headers
         this.partyAccordionContainer.querySelectorAll('.accordion-header').forEach(button => {
             button.addEventListener('click', () => {
@@ -159,10 +154,20 @@ export class GameplayHandler {
     _updateKnowledgePanel() {
         const i18n = this.app.i18n;
         let kbHtml = `<span>${i18n.t('kbDisplayRules')}: <strong>${this.gameConfig.rules}</strong></span>`;
-        if (this.gameConfig.llm_model) {
-            kbHtml += ` |
-                <span>${i18n.t('dmModel')}: <strong>${this.gameConfig.llm_model}</strong></span>`;
+
+        // Determine which model to display: override or default
+        let modelToDisplay = this.gameConfig.llm_model;
+        if (!modelToDisplay) {
+            try {
+                // Fallback to global setting
+                const gameModels = JSON.parse(this.app.settings.OllamaGame.models_json);
+                modelToDisplay = gameModels.dm.model;
+            } catch (e) {
+                console.error("Could not parse default DM model from settings:", e);
+                modelToDisplay = 'N/A';
+            }
         }
+        kbHtml += ` | <span>${i18n.t('dmModel')}: <strong>${modelToDisplay}</strong></span>`;
         this.kbDisplay.innerHTML = kbHtml;
     }
 
@@ -347,7 +352,8 @@ export class GameplayHandler {
         let buffer = '';
         let currentParagraph = initialParagraph;
         let currentParagraphMarkdown = '';
-        this.lastInsightContent = ''; // Reset for this turn
+        this.lastInsightContent = '';
+        // Reset for this turn
 
         while (true) {
             const { value, done } = await reader.read();
@@ -355,7 +361,8 @@ export class GameplayHandler {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep the potentially incomplete last line
+            buffer = lines.pop();
+            // Keep the potentially incomplete last line
 
             for (const line of lines) {
                 if (!line.trim()) continue;

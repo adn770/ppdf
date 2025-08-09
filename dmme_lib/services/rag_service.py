@@ -70,7 +70,14 @@ class RAGService:
         self.current_location = None
         log.info("Context cache cleared for new game session.")
 
-        lang = game_config.get("language", "en")
+        # --- Get Session-Specific Configuration ---
+        global_settings = self.config_service.get_settings()
+        lang = game_config.get("language") or global_settings["Appearance"]["language"]
+        dm_config = self.config_service.get_model_config("dm")
+        if game_config.get("llm_model"):
+            dm_config["model"] = game_config["llm_model"]
+            log.info("Overriding DM model for session to: %s", dm_config["model"])
+
         log.info("Generating kickoff narration for game in '%s'.", lang)
         module_kb = game_config.get("module")
         setting_kb = game_config.get("setting")
@@ -144,7 +151,6 @@ class RAGService:
             prompt_content = f"[PREVIOUS SESSION RECAP]\n{recap}\n\n{prompt_content}"
 
         kickoff_prompt = self._get_prompt("KICKOFF_ADVENTURE", lang)
-        dm_config = self.config_service.get_model_config("dm")
         llm_stream = query_text_llm(
             kickoff_prompt,
             prompt_content,
@@ -175,7 +181,14 @@ class RAGService:
         Generates a game response using a multi-query, cached RAG pipeline.
         This is a generator function that yields JSON chunks.
         """
-        lang = game_config.get("language", "en")
+        # --- Get Session-Specific Configuration ---
+        global_settings = self.config_service.get_settings()
+        lang = game_config.get("language") or global_settings["Appearance"]["language"]
+        dm_config = self.config_service.get_model_config("dm")
+        if game_config.get("llm_model"):
+            dm_config["model"] = game_config["llm_model"]
+            log.info("Overriding DM model for session to: %s", dm_config["model"])
+
         log.info("Generating RAG stream for command: '%s' in '%s'", player_command, lang)
 
         module_kb = (
@@ -298,7 +311,6 @@ class RAGService:
             f"[PLAYER ACTION]\n{player_command}"
         )
         game_master_prompt = self._get_prompt("GAME_MASTER", lang)
-        dm_config = self.config_service.get_model_config("dm")
         llm_stream = query_text_llm(
             game_master_prompt,
             user_prompt,
