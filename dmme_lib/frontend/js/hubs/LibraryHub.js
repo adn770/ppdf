@@ -9,6 +9,7 @@ export class LibraryHub {
         this.isInitialized = false;
         this.selectedKb = null;
         this.selectedEntity = null;
+        this.contentViewMode = 'list'; // 'list' or 'flow'
         this.kbDataCache = {};
         this.searchDebounceTimer = null;
     }
@@ -29,6 +30,7 @@ export class LibraryHub {
         this.wordCloudEl = document.getElementById('dashboard-word-cloud');
 
         this.contentView = document.getElementById('library-content-view');
+        this.contentViewToggleBtn = document.getElementById('content-view-toggle-btn');
         this.contentFilterStatus = document.getElementById('content-filter-status');
         this.filterStatusTerm = document.getElementById('filter-status-term');
         this.clearContentFilterBtn = document.getElementById('clear-content-filter-btn');
@@ -65,6 +67,7 @@ export class LibraryHub {
         this.entityMasterList.addEventListener('click', (e) => this._handleEntitySelection(e));
         this.searchInput.addEventListener('input', () => this._debounceSearch());
         this.searchScope.addEventListener('change', () => this._performSearch());
+        this.contentViewToggleBtn.addEventListener('click', () => this._toggleContentView());
         this._addTooltipListeners();
         const contentArea = this.inspector.querySelector('.hub-tab-content');
         contentArea.addEventListener('click', (e) => this._handleBreadcrumbClick(e));
@@ -282,6 +285,7 @@ export class LibraryHub {
 
         this.selectedKb = kb;
         this.selectedEntity = null;
+        this.contentViewMode = 'list'; // Reset to default view
         this.kbDataCache[kb.name] = {};
         this._updateSearchScope();
 
@@ -374,6 +378,7 @@ export class LibraryHub {
     }
 
     async renderContentView() {
+        this._updateContentViewToggle();
         this._clearContentFilter();
         const wrapper = this.contentListEl;
         wrapper.innerHTML = '<div class="spinner"></div>';
@@ -385,9 +390,36 @@ export class LibraryHub {
             wrapper.innerHTML = `<p>No text documents found in this knowledge base.</p>`;
             return;
         }
-        data.documents.forEach(doc => {
-            wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
-        });
+
+        if (this.contentViewMode === 'list') {
+            data.documents.forEach(doc => {
+                wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
+            });
+        } else { // 'flow' mode
+            const sections = data.documents.reduce((acc, doc) => {
+                const title = doc.section_title || 'Uncategorized';
+                if (!acc[title]) {
+                    acc[title] = {
+                        page: doc.page_start || 0,
+                        chunks: []
+                    };
+                }
+                acc[title].chunks.push(doc);
+                return acc;
+            }, {});
+
+            const sortedSections = Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
+
+            for (const [title, sectionData] of sortedSections) {
+                const header = document.createElement('h4');
+                header.className = 'section-flow-header';
+                header.textContent = title;
+                wrapper.appendChild(header);
+                sectionData.chunks.forEach(doc => {
+                    wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
+                });
+            }
+        }
     }
 
     async _loadAndRenderEntityList() {
@@ -423,7 +455,7 @@ export class LibraryHub {
         const li = event.target.closest('li[data-entity-name]');
         if (!li) return;
 
-        this.searchInput.value = ''; // Clear search when selecting an entity
+        this.searchInput.value = '';
         this.selectedEntity = li.dataset.entityName;
         this.entityMasterList.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
         li.classList.add('selected');
@@ -681,5 +713,18 @@ export class LibraryHub {
                 this.entityRelatedChunks.style.display = 'none';
             }
         }
+    }
+
+    _toggleContentView() {
+        this.contentViewMode = this.contentViewMode === 'list' ? 'flow' : 'list';
+        this.renderContentView();
+    }
+
+    _updateContentViewToggle() {
+        const isFlow = this.contentViewMode === 'flow';
+        this.contentViewToggleBtn.title = isFlow ? 'Switch to List View' : 'Switch to Section Flow View';
+        this.contentViewToggleBtn.innerHTML = isFlow ?
+            `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"></line><line x1="8" x2="21" y1="12" y2="12"></line><line x1="8" x2="21" y1="18" y2="18"></line><line x1="3" x2="3.01" y1="6" y2="6"></line><line x1="3" x2="3.01" y1="12" y2="12"></line><line x1="3" x2="3.01" y1="18" y2="18"></line></svg>` :
+            `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="2"></rect><path d="M3 11h18M3 19h18"></path></svg>`;
     }
 }

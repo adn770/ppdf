@@ -270,7 +270,7 @@
     flex-shrink: 0;
 }
 
-/* --- New Dashboard Styles --- */
+/* --- Dashboard Styles --- */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -352,7 +352,7 @@
     cursor: default;
 }
 
-/* --- Refined Entity Explorer Styles --- */
+/* --- Entity Explorer Styles --- */
 .entity-explorer-container {
     display: flex;
     height: 100%;
@@ -420,4 +420,32 @@
     margin: 0;
     padding: 0;
     color: var(--text-color);
+}
+
+/* --- Section Flow View Styles --- */
+.content-explorer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.content-explorer-header h5 {
+    margin: 0;
+}
+
+.section-flow-header {
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 12px;
+    margin: 24px 0 16px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.section-flow-header:first-of-type {
+    margin-top: 0;
 }
