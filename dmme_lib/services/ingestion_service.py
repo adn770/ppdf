@@ -138,6 +138,7 @@ class IngestionService:
 
                 final_tags = sorted(list(set(tags)))
                 key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
+                is_dm_only = "access:dm_only" in final_tags
 
                 processed_chunks.append(
                     {
@@ -147,6 +148,7 @@ class IngestionService:
                             "section_title": title,
                             "chunk_id": chunk_id_counter,
                             "tags": final_tags,
+                            "is_dm_only": is_dm_only,
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -170,7 +172,6 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            # Tags are already a list, just needs to be dumped
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         msg = "Generating embeddings and saving to vector store..."
@@ -365,15 +366,17 @@ class IngestionService:
                 if not chunk.strip():
                     continue
 
-                # Get initial tags from the LLM
-                tags = get_semantic_tags(
-                    chunk, final_labeler_prompt, util_config["url"], util_config["model"]
-                )
-
-                # Apply hard-coded rules
+                # Get initial tags from the LLM or structural rules
+                tags = []
                 if para.is_table:
                     tags.append("access:dm_only")
                     log.debug("Applying structural rule: Added access:dm_only to table.")
+                else:
+                    tags = get_semantic_tags(
+                        chunk, final_labeler_prompt, util_config["url"], util_config["model"]
+                    )
+
+                # Apply additional hard-coded semantic rules
                 if "type:stat_block" in tags:
                     tags.append("access:dm_only")
                     log.debug("Applying semantic rule: Added access:dm_only to stat_block.")
@@ -383,6 +386,8 @@ class IngestionService:
 
                 final_tags = sorted(list(set(tags)))
                 key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
+                is_dm_only = "access:dm_only" in final_tags
+
                 processed_chunks.append(
                     {
                         "text": chunk,
@@ -392,6 +397,7 @@ class IngestionService:
                             "page_start": section.page_start,
                             "chunk_id": chunk_id,
                             "tags": final_tags,
+                            "is_dm_only": is_dm_only,
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -523,7 +529,8 @@ class IngestionService:
             metadatas.append(
                 {
                     "source_file": "PDF Images",
-                    "tags": ["type:image"],
+                    "tags": json.dumps(["type:image"]),
+                    "is_dm_only": False,
                     "classification": data["classification"],
                     "image_url": final_image_path,
                     "thumbnail_url": final_thumb_path,
@@ -613,7 +620,8 @@ class IngestionService:
         doc_text = f"An image of type '{classification}' depicting: {description}"
         doc_meta = {
             "source_file": "User Uploads",
-            "tags": ["type:image"],
+            "tags": json.dumps(["type:image"]),
+            "is_dm_only": False,
             "classification": classification,
             "image_url": os.path.join("images", kb_name, image_filename),
             "thumbnail_url": os.path.join("images", kb_name, thumb_filename),

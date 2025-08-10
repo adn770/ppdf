@@ -85,6 +85,7 @@ def query_text_llm(
         "system": prompt,
         "prompt": user_content,
         "stream": stream,
+        "format": "json" if "json" in prompt.lower() else "",
     }
     options = {}
     if temperature is not None:
@@ -228,7 +229,7 @@ def get_semantic_tags(chunk: str, prompt: str, ollama_url: str, model: str) -> l
         return ["type:prose"]
 
     try:
-        # Clean the response to find the JSON array
+        # Clean the response to find the JSON array, removing markdown fences
         json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
         if not json_match:
             log_llm.warning("LLM returned non-JSON tag response: %s", response_str)
@@ -238,7 +239,7 @@ def get_semantic_tags(chunk: str, prompt: str, ollama_url: str, model: str) -> l
         tags = json.loads(json_str)
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
-            return tags
+            return tags if tags else ["type:prose"]
         else:
             log_llm.warning("LLM returned malformed tag list: %s", tags)
             return ["type:prose"]
