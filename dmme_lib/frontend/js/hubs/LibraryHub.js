@@ -71,10 +71,12 @@ export class LibraryHub {
         this.searchScope.addEventListener('change', () => this._performSearch());
         this.contentViewToggleBtn.addEventListener('click', () => this._toggleContentView());
         this._addTooltipListeners();
-        const contentArea = this.inspector.querySelector('.hub-tab-content');
-        contentArea.addEventListener('click', (e) => this._handleBreadcrumbClick(e));
-        this.searchResultsView.addEventListener('click', (e) => this._handleBreadcrumbClick(e));
+        
+        // Delegated listener for clicks inside content areas (tags, breadcrumbs)
+        this.contentListEl.addEventListener('click', (e) => this._handleContentAreaClick(e));
+        this.searchResultsView.addEventListener('click', (e) => this._handleContentAreaClick(e));
         this.clearContentFilterBtn.addEventListener('click', () => this._clearContentFilter());
+
         this.isInitialized = true;
     }
 
@@ -136,19 +138,48 @@ export class LibraryHub {
         this.tooltip.style.top = `${top}px`;
     }
 
-    _handleBreadcrumbClick(event) {
-        const target = event.target.closest('[data-action="breadcrumb-search"]');
-        if (!target) return;
-        const sectionTitle = target.dataset.sectionQuery;
+    _handleContentAreaClick(event) {
+        const breadcrumb = event.target.closest('[data-action="breadcrumb-search"]');
+        const tagChip = event.target.closest('.tag-chip');
+
+        if (breadcrumb) {
+            this._handleBreadcrumbClick(breadcrumb);
+        } else if (tagChip) {
+            this._handleTagClick(tagChip);
+        }
+    }
+
+    _handleBreadcrumbClick(breadcrumbElement) {
+        const sectionTitle = breadcrumbElement.dataset.sectionQuery;
         this.contentFilterStatus.style.display = 'flex';
         this.filterStatusTerm.textContent = sectionTitle;
         this.switchTab('content');
         this.contentListEl.querySelectorAll('.text-chunk-card').forEach(card => {
             const cardSection = card.querySelector('.breadcrumb-link')?.dataset.sectionQuery;
-            if (cardSection === sectionTitle) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
+            card.style.display = (cardSection === sectionTitle) ? 'flex' : 'none';
+        });
+    }
+
+    _handleTagClick(tagChipElement) {
+        const tag = tagChipElement.textContent;
+        // Switch to content view if not already there (handles clicks from search results)
+        this.switchTab('content');
+        this._applyTagFilter(tag);
+    }
+
+    _applyTagFilter(tag) {
+        // Show banner
+        this.contentFilterStatus.style.display = 'flex';
+        this.filterStatusTerm.textContent = tag;
+
+        // Filter DOM elements based on their data-tags attribute
+        const cardElements = this.contentListEl.querySelectorAll('.text-chunk-card');
+        cardElements.forEach(card => {
+            try {
+                const cardTags = JSON.parse(card.dataset.tags || '[]');
+                card.style.display = cardTags.includes(tag) ? 'flex' : 'none';
+            } catch (e) {
+                card.style.display = 'none'; // Hide if tags are malformed
             }
         });
     }
@@ -473,11 +504,14 @@ export class LibraryHub {
         const doc = isSearchResult ?
             { ...result.metadata, document: result.document } : result;
         const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
+        
         const tags = JSON.parse(doc.tags || '[]');
+        const tagsForAttr = doc.tags || '[]';
         const tagsHTML = tags.map(tag => {
             const [category] = tag.split(':', 1);
             return `<span class="tag-chip tag-category--${category}">${tag}</span>`;
         }).join('');
+
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
@@ -490,7 +524,8 @@ export class LibraryHub {
         const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
 
         return `
-        <div class="text-chunk-card ${isSearchResult ? 'search-result-card' : ''}">
+        <div class="text-chunk-card ${isSearchResult ? 'search-result-card' : ''}" 
+             data-tags='${tagsForAttr}'>
             <div class="chunk-breadcrumb">
                 <span>${kbName} > </span>
                 <span class="breadcrumb-link"
