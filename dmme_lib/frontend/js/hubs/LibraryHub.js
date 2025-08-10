@@ -23,7 +23,6 @@ export class LibraryHub {
         this.content = document.getElementById('library-inspector-content');
         this.tabs = this.inspector.querySelectorAll('.hub-tab-btn');
         this.panes = this.inspector.querySelectorAll('.hub-tab-pane');
-
         this.dashboardView = document.getElementById('library-dashboard-view');
         this.chunkCountEl = document.getElementById('dashboard-chunk-count');
         this.entityChartEl = document.getElementById('dashboard-entity-chart');
@@ -117,16 +116,13 @@ export class LibraryHub {
 
     _updateTooltipPosition(event) {
         if (!this.tooltip || this.tooltip.style.display !== 'block') return;
-
         const offsetX = 15;
         const offsetY = 15;
         const tooltipRect = this.tooltip.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-
         let top = event.clientY + offsetY;
         let left = event.clientX + offsetX;
-
         if (left + tooltipRect.width > viewportWidth) {
             left = event.clientX - tooltipRect.width - offsetX;
         }
@@ -143,12 +139,10 @@ export class LibraryHub {
     _handleBreadcrumbClick(event) {
         const target = event.target.closest('[data-action="breadcrumb-search"]');
         if (!target) return;
-
         const sectionTitle = target.dataset.sectionQuery;
         this.contentFilterStatus.style.display = 'flex';
         this.filterStatusTerm.textContent = sectionTitle;
         this.switchTab('content');
-
         this.contentListEl.querySelectorAll('.text-chunk-card').forEach(card => {
             const cardSection = card.querySelector('.breadcrumb-link')?.dataset.sectionQuery;
             if (cardSection === sectionTitle) {
@@ -285,13 +279,11 @@ export class LibraryHub {
 
     async showKbDetails(kb) {
         if (this.selectedKb?.name === kb.name && !this.searchInput.value.trim()) return;
-
         this.selectedKb = kb;
         this.selectedEntity = null;
         this.contentViewMode = 'list';
         this.kbDataCache[kb.name] = {};
         this._updateSearchScope();
-
         if (this.searchInput.value.trim()) {
             this._performSearch();
         } else {
@@ -301,7 +293,6 @@ export class LibraryHub {
         this.listEl.querySelectorAll('li').forEach(li => {
             li.classList.toggle('selected', li.dataset.kbName === kb.name);
         });
-
         this._clearContentFilter();
         this.switchTab('dashboard');
         this.renderDashboard();
@@ -388,7 +379,6 @@ export class LibraryHub {
         const data = await this._getKbExploreData();
         this.kbDataCache[this.selectedKb.name].content = data.documents;
         wrapper.innerHTML = '';
-
         if (!data.documents || data.documents.length === 0) {
             wrapper.innerHTML = `<p>No text documents found in this knowledge base.</p>`;
             return;
@@ -407,7 +397,6 @@ export class LibraryHub {
                 acc[title].chunks.push(doc);
                 return acc;
             }, {});
-
             const sortedSections = Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
 
             for (const [title, sectionData] of sortedSections) {
@@ -428,7 +417,6 @@ export class LibraryHub {
         const entities = await this._getKbEntityData();
         this.entityMasterList.innerHTML = '';
         this.entityFilterInput.value = '';
-
         if (!entities || entities.length === 0) {
             this.entityMasterList.innerHTML = '<li>No entities found.</li>';
             return;
@@ -462,7 +450,6 @@ export class LibraryHub {
 
         this.entityRelatedChunks.innerHTML = '<div class="spinner"></div>';
         this.switchTab('entities');
-
         const data = await this._getKbExploreData();
         if (!data.documents) return;
 
@@ -472,7 +459,6 @@ export class LibraryHub {
                 return Object.keys(entities).includes(this.selectedEntity);
             } catch (e) { return false; }
         });
-
         this.entityRelatedChunks.innerHTML = '';
         if (relatedChunks.length === 0) {
             this.entityRelatedChunks.innerHTML = `<p>No chunks found for "${this.selectedEntity}".</p>`;
@@ -484,20 +470,23 @@ export class LibraryHub {
     }
 
     _createChunkCardHTML(result, isSearchResult = false) {
-        const doc = isSearchResult ? { ...result.metadata, document: result.document } : result;
+        const doc = isSearchResult ?
+            { ...result.metadata, document: result.document } : result;
         const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
-        const label = doc.label || 'PROSE';
+        const tags = JSON.parse(doc.tags || '[]');
+        const tagsHTML = tags.map(tag => {
+            const [category] = tag.split(':', 1);
+            return `<span class="tag-chip tag-category--${category}">${tag}</span>`;
+        }).join('');
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
         const statsStr = doc.structured_stats || '{}';
         const hasStats = statsStr && Object.keys(JSON.parse(statsStr || '{}')).length > 0;
         const sectionTitle = doc.section_title || 'Untitled Section';
-
         const sourceInfo = isSearchResult
             ? `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>`
             : `<span>p. ${doc.page_start || 'N/A'}</span>`;
-
         const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
 
         return `
@@ -512,7 +501,7 @@ export class LibraryHub {
                 </span>
             </div>
             <div class="text-chunk-header">
-                <span class="text-chunk-label">${label}</span>
+                <div class="tag-list">${tagsHTML}</div>
                 <div>${sourceInfo}</div>
             </div>
             <pre class="text-chunk-content">${doc.document}</pre>
@@ -705,7 +694,6 @@ export class LibraryHub {
             const paneId = `library-${paneName}-view`;
             pane.classList.toggle('active', pane.id === paneId);
         });
-
         if (this.selectedKb && paneName === 'entities') {
             if (this.selectedEntity) {
                 this.entityDetailsPlaceholder.style.display = 'none';
@@ -769,10 +757,8 @@ export class LibraryHub {
                 }
             } catch (e) { /* ignore */ }
         });
-
         const nodes = Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
         const links = new Set();
-
         for (const entity in entityToSections) {
             const connectedSections = Array.from(entityToSections[entity]);
             if (connectedSections.length > 1) {
