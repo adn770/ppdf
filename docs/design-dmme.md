@@ -1755,6 +1755,41 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The Library Hub UI displays multiple, color-coded tags on each chunk
         card, providing users with a much richer view of their ingested data.
 
+### Phase 24: Interactive UI Enhancements
+
+-   **Milestone 80: Add Interactive Styling to Tag Chips**
+    -   **Goal**: Update the CSS to provide visual feedback that tag chips are clickable
+        elements.
+    -   **Description**: This milestone focuses purely on the user interface affordance. By
+        changing the cursor and adding a hover effect, we signal to the user that the
+        tags are interactive elements, paving the way for the filtering logic.
+    -   **Key Tasks**: Modify `dmme_lib/frontend/css/components/library-hub.css`. Add
+        `cursor: pointer` and a subtle hover effect (e.g., `transform: scale(1.05)`)
+        to the `.tag-chip` CSS rule.
+    -   **Outcome**: When a user hovers over a tag chip in the Library Hub, the cursor
+        changes to a pointer and the chip visually reacts, clearly indicating it is a
+        clickable element.
+
+-   **Milestone 81: Implement Client-Side Tag Filtering Logic**
+    -   **Goal**: Implement the client-side JavaScript logic to filter the Content Explorer
+        when a tag chip is clicked.
+    -   **Description**: This milestone implements the core functionality of the interactive
+        tags feature. It will use a delegated event listener to capture clicks on tag
+        chips and then use the component's cached data to show or hide chunk cards
+        in the DOM, providing an instantaneous filtering experience for the user.
+    -   **Key Tasks**:
+        -   In `dmme_lib/frontend/js/hubs/LibraryHub.js`, add a delegated click event
+            listener to the content view container.
+        -   Write the filtering function that iterates through the cached chunk data,
+            toggling the visibility of `.text-chunk-card` elements.
+        -   Implement the logic to display and populate the existing
+            `#content-filter-status` banner when a filter is active.
+        -   Wire the `#clear-content-filter-btn` to a function that clears the active
+            filter and restores the visibility of all chunk cards.
+    -   **Outcome**: A user can click any tag chip in the Library Hub, and the view will
+        instantly filter to show only content matching that tag. A banner appears
+        allowing the user to clear the filter and return to the full view.
+
 ---
 
 ## 7. Potential Future Extensions
