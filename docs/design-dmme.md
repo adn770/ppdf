@@ -201,10 +201,9 @@ The RAG system is built upon four types of knowledge bases:
         system automatically generates a description, classification, and thumbnail for
         the uploaded asset.
     -   **Tiered LLM Configuration Panel**: An advanced settings panel that allows
-        for fine-grained control over LLM configurations. It features a "Simple Mode"
-        for basic setup and an "Expert Mode" that enables users to assign different
-        models and Ollama server endpoints for distinct workloads (e.g., Game vs.
-        Ingestion).
+        for fine-grained control over LLM configurations. It enables users to assign
+        different models and Ollama server endpoints for distinct workloads (e.g.,
+        Game vs. Ingestion).
 
 ---
 
@@ -291,7 +290,7 @@ game state, and interacts with the LLM.
     `characters`.
 -   **Configuration Persistence**: User settings are stored in an INI file at
     `~/.dmme/dmme.cfg`. A dedicated **`ConfigService`** is responsible for reading and
-    writing these settings, including the tiered Simple/Advanced LLM configurations.
+    writing these settings, including the tiered Game/Ingestion LLM configurations.
 -   **Knowledge Ingestion**: Provides an API to support the frontend's **Library
     Hub**. It will invoke `ppdf_lib` for a two-stage process: first to
     `analyze` a document's structure, and second to perform the final `ingestion`
@@ -418,21 +417,27 @@ The main gameplay interface is a **two-column layout**:
 
 A two-panel layout for all KB-related tasks.
 
--   **Left Panel:**
-    -   **Global Search Utility**: A new component at the top with a search bar and a
-        scope selector (`All Knowledge` vs. `Current Collection`).
-    -   **KB List**: A searchable list of all created KBs.
+-   **Left Panel (Split View):**
+    -   **Top Section**: Contains the **Global Search Utility** with a search bar and scope
+        selector, positioned above the main, searchable list of all created
+        Knowledge Bases.
+    -   **Bottom Section**: Contains the master **Entity List** for the selected KB,
+        complete with its own filter input. This allows for Browse all unique
+        entities found in a document.
 
--   **Right Panel (KB Inspector / Search Results):** This panel is now dynamic.
+-   **Right Panel (KB Inspector / Search Results):** This panel is dynamic.
     -   **Default State (Inspector):** A multi-tab interface for the selected KB:
         -   **Dashboard:** An overview with stats, an entity distribution chart, and a
             key terms word cloud.
         -   **Content Explorer:** A view of all text chunks, presented in enhanced
-            cards that display semantic labels, key terms, and icons for links or
-            structured data.
-        -   **Entity Explorer:** A master list of all unique entities (creatures,
-            locations, items). Selecting an entity shows all chunks that reference it.
-        -   **Asset Explorer:** The existing grid view for visual assets.
+            cards that display semantic labels and key terms. It features a toggle for
+            a linear "Section Flow" view.
+        -   **Entities:** A detail view that displays all text chunks related to a
+            single entity selected from the master list in the left panel.
+        -   **Mind Map:** A graphical visualization of the document's structure,
+            showing sections and their entity-based relationships.
+        -   **Asset Explorer:** The grid view for visual assets, featuring a
+            drag-and-drop area for custom asset uploads.
     -   **Search State:** When a search is performed, this panel displays a list of
         rich result cards, each showing a content snippet, source KB, and other
         metadata.
@@ -457,30 +462,30 @@ A two-panel layout for all party and character management:
 #### 4.4.1. Settings Panel (Granular LLM Configuration)
 
 The main settings modal is a multi-pane interface for application configuration,
-featuring a powerful tab-based system for granular LLM control. It will contain
-four tabs: `General`, `Appearance`, `Game LLM`, and `Ingestion LLM`.
+featuring a powerful tab-based system for granular LLM control. It is implemented with
+**three** tabs that group the configuration sections.
 
--   **General Tab**: Contains application-level settings, such as the "Default
-    Preferred Ruleset" for the AI Character Creator.
--   **Appearance Tab**: Contains all theming and language selection options.
+-   **General Tab**: This tab combines two functional groups:
+    -   **Game Configuration**: Contains application-level settings, such as the "Default
+        Preferred Ruleset" for the AI Character Creator.
+    -   **Appearance**: Contains all theming and language selection options.
 
 -   **Game LLM Tab**:
     -   **Ollama Server URL**: A text input for the endpoint serving gameplay models.
     -   **DM Model Group**:
         -   **Model**: A text input with a datalist for model selection.
         -   **Temperature**: A slider for tuning creativity.
-        -   **Context Window**: A dropdown with options (2K, 4K, 8K, 16K, 32K, 48K, 64K,
-            80K, 96K, 112K, 128K).
+        -   **Context Window**: A dropdown with options (2K through 128K).
     -   **Character Creation Model Group**:
         -   Contains the same three controls (Model, Temperature, Context Window).
 
 -   **Ingestion LLM Tab**:
     -   **Ollama Server URL**: A separate text input for the endpoint serving
         ingestion and utility models.
-    -   **PDF Formatting Model Group**: Controls for Model, Temperature, Context Window.
-    -   **Classification & Labeling Model Group**: Controls for Model, Temperature,
+    -   **PDF Formatting Model Group**: Controls for Model, Temperature, and Context Window.
+    -   **Classification & Labeling Model Group**: Controls for Model, Temperature, and
         Context Window.
-    -   **Vision Model Group**: Controls for Model, Temperature, Context Window.
+    -   **Image Analysis Model Group**: Controls for Model, Temperature, and Context Window.
     -   **Embedding Model Group**: A single Model selection input.
 
 ---
@@ -516,7 +521,10 @@ root, a shared `core` library, and dedicated libraries for each application.
     ├── `api/`: Contains all Flask Blueprints for the REST API (e.g., `game.py`, `knowledge.py`).
     ├── `services/`: Contains all backend business logic (`storage_service.py`, `rag_service.py`, `config_service.py`, etc.).
     └── `frontend/`: All frontend code for the web UI, built with ES6 modules.
-        ├── `js/`: Main application logic (`main.js`), handlers, hubs (`SettingsManager.js`), and wizards.
+        ├── `js/`: Main application logic (`main.js`), handlers, and core utilities.
+        │   ├── `components/`: Reusable UI components (e.g., `DiceRoller.js`).
+        │   ├── `hubs/`: Logic for the main views (e.g., `LibraryHub.js`).
+        │   └── `wizards/`: Logic for modal wizards (e.g., `ImportWizard.js`).
         ├── `css/`: All stylesheets, including base styles and component modules.
         └── `locales/`: JSON files for internationalization (`en.json`, `es.json`, etc.).
 
@@ -1686,6 +1694,66 @@ This implementation plan details the incremental steps to build the `dmme` appli
             label is `stat_block`, overwrite it with `dm_knowledge`.
     -   **Outcome**: All chunks identified as stat blocks by the LLM are correctly
         re-classified as `dm_knowledge` for RAG security purposes.
+
+### Phase 23: Multi-Tag System Implementation
+
+-   **Milestone 76: Update Vector Store Metadata Model**
+    -   **Goal**: Modify the backend data model to store a list of tags for each chunk instead
+        of a single label.
+    -   **Description**: This is the foundational data-layer change for the new system. The
+        metadata associated with each document in the vector store will be updated to
+        accommodate an array of string tags, allowing for richer, more flexible
+        data.
+    -   **Key Tasks**: In `ingestion_service.py`, change the structure of the `metadatas`
+        list that is passed to `vector_store.add_to_kb`. The single `label` key will be
+        replaced with a `tags` key that holds a list of strings.
+    -   **Outcome**: The vector store will be populated with a `tags` metadata field for
+        all newly ingested documents, capable of storing multiple categorized tags.
+
+-   **Milestone 77: Rework Ingestion Pipeline for Multi-Tag Generation**
+    -   **Goal**: Update the ingestion service to generate and apply the new categorized
+        multi-tag vocabulary.
+    -   **Description**: This milestone adapts the core of the ingestion logic. The
+        LLM prompts will be updated to request a JSON array of tags, and the service
+        will be modified to parse this output and apply the hard-coded rules we designed
+        (e.g., for tables and stat blocks).
+    -   **Key Tasks**:
+        -   Update the `SEMANTIC_LABELER_ADVENTURE` and `SEMANTIC_LABELER_RULES` prompts in
+            `dmme_lib/constants.py` to instruct the LLM to output a JSON array of
+            tags based on the new categorized vocabulary.
+        -   Modify `ingestion_service.py` to parse the JSON list from the LLM.
+        -   Change the logic from "overwriting" labels to "appending" tags (e.g., adding
+            `access:dm_only` to stat blocks without removing `type:stat_block`).
+    -   **Outcome**: The ingestion pipeline correctly generates and saves a rich list of
+        categorized tags for each text chunk, reflecting its content, function, and
+        security level.
+
+-   **Milestone 78: Update RAG Service for Tag-Based Filtering**
+    -   **Goal**: Adapt the RAG service to use the new tag list for secure and precise
+        context retrieval.
+    -   **Description**: This task makes the gameplay engine aware of the new data model.
+        The core security mechanism will be updated to filter based on the `access:dm_only`
+        tag, ensuring player-facing context remains safe.
+    -   **Key Tasks**: In `rag_service.py`, modify the `generate_response` method. Change
+        the ChromaDB `where` filters from checking a single `label` field to querying
+        the new `tags` list (e.g., where `tags` does not contain `access:dm_only`).
+    -   **Outcome**: The RAG system correctly and securely retrieves context using the new
+        multi-tag system, with no loss of the critical security filtering.
+
+-   **Milestone 79: Implement Tag Chip Display in Library Hub**
+    -   **Goal**: Visually represent the new multi-tag metadata on the frontend.
+    -   **Description**: This milestone implements the user-facing portion of the new
+        system, allowing users to see all the tags associated with a chunk in an intuitive
+        way.
+    -   **Key Tasks**:
+        -   Modify `_library-hub.html` to replace the single label element in the chunk
+            card with a `div` container for multiple tags.
+        -   Update the `_createChunkCardHTML` function in `LibraryHub.js` to iterate
+            over the `tags` list and render each tag as a "chip".
+        -   Add CSS to `library-hub.css` to style the new tag chips, including the
+            category-based color-coding (e.g., blue for `type`, red for `access`).
+    -   **Outcome**: The Library Hub UI displays multiple, color-coded tags on each chunk
+        card, providing users with a much richer view of their ingested data.
 
 ---
 
