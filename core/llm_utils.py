@@ -219,28 +219,32 @@ def generate_embeddings_ollama(
         raise
 
 
-def get_semantic_label(chunk: str, prompt: str, ollama_url: str, model: str) -> str:
-    """Gets a single semantic label for a text chunk using a provided prompt."""
-    # FIX: Synchronized with SEMANTIC_LABELER prompt in constants.py
-    valid_labels = [
-        "read_aloud_kickoff",
-        "adventure_hook",
-        "stat_block",
-        "read_aloud_text",
-        "item_description",
-        "location_description",
-        "mechanics",
-        "lore",
-        "dialogue",
-        "prose",
-    ]
+def get_semantic_tags(chunk: str, prompt: str, ollama_url: str, model: str) -> list[str]:
+    """Gets a list of semantic tags for a text chunk using a provided prompt."""
     response_data = query_text_llm(prompt, chunk, ollama_url, model, temperature=0.1)
-    # FIX: More robust cleaning of the model's response
-    label = re.sub(r"[`'\"]", "", response_data.get("response", "").strip())
-    if label in valid_labels:
-        return label
-    log_llm.warning("LLM returned invalid semantic label '%s'. Defaulting to 'prose'.", label)
-    return "prose"  # Default fallback
+    response_str = response_data.get("response", "").strip()
+
+    if not response_str:
+        return ["type:prose"]
+
+    try:
+        # Clean the response to find the JSON array
+        json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
+        if not json_match:
+            log_llm.warning("LLM returned non-JSON tag response: %s", response_str)
+            return ["type:prose"]
+
+        json_str = json_match.group(0)
+        tags = json.loads(json_str)
+
+        if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
+            return tags
+        else:
+            log_llm.warning("LLM returned malformed tag list: %s", tags)
+            return ["type:prose"]
+    except json.JSONDecodeError:
+        log_llm.warning("Failed to decode JSON from tag response: %s", response_str)
+        return ["type:prose"]
 
 
 def generate_character_json(

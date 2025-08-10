@@ -12,7 +12,7 @@ from collections import defaultdict
 from .vector_store_service import VectorStoreService
 from .config_service import ConfigService
 from core.llm_utils import (
-    get_semantic_label,
+    get_semantic_tags,
     query_text_llm,
     get_model_details,
     query_multimodal_llm,
@@ -48,12 +48,12 @@ class IngestionService:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
         return f'"{single_line_text}"'
 
-    def _extract_key_terms_from_chunk(self, chunk: str, label: str) -> list[str]:
+    def _extract_key_terms_from_chunk(self, chunk: str, tags: list[str]) -> list[str]:
         """
         Extracts key terms from a chunk.
         For stat blocks, it extracts the title. For others, it extracts bolded text.
         """
-        if label == "stat_block":
+        if "type:stat_block" in tags:
             first_line = chunk.split("\n", 1)[0]
             # Remove markdown bolding and any leading/trailing whitespace
             cleaned_name = re.sub(r"[\*#]", "", first_line).strip()
@@ -128,16 +128,16 @@ class IngestionService:
                 msg = f"  -> Labeling chunk from section '{title}'..."
                 log.info(msg)
                 yield msg
-                original_label = get_semantic_label(
+                tags = get_semantic_tags(
                     chunk, labeler_prompt, util_config["url"], util_config["model"]
                 )
-                final_label = original_label
                 # Apply secrecy rule for stat blocks
-                if original_label == "stat_block":
-                    final_label = "dm_knowledge"
-                    log.debug("Applying semantic rule: Re-labeled stat_block as dm_knowledge.")
+                if "type:stat_block" in tags:
+                    tags.append("access:dm_only")
+                    log.debug("Applying semantic rule: Added access:dm_only to stat_block.")
 
-                key_terms = self._extract_key_terms_from_chunk(chunk, original_label)
+                final_tags = sorted(list(set(tags)))
+                key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
 
                 processed_chunks.append(
                     {
@@ -146,7 +146,7 @@ class IngestionService:
                             "source_file": metadata.get("filename", "unknown.md"),
                             "section_title": title,
                             "chunk_id": chunk_id_counter,
-                            "tags": [final_label],
+                            "tags": final_tags,
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -170,6 +170,8 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
+            # Tags are already a list, just needs to be dumped
+            meta["tags"] = json.dumps(meta.get("tags", []))
 
         msg = "Generating embeddings and saving to vector store..."
         log.info(msg)
@@ -191,8 +193,7 @@ class IngestionService:
             metadata = chunk_data["metadata"]
 
             # Deep parse stat blocks if applicable
-            # This relies on the overwrite rule still being in place for this milestone
-            if metadata.get("tags") == ["dm_knowledge"] and '"stat_block"' in str(metadata):
+            if "type:stat_block" in metadata.get("tags", []):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
 
@@ -364,25 +365,24 @@ class IngestionService:
                 if not chunk.strip():
                     continue
 
-                original_label = ""
-                # Structural check for tables
+                # Get initial tags from the LLM
+                tags = get_semantic_tags(
+                    chunk, final_labeler_prompt, util_config["url"], util_config["model"]
+                )
+
+                # Apply hard-coded rules
                 if para.is_table:
-                    original_label = "dm_knowledge"
-                    log.debug("Applying structural rule: Labeled table as dm_knowledge.")
-                else:
-                    # Semantic check for other content
-                    original_label = get_semantic_label(
-                        chunk, final_labeler_prompt, util_config["url"], util_config["model"]
-                    )
-                    if original_label == "read_aloud_kickoff" and section.page_start > 10:
-                        original_label = "read_aloud_text"
+                    tags.append("access:dm_only")
+                    log.debug("Applying structural rule: Added access:dm_only to table.")
+                if "type:stat_block" in tags:
+                    tags.append("access:dm_only")
+                    log.debug("Applying semantic rule: Added access:dm_only to stat_block.")
+                if "narrative:kickoff" in tags and section.page_start > 10:
+                    tags.remove("narrative:kickoff")
+                    tags.append("type:read_aloud")
 
-                final_label = original_label
-                if original_label == "stat_block":
-                    final_label = "dm_knowledge"
-                    log.debug("Applying semantic rule: Re-labeled stat_block as dm_knowledge.")
-
-                key_terms = self._extract_key_terms_from_chunk(chunk, original_label)
+                final_tags = sorted(list(set(tags)))
+                key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
                 processed_chunks.append(
                     {
                         "text": chunk,
@@ -391,7 +391,7 @@ class IngestionService:
                             "section_title": section.title or "Untitled",
                             "page_start": section.page_start,
                             "chunk_id": chunk_id,
-                            "tags": [final_label],
+                            "tags": final_tags,
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -410,6 +410,7 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
+            meta["tags"] = json.dumps(meta.get("tags", []))
 
         msg = f"✔ Processing complete. Found {len(documents)} valid chunks."
         log.info(msg)
@@ -522,7 +523,7 @@ class IngestionService:
             metadatas.append(
                 {
                     "source_file": "PDF Images",
-                    "tags": ["image_description"],
+                    "tags": ["type:image"],
                     "classification": data["classification"],
                     "image_url": final_image_path,
                     "thumbnail_url": final_thumb_path,
@@ -612,7 +613,7 @@ class IngestionService:
         doc_text = f"An image of type '{classification}' depicting: {description}"
         doc_meta = {
             "source_file": "User Uploads",
-            "tags": ["image_description"],
+            "tags": ["type:image"],
             "classification": classification,
             "image_url": os.path.join("images", kb_name, image_filename),
             "thumbnail_url": os.path.join("images", kb_name, thumb_filename),
