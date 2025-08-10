@@ -146,7 +146,7 @@ class IngestionService:
                             "source_file": metadata.get("filename", "unknown.md"),
                             "section_title": title,
                             "chunk_id": chunk_id_counter,
-                            "label": final_label,
+                            "tags": [final_label],
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -191,8 +191,8 @@ class IngestionService:
             metadata = chunk_data["metadata"]
 
             # Deep parse stat blocks if applicable
-            # Note: We check the original label before it was overwritten
-            if metadata.get("label") == "dm_knowledge" and '"stat_block"' in str(metadata):
+            # This relies on the overwrite rule still being in place for this milestone
+            if metadata.get("tags") == ["dm_knowledge"] and '"stat_block"' in str(metadata):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
 
@@ -309,11 +309,13 @@ class IngestionService:
                 final_tag = "content"
 
             log.debug(
-                "Section Classification:\n"
-                "  - Model: %s\n"
-                "  - Title: '%s'\n"
-                "  - Final Tag: %s\n"
-                "  - Input: %s",
+                (
+                    "Section Classification:\n"
+                    "  - Model: %s\n"
+                    "  - Title: '%s'\n"
+                    "  - Final Tag: %s\n"
+                    "  - Input: %s"
+                ),
                 self.utility_model,
                 section.title or "Untitled",
                 final_tag,
@@ -389,7 +391,7 @@ class IngestionService:
                             "section_title": section.title or "Untitled",
                             "page_start": section.page_start,
                             "chunk_id": chunk_id,
-                            "label": final_label,
+                            "tags": [final_label],
                             "key_terms": json.dumps(key_terms),
                         },
                     }
@@ -520,7 +522,7 @@ class IngestionService:
             metadatas.append(
                 {
                     "source_file": "PDF Images",
-                    "label": "image_description",
+                    "tags": ["image_description"],
                     "classification": data["classification"],
                     "image_url": final_image_path,
                     "thumbnail_url": final_thumb_path,
@@ -610,7 +612,7 @@ class IngestionService:
         doc_text = f"An image of type '{classification}' depicting: {description}"
         doc_meta = {
             "source_file": "User Uploads",
-            "label": "image_description",
+            "tags": ["image_description"],
             "classification": classification,
             "image_url": os.path.join("images", kb_name, image_filename),
             "thumbnail_url": os.path.join("images", kb_name, thumb_filename),
