@@ -83,6 +83,29 @@ class IngestionService:
             log.warning("Could not parse stat block JSON from LLM: %s", e)
             return {}
 
+    def _parse_spell(self, chunk: str, lang: str) -> dict:
+        """Uses an LLM to parse a spell description into a structured dictionary."""
+        log.debug("Parsing spell with LLM...")
+        prompt = self._get_prompt("SPELL_PARSER", lang)
+        try:
+            util_config = self.config_service.get_model_config("classify")
+            response_data = query_text_llm(
+                prompt,
+                chunk,
+                util_config["url"],
+                util_config["model"],
+                temperature=0.0,
+            )
+            response_str = response_data.get("response", "").strip()
+            json_match = re.search(r"\{.*\}", response_str, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group(0))
+            log.warning("No JSON object found in spell parser response: %s", response_str)
+            return {}
+        except (json.JSONDecodeError, TypeError) as e:
+            log.warning("Could not parse spell JSON from LLM: %s", e)
+            return {}
+
     def ingest_markdown(self, file_content: str, metadata: dict):
         """Processes and ingests a Markdown file's content, yielding progress."""
         kb_name = metadata.get("kb_name")
@@ -172,6 +195,7 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
+            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         msg = "Generating embeddings and saving to vector store..."
@@ -197,6 +221,11 @@ class IngestionService:
             if "type:stat_block" in metadata.get("tags", []):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
+
+            # Deep parse spells if applicable
+            if "type:spell" in metadata.get("tags", []):
+                spell_data = self._parse_spell(chunk_data["text"], lang)
+                metadata["structured_spell_data"] = spell_data
 
             key_terms = json.loads(metadata.get("key_terms", "[]"))
             if not key_terms:
@@ -416,6 +445,7 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
+            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         msg = f"✔ Processing complete. Found {len(documents)} valid chunks."

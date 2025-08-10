@@ -341,6 +341,27 @@ PROMPT_REGISTRY = {
             '"na": "1d6 (1d6)", "tt": "F"}'
         )
     },
+    "SPELL_PARSER": {
+        "en": (
+            "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
+            "raw text spell description and convert it into a structured JSON object.\n\n"
+            "RULES:\n"
+            "1. Extract values for the following keys: `name`, `level`, `school`, "
+            "`casting_time`, `range`, `components`, `duration`.\n"
+            "2. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
+            "if they are not explicitly in the text.\n"
+            "3. If a value is not present in the text, omit its key from the JSON.\n"
+            "4. Your response MUST be ONLY the single, valid JSON object and nothing else.\n\n"
+            "EXAMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
+            "Bola de foc\n"
+            "Durada: instantani.\n"
+            "Abast: 240'.\n"
+            "Una flama es dirigeix ​​cap a un punt dins de l'abast i explota...\n\n"
+            "EXAMPLE OUTPUT:\n"
+            '{"name": "Bola de foc", "level": 3, "school": "Arcà", '
+            '"range": "240\'", "duration": "instantani"}'
+        )
+    },
     "ENTITY_EXTRACTOR": {
         "en": (
             "You are a Named Entity Recognition (NER) engine for a TTRPG. "
