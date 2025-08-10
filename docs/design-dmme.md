@@ -1790,6 +1790,52 @@ This implementation plan details the incremental steps to build the `dmme` appli
         instantly filter to show only content matching that tag. A banner appears
         allowing the user to clear the filter and return to the full view.
 
+### Phase 25: Deep Parsing for Spells
+
+-   **Milestone 82: Design and Implement `SPELL_PARSER` Prompt**
+    -   **Goal**: Design and add the `SPELL_PARSER` LLM prompt to the project's constants.
+    -   **Description**: This milestone involves creating a new, specialized prompt that
+        instructs an LLM to extract key mechanical data from a spell's text (e.g.,
+        range, duration, school) and format it as a JSON object.
+    -   **Key Tasks**: Create a new prompt key, `SPELL_PARSER`, within the `PROMPT_REGISTRY`
+        in `dmme_lib/constants.py`. The prompt will define the desired JSON schema and
+        provide clear instructions and examples to ensure reliable output from the LLM.
+    -   **Outcome**: A new `SPELL_PARSER` prompt is available in the constants file for the
+        ingestion service to use.
+
+-   **Milestone 83: Implement Backend Spell Parsing Method**
+    -   **Goal**: Implement the `_parse_spell` method in the `IngestionService`.
+    -   **Description**: This milestone adds the core backend logic for the parsing feature. A
+        new method will be created, analogous to the existing `_parse_stat_block`,
+        which will be responsible for calling the LLM with the `SPELL_PARSER` prompt
+        and handling its JSON response.
+    -   **Key Tasks**: In `dmme_lib/services/ingestion_service.py`, create a new private
+        method `_parse_spell(self, chunk: str, lang: str)`. This method will call
+        `query_text_llm`, parse the returned JSON string, and include error handling for
+        malformed LLM responses.
+    -   **Outcome**: The `IngestionService` has a functional `_parse_spell` method capable of
+        converting a raw spell description into a structured Python dictionary.
+
+-   **Milestone 84: Integrate Spell Parsing into Ingestion Pipeline**
+    -   **Goal**: Update the ingestion pipeline to call the spell parser for relevant chunks
+        and save the structured data to the vector store.
+    -   **Description**: This milestone integrates the new parsing functionality into the live
+        ingestion process. The logic will be updated to check for the `type:spell` tag
+        and, when found, call the `_parse_spell` method and store its output in a new
+        metadata field.
+    -   **Key Tasks**:
+        -   Modify the `ingest_markdown` and `ingest_pdf_text` methods in
+            `dmme_lib/services/ingestion_service.py`.
+        -   In the main chunk processing loop, add a condition `if "type:spell" in tags:`.
+        -   If the condition is met, call `self._parse_spell` and store the result in a
+            new metadata field named `structured_spell_data`.
+        -   Ensure this new field is serialized to a JSON string before being saved to
+            the vector store.
+    -   **Outcome**: All newly ingested knowledge bases will have spell descriptions
+        automatically parsed into structured JSON, which is then stored in the
+        `structured_spell_data` metadata field, making it available for advanced RAG
+        queries.
+
 ---
 
 ## 7. Potential Future Extensions
