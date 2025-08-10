@@ -178,7 +178,8 @@ The RAG system is built upon four types of knowledge bases:
         system that leverages semantically labeled text chunks for precise,
         context-aware responses. It employs a two-stage retrieval process to prevent
         DM-only knowledge from being shown to the player while still using it for
-        context.
+        context. It is "strategy-aware," meaning it can dynamically adapt its
+        retrieval method based on how a knowledge base was indexed (Standard vs. Deep).
     -   **Multiple Game Modes**: Support for both pre-defined `Module` play and
         LLM-generated `Freestyle` play, selectable from a "New Game" wizard.
     -   **Optional Game Aids**: User-selectable aids including an "AI Art Historian" for
@@ -196,6 +197,10 @@ The RAG system is built upon four types of knowledge bases:
         section-level review of a PDF document *before* ingestion. The system first
         analyzes the document's structure, then presents a list of sections to the user,
         who can exclude sections from the final import process.
+    -   **Optional Deep Indexing**: A user-selectable option in the Ingestion Wizard
+        that enables a slower but higher-quality ingestion process. It creates an
+        additional layer of LLM-generated summaries for each document section, enabling
+        more advanced RAG retrieval strategies.
     -   **Custom Asset Upload**: A feature within the Library Hub's asset explorer
         allowing users to add their own images to a KB via drag-and-drop. The
         system automatically generates a description, classification, and thumbnail for
@@ -292,19 +297,21 @@ game state, and interacts with the LLM.
     `~/.dmme/dmme.cfg`. A dedicated **`ConfigService`** is responsible for reading and
     writing these settings, including the tiered Game/Ingestion LLM configurations.
 -   **Knowledge Ingestion**: Provides an API to support the frontend's **Library
-    Hub**. It will invoke `ppdf_lib` for a two-stage process: first to
-    `analyze` a document's structure, and second to perform the final `ingestion`
-    based on user-provided section configurations.
--   **RAG & LLM Logic**: The core RAG service will query the ChromaDB collections,
-    leveraging semantic labels for precision. It will request its model configuration
-    (e.g., for the 'DM Narration' task) from the `ConfigService` before making any
-    LLM calls.
+    Hub**. It defaults to a **"Section-as-Chunk"** strategy, where each logical
+    section of a document becomes a single chunk for improved contextual integrity.
+    It also supports an optional, user-enabled **"Deep Indexing"** mode, which
+    creates a parallel collection of LLM-generated summaries for each section to
+    enable more advanced RAG. The chosen strategy is stored in the collection's metadata.
+-   **RAG & LLM Logic**: The core RAG service is **strategy-aware**. Before querying,
+    it inspects the knowledge base's metadata. If the `indexing_strategy` is `deep`,
+    it performs a summary-first search before retrieving the full-text chunk.
+    Otherwise, it searches the full-text chunks directly.
 -   **REST API (Enhanced)**:
     -   **Campaigns**: Full CRUD APIs for managing campaigns.
     -   **Parties**: Full CRUD APIs for managing saved parties.
     -   **Knowledge**: APIs to orchestrate the multi-step ingestion process,
-        including `POST /api/knowledge/analyze` and
-        `POST /api/knowledge/<kb_name>/upload-asset`.
+        including `POST /api/knowledge/analyze` and `POST /api/knowledge/ingest-document`,
+        which now accepts an optional `deep_indexing: boolean` parameter.
         -   `GET /api/knowledge/dashboard/<kb_name>` for aggregated KB stats.
         -   `GET /api/knowledge/entities/<kb_name>` for a list of all unique entities.
     -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
@@ -454,6 +461,10 @@ A two-panel layout for all party and character management:
 
 -   **New Game Wizard:** A modal launched from the Game View to guide the user
     through selecting a Game Mode and the required knowledge bases.
+-   **Ingestion Wizard**: The multi-step modal for creating a new Knowledge Base.
+    The "Add Details" pane will be updated to include a checkbox labeled
+    "Enable Deep Indexing (Slower, Higher Quality)" to allow users to opt-in
+    to the advanced summary-generation ingestion pipeline.
 -   **DM's Insight Modal**: Triggered by a toolbar button, this
     modal displays the raw RAG context used for that specific generation.
 -   **Image Lightbox Modal**: A simple, reusable modal overlay that displays a
@@ -517,7 +528,8 @@ root, a shared `core` library, and dedicated libraries for each application.
 │
 └── **dmme_lib/**: A self-contained package for the `dmme` web server.
     ├── `app.py`: The Flask app factory (`create_app`) and service initialization.
-    ├── `constants.py`: Stores DM persona presets and all internationalized prompts.
+    ├── `constants.py`: Stores DM persona presets and all internationalized prompts,
+    │   including a new `SUMMARIZE_CHUNK` prompt for Deep Indexing.
     ├── `api/`: Contains all Flask Blueprints for the REST API (e.g., `game.py`, `knowledge.py`).
     ├── `services/`: Contains all backend business logic (`storage_service.py`, `rag_service.py`, `config_service.py`, etc.).
     └── `frontend/`: All frontend code for the web UI, built with ES6 modules.
@@ -1835,6 +1847,60 @@ This implementation plan details the incremental steps to build the `dmme` appli
         automatically parsed into structured JSON, which is then stored in the
         `structured_spell_data` metadata field, making it available for advanced RAG
         queries.
+
+### Phase 26: Advanced Chunking and Retrieval Strategies
+
+-   **Milestone 85: Implement "Section-as-Chunk" Default Ingestion**
+    -   **Goal**: Replace the size-based chunking logic with a more contextually aware
+        "Section-as-Chunk" default.
+    -   **Description**: This milestone refactors the core ingestion logic to treat each
+        logical `Section` object from `ppdf_lib` as a single document for the vector
+        store, dramatically improving contextual cohesion.
+    -   **Key Tasks**: Modify `ingestion_service.py` to process entire sections as single
+        chunks, with a fallback to paragraph-based chunking for sections that exceed the
+        model's context window.
+    -   **Outcome**: The baseline ingestion process produces more contextually complete
+        documents, improving the foundation for all RAG operations.
+
+-   **Milestone 86: Add "Deep Indexing" UI to Ingestion Wizard**
+    -   **Goal**: Add a user-facing option to enable the advanced "Deep Indexing" feature.
+    -   **Description**: This task adds a checkbox to the Import Wizard UI, allowing the
+        user to opt-in to the slower, higher-quality deep indexing process.
+    -   **Key Tasks**: Modify `_modals-wizards.html` to add the checkbox. Update
+        `ImportWizard.js` to capture its state and pass it to the backend API. Update
+        the `/api/knowledge/ingest-document` endpoint in `knowledge.py` to accept the
+        new flag.
+    -   **Outcome**: A functional UI option exists for the user to choose their preferred
+        indexing strategy during knowledge base creation.
+
+-   **Milestone 87: Implement Conditional Deep Indexing Logic**
+    -   **Goal**: Enhance the ingestion service to perform the two-layer summary-and-full-text
+        indexing when requested.
+    -   **Description**: This milestone implements the core logic for the "Deep Indexing"
+        feature. When enabled, the service will generate an LLM summary for each section
+        and store it in a parallel collection linked to the full-text version.
+    -   **Key Tasks**: Add a `SUMMARIZE_CHUNK` prompt to `constants.py`. In
+        `ingestion_service.py`, add logic that, when the `deep_indexing` flag is true,
+        generates and stores summaries in a separate collection (e.g., `my_kb_summaries`).
+        Store the chosen strategy (`standard` or `deep`) in the primary collection's
+        metadata.
+    -   **Outcome**: The ingestion service can create deeply indexed knowledge bases with two
+        layers of context (summaries and full text).
+
+-   **Milestone 88: Implement Strategy-Aware RAG Retrieval**
+    -   **Goal**: Refactor the RAG service to use the appropriate retrieval strategy based
+        on the knowledge base's metadata.
+    -   **Description**: This makes the RAG system intelligent. It will check a KB's
+        `indexing_strategy` metadata before performing a query and adapt its approach
+        accordingly.
+    -   **Key Tasks**: Modify `rag_service.py`. Before a query, fetch the collection's
+        metadata. If the strategy is `deep`, search the `_summaries` collection first,
+        get the parent document IDs from the results, and then retrieve the full-text
+        documents from the primary collection. If the strategy is `standard`, perform the
+        direct search as before.
+    -   **Outcome**: The RAG service can dynamically leverage the higher-quality context
+        from deeply indexed knowledge bases, leading to more accurate and relevant LLM
+        responses.
 
 ---
 
