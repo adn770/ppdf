@@ -159,6 +159,7 @@ class RAGService:
             dm_config["model"],
             stream=True,
             temperature=dm_config["temperature"],
+            context_window=dm_config["context_window"],
         )
         for chunk_data in llm_stream:
             yield {"type": "narrative_chunk", "content": chunk_data.get("response", "")}
@@ -215,6 +216,7 @@ class RAGService:
                 util_config["model"],
                 stream=False,
                 temperature=util_config["temperature"],
+                context_window=util_config["context_window"],
             )
             response_str = response_data.get("response", "[]")
             json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
@@ -319,6 +321,7 @@ class RAGService:
             dm_config["model"],
             stream=True,
             temperature=dm_config["temperature"],
+            context_window=dm_config["context_window"],
         )
         full_narrative = ""
         for chunk_data in llm_stream:
@@ -410,6 +413,7 @@ class RAGService:
                 util_config["url"],
                 util_config["model"],
                 temperature=util_config["temperature"],
+                context_window=util_config["context_window"],
             )
             map_response = response_data.get("response", "").strip()
             if map_response:
@@ -432,6 +436,7 @@ class RAGService:
             dm_config["url"],
             dm_config["model"],
             temperature=dm_config["temperature"],
+            context_window=dm_config["context_window"],
         )
         summary = response_data.get("response", "").strip()
         return summary

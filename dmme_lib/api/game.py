@@ -98,7 +98,6 @@ def generate_character():
         rules_context = "\n\n".join(rules_docs)
         if not rules_context:
             rules_context = f"No specific rules found. Use general knowledge for '{rules_kb}'."
-
         char_creation_config = current_app.config_service.get_model_config("char")
         char_data = generate_character_json(
             description=description,
@@ -106,6 +105,7 @@ def generate_character():
             lang=lang,
             ollama_url=char_creation_config["url"],
             model=char_creation_config["model"],
+            context_window=char_creation_config["context_window"],
         )
         return jsonify(char_data)
     except ValueError as e:

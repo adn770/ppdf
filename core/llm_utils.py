@@ -65,6 +65,7 @@ def query_text_llm(
     model: str,
     stream: bool = False,
     temperature: float = None,
+    context_window: int = None,
 ):
     """
     Sends a standard text prompt to an Ollama model.
@@ -80,16 +81,37 @@ def query_text_llm(
         _format_text_for_log(user_content),
     )
     start_time = time.monotonic()
-    payload = {
-        "model": model,
-        "system": prompt,
-        "prompt": user_content,
-        "stream": stream,
-        "format": "json" if "json" in prompt.lower() else "",
-    }
+    payload = {}
+
+    # --- Conditional Gemma Prompt Formatting ---
+    if "gemma" in model.lower():
+        log_llm.debug("Applying Gemma-specific prompt formatting for model '%s'.", model)
+        # For Gemma, the system prompt is included within the user turn.
+        formatted_prompt = (
+            f"<start_of_turn>user\n{prompt}\n\n{user_content}<end_of_turn>\n"
+            f"<start_of_turn>model\n"
+        )
+        payload = {
+            "model": model,
+            "prompt": formatted_prompt,
+            "stream": stream,
+        }
+    else:
+        # Standard formatting for Llama, Mixtral, Qwen, etc.
+        payload = {
+            "model": model,
+            "system": prompt,
+            "prompt": user_content,
+            "stream": stream,
+            "format": "json" if "json" in prompt.lower() else "",
+        }
+
+    # Add options to the payload
     options = {}
     if temperature is not None:
         options["temperature"] = temperature
+    if context_window is not None:
+        options["num_ctx"] = context_window
     if options:
         payload["options"] = options
 
@@ -220,32 +242,65 @@ def generate_embeddings_ollama(
         raise
 
 
-def get_semantic_tags(chunk: str, prompt: str, ollama_url: str, model: str) -> list[str]:
-    """Gets a list of semantic tags for a text chunk using a provided prompt."""
-    response_data = query_text_llm(prompt, chunk, ollama_url, model, temperature=0.1)
+def get_semantic_tags(
+    chunk: str, prompt: str, ollama_url: str, model: str, context_window: int = None
+) -> list[str]:
+    """Gets a list of semantic tags for a text chunk, handling various LLM JSON outputs."""
+    response_data = query_text_llm(
+        prompt, chunk, ollama_url, model, temperature=0.1, context_window=context_window
+    )
     response_str = response_data.get("response", "").strip()
 
     if not response_str:
         return ["type:prose"]
 
+    # Clean response string from markdown fences or other text
+    clean_str = response_str
+    if "```json" in clean_str:
+        clean_str = clean_str.split("```json")[1]
+    clean_str = clean_str.split("```")[0].strip()
+
     try:
-        # Clean the response to find the JSON array, removing markdown fences
-        json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
-        if not json_match:
-            log_llm.warning("LLM returned non-JSON tag response: %s", response_str)
-            return ["type:prose"]
+        # First, try to parse the entire cleaned string as JSON
+        parsed_json = json.loads(clean_str)
 
-        json_str = json_match.group(0)
-        tags = json.loads(json_str)
+        # Case 1: It's already a valid list of strings
+        if isinstance(parsed_json, list):
+            if all(isinstance(t, str) for t in parsed_json):
+                return parsed_json if parsed_json else ["type:prose"]
 
-        if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
-            return tags if tags else ["type:prose"]
-        else:
-            log_llm.warning("LLM returned malformed tag list: %s", tags)
-            return ["type:prose"]
+        # Case 2: It's an object, let's inspect it
+        if isinstance(parsed_json, dict):
+            # Check for a 'tags' key which is the most common correct wrapper
+            if "tags" in parsed_json and isinstance(parsed_json["tags"], list):
+                tags = parsed_json["tags"]
+                return tags if tags else ["type:prose"]
+
+            # Handle cases like {"type": "stat_block"} or {"type": ["mechanics"]}
+            tags = []
+            for value in parsed_json.values():
+                if isinstance(value, str):
+                    tags.append(value)
+                elif isinstance(value, list):
+                    tags.extend([str(item) for item in value])
+            if tags:
+                return sorted(list(set(tags)))
+
     except json.JSONDecodeError:
-        log_llm.warning("Failed to decode JSON from tag response: %s", response_str)
-        return ["type:prose"]
+        # JSON parsing failed, fall back to regex search for an array
+        json_match = re.search(r"\[\s*.*?\s*\]", clean_str, re.DOTALL)
+        if json_match:
+            try:
+                tags = json.loads(json_match.group(0))
+                if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
+                    return tags if tags else ["type:prose"]
+            except json.JSONDecodeError:
+                pass  # Fall through to the warning
+
+    log_llm.warning(
+        "Could not parse a valid tag structure from LLM response: %s", response_str
+    )
+    return ["type:prose"]
 
 
 def generate_character_json(
@@ -254,6 +309,7 @@ def generate_character_json(
     lang: str,
     ollama_url: str,
     model: str,
+    context_window: int = None,
 ) -> dict:
     """
     High-level function to generate a character JSON from a description.
@@ -263,7 +319,9 @@ def generate_character_json(
     prompt = prompt_template.format(description=description, rules_context=rules_context)
 
     # For this specific task, the complex prompt is the user content
-    response_data = query_text_llm("", prompt, ollama_url, model)
+    response_data = query_text_llm(
+        "", prompt, ollama_url, model, context_window=context_window
+    )
     response_str = response_data.get("response", "").strip()
 
     if not response_str:

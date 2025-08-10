@@ -53,7 +53,7 @@ class IngestionService:
         Extracts key terms from a chunk.
         For stat blocks, it extracts the title. For others, it extracts bolded text.
         """
-        if "type:stat_block" in tags:
+        if "table:stats" in tags:
             first_line = chunk.split("\n", 1)[0]
             # Remove markdown bolding and any leading/trailing whitespace
             cleaned_name = re.sub(r"[\*#]", "", first_line).strip()
@@ -76,9 +76,12 @@ class IngestionService:
                 util_config["url"],
                 util_config["model"],
                 temperature=0.0,
+                context_window=util_config["context_window"],
             )
             response_str = response_data.get("response", "").strip()
-            return json.loads(response_str)
+            # Clean potential markdown fences from the response
+            clean_str = re.sub(r"```(json)?\n?|\n?```", "", response_str).strip()
+            return json.loads(clean_str)
         except (json.JSONDecodeError, TypeError) as e:
             log.warning("Could not parse stat block JSON from LLM: %s", e)
             return {}
@@ -95,6 +98,7 @@ class IngestionService:
                 util_config["url"],
                 util_config["model"],
                 temperature=0.0,
+                context_window=util_config["context_window"],
             )
             response_str = response_data.get("response", "").strip()
             json_match = re.search(r"\{.*\}", response_str, re.DOTALL)
@@ -125,7 +129,9 @@ class IngestionService:
         yield msg
 
         prompt_key = (
-            "SEMANTIC_LABELER_RULES" if kb_type == "rules" else "SEMANTIC_LABELER_ADVENTURE"
+            "SEMANTIC_LABELER_RULES_XML"
+            if kb_type == "rules"
+            else "SEMANTIC_LABELER_ADVENTURE_XML"
         )
         labeler_prompt_template = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
@@ -152,12 +158,16 @@ class IngestionService:
                 log.info(msg)
                 yield msg
                 tags = get_semantic_tags(
-                    chunk, labeler_prompt, util_config["url"], util_config["model"]
+                    chunk,
+                    labeler_prompt,
+                    util_config["url"],
+                    util_config["model"],
+                    context_window=util_config["context_window"],
                 )
-                # Apply secrecy rule for stat blocks
-                if "type:stat_block" in tags:
+                # Apply secrecy rule for all tables
+                if "type:table" in tags:
                     tags.append("access:dm_only")
-                    log.debug("Applying semantic rule: Added access:dm_only to stat_block.")
+                    log.debug("Applying structural rule: Added access:dm_only to table.")
 
                 final_tags = sorted(list(set(tags)))
                 key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
@@ -218,7 +228,7 @@ class IngestionService:
             metadata = chunk_data["metadata"]
 
             # Deep parse stat blocks if applicable
-            if "type:stat_block" in metadata.get("tags", []):
+            if "table:stats" in metadata.get("tags", []):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
 
@@ -239,6 +249,7 @@ class IngestionService:
                     util_config["url"],
                     util_config["model"],
                     temperature=0.0,
+                    context_window=util_config["context_window"],
                 )
                 response_str = response_data.get("response", "").strip()
                 entities = json.loads(response_str)
@@ -333,6 +344,7 @@ class IngestionService:
                 util_config["url"],
                 util_config["model"],
                 temperature=0.1,
+                context_window=util_config["context_window"],
             )
             final_tag = response_data.get("response", "").strip()
 
@@ -363,7 +375,9 @@ class IngestionService:
         # --- Paragraph-level Reformatting and Semantic Labeling ---
         kb_type = metadata.get("kb_type", "module")
         prompt_key = (
-            "SEMANTIC_LABELER_RULES" if kb_type == "rules" else "SEMANTIC_LABELER_ADVENTURE"
+            "SEMANTIC_LABELER_RULES_XML"
+            if kb_type == "rules"
+            else "SEMANTIC_LABELER_ADVENTURE_XML"
         )
         labeler_prompt_template = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
@@ -398,17 +412,21 @@ class IngestionService:
                 # Get initial tags from the LLM or structural rules
                 tags = []
                 if para.is_table:
-                    tags.append("access:dm_only")
-                    log.debug("Applying structural rule: Added access:dm_only to table.")
+                    tags.append("type:table")  # Now assign the general table tag
+                    log.debug("Applying structural rule: Identified a table.")
                 else:
                     tags = get_semantic_tags(
-                        chunk, final_labeler_prompt, util_config["url"], util_config["model"]
+                        chunk,
+                        final_labeler_prompt,
+                        util_config["url"],
+                        util_config["model"],
+                        context_window=util_config["context_window"],
                     )
 
                 # Apply additional hard-coded semantic rules
-                if "type:stat_block" in tags:
+                if "type:table" in tags:
                     tags.append("access:dm_only")
-                    log.debug("Applying semantic rule: Added access:dm_only to stat_block.")
+                    log.debug("Applying security rule: Added access:dm_only to table.")
                 if "narrative:kickoff" in tags and section.page_start > 10:
                     tags.remove("narrative:kickoff")
                     tags.append("type:read_aloud")

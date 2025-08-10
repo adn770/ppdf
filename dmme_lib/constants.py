@@ -39,7 +39,8 @@ PROMPT_REGISTRY = {
             "    that requires a rule lookup (e.g., casting a spell, making a skill check)?\n"
             "4. **Hypothetical Outcome**: What might happen next? Query for potential consequences "
             "    or reactions.\n\n"
-            "Your response MUST be a single, valid JSON array of strings and nothing else.\n\n"
+            "Your response MUST be a single, valid JSON array of strings and nothing else. "
+            "Do not wrap it in Markdown code fences.\n\n"
             "[CONVERSATION HISTORY]\n{history}\n\n"
             "[PLAYER ACTION]\n{command}"
         )
@@ -170,6 +171,7 @@ PROMPT_REGISTRY = {
             "USER DESCRIPTION:\n{description}\n\n"
             "RULE SYSTEM CONTEXT:\n{rules_context}\n\n"
             "Your response MUST be a single, valid JSON object and nothing else. "
+            "Do not wrap it in Markdown code fences. "
             "The JSON must have keys for 'name', 'class', 'level', and 'description'. "
             "It MUST also have a nested 'stats' object containing keys for: "
             "'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', "
@@ -187,6 +189,7 @@ PROMPT_REGISTRY = {
             "DESCRIPCIÓN DEL USUARIO:\n{description}\n\n"
             "CONTEXTO DEL SISTEMA DE REGLAS:\n{rules_context}\n\n"
             "Tu respuesta DEBE ser un único objeto JSON válido y nada más. "
+            "No lo envuelvas en bloques de código Markdown. "
             "El JSON debe tener claves para 'name', 'class', 'level' y 'description'. "
             "También DEBE tener un objeto 'stats' anidado que contenga claves para: "
             "'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', "
@@ -204,6 +207,7 @@ PROMPT_REGISTRY = {
             "DESCRIPCIÓ DE L'USUARI:\n{description}\n\n"
             "CONTEXT DEL SISTEMA DE REGLES:\n{rules_context}\n\n"
             "La teva resposta HA DE SER un únic objecte JSON vàlid i res més. "
+            "No l'embolcallis amb blocs de codi Markdown. "
             "El JSON ha de tenir claus per a 'name', 'class', 'level' i 'description'. "
             "També HA DE tenir un objecte 'stats' niat que contingui claus per a: "
             "'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', "
@@ -257,66 +261,6 @@ PROMPT_REGISTRY = {
             "La teva resposta ha de ser ÚNICAMENT el resum narratiu, i HA DE ser en català."
         ),
     },
-    "SEMANTIC_LABELER_ADVENTURE": {
-        "en": (
-            "You are a semantic analysis engine for an adventure module. Your task is to analyze "
-            "the provided text chunk and generate a JSON array of all applicable tags from the "
-            "vocabulary provided. Pay close attention to stylistic cues.\n\n"
-            "USER KICKOFF CUE (Use this to identify starting text):\n{kickoff_cue}\n\n"
-            "TAG VOCABULARY:\n"
-            "1. `type` (Content Type - Choose AT LEAST one):\n"
-            "   - `type:prose`: General narrative text.\n"
-            "   - `type:read_aloud`: *Italicized paragraphs* are almost always this.\n"
-            "   - `type:stat_block`: A creature's statistics.\n"
-            "   - `type:spell`: A spell description.\n"
-            "   - `type:mechanics`: Rules for skill checks, combat, etc.\n"
-            "   - `type:lore`: Background history or world-building.\n"
-            "   - `type:dialogue`: Quoted spoken words.\n"
-            "   - `type:item`: Description of an item or treasure.\n"
-            "   - `type:location`: Description of a place.\n"
-            "2. `access` (Security - Choose zero or one):\n"
-            "   - `access:dm_only`: Secret information FOR THE DM ONLY (monster tactics, "
-            "plot secrets, trap mechanics).\n"
-            "3. `narrative` (Function - Choose zero or more):\n"
-            "   - `narrative:kickoff`: The very first `read_aloud` text starting the adventure.\n"
-            "   - `narrative:hook`: A plot hook, rumor, or mission for players.\n"
-            "   - `narrative:clue`: Information that helps solve a puzzle/mystery.\n"
-            "   - `narrative:plot_twist`: A surprising revelation.\n"
-            "4. `gameplay` (Interactive Elements - Choose zero or more):\n"
-            "   - `gameplay:trap`: Describes a trap.\n"
-            "   - `gameplay:puzzle`: Describes a puzzle.\n"
-            "   - `gameplay:secret`: Describes a secret door or hidden item.\n\n"
-            "Your response MUST be ONLY a single, valid JSON array of strings and nothing else."
-        )
-    },
-    "SEMANTIC_LABELER_RULES": {
-        "en": (
-            "You are a semantic analysis engine for a rulebook. Your task is to analyze "
-            "the provided text chunk and generate a JSON array of all applicable tags from the "
-            "vocabulary provided. Pay close attention to stylistic cues.\n\n"
-            "USER KICKOFF CUE (Use this to identify starting text):\n{kickoff_cue}\n\n"
-            "TAG VOCABULARY:\n"
-            "1. `type` (Content Type - Choose AT LEAST one):\n"
-            "   - `type:prose`: General descriptive text.\n"
-            "   - `type:read_aloud`: Descriptive text examples.\n"
-            "   - `type:stat_block`: A creature's statistics.\n"
-            "   - `type:spell`: A spell description.\n"
-            "   - `type:mechanics`: Rules for how the game is played. *Italicized text* "
-            "often highlights a specific rule, condition, or game term.\n"
-            "   - `type:lore`: Background history or world-building.\n"
-            "   - `type:dialogue`: Quoted spoken words.\n"
-            "   - `type:item`: Description of an item or equipment.\n"
-            "   - `type:location`: Description of a generic place.\n"
-            "2. `access` (Security - Choose zero or one):\n"
-            "   - `access:dm_only`: Optional rules or guidance FOR THE DM ONLY.\n"
-            "3. `narrative` (Function - Choose zero or more):\n"
-            "   - `narrative:hook`: An example of a plot hook.\n"
-            "4. `gameplay` (Interactive Elements - Choose zero or more):\n"
-            "   - `gameplay:trap`: An example of a trap.\n"
-            "   - `gameplay:puzzle`: An example of a puzzle.\n\n"
-            "Your response MUST be ONLY a single, valid JSON array of strings and nothing else."
-        )
-    },
     "STAT_BLOCK_PARSER": {
         "en": (
             "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
@@ -329,16 +273,18 @@ PROMPT_REGISTRY = {
             "Also extract the average hit points into a separate `pc` key if present.\n"
             "3. The value for `ts` should be the full string (e.g., 'M12 V13 P14 A15 E16 (2)').\n"
             "4. If a value is not present in the text, omit its key from the JSON.\n"
-            "5. Your response MUST be ONLY the single, valid JSON object and nothing else.\n\n"
+            "5. If any other attributes are present (e.g., 'Special'), include them as "
+            "key-value pairs in the final JSON, using a lowercase key.\n"
+            "6. Your response MUST be ONLY the single, valid JSON object and nothing else.\n"
+            "7. Do not wrap the JSON object in Markdown code fences (```json ... ```).\n\n"
             "EXAMPLE INPUT:\n"
-            "CA 15, DC 6+1** (28 pc), AT 1×mossegada (1d10+petrifica), 1×mirada (petrifica), "
-            "BA +6, MV 60' (20'), TS M10 V11 P12 A13 E14 (6), ML 9, AL neutral, PX 950, "
-            "NA 1d6 (1d6), TT F\n\n"
+            "CA 15, DC 6+1** (28 pc), AT 1×mossegada (1d10+petrifica), "
+            "TS M10 V11 P12 A13 E14 (6), ML 9, AL neutral, PX 950, "
+            "Special: Immune to sleep and charm spells.\n\n"
             "EXAMPLE OUTPUT:\n"
-            '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×mossegada (1d10+petrifica), '
-            '1×mirada (petrifica)", "ba": "+6", "mv": "60\' (20\')", '
+            '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×mossegada (1d10+petrifica)", '
             '"ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "neutral", "px": 950, '
-            '"na": "1d6 (1d6)", "tt": "F"}'
+            '"special": "Immune to sleep and charm spells"}'
         )
     },
     "SPELL_PARSER": {
@@ -351,7 +297,8 @@ PROMPT_REGISTRY = {
             "2. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
             "if they are not explicitly in the text.\n"
             "3. If a value is not present in the text, omit its key from the JSON.\n"
-            "4. Your response MUST be ONLY the single, valid JSON object and nothing else.\n\n"
+            "4. Your response MUST be ONLY the single, valid JSON object and nothing else. "
+            "Do not wrap it in Markdown code fences.\n\n"
             "EXAMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
             "Bola de foc\n"
             "Durada: instantani.\n"
@@ -377,7 +324,8 @@ PROMPT_REGISTRY = {
             "INPUT: A JSON list of strings.\n"
             '["Goblin", "Cragmaw Hideout", "Sildar Hallwinter", "Potion of Healing"]\n\n'
             "OUTPUT: Your response MUST be a single, valid JSON object mapping each "
-            "input term to its classified entity type. Do not include any other text.\n"
+            "input term to its classified entity type. Do not include any other text or "
+            "Markdown code fences.\n"
             '{"Goblin": "creature", "Cragmaw Hideout": "location", '
             '"Sildar Hallwinter": "character", "Potion of Healing": "item"}'
         )
@@ -452,5 +400,99 @@ PROMPT_REGISTRY = {
             "`decoration`, `other`. Your response must be ONLY one of these words "
             "and nothing else."
         )
+    },
+    # --- NEW XML PROMPTS FOR SEMANTIC LABELING ---
+    "SEMANTIC_LABELER_RULES_XML": {
+        "en": (
+            "<task>Analyze the text in the <text_input> tag. Select all applicable tags from "
+            "the <vocabulary> list. Pay close attention to keywords like 'Duration' and "
+            "'Range'; text containing these is often a `type:spell`. If you identify a "
+            "table, you MUST use the `type:table` tag AND one specific `table:*` sub-tag. "
+            "For tables that only list spell names, use `table:spell_list`. Your response "
+            "MUST be ONLY a single, valid JSON array of strings. Do not wrap it in "
+            "Markdown code fences.</task>\n"
+            "<vocabulary>[\"type:prose\", \"type:spell\", \"type:mechanics\", "
+            "\"type:item\", \"access:dm_only\", \"type:table\", \"table:stats\", \"table:random\", "
+            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulary>\n"
+            "<example><input>| 1d12 | Name | Rev. | Duration | Range |</input>"
+            "<output>[\"type:table\", \"table:spell_list\"]</output></example>"
+        ),
+        "es": (
+            "<tasca>Analiza el texto dentro de la etiqueta <text_input>. Elige todas las "
+            "etiquetas aplicables de la lista <vocabulario>. Presta especial atención a "
+            "palabras clave como 'Duración' y 'Alcance'; el texto que las contiene suele ser "
+            "un `type:spell`. Si identificas una tabla, DEBES USAR la etiqueta `type:table` "
+            "Y una sub-etiqueta `table:*` específica. Para tablas que solo listan nombres "
+            "de hechizos, usa `table:spell_list`. Tu respuesta DEBE SER ÚNICAMENTE un único "
+            "array JSON válido de strings. No lo envuelvas en bloques de código Markdown."
+            "</tasca>\n"
+            "<vocabulario>[\"type:prose\", \"type:spell\", \"type:mechanics\", "
+            "\"type:item\", \"access:dm_only\", \"type:table\", \"table:stats\", \"table:random\", "
+            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulario>\n"
+            "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
+            "<output>[\"type:table\", \"table:spell_list\"]</output></ejemplo>"
+        ),
+        "ca": (
+            "<tasca>Analitza el text dins l'etiqueta <text_input>. Tria totes les etiquetes "
+            "aplicables de la llista <vocabulari>. Para atenció a paraules clau com "
+            "'Durada' i 'Abast'; el text que les conté sovint és un `type:spell`. Si "
+            "identifiques una taula, HAS D'UTILITZAR l'etiqueta `type:table` I una "
+            "sub-etiqueta `table:*` específica. Per a les taules que només llisten noms "
+            "d'encanteris, fes servir `table:spell_list`. La teva resposta HA DE SER "
+            "ÚNICAMENT una única matriu JSON vàlida de strings. No l'embolcallis amb "
+            "blocs de codi Markdown.</tasca>\n"
+            "<vocabulari>[\"type:prose\", \"type:spell\", \"type:mechanics\", "
+            "\"type:item\", \"access:dm_only\", \"type:table\", \"table:stats\", \"table:random\", "
+            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulari>\n"
+            "<exemple><input>| 1d12 | Nom | Inv. | Durada | Abast |</input>"
+            "<output>[\"type:table\", \"table:spell_list\"]</output></exemple>"
+        ),
+    },
+    "SEMANTIC_LABELER_ADVENTURE_XML": {
+        "en": (
+            "<task>Analyze the text in the <text_input> tag. Select all applicable tags "
+            "from the <vocabulary> list. If you identify a table, you MUST use the "
+            "`type:table` tag AND one specific `table:*` sub-tag (e.g., `table:stats`). "
+            "Your response MUST be ONLY a single, valid JSON array of strings. "
+            "Do not wrap it in Markdown code fences.</task>\n"
+            "<vocabulary>[\"type:prose\", \"type:read_aloud\", \"type:spell\", \"type:mechanics\", "
+            "\"type:lore\", \"type:dialogue\", \"type:item\", \"type:location\", "
+            "\"access:dm_only\", \"narrative:kickoff\", \"narrative:hook\", \"narrative:clue\", "
+            "\"narrative:plot_twist\", \"gameplay:trap\", \"gameplay:puzzle\", "
+            "\"gameplay:secret\", \"type:table\", \"table:stats\", \"table:random\", "
+            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulary>\n"
+            "<example><input>The bandits will ambush the party on the road.</input>"
+            "<output>[\"type:prose\", \"access:dm_only\"]</output></example>"
+        ),
+        "es": (
+            "<tasca>Analiza el texto dentro de la etiqueta <text_input>. Elige todas las "
+            "etiquetas aplicables de la lista <vocabulario>. Si identificas una tabla, "
+            "DEBES USAR la etiqueta `type:table` Y una sub-etiqueta `table:*` específica "
+            "(p. ej., `table:stats`). Tu respuesta DEBE SER ÚNICAMENTE un único array JSON "
+            "válido de strings. No lo envuelvas en bloques de código Markdown.</tasca>\n"
+            "<vocabulary>[\"type:prose\", \"type:read_aloud\", \"type:spell\", \"type:mechanics\", "
+            "\"type:lore\", \"type:dialogue\", \"type:item\", \"type:location\", "
+            "\"access:dm_only\", \"narrative:kickoff\", \"narrative:hook\", \"narrative:clue\", "
+            "\"narrative:plot_twist\", \"gameplay:trap\", \"gameplay:puzzle\", "
+            "\"gameplay:secret\", \"type:table\", \"table:stats\", \"table:random\", "
+            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulary>\n"
+            "<ejemplo><input>Los bandidos emboscarán al grupo en el camino.</input>"
+            "<output>[\"type:prose\", \"access:dm_only\"]</output></ejemplo>"
+        ),
+        "ca": (
+            "<tasca>Analitza el text dins l'etiqueta <text_input>. Tria totes les etiquetes "
+            "aplicables de la llista <vocabulari>. Si identifiques una taula, HAS D'UTILITZAR "
+            "l'etiqueta `type:table` I una sub-etiqueta `table:*` específica (p. ex., "
+            "`table:stats`). La teva resposta HA DE SER ÚNICAMENT una única matriu JSON "
+            "vàlida de strings. No l'embolcallis amb blocs de codi Markdown.</tasca>\n"
+            "<vocabulari>[\"type:prose\", \"type:read_aloud\", \"type:spell\", \"type:mechanics\", "
+            "\"type:lore\", \"type:dialogue\", \"type:item\", \"type:location\", "
+            "\"access:dm_only\", \"narrative:kickoff\", \"narrative:hook\", \"narrative:clue\", "
+            "\"narrative:plot_twist\", \"gameplay:trap\", \"gameplay:puzzle\", "
+            "\"gameplay:secret\", \"type:table\", \"table:stats\", \"table:random\", "
+            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulari>\n"
+            "<exemple><input>Els bandits emboscaran el grup al camí.</input>"
+            "<output>[\"type:prose\", \"access:dm_only\"]</output></exemple>"
+        ),
     },
 }
