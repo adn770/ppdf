@@ -90,7 +90,7 @@ class RAGService:
         if game_config.get("mode") == "module" and module_kb:
             yield from self._find_and_yield_cover_mosaic(module_kb)
 
-        priority_labels = ["read_aloud_kickoff", "adventure_hook"]
+        priority_labels = ["narrative:kickoff", "narrative:hook"]
         found_docs, found_metas = [], []
 
         for label in priority_labels:
@@ -99,7 +99,7 @@ class RAGService:
                 active_kb,
                 query_text=f"Text for starting an adventure, like a {label.replace('_', ' ')}",
                 n_results=1,
-                where_filter={"label": label},
+                where_filter={"tags": {"$contains": label}},
             )
             if docs:
                 log.info("Found high-priority kickoff content with label '%s'.", label)
@@ -114,7 +114,8 @@ class RAGService:
                 if start_idx != -1:
                     sequence = [s_chunks[start_idx]]
                     for i in range(start_idx + 1, len(s_chunks)):
-                        if s_chunks[i][1].get("label") == "mechanics":
+                        chunk_tags = json.loads(s_chunks[i][1].get("tags", "[]"))
+                        if "type:mechanics" in chunk_tags:
                             sequence.append(s_chunks[i])
                         else:
                             break
@@ -136,11 +137,11 @@ class RAGService:
 
         if not found_docs:
             found_docs = ["No introductory text was found in the knowledge base."]
-            found_metas = [{"label": "prose"}]
+            found_metas = [{"tags": '["type:prose"]'}]
 
         intro_context = "\n\n".join(found_docs)
         insight_data = [
-            {"label": meta.get("label", "prose"), "text": doc}
+            {"tags": json.loads(meta.get("tags", "[]")), "text": doc}
             for doc, meta in zip(found_docs, found_metas)
         ]
         log.debug("Final kickoff RAG context retrieved:\n%s", intro_context)
@@ -230,7 +231,7 @@ class RAGService:
             log.warning("Could not parse query expansion response. Error: %s", e)
 
         # --- Stage 2: Execute all queries and check for cacheable location ---
-        narrative_filter = {"label": {"$ne": "dm_knowledge"}}
+        narrative_filter = {"is_dm_only": False}
 
         # We query for insight first to identify a primary location
         insight_module_docs, insight_module_metas = execute_queries(
@@ -265,7 +266,7 @@ class RAGService:
                     module_kb, primary_location["meta"]
                 )
                 insight_data = [
-                    {"text": d, "label": m.get("label", "prose")}
+                    {"text": d, "tags": json.loads(m.get("tags", "[]"))}
                     for d, m in zip(full_docs, full_metas)
                 ]
                 # Store both in cache
@@ -295,11 +296,11 @@ class RAGService:
                     self.vector_store, rules_kb, queries, n_results=3
                 )
                 insight_data = [
-                    {"text": d, "label": m.get("label", "prose")}
+                    {"text": d, "tags": json.loads(m.get("tags", "[]"))}
                     for d, m in zip(insight_module_docs, insight_module_metas)
                 ]
                 insight_data.extend(
-                    [{"text": doc, "label": "mechanics"} for doc in insight_rules_docs]
+                    [{"text": doc, "tags": ["type:mechanics"]} for doc in insight_rules_docs]
                 )
 
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
@@ -379,7 +380,7 @@ class RAGService:
                 kb_name,
                 image_query,
                 n_results=1,
-                where_filter={"label": "image_description"},
+                where_filter={"tags": {"$contains": "type:image"}},
             )
             if docs and metas:
                 image_doc = docs[0]
