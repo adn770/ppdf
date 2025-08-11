@@ -269,7 +269,6 @@ def ingest_document():
     pages_str = data.get("pages", "all")
     sections_to_include = data.get("sections_to_include")
     extract_images = data.get("extract_images", True)
-    kickoff_cue = data.get("kickoff_cue", "")
     deep_indexing = data.get("deep_indexing", False)
     force_paragraph_chunking = data.get("force_paragraph_chunking", False)
 
@@ -306,7 +305,6 @@ def ingest_document():
                         metadata,
                         pages_str,
                         sections_to_include,
-                        kickoff_cue,
                         deep_indexing=deep_indexing,
                         force_paragraph_chunking=force_paragraph_chunking,
                     ):

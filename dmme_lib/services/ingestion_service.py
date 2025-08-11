@@ -44,7 +44,7 @@ class IngestionService:
         if not prompt_data:
             raise ValueError(f"Prompt key '{key}' not found in registry.")
 
-        # For old-style, fully translated prompts (future-proofing)
+        # For old-style, fully translated prompts (like gameplay prompts)
         if isinstance(prompt_data.get(lang), str):
             return prompt_data.get(lang, prompt_data.get("en", ""))
 
@@ -72,19 +72,29 @@ class IngestionService:
 
     def _extract_key_terms_from_chunk(self, chunk: str, tags: list[str]) -> list[str]:
         """
-        Extracts key terms from a chunk.
-        For stat blocks, it extracts the title. For others, it extracts bolded text.
+        Extracts and sanitizes key terms from a chunk.
+        - For stat blocks, it extracts the title.
+        - For tables, it splits the header into individual terms.
+        - For prose, it extracts bolded text.
+        - All terms are sanitized to remove trailing colons.
         """
+        raw_terms = []
         if "table:stats" in tags:
             first_line = chunk.split("\n", 1)[0]
-            # Remove markdown bolding and any leading/trailing whitespace
-            cleaned_name = re.sub(r"[\*#]", "", first_line).strip()
-            if cleaned_name:
-                return [cleaned_name]
-            return []
+            raw_terms = [re.sub(r"[\*#]", "", first_line).strip()]
+        elif "type:table" in tags:
+            header_line = chunk.split("\n", 1)[0]
+            # Split by '|', filter empty strings, and strip whitespace/colons
+            raw_terms = [term.strip() for term in header_line.split("|") if term.strip()]
         else:
             # Find all non-overlapping matches of text between double asterisks
-            return re.findall(r"\*\*(.*?)\*\*", chunk)
+            raw_terms = re.findall(r"\*\*(.*?)\*\*", chunk)
+
+        # Sanitize all extracted terms
+        sanitized_terms = [
+            term.strip().rstrip(":").strip() for term in raw_terms if term.strip()
+        ]
+        return sorted(list(set(sanitized_terms)))
 
     def _parse_stat_block(self, chunk: str, lang: str) -> dict:
         """Uses an LLM to parse a stat block string into a structured dictionary."""
@@ -187,11 +197,20 @@ class IngestionService:
             title = lines[0].lstrip("# ").strip()
             content = "\n".join(lines[1:])
 
-            chunks = [
-                c.strip() for c in re.split(r"\n{2,}", content) if c.strip() and len(c) >= 50
-            ]
+            chunks_to_process = []
+            if force_paragraph_chunking:
+                log.debug("Applying forced paragraph chunking to section '%s'.", title)
+                chunks_to_process = [
+                    c.strip()
+                    for c in re.split(r"\n{2,}", content)
+                    if c.strip() and len(c) >= 50
+                ]
+            else:
+                log.debug("Applying section-as-chunk strategy to section '%s'.", title)
+                if content.strip() and len(content) >= 50:
+                    chunks_to_process = [content.strip()]
 
-            for chunk in chunks:
+            for chunk in chunks_to_process:
                 msg = f"  -> Labeling chunk from section '{title}'..."
                 log.info(msg)
                 yield msg
@@ -233,10 +252,7 @@ class IngestionService:
             return
 
         # Post-processing for entity linking
-        msg = f"✔ Found {len(processed_chunks)} valid chunks. Starting entity linking..."
-        log.info(msg)
-        yield msg
-        final_metadatas = self._link_entities_in_document(processed_chunks, lang)
+        final_metadatas = yield from self._link_entities_in_document(processed_chunks, lang)
         documents = [chunk["text"] for chunk in processed_chunks]
 
         # Finalize metadata and IDs
@@ -268,14 +284,19 @@ class IngestionService:
         yield msg
 
     def _link_entities_in_document(self, processed_chunks: list[dict], lang: str):
-        """Post-processes chunks to extract and link named entities."""
+        """Post-processes chunks to extract and link named entities, yielding progress."""
         entity_extractor_prompt = self._get_prompt("ENTITY_EXTRACTOR", lang)
         util_config = self.config_service.get_model_config("classify")
         entity_map = defaultdict(list)
 
         # Stage 1: Extract entities and structured stats from all chunks
-        log.info("  -> Starting entity extraction for %d chunks...", len(processed_chunks))
+        msg = f"✔ Starting entity extraction for {len(processed_chunks)} chunks..."
+        log.info(msg)
+        yield msg
         for i, chunk_data in enumerate(processed_chunks):
+            msg = f"  -> Extracting entities from chunk {i + 1}/{len(processed_chunks)}..."
+            log.info(msg)
+            yield msg
             metadata = chunk_data["metadata"]
 
             # Deep parse stat blocks if applicable
@@ -313,7 +334,9 @@ class IngestionService:
                 log.error("Unexpected error during entity extraction: %s", e)
 
         # Stage 2: Create links based on the entity map
-        log.info("  -> Building relational links between chunks...")
+        msg = "  -> Building relational links between chunks..."
+        log.info(msg)
+        yield msg
         for chunk_data in processed_chunks:
             metadata = chunk_data["metadata"]
             linked_chunk_ids = set()
@@ -332,7 +355,6 @@ class IngestionService:
         metadata: dict,
         pages_str: str = "all",
         sections_to_include: list[str] | None = None,
-        kickoff_cue: str = "",
         deep_indexing: bool = False,
         force_paragraph_chunking: bool = False,
     ):
@@ -443,17 +465,13 @@ class IngestionService:
             if kb_type == "rules"
             else "SEMANTIC_LABELER_ADVENTURE_XML"
         )
-        labeler_prompt_template = self._get_prompt(prompt_key, lang)
+        labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         processed_chunks, chunk_id = [], 0
         fmt_config = self.config_service.get_model_config("format")
         fmt_model_details = get_model_details(fmt_config["url"], fmt_config["model"])
         fmt_ctx = fmt_model_details.get("context_length", 4096)
         fmt_target_chars = int(fmt_ctx * 0.8)
-
-        final_labeler_prompt = labeler_prompt_template.format(
-            kickoff_cue=kickoff_cue or "No hint provided."
-        )
 
         for i, section in enumerate(content_sections):
             if not section.paragraphs:
@@ -509,7 +527,7 @@ class IngestionService:
                 else:
                     tags = get_semantic_tags(
                         chunk,
-                        final_labeler_prompt,
+                        labeler_prompt,
                         util_config["url"],
                         util_config["model"],
                         context_window=util_config["context_window"],
@@ -543,10 +561,7 @@ class IngestionService:
                 chunk_id += 1
 
         # --- Post-processing: Entity Extraction and Linking ---
-        msg = "Post-processing: Extracting entities and creating links..."
-        log.info(msg)
-        yield msg
-        final_metadatas = self._link_entities_in_document(processed_chunks, lang)
+        final_metadatas = yield from self._link_entities_in_document(processed_chunks, lang)
         documents = [chunk["text"] for chunk in processed_chunks]
 
         # --- Finalize and Save to Vector Store ---

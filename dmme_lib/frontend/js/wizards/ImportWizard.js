@@ -113,7 +113,6 @@ export class ImportWizard {
         this.uploadInput.value = '';
         document.getElementById('kb-name').value = '';
         document.getElementById('kb-desc').value = '';
-        document.getElementById('kb-kickoff-cue').value = '';
         this.pdfPagesInput.value = 'all';
         this.pdfPagesInput.disabled = true;
         this.extractImagesCheckbox.checked = true;
@@ -285,7 +284,6 @@ export class ImportWizard {
                 pages: pagesValue || 'all',
                 sections_to_include: sectionsToInclude,
                 extract_images: this.extractImagesCheckbox.checked,
-                kickoff_cue: document.getElementById('kb-kickoff-cue').value.trim(),
                 deep_indexing: document.getElementById('deep-indexing-checkbox').checked,
                 force_paragraph_chunking: document.getElementById('force-paragraph-chunking-checkbox').checked,
                 metadata: {
@@ -400,7 +398,8 @@ export class ImportWizard {
         clearTimeout(this.autosaveDebounceTimer);
         this.autosaveDebounceTimer = setTimeout(() => {
             this.saveImageChanges();
-        }, 500); // Wait 500ms after user stops typing
+        }, 500);
+        // Wait 500ms after user stops typing
     }
 
     async saveImageChanges() {

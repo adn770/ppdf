@@ -112,8 +112,8 @@
 .tag-category--type { background-color: var(--accent-color); color: white; }
 .tag-category--access { background-color: var(--danger-color); color: white; }
 .tag-category--narrative { background-color: #6a9955; color: white; }
-.tag-category--gameplay { background-color: #8a3ffc; color: white;
-}
+.tag-category--gameplay { background-color: #8a3ffc; color: white; }
+.tag-category--table { background-color: #d18616; color: white; } /* New color for tables */
 
 .text-chunk-content {
     white-space: pre-wrap;
@@ -133,7 +133,7 @@
     justify-content: space-between;
     width: 100%;
     gap: 12px;
-    align-items: center;
+    align-items: flex-start; /* FIX: Align items to the top of the footer */
     color: #888;
     font-size: 0.9em;
 }
@@ -157,6 +157,7 @@
     gap: 8px;
     font-size: 1.2em;
     align-items: center;
+    flex-shrink: 0; /* Prevent icons from shrinking */
 }
 
 .chunk-expand-btn {
@@ -170,7 +171,8 @@
 }
 .chunk-expand-btn:hover { text-decoration: underline; }
 
-.metadata-icons [data-structured-stats] {
+.metadata-icons [data-structured-stats],
+.metadata-icons [data-linked-chunks] {
     cursor: help;
     font-weight: bold;
     font-family: var(--font-family-mono);

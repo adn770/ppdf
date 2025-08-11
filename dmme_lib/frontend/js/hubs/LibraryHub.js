@@ -1,4 +1,4 @@
-// dmme_lib/frontend/js/hubs/LibraryHub.js
+// --- dmme_lib/frontend/js/hubs/LibraryHub.js ---
 import { apiCall } from '../wizards/ApiHelper.js';
 import { status, confirmationModal } from '../ui.js';
 
@@ -93,25 +93,39 @@ export class LibraryHub {
     }
 
     _handleTooltipShow(event) {
-        const target = event.target.closest('[data-structured-stats]');
-        if (!target || !this.tooltip) return;
+        const statsTarget = event.target.closest('[data-structured-stats]');
+        const linksTarget = event.target.closest('[data-linked-chunks]');
+        if (!statsTarget && !linksTarget) return;
+
+        let tooltipContent = '';
 
         try {
-            const statsRaw = target.dataset.structuredStats;
-            const statsObj = JSON.parse(statsRaw);
-            const formattedJson = JSON.stringify(statsObj, null, 2);
-            this.tooltip.querySelector('pre').textContent = formattedJson;
+            if (statsTarget) {
+                const statsRaw = statsTarget.dataset.structuredStats;
+                const statsObj = JSON.parse(statsRaw);
+                tooltipContent = JSON.stringify(statsObj, null, 2);
+            } else if (linksTarget) {
+                const linksRaw = linksTarget.dataset.linkedChunks;
+                const linkIds = JSON.parse(linksRaw);
+                const allDocs = this.kbDataCache[this.selectedKb.name]?.content || [];
+                const linkedTitles = linkIds.map(id => {
+                    const doc = allDocs.find(d => d.chunk_id === id);
+                    return doc ? doc.section_title : 'Unknown Section';
+                });
+                tooltipContent = `Linked Sections:\n- ${[...new Set(linkedTitles)].join('\n- ')}`;
+            }
+            this.tooltip.querySelector('pre').textContent = tooltipContent;
             this.tooltip.style.display = 'block';
             this._updateTooltipPosition(event);
         } catch (e) {
-            console.error("Failed to parse structured stats JSON:", e);
-            this.tooltip.querySelector('pre').textContent = "Error: Invalid JSON data.";
+            console.error("Failed to parse tooltip JSON:", e);
+            this.tooltip.querySelector('pre').textContent = "Error: Invalid data.";
             this.tooltip.style.display = 'block';
         }
     }
 
     _handleTooltipHide(event) {
-        const target = event.target.closest('[data-structured-stats]');
+        const target = event.target.closest('[data-structured-stats], [data-linked-chunks]');
         if (target && this.tooltip) {
             this.tooltip.style.display = 'none';
         }
@@ -551,14 +565,16 @@ export class LibraryHub {
         }).join('');
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
-        const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
-        const statsStr = doc.structured_stats || '{}';
-        const hasStats = statsStr && Object.keys(JSON.parse(statsStr || '{}')).length > 0;
+        const linksStr = doc.linked_chunks || '[]';
+        const hasLinks = JSON.parse(linksStr).length > 0;
+        const statsStr = doc.structured_stats || doc.structured_spell_data || '{}';
+        const hasStats = statsStr && statsStr !== '{}';
         const sectionTitle = doc.section_title || 'Untitled Section';
         const sourceInfo = isSearchResult ?
             `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>` :
             `<span>p. ${doc.page_start || 'N/A'}</span>`;
         const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
+        const linksAttr = hasLinks ? `data-linked-chunks='${linksStr}'` : '';
         const content = summaryText ? summaryText : doc.document;
         const expandButton = summaryText ? `<button class="chunk-expand-btn">[ ▾ Expand ]</button>` : '';
 
@@ -585,7 +601,7 @@ export class LibraryHub {
                 <div class="metadata-icons">
                     ${expandButton}
                     ${hasLinks ?
-            '<span title="Has linked content">🔗</span>' : ''}
+            `<span title="Show linked sections" ${linksAttr}>🔗</span>` : ''}
                     ${hasStats ?
             `<span title="Show structured data" ${statsAttr}>{}</span>` : ''}
                 </div>
