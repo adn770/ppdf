@@ -29,8 +29,29 @@ class RAGService:
         log.info("RAGService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
-        """Safely retrieves a prompt from the registry, falling back to English."""
-        return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
+        """Assembles a prompt from the registry using the hybrid, English-first strategy."""
+        prompt_data = PROMPT_REGISTRY.get(key, {})
+        if not prompt_data:
+            raise ValueError(f"Prompt key '{key}' not found in registry.")
+
+        # For old-style, fully translated prompts (like gameplay prompts)
+        if isinstance(prompt_data.get(lang), str):
+            return prompt_data.get(lang, prompt_data.get("en", ""))
+
+        # For new-style, component-based prompts
+        base_prompt = prompt_data.get("base_prompt", "")
+        examples = prompt_data.get("examples", {})
+        lang_example = examples.get(lang, examples.get("en", ""))
+
+        final_prompt = base_prompt
+        if lang_example:
+            final_prompt += f"\n\n{lang_example}"
+
+        language_map = {"en": "English", "es": "Spanish", "ca": "Catalan"}
+        if "{language_name}" in final_prompt:
+            final_prompt = final_prompt.format(language_name=language_map.get(lang, "English"))
+
+        return final_prompt
 
     def _format_text_for_log(self, text: str) -> str:
         """Formats a long text block into a concise, single-line summary for logging."""

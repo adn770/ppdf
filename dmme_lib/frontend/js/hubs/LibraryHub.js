@@ -802,7 +802,7 @@ export class LibraryHub {
         const data = await this._getKbExploreData();
         this.kbDataCache[this.selectedKb.name].mindmap = true; // Mark as loaded
 
-        if (!data.documents || data.documents.length === 0) {
+        if ((!data.documents || data.documents.length === 0) && (!data.summaries || data.summaries.length === 0)) {
             this.mindmapContainer.innerHTML = '<p>No content to generate a mind map.</p>';
             return;
         }

@@ -39,8 +39,29 @@ class IngestionService:
         log.info("IngestionService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
-        """Safely retrieves a prompt from the registry, falling back to English."""
-        return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
+        """Assembles a prompt from the registry using the hybrid, English-first strategy."""
+        prompt_data = PROMPT_REGISTRY.get(key, {})
+        if not prompt_data:
+            raise ValueError(f"Prompt key '{key}' not found in registry.")
+
+        # For old-style, fully translated prompts (future-proofing)
+        if isinstance(prompt_data.get(lang), str):
+            return prompt_data.get(lang, prompt_data.get("en", ""))
+
+        # For new-style, component-based prompts
+        base_prompt = prompt_data.get("base_prompt", "")
+        examples = prompt_data.get("examples", {})
+        lang_example = examples.get(lang, examples.get("en", ""))
+
+        final_prompt = base_prompt
+        if lang_example:
+            final_prompt += f"\n\n{lang_example}"
+
+        language_map = {"en": "English", "es": "Spanish", "ca": "Catalan"}
+        if "{language_name}" in final_prompt:
+            final_prompt = final_prompt.format(language_name=language_map.get(lang, "English"))
+
+        return final_prompt
 
     def _format_text_for_log(self, text: str) -> str:
         """Formats a long text block into a concise, single-line summary for logging."""
@@ -151,9 +172,8 @@ class IngestionService:
             if kb_type == "rules"
             else "SEMANTIC_LABELER_ADVENTURE_XML"
         )
-        labeler_prompt_template = self._get_prompt(prompt_key, lang)
+        labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
-        labeler_prompt = labeler_prompt_template.format(kickoff_cue="No hint provided.")
         util_config = self.config_service.get_model_config("classify")
 
         processed_chunks = []
@@ -458,7 +478,8 @@ class IngestionService:
                     chunks_to_process.append((section, section.paragraphs))
                 else:
                     log.warning(
-                        "Section '%s' is too large (%d chars). Falling back to para-chunking.",
+                        "Section '%s' is too large (%d chars). "
+                        "Falling back to para-chunking.",
                         section.title,
                         len(section_text_for_llm),
                     )

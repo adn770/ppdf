@@ -22,12 +22,14 @@ PERSONA_PRESETS = {
 
 
 # --- I18N PROMPT REGISTRY ---
-# This registry holds all user-facing prompts in multiple languages.
-# The RAG and Ingestion services will select the appropriate prompt based on user settings.
+# This registry holds all user-facing prompts. It uses a hybrid, English-first
+# strategy. Core logic is in English, while examples are translated to provide
+# few-shot guidance to the LLM. Prompts for internal, structured data are English-only.
 
 PROMPT_REGISTRY = {
+    # --- Ingestion & Utility Prompts (Refactored) ---
     "SUMMARIZE_CHUNK": {
-        "en": (
+        "base_prompt": (
             "You are a summarization engine for a TTRPG knowledge base. Your task is to "
             "create a concise, third-person summary of the provided text chunk.\n\n"
             "GUIDELINES:\n"
@@ -38,28 +40,237 @@ PROMPT_REGISTRY = {
             "section describes...', 'The room contains...').\n"
             "4. **No Commentary**: Do not add opinions or information not present in the "
             "text.\n\n"
-            "Your response MUST be ONLY the summary and nothing else."
-        )
+            "CRITICAL RULE: Your response MUST be ONLY the summary text, and it MUST be "
+            "generated in {language_name}."
+        ),
+        "examples": {},
     },
     "QUERY_EXPANDER": {
-        "en": (
+        "base_prompt": (
             "You are a search query expansion assistant for a TTRPG AI Dungeon Master. "
             "Your task is to analyze the player's most recent action and the conversation "
             "history, then generate a JSON list of 3 to 5 diverse search queries to "
             "retrieve the most relevant context from a knowledge base.\n\n"
             "GUIDELINES:\n"
             "1. **Core Intent**: What is the player's primary goal?\n"
-            "2. **Key Entities**: What specific characters, locations, or items are mentioned?\n"
-            "3. **Rules & Mechanics**: Is the player asking about a rule or performing an action "
-            "    that requires a rule lookup (e.g., casting a spell, making a skill check)?\n"
-            "4. **Hypothetical Outcome**: What might happen next? Query for potential consequences "
-            "    or reactions.\n\n"
+            "2. **Key Entities**: What specific characters, locations, or items are "
+            "mentioned?\n"
+            "3. **Rules & Mechanics**: Is the player asking about a rule or performing an "
+            "action that requires a rule lookup (e.g., casting a spell)?\n"
+            "4. **Hypothetical Outcome**: What might happen next? Query for potential "
+            "consequences or reactions.\n\n"
             "Your response MUST be a single, valid JSON array of strings and nothing else. "
             "Do not wrap it in Markdown code fences.\n\n"
             "[CONVERSATION HISTORY]\n{history}\n\n"
             "[PLAYER ACTION]\n{command}"
-        )
+        ),
+        "examples": {},
     },
+    "STAT_BLOCK_PARSER": {
+        "base_prompt": (
+            "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
+            "raw text stat block and convert it into a structured JSON object. "
+            "The input format is inconsistent.\n\n"
+            "RULES:\n"
+            "1. Extract values for the keys: `ca`, `dc`, `at`, `ba`, `mv`, `ts`, `ml`, "
+            "`al`, `px`, `na`, `tt`.\n"
+            "2. Also extract the average hit points into a separate `pc` key if present.\n"
+            "3. If a value is not present, omit its key from the JSON.\n"
+            "4. If any other attributes are present (e.g., 'Special'), include them as "
+            "key-value pairs, using a lowercase key.\n"
+            "5. Your response MUST be ONLY the single, valid JSON object and nothing else. "
+            "Do not wrap it in Markdown code fences."
+        ),
+        "examples": {
+            "en": (
+                "EXAMPLE INPUT:\n"
+                "AC 15, HD 6+1** (28 hp), AT 1×bite (1d10+petrify), "
+                "SV M10 V11 P12 B13 S14 (6), ML 9, AL neutral, XP 950, "
+                "Special: Immune to sleep and charm spells.\n\n"
+                "EXAMPLE OUTPUT:\n"
+                '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×bite (1d10+petrify)", '
+                '"ts": "M10 V11 P12 B13 S14 (6)", "ml": 9, "al": "neutral", "xp": 950, '
+                '"special": "Immune to sleep and charm spells"}'
+            ),
+            "ca": (
+                "EXEMPLE INPUT:\n"
+                "CA 15, DC 6+1** (28 pc), AT 1×mossegada (1d10+petrifica), "
+                "TS M10 V11 P12 A13 E14 (6), ML 9, AL neutral, PX 950, "
+                "Special: Immune to sleep and charm spells.\n\n"
+                "EXEMPLE OUTPUT:\n"
+                '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×mossegada (1d10+petrifica)", '
+                '"ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "neutral", "px": 950, '
+                '"special": "Immune to sleep and charm spells"}'
+            ),
+            "es": (
+                "EJEMPLO INPUT:\n"
+                "CA 15, DG 6+1** (28 pg), AT 1×mordisco (1d10+petrificar), "
+                "TS M10 V11 P12 S13 E14 (6), ML 9, AL neutral, PX 950, "
+                "Especial: Inmune a conjuros de dormir y hechizar.\n\n"
+                "EJEMPLO OUTPUT:\n"
+                '{"ca": 15, "dg": "6+1**", "pg": 28, "at": "1×mordisco (1d10+petrificar)", '
+                '"ts": "M10 V11 P12 S13 E14 (6)", "ml": 9, "al": "neutral", "px": 950, '
+                '"especial": "Inmune a conjuros de dormir y hechizar"}'
+            ),
+        },
+    },
+    "SPELL_PARSER": {
+        "base_prompt": (
+            "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
+            "raw text spell description and convert it into a structured JSON object.\n\n"
+            "RULES:\n"
+            "1. Extract values for these keys: `name`, `level`, `school`, "
+            "`casting_time`, `range`, `components`, `duration`.\n"
+            "2. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
+            "if not explicitly in the text.\n"
+            "3. If a value is not present, omit its key from the JSON.\n"
+            "4. Your response MUST be ONLY the single, valid JSON object and nothing else. "
+            "Do not wrap it in Markdown code fences."
+        ),
+        "examples": {
+            "ca": (
+                "EXEMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
+                "Bola de foc\nDurada: instantani.\nAbast: 240'.\n"
+                "Una flama es dirigeix ​​cap a un punt dins de l'abast i explota...\n\n"
+                "EXEMPLE OUTPUT:\n"
+                '{"name": "Bola de foc", "level": 3, "school": "Arcà", '
+                '"range": "240\'", "duration": "instantani"}'
+            ),
+            "en": (
+                "EXAMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
+                "Fireball\nDuration: instantaneous.\nRange: 240'.\n"
+                "A flame streaks towards a point within range and explodes...\n\n"
+                "EXAMPLE OUTPUT:\n"
+                '{"name": "Fireball", "level": 3, "school": "Arcane", '
+                '"range": "240\'", "duration": "instantaneous"}'
+            ),
+        },
+    },
+    "ENTITY_EXTRACTOR": {
+        "base_prompt": (
+            "You are a Named Entity Recognition (NER) engine for a TTRPG. "
+            "Your task is to analyze a JSON list of key terms and classify each one.\n\n"
+            "ENTITY TYPES:\n"
+            "- `creature`: A monster, animal, or NPC with stats.\n"
+            "- `character`: An important named NPC, often without full stats.\n"
+            "- `location`: A specific place, area, room, or geographical feature.\n"
+            "- `item`: A specific object, treasure, or piece of equipment.\n"
+            "- `organization`: A faction, guild, or group of people.\n"
+            "- `other`: A term that does not fit into the other categories.\n\n"
+            "OUTPUT: Your response MUST be a single, valid JSON object mapping each "
+            "input term to its classified entity type. Do not include any other text or "
+            "Markdown code fences."
+        ),
+        "examples": {
+            "en": (
+                'INPUT: ["Goblin", "Cragmaw Hideout", "Sildar Hallwinter", '
+                '"Potion of Healing"]\n\n'
+                'OUTPUT: {"Goblin": "creature", "Cragmaw Hideout": "location", '
+                '"Sildar Hallwinter": "character", "Potion of Healing": "item"}'
+            )
+        },
+    },
+    "SECTION_CLASSIFIER": {
+        "base_prompt": (
+            "You are a lead technical writer specializing in structuring manuals. "
+            "Your task is to classify a section of a document based on its role in "
+            "organizing information for the reader.\n\n"
+            "GUIDING PRINCIPLES:\n"
+            "1. **Evaluate Function**: Determine the text's primary function: "
+            "Is it setting the stage (preface), presenting the main content (content), "
+            "providing supplementary data (appendix), helping with navigation "
+            "(table_of_contents, index), or handling administrative details (legal, "
+            "credits)?\n"
+            "2. **Distinguish**: A `preface` talks *about the book* itself. In contrast, "
+            "`content` is the adventure, world, or rules, including lore and mechanics.\n\n"
+            "Respond with ONE label from this list: `table_of_contents`, `index`, "
+            "`credits`, `legal`, `preface`, `appendix`, `content`.\n\n"
+            "Your response must be ONLY the chosen label and nothing else."
+        ),
+        "examples": {},
+    },
+    "DESCRIBE_IMAGE": {
+        "base_prompt": (
+            "You are a visual analysis engine for a TTRPG.\n"
+            "Your task is to describe the provided image in a single, objective, and "
+            "descriptive sentence.\n\n"
+            "CRITICAL RULES:\n"
+            "1. Your response MUST be only the descriptive sentence and nothing else.\n"
+            "2. Describe the image as if you were a Dungeon Master setting a scene.\n"
+            "3. DO NOT be conversational. Do not start with 'This image shows...'.\n"
+            "4. DO NOT refuse to answer. If the image is unclear, describe the literal "
+            "shapes, colors, and textures you see.\n"
+            "5. Your response MUST be in {language_name}."
+        ),
+        "examples": {},
+    },
+    "CLASSIFY_IMAGE": {
+        "base_prompt": (
+            "You are a visual classification assistant for a TTRPG tool. Classify "
+            "the described scene as one of the following: `cover`, `map`, `handout`, `art`, "
+            "`decoration`, `other`. Your response must be ONLY one of these words "
+            "and nothing else."
+        ),
+        "examples": {},
+    },
+    "SEMANTIC_LABELER_RULES_XML": {
+        "base_prompt": (
+            "<task>Analyze the text in the <text_input> tag. Select all applicable tags from "
+            "the <vocabulary> list. Pay close attention to keywords like 'Duration' and "
+            "'Range'; text containing these is often a `type:spell`. If you identify a "
+            "table, you MUST use the `type:table` tag AND one specific `table:*` sub-tag. "
+            "For tables that only list spell names, use `table:spell_list`. Your response "
+            "MUST be ONLY a single, valid JSON array of strings. Do not wrap it in "
+            "Markdown code fences.</task>\n"
+            '<vocabulary>["type:prose", "type:spell", "type:mechanics", '
+            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>'
+        ),
+        "examples": {
+            "ca": (
+                "<exemple><input>| 1d12 | Nom | Inv. | Durada | Abast |</input>"
+                '<output>["type:table", "table:spell_list"]</output></exemple>'
+            ),
+            "en": (
+                "<example><input>| 1d12 | Name | Rev. | Duration | Range |</input>"
+                '<output>["type:table", "table:spell_list"]</output></example>'
+            ),
+            "es": (
+                "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
+                '<output>["type:table", "table:spell_list"]</output></ejemplo>'
+            ),
+        },
+    },
+    "SEMANTIC_LABELER_ADVENTURE_XML": {
+        "base_prompt": (
+            "<task>Analyze the text in the <text_input> tag. Select all applicable tags "
+            "from the <vocabulary> list. If you identify a table, you MUST use the "
+            "`type:table` tag AND one specific `table:*` sub-tag (e.g., `table:stats`). "
+            "Your response MUST be ONLY a single, valid JSON array of strings. "
+            "Do not wrap it in Markdown code fences.</task>\n"
+            '<vocabulary>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
+            '"type:lore", "type:dialogue", "type:item", "type:location", '
+            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
+            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
+            '"gameplay:secret", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>'
+        ),
+        "examples": {
+            "ca": (
+                "<exemple><input>Els bandits emboscaran el grup al camí.</input>"
+                '<output>["type:prose", "access:dm_only"]</output></exemple>'
+            ),
+            "en": (
+                "<example><input>The bandits will ambush the party on the road.</input>"
+                '<output>["type:prose", "access:dm_only"]</output></example>'
+            ),
+            "es": (
+                "<ejemplo><input>Los bandidos emboscarán al grupo en el camino.</input>"
+                '<output>["type:prose", "access:dm_only"]</output></ejemplo>'
+            ),
+        },
+    },
+    # --- Gameplay Prompts (Unchanged) ---
     "GAME_MASTER": {
         "en": (
             "You are the Dungeon Master, a master storyteller. Your entire reality is the "
@@ -274,240 +485,6 @@ PROMPT_REGISTRY = {
             "4.  **Fes servir 'Nosaltres' o 'Els Nostres Herois'**: Fes referència al "
             "    grup de forma col·lectiva.\n\n"
             "La teva resposta ha de ser ÚNICAMENT el resum narratiu, i HA DE ser en català."
-        ),
-    },
-    "STAT_BLOCK_PARSER": {
-        "en": (
-            "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
-            "raw text stat block and convert it into a structured JSON object. "
-            "The input format is inconsistent.\n\n"
-            "RULES:\n"
-            "1. Extract values for the following keys: `ca`, `dc`, `at`, `ba`, `mv`, "
-            "`ts`, `ml`, `al`, `px`, `na`, `tt`.\n"
-            "2. The value for `dc` should include any modifiers (e.g., '4*', '6+3*'). "
-            "Also extract the average hit points into a separate `pc` key if present.\n"
-            "3. The value for `ts` should be the full string (e.g., 'M12 V13 P14 A15 E16 (2)').\n"
-            "4. If a value is not present in the text, omit its key from the JSON.\n"
-            "5. If any other attributes are present (e.g., 'Special'), include them as "
-            "key-value pairs in the final JSON, using a lowercase key.\n"
-            "6. Your response MUST be ONLY the single, valid JSON object and nothing else.\n"
-            "7. Do not wrap the JSON object in Markdown code fences (```json ... ```).\n\n"
-            "EXAMPLE INPUT:\n"
-            "CA 15, DC 6+1** (28 pc), AT 1×mossegada (1d10+petrifica), "
-            "TS M10 V11 P12 A13 E14 (6), ML 9, AL neutral, PX 950, "
-            "Special: Immune to sleep and charm spells.\n\n"
-            "EXAMPLE OUTPUT:\n"
-            '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×mossegada (1d10+petrifica)", '
-            '"ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "neutral", "px": 950, '
-            '"special": "Immune to sleep and charm spells"}'
-        )
-    },
-    "SPELL_PARSER": {
-        "en": (
-            "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
-            "raw text spell description and convert it into a structured JSON object.\n\n"
-            "RULES:\n"
-            "1. Extract values for the following keys: `name`, `level`, `school`, "
-            "`casting_time`, `range`, `components`, `duration`.\n"
-            "2. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
-            "if they are not explicitly in the text.\n"
-            "3. If a value is not present in the text, omit its key from the JSON.\n"
-            "4. Your response MUST be ONLY the single, valid JSON object and nothing else. "
-            "Do not wrap it in Markdown code fences.\n\n"
-            "EXAMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
-            "Bola de foc\n"
-            "Durada: instantani.\n"
-            "Abast: 240'.\n"
-            "Una flama es dirigeix ​​cap a un punt dins de l'abast i explota...\n\n"
-            "EXAMPLE OUTPUT:\n"
-            '{"name": "Bola de foc", "level": 3, "school": "Arcà", '
-            '"range": "240\'", "duration": "instantani"}'
-        )
-    },
-    "ENTITY_EXTRACTOR": {
-        "en": (
-            "You are a Named Entity Recognition (NER) engine for a TTRPG. "
-            "Your task is to analyze a list of key terms extracted from a document "
-            "and classify each one into a specific entity type.\n\n"
-            "ENTITY TYPES:\n"
-            "- `creature`: A monster, animal, or non-player character (NPC) with stats.\n"
-            "- `character`: An important named NPC, often without full stats.\n"
-            "- `location`: A specific place, area, room, or geographical feature.\n"
-            "- `item`: A specific object, treasure, or piece of equipment.\n"
-            "- `organization`: A faction, guild, or group of people.\n"
-            "- `other`: A term that does not fit into the other categories.\n\n"
-            "INPUT: A JSON list of strings.\n"
-            '["Goblin", "Cragmaw Hideout", "Sildar Hallwinter", "Potion of Healing"]\n\n'
-            "OUTPUT: Your response MUST be a single, valid JSON object mapping each "
-            "input term to its classified entity type. Do not include any other text or "
-            "Markdown code fences.\n"
-            '{"Goblin": "creature", "Cragmaw Hideout": "location", '
-            '"Sildar Hallwinter": "character", "Potion of Healing": "item"}'
-        )
-    },
-    "SECTION_CLASSIFIER": {
-        "en": (
-            "You are a lead technical writer specializing in structuring manuals and rulebooks. "
-            "Your task is to classify a section of a document based on its role in "
-            "organizing information for the reader.\n\n"
-            "GUIDING PRINCIPLES:\n"
-            "1.  **Evaluate Function**: Evaluate the text to determine its primary function: "
-            "Is it setting the stage for the reader (preface), presenting the adventure's "
-            "world and rules (content), providing supplementary data (appendix), helping "
-            "with navigation (table_of_contents, index), or handling administrative "
-            "details (legal, credits)?\n"
-            "2.  **Clarify Distinction**: A `preface` talks *about the book* itself "
-            '(e.g., "how to use this supplement," author\'s notes). In contrast, `content` '
-            "is the adventure itself, including **background lore**, world history, "
-            "location descriptions, and game mechanics.\n"
-            "3.  **Focus on Content**: Base your classification on the substance and "
-            "meaning of the text provided.\n\n"
-            "Respond with ONE label from this list: `table_of_contents`, `index`, "
-            "`credits`, `legal`, `preface`, `appendix`, `content`.\n\n"
-            "Your response must be ONLY the chosen label and nothing else."
-        )
-    },
-    "DESCRIBE_IMAGE": {
-        "en": (
-            "You are a visual analysis engine for a tabletop role-playing game (TTRPG).\n"
-            "Your task is to describe the provided image in a single, objective, and "
-            "descriptive sentence.\n\n"
-            "CRITICAL RULES:\n"
-            "1. Your response MUST be only the descriptive sentence and nothing else.\n"
-            "2. Describe the image as if you were a Dungeon Master setting a scene for players.\n"
-            "3. DO NOT be conversational. Do not start with 'This image shows...' or 'In "
-            "this image...'.\n"
-            "4. DO NOT refuse to answer. If the image is unclear, describe the literal "
-            "shapes, colors, and textures you see.\n"
-            "5. Your response MUST be in English."
-        ),
-        "es": (
-            "Eres un motor de análisis visual para un juego de rol de mesa (TTRPG).\n"
-            "Tu tarea es describir la imagen proporcionada en una única frase objetiva y "
-            "descriptiva.\n\n"
-            "REGLAS CRÍTICAS:\n"
-            "1.  Tu respuesta DEBE ser únicamente la frase descriptiva y nada más.\n"
-            "2.  Describe la imagen como si fueras un Dungeon Master presentando una escena.\n"
-            "3.  NO seas conversacional. No empieces con 'La imagen muestra...' o 'En "
-            "esta imagen...'.\n"
-            "4.  NO te niegues a responder. Si la imagen no es clara, describe las "
-            "formas, colores y texturas literales que ves.\n"
-            "5.  Tu respuesta DEBE ser en español."
-        ),
-        "ca": (
-            "Ets un motor d'anàlisi visual per a un joc de rol de taula (TTRPG).\n"
-            "La teva tasca és descriure la imatge proporcionada en una única frase "
-            "objectiva i descriptiva.\n\n"
-            "REGLES CRÍTIQUES:\n"
-            "1.  La teva resposta HA DE ser únicament la frase descriptiva i res més.\n"
-            "2.  Descriu la imatge com si fossis un Dungeon Master presentant una escena.\n"
-            "3.  NO siguis conversacional. No comencis amb 'La imatge mostra...' o 'En "
-            "aquesta imatge...'.\n"
-            "4.  NO et neguis a respondre. Si la imatge no és clara, descriu les "
-            "formes, colors i textures literals que veus.\n"
-            "5.  La teva resposta HA DE ser en català."
-        ),
-    },
-    "CLASSIFY_IMAGE": {
-        "en": (
-            "You are a visual classification assistant for a TTRPG tool. Classify "
-            "the described scene as one of the following: `cover`, `map`, `handout`, `art`, "
-            "`decoration`, `other`. Your response must be ONLY one of these words "
-            "and nothing else."
-        )
-    },
-    # --- NEW XML PROMPTS FOR SEMANTIC LABELING ---
-    "SEMANTIC_LABELER_RULES_XML": {
-        "en": (
-            "<task>Analyze the text in the <text_input> tag. Select all applicable tags from "
-            "the <vocabulary> list. Pay close attention to keywords like 'Duration' and "
-            "'Range'; text containing these is often a `type:spell`. If you identify a "
-            "table, you MUST use the `type:table` tag AND one specific `table:*` sub-tag. "
-            "For tables that only list spell names, use `table:spell_list`. Your response "
-            "MUST be ONLY a single, valid JSON array of strings. Do not wrap it in "
-            "Markdown code fences.</task>\n"
-            '<vocabulary>["type:prose", "type:spell", "type:mechanics", '
-            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>\n'
-            "<example><input>| 1d12 | Name | Rev. | Duration | Range |</input>"
-            '<output>["type:table", "table:spell_list"]</output></example>'
-        ),
-        "es": (
-            "<tasca>Analiza el texto dentro de la etiqueta <text_input>. Elige todas las "
-            "etiquetas aplicables de la lista <vocabulario>. Presta especial atención a "
-            "palabras clave como 'Duración' y 'Alcance'; el texto que las contiene suele ser "
-            "un `type:spell`. Si identificas una tabla, DEBES USAR la etiqueta `type:table` "
-            "Y una sub-etiqueta `table:*` específica. Para tablas que solo listan nombres "
-            "de hechizos, usa `table:spell_list`. Tu respuesta DEBE SER ÚNICAMENTE un único "
-            "array JSON válido de strings. No lo envuelvas en bloques de código Markdown."
-            "</tasca>\n"
-            '<vocabulario>["type:prose", "type:spell", "type:mechanics", '
-            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulario>\n'
-            "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
-            '<output>["type:table", "table:spell_list"]</output></ejemplo>'
-        ),
-        "ca": (
-            "<tasca>Analitza el text dins l'etiqueta <text_input>. Tria totes les etiquetes "
-            "aplicables de la llista <vocabulari>. Para atenció a paraules clau com "
-            "'Durada' i 'Abast'; el text que les conté sovint és un `type:spell`. Si "
-            "identifiques una taula, HAS D'UTILITZAR l'etiqueta `type:table` I una "
-            "sub-etiqueta `table:*` específica. Per a les taules que només llisten noms "
-            "d'encanteris, fes servir `table:spell_list`. La teva resposta HA DE SER "
-            "ÚNICAMENT una única matriu JSON vàlida de strings. No l'embolcallis amb "
-            "blocs de codi Markdown.</tasca>\n"
-            '<vocabulari>["type:prose", "type:spell", "type:mechanics", '
-            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulario>\n'
-            "<exemple><input>| 1d12 | Nom | Inv. | Durada | Abast |</input>"
-            '<output>["type:table", "table:spell_list"]</output></exemple>'
-        ),
-    },
-    "SEMANTIC_LABELER_ADVENTURE_XML": {
-        "en": (
-            "<task>Analyze the text in the <text_input> tag. Select all applicable tags "
-            "from the <vocabulary> list. If you identify a table, you MUST use the "
-            "`type:table` tag AND one specific `table:*` sub-tag (e.g., `table:stats`). "
-            "Your response MUST be ONLY a single, valid JSON array of strings. "
-            "Do not wrap it in Markdown code fences.</task>\n"
-            '<vocabulary>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
-            '"type:lore", "type:dialogue", "type:item", "type:location", '
-            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
-            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
-            '"gameplay:secret", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>\n'
-            "<example><input>The bandits will ambush the party on the road.</input>"
-            '<output>["type:prose", "access:dm_only"]</output></example>'
-        ),
-        "es": (
-            "<tasca>Analiza el texto dentro de la etiqueta <text_input>. Elige todas las "
-            "etiquetas aplicables de la lista <vocabulario>. Si identificas una tabla, "
-            "DEBES USAR la etiqueta `type:table` Y una sub-etiqueta `table:*` específica "
-            "(p. ej., `table:stats`). Tu respuesta DEBE SER ÚNICAMENTE un único array JSON "
-            "válido de strings. No lo envuelvas en bloques de código Markdown.</tasca>\n"
-            '<vocabulary>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
-            '"type:lore", "type:dialogue", "type:item", "type:location", '
-            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
-            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
-            '"gameplay:secret", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>\n'
-            "<ejemplo><input>Los bandidos emboscarán al grupo en el camino.</input>"
-            '<output>["type:prose", "access:dm_only"]</output></ejemplo>'
-        ),
-        "ca": (
-            "<tasca>Analitza el text dins l'etiqueta <text_input>. Tria totes les etiquetes "
-            "aplicables de la llista <vocabulari>. Si identifiques una taula, HAS D'UTILITZAR "
-            "l'etiqueta `type:table` I una sub-etiqueta `table:*` específica (p. ex., "
-            "`table:stats`). La teva resposta HA DE SER ÚNICAMENT una única matriu JSON "
-            "vàlida de strings. No l'embolcallis amb blocs de codi Markdown.</tasca>\n"
-            '<vocabulari>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
-            '"type:lore", "type:dialogue", "type:item", "type:location", '
-            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
-            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
-            '"gameplay:secret", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulari>\n'
-            "<exemple><input>Els bandits emboscaran el grup al camí.</input>"
-            '<output>["type:prose", "access:dm_only"]</output></exemple>'
         ),
     },
 }
