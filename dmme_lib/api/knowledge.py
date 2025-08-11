@@ -46,10 +46,20 @@ def list_knowledge_bases():
 def explore_knowledge_base(kb_name):
     """Retrieves all documents and assets for a given knowledge base."""
     try:
+        kb_meta = current_app.vector_store.get_kb_metadata(kb_name)
+        strategy = kb_meta.get("indexing_strategy", "standard")
+
         # 1. Get all text documents from the vector store
         documents = current_app.vector_store.get_all_from_kb(kb_name)
+        response_data = {"documents": documents}
 
-        # 2. Get all assets from the manifest for efficiency
+        # 2. If deep-indexed, also fetch the summaries
+        if strategy == "deep":
+            summary_kb_name = f"{kb_name}_summaries"
+            summaries = current_app.vector_store.get_all_from_kb(summary_kb_name)
+            response_data["summaries"] = summaries
+
+        # 3. Get all assets from the manifest for efficiency
         assets = []
         manifest_path = os.path.join(
             current_app.config["ASSETS_PATH"], "images", kb_name, "assets.json"
@@ -63,10 +73,27 @@ def explore_knowledge_base(kb_name):
                 asset["full_url"] = f"/assets/images/{asset['full_url']}"
                 assets.append(asset)
 
-        return jsonify({"documents": documents, "assets": assets})
+        response_data["assets"] = assets
+        return jsonify(response_data)
     except Exception as e:
         log.error("Failed to explore knowledge base '%s': %s", kb_name, e, exc_info=True)
         return jsonify({"error": f"Could not explore knowledge base: {e}"}), 500
+
+
+@bp.route("/chunk/<kb_name>/<chunk_id>", methods=["GET"])
+def get_chunk(kb_name, chunk_id):
+    """Retrieves a single full-text document by its ID."""
+    try:
+        docs, metas = current_app.vector_store.get_by_ids(kb_name, ids=[chunk_id])
+        if not docs:
+            return jsonify({"error": "Chunk not found"}), 404
+
+        # Combine document and metadata into a single object
+        chunk_data = {**metas[0], "document": docs[0]}
+        return jsonify(chunk_data)
+    except Exception as e:
+        log.error("Failed to retrieve chunk '%s' from '%s': %s", chunk_id, kb_name, e)
+        return jsonify({"error": "Could not retrieve chunk"}), 500
 
 
 @bp.route("/dashboard/<kb_name>", methods=["GET"])

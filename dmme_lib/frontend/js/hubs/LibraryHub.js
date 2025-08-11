@@ -71,10 +71,11 @@ export class LibraryHub {
         this.searchScope.addEventListener('change', () => this._performSearch());
         this.contentViewToggleBtn.addEventListener('click', () => this._toggleContentView());
         this._addTooltipListeners();
-        
-        // Delegated listener for clicks inside content areas (tags, breadcrumbs)
-        this.contentListEl.addEventListener('click', (e) => this._handleContentAreaClick(e));
-        this.searchResultsView.addEventListener('click', (e) => this._handleContentAreaClick(e));
+        // Delegated listener for clicks inside content areas
+        const contentAreas = [this.contentListEl, this.searchResultsView, this.entityRelatedChunks];
+        contentAreas.forEach(area => {
+            area.addEventListener('click', (e) => this._handleContentAreaClick(e));
+        });
         this.clearContentFilterBtn.addEventListener('click', () => this._clearContentFilter());
 
         this.isInitialized = true;
@@ -138,14 +139,17 @@ export class LibraryHub {
         this.tooltip.style.top = `${top}px`;
     }
 
-    _handleContentAreaClick(event) {
+    async _handleContentAreaClick(event) {
         const breadcrumb = event.target.closest('[data-action="breadcrumb-search"]');
         const tagChip = event.target.closest('.tag-chip');
+        const expandBtn = event.target.closest('.chunk-expand-btn');
 
         if (breadcrumb) {
             this._handleBreadcrumbClick(breadcrumb);
         } else if (tagChip) {
             this._handleTagClick(tagChip);
+        } else if (expandBtn) {
+            await this._handleProgressiveReveal(expandBtn);
         }
     }
 
@@ -162,24 +166,49 @@ export class LibraryHub {
 
     _handleTagClick(tagChipElement) {
         const tag = tagChipElement.textContent;
-        // Switch to content view if not already there (handles clicks from search results)
+        // Switch to content view if not already there
         this.switchTab('content');
         this._applyTagFilter(tag);
     }
 
+    async _handleProgressiveReveal(button) {
+        const card = button.closest('.text-chunk-card');
+        const chunkId = card.dataset.chunkId;
+        const contentEl = card.querySelector('.text-chunk-content');
+        const summaryText = card.dataset.summary;
+
+        if (card.classList.contains('is-expanded')) {
+            // Collapse
+            contentEl.innerHTML = window.marked.parse(summaryText || '');
+            button.textContent = '[ ▾ Expand ]';
+            card.classList.remove('is-expanded');
+        } else {
+            // Expand
+            button.textContent = '[...]';
+            try {
+                const chunk = await apiCall(
+                    `/api/knowledge/chunk/${this.selectedKb.name}/${chunkId}`
+                );
+                contentEl.innerHTML = window.marked.parse(chunk.document);
+                button.textContent = '[ ▴ Collapse ]';
+                card.classList.add('is-expanded');
+            } catch (error) {
+                contentEl.textContent = 'Error loading full text.';
+                button.textContent = '[ ▾ Expand ]';
+            }
+        }
+    }
+
     _applyTagFilter(tag) {
-        // Show banner
         this.contentFilterStatus.style.display = 'flex';
         this.filterStatusTerm.textContent = tag;
-
-        // Filter DOM elements based on their data-tags attribute
         const cardElements = this.contentListEl.querySelectorAll('.text-chunk-card');
         cardElements.forEach(card => {
             try {
                 const cardTags = JSON.parse(card.dataset.tags || '[]');
                 card.style.display = cardTags.includes(tag) ? 'flex' : 'none';
             } catch (e) {
-                card.style.display = 'none'; // Hide if tags are malformed
+                card.style.display = 'none';
             }
         });
     }
@@ -212,14 +241,14 @@ export class LibraryHub {
             const results = await apiCall(`/api/search?q=${encodeURIComponent(query)}&scope=${scope}`);
             this._renderSearchResults(results);
         } catch (error) {
-            this.searchResultsView.innerHTML = '<p class="error">Search failed to execute.</p>';
+            this.searchResultsView.innerHTML = '<p class="error">Search failed.</p>';
         }
     }
 
     _renderSearchResults(results) {
         this.searchResultsView.innerHTML = '';
         if (!results || results.length === 0) {
-            this.searchResultsView.innerHTML = `<p>No results found for "${this.searchInput.value}".</p>`;
+            this.searchResultsView.innerHTML = `<p>No results for "${this.searchInput.value}".</p>`;
             return;
         }
         results.forEach(result => {
@@ -408,6 +437,14 @@ export class LibraryHub {
         const wrapper = this.contentListEl;
         wrapper.innerHTML = '<div class="spinner"></div>';
         const data = await this._getKbExploreData();
+        const isDeep = this.selectedKb.metadata?.indexing_strategy === 'deep';
+
+        const summaryMap = new Map();
+        if (isDeep && data.summaries) {
+            data.summaries.forEach(summary => {
+                summaryMap.set(summary.parent_id, summary.document);
+            });
+        }
         this.kbDataCache[this.selectedKb.name].content = data.documents;
         wrapper.innerHTML = '';
         if (!data.documents || data.documents.length === 0) {
@@ -417,7 +454,8 @@ export class LibraryHub {
 
         if (this.contentViewMode === 'list') {
             data.documents.forEach(doc => {
-                wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
+                const summary = isDeep ? summaryMap.get(doc.chunk_id) : null;
+                wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc, false, summary));
             });
         } else { // 'flow' mode
             const sections = data.documents.reduce((acc, doc) => {
@@ -436,7 +474,8 @@ export class LibraryHub {
                 header.textContent = title;
                 wrapper.appendChild(header);
                 sectionData.chunks.forEach(doc => {
-                    wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
+                    const summary = isDeep ? summaryMap.get(doc.chunk_id) : null;
+                    wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc, false, summary));
                 });
             }
         }
@@ -492,7 +531,7 @@ export class LibraryHub {
         });
         this.entityRelatedChunks.innerHTML = '';
         if (relatedChunks.length === 0) {
-            this.entityRelatedChunks.innerHTML = `<p>No chunks found for "${this.selectedEntity}".</p>`;
+            this.entityRelatedChunks.innerHTML = `<p>No chunks for "${this.selectedEntity}".</p>`;
         } else {
             relatedChunks.forEach(doc => {
                 this.entityRelatedChunks.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
@@ -500,36 +539,37 @@ export class LibraryHub {
         }
     }
 
-    _createChunkCardHTML(result, isSearchResult = false) {
+    _createChunkCardHTML(result, isSearchResult = false, summaryText = null) {
         const doc = isSearchResult ?
             { ...result.metadata, document: result.document } : result;
         const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
-        
         const tags = JSON.parse(doc.tags || '[]');
         const tagsForAttr = doc.tags || '[]';
         const tagsHTML = tags.map(tag => {
             const [category] = tag.split(':', 1);
             return `<span class="tag-chip tag-category--${category}">${tag}</span>`;
         }).join('');
-
         const keyTerms = JSON.parse(doc.key_terms || '[]');
         const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const hasLinks = JSON.parse(doc.linked_chunks || '[]').length > 0;
         const statsStr = doc.structured_stats || '{}';
         const hasStats = statsStr && Object.keys(JSON.parse(statsStr || '{}')).length > 0;
         const sectionTitle = doc.section_title || 'Untitled Section';
-        const sourceInfo = isSearchResult
-            ? `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>`
-            : `<span>p. ${doc.page_start || 'N/A'}</span>`;
+        const sourceInfo = isSearchResult ?
+            `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>` :
+            `<span>p. ${doc.page_start || 'N/A'}</span>`;
         const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
+        const content = summaryText ? summaryText : doc.document;
+        const expandButton = summaryText ? `<button class="chunk-expand-btn">[ ▾ Expand ]</button>` : '';
 
         return `
-        <div class="text-chunk-card ${isSearchResult ? 'search-result-card' : ''}" 
-             data-tags='${tagsForAttr}'>
+        <div class="text-chunk-card" data-chunk-id="${doc.chunk_id}"
+             data-summary="${summaryText ?
+            summaryText.replace(/"/g, '&quot;') : ''}" data-tags='${tagsForAttr}'>
             <div class="chunk-breadcrumb">
                 <span>${kbName} > </span>
                 <span class="breadcrumb-link"
-                      data-action="breadcrumb-search"
+                       data-action="breadcrumb-search"
                       data-kb-scope="${kbName}"
                       data-section-query="${sectionTitle}">
                     ${sectionTitle}
@@ -539,12 +579,15 @@ export class LibraryHub {
                 <div class="tag-list">${tagsHTML}</div>
                 <div>${sourceInfo}</div>
             </div>
-            <pre class="text-chunk-content">${doc.document}</pre>
+            <div class="text-chunk-content">${window.marked.parse(content)}</div>
             <div class="text-chunk-footer">
                 <div class="key-terms-list">${keyTermsHTML}</div>
                 <div class="metadata-icons">
-                    ${hasLinks ? '<span title="Has linked content">🔗</span>' : ''}
-                    ${hasStats ? `<span title="Show structured data" ${statsAttr}>{}</span>` : ''}
+                    ${expandButton}
+                    ${hasLinks ?
+            '<span title="Has linked content">🔗</span>' : ''}
+                    ${hasStats ?
+            `<span title="Show structured data" ${statsAttr}>{}</span>` : ''}
                 </div>
             </div>
         </div>`;
@@ -741,7 +784,8 @@ export class LibraryHub {
     }
 
     _toggleContentView() {
-        this.contentViewMode = this.contentViewMode === 'list' ? 'flow' : 'list';
+        this.contentViewMode = this.contentViewMode === 'list' ?
+            'flow' : 'list';
         this.renderContentView();
     }
 
@@ -763,7 +807,7 @@ export class LibraryHub {
             return;
         }
 
-        const { nodes, links } = this._buildGraphData(data.documents);
+        const { nodes, links } = this._buildGraphData(data);
         const mermaidSyntax = this._generateMermaidSyntax(nodes, links);
 
         try {
@@ -775,7 +819,9 @@ export class LibraryHub {
         }
     }
 
-    _buildGraphData(documents) {
+    _buildGraphData(data) {
+        const isDeep = this.selectedKb.metadata?.indexing_strategy === 'deep';
+        const documents = (isDeep && data.summaries) ? data.summaries : data.documents;
         const sections = {};
         const entityToSections = {};
 

@@ -112,7 +112,8 @@
 .tag-category--type { background-color: var(--accent-color); color: white; }
 .tag-category--access { background-color: var(--danger-color); color: white; }
 .tag-category--narrative { background-color: #6a9955; color: white; }
-.tag-category--gameplay { background-color: #8a3ffc; color: white; }
+.tag-category--gameplay { background-color: #8a3ffc; color: white;
+}
 
 .text-chunk-content {
     white-space: pre-wrap;
@@ -129,6 +130,8 @@
 
 .text-chunk-footer {
     display: flex;
+    justify-content: space-between;
+    width: 100%;
     gap: 12px;
     align-items: center;
     color: #888;
@@ -153,7 +156,19 @@
     display: flex;
     gap: 8px;
     font-size: 1.2em;
+    align-items: center;
 }
+
+.chunk-expand-btn {
+    background: none;
+    border: none;
+    color: var(--accent-color);
+    cursor: pointer;
+    font-family: var(--font-family-mono);
+    font-size: 0.8em;
+    padding: 4px;
+}
+.chunk-expand-btn:hover { text-decoration: underline; }
 
 .metadata-icons [data-structured-stats] {
     cursor: help;
