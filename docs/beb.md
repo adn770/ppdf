@@ -160,45 +160,45 @@ Tria-li un nom i anota que és al primer nivell, amb zero punts d'experiència i
 
 Descriu el múscul i el poder físic; afecta el combat. 
 
-\- **Lluita cos a cos:** el modificador s'aplica tant a les tirades d'atac com a les de dany (mínim un punt de dany) per les armes de lluita cos a cos. 
+- **Lluita cos a cos:** el modificador s'aplica tant a les tirades d'atac com a les de dany (mínim un punt de dany) per les armes de lluita cos a cos. 
 
-\- **Obrir portes:** s'afegeix el modificador a la probabilitat d'èxit per obrir una porta travada.
+- **Obrir portes:** s'afegeix el modificador a la probabilitat d'èxit per obrir una porta travada.
 
 ### Destresa
 
 La coordinació ull-mà, l'agilitat, els reflexos i l'equilibri que pot millorar les habilitats d'algunes classes.
 
-\- **CA:** modifica la classe d'armadura del personatge.
+- **CA:** modifica la classe d'armadura del personatge.
 
-\- **Projectils:** s'aplica a les tirades d'atac amb les armes a distància, però no a les de dany.
+- **Projectils:** s'aplica a les tirades d'atac amb les armes a distància, però no a les de dany.
 
-\- **Iniciativa:** modifica la del personatge si es fa servir la regla opcional per iniciativa individual.
+- **Iniciativa:** modifica la del personatge si es fa servir la regla opcional per iniciativa individual.
 
 ### Constitució
 
 En representa la salut, el vigor i la resistència. Clau per a totes les classes perquè n'augmenta la capacitat de sobreviure i resistir alguns efectes màgics.
 
-\- **Punts de cop:** s'aplica quan es tiren els punts de cop (és a dir, al primer nivell i cada vegada que es puja de nivell) i sempre s'obté un punt de cop com a mínim.
+- **Punts de cop:** s'aplica quan es tiren els punts de cop (és a dir, al primer nivell i cada vegada que es puja de nivell) i sempre s'obté un punt de cop com a mínim.
 
 ### Intel·ligència
 
 És una mesura dels coneixements del personatge i la seva capacitat d'aprenentatge abans de començar el joc; no en mesura la seva memòria ni la capacitat de resoldre enigmes; l'enginy del jugador és el que s'ha de fer servir per a aquestes situacions.
 
-\- **Idiomes parlats:** el valor del modificador indica el nombre d'idiomes addicionals que parla el personatge.
+- **Idiomes parlats:** el valor del modificador indica el nombre d'idiomes addicionals que parla el personatge.
 
-\- **Alfabetització:** indica la capacitat del personatge per llegir i escriure la llengua materna.
+- **Alfabetització:** indica la capacitat del personatge per llegir i escriure la llengua materna.
 
 ### Saviesa
 
 Descriu la força de voluntat, el sentit comú, la percepció, la intuïció i la connexió del personatge amb l'univers.
 
-\- **Salvació contra màgia:** s'aplica a les tirades de salvació contra els efectes màgics. Normalment, no s'inclou per les tirades de salvació contra els atacs d'alè, però pot aplicar-se a qualsevol altra categoria.
+- **Salvació contra màgia:** s'aplica a les tirades de salvació contra els efectes màgics. Normalment, no s'inclou per les tirades de salvació contra els atacs d'alè, però pot aplicar-se a qualsevol altra categoria.
 
 ### Carisma
 
 La personalitat, oratòria i habilitat per liderar.
 
-\- **Reacció dels PNJ:** s'aplica el modificador per ***carisma*** a la contractació de jornalers i mercenaris, o també quan s'interactua amb criatures.
+- **Reacció dels PNJ:** s'aplica el modificador per ***carisma*** a la contractació de jornalers i mercenaris, o també quan s'interactua amb criatures.
 
 ## Alineació (opcional)
 
@@ -259,7 +259,7 @@ En els mons de joc, moltes criatures intel·ligents tenen el seu idioma propi qu
 
 | Intel·ligència | Alfabetització |
 | :---: | :---: |
-| **3** | Incapaç de llegir o escriure, i xampurrejar la llengua materna. |
+| **3** | Incapaç de llegir o escriure, i xampurrejar la llengua materna. |
 | **4-5** | Incapaç de llegir o escriure. |
 | **6-8** | Pot escriure paraules simples en la llengua materna. |
 | **9-12** | Pot llegir i escriure la llengua materna. |
@@ -360,11 +360,11 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 **Oli:** un flascó alimenta una llanterna durant quatre hores (24 torns) o es pot usar com una arma.
 
-\- **Llançament:** es pot encendre un flascó i llançar-lo.
+- **Llançament:** es pot encendre un flascó i llançar-lo.
 
-\- **Toll:** l'oli cobreix un diàmetre de tres peus de terra. S'encén i crema durant 1 torn, danyant a qualsevol personatge o criatures en moviment a través del toll.
+- **Toll:** l'oli cobreix un diàmetre de tres peus de terra. S'encén i crema durant 1 torn, danyant a qualsevol personatge o criatures en moviment a través del toll.
 
-\- **Invulnerabilitat:** l'oli encès no perjudica les criatures que tenen un atac de flama natural.
+- **Invulnerabilitat:** l'oli encès no perjudica les criatures que tenen un atac de flama natural.
 
 **Pal de fusta de deu peus:** fa 2 polzades de gruix. És útil per colpir i activar objectes sospitosos a la masmorra.
 
@@ -461,7 +461,7 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 | Farcell A (40 po) | Farcell B (30 po) | Farcell C (30 po) | Farcell D (50 po) |
 | :---: | :---: | :---: | :---: |
-| Motxilla3 sacs gransLlanterna2 flascons d'oli Caixa d'escaBotaRacions estàndard (7 dies)Sac de dormir i mantaMirall (petit, d'acer) | Motxilla3 sacs grans6 torxes3 flascons d'oliCaixa d'escaBotaRacions estàndard (7 dies)Sac de dormir i mantaPal de fusta de 10 peus o corda | Motxilla3 sacs petitsSímbol sagrat (de fusta)12 piquetes de ferroMartell petitBotaRacions estàndard (7 dies)Sac de dormir i una manta6 cabeces d'alls o 1 matallops | Motxilla5 sacs petitsEines de lladre o símbol sagrat(de plata)12 piquetes de ferroMartell petit i 3 estaquesBotaRacions estàndard (7 dies)Sac de dormir i una manta |
+| Motxilla3 sacs gransLlanterna2 flascons d'oli Caixa d'escaBotaRacions estàndard (7 dies)Sac de dormir i mantaMirall (petit, d'acer) | Motxilla3 sacs grans6 torxes3 flascons d'oliCaixa d'escaBotaRacions estàndard (7 dies)Sac de dormir i mantaPal de fusta de 10 peus o corda | Motxilla3 sacs petitsSímbol sagrat (de fusta)12 piquetes de ferroMartell petitBotaRacions estàndard (7 dies)Sac de dormir i una manta6 cabeces d'alls o 1 matallops | Motxilla5 sacs petitsEines de lladre o símbol sagrat(de plata)12 piquetes de ferroMartell petit i 3 estaquesBotaRacions estàndard (7 dies)Sac de dormir i una manta |
 
 # Classes de personatge
 
@@ -653,19 +653,19 @@ Aquests personatges tenen un conjunt d'habilitats divers que els permet enfronta
 | 4 | 5+ | 9+ | 3-en-6 | 10+ | 9+ | 9+ | 9+ |
 | 5 | 5+ | 9+ | 3-en-6 | 9+ | 9+ | 9+ | 8+ |
 
-\- **Escalar parets llises (EP):** cal tirar per cada 100' i si es falla el PJ cau a mig camí, patint dany per la caiguda.
+- **Escalar parets llises (EP):** cal tirar per cada 100' i si es falla el PJ cau a mig camí, patint dany per la caiguda.
 
-\- **Detectar o desactivar paranys de tresor (DP):** cal una tirada per detectar el parany i després un altre per desactivar-lo. Tan sols es pot intentar un cop per parany.
+- **Detectar o desactivar paranys de tresor (DP):** cal una tirada per detectar el parany i després un altre per desactivar-lo. Tan sols es pot intentar un cop per parany.
 
-\- **Sentir sorolls (SS):** pot escoltar darrere d'una porta o sentir quelcom que s'acosta com un monstre errant.
+- **Sentir sorolls (SS):** pot escoltar darrere d'una porta o sentir quelcom que s'acosta com un monstre errant.
 
-\- **Amagar-se en les ombres (AO):** cal que s'estigui immòbil i no pot atacar ni moure's mentre s'està amagant.
+- **Amagar-se en les ombres (AO):** cal que s'estigui immòbil i no pot atacar ni moure's mentre s'està amagant.
 
-\- **Moure's en silenci (MS):** pot intentar esmunyir-se entre els enemics sense fer cap mena de soroll.
+- **Moure's en silenci (MS):** pot intentar esmunyir-se entre els enemics sense fer cap mena de soroll.
 
-\- **Obrir panys (OP):** calen les eines de lladre i tan sols es pot intentar un cop; si es falla es pot provar de nou en aquest pany quan s'assoleix el següent nivell.
+- **Obrir panys (OP):** calen les eines de lladre i tan sols es pot intentar un cop; si es falla es pot provar de nou en aquest pany quan s'assoleix el següent nivell.
 
-\- **Buidar butxaques (BB):** si l'objectiu supera el 5è nivell, es penalitza la tirada amb \-1 per a cada nivell per sobre; la víctima nota l'intent de robatori quan es falla i el director de joc pot fer una tirada de reacció per decidir-ne el resultat.
+- **Buidar butxaques (BB):** si l'objectiu supera el 5è nivell, es penalitza la tirada amb \-1 per a cada nivell per sobre; la víctima nota l'intent de robatori quan es falla i el director de joc pot fer una tirada de reacció per decidir-ne el resultat.
 
 ### Tirada d'habilitat
 
@@ -753,9 +753,9 @@ La seva coordinació excepcional els proporciona una bonificació \+1 a l'atac a
 
 Tenen una capacitat especial per desaparèixer de la vista. Per amagar-se cal que s'estigui en silenci i immòbil.
 
-\- **Al bosc o sotabosc:** té 5-en-6 possibilitats de restar ocult.
+- **Al bosc o sotabosc:** té 5-en-6 possibilitats de restar ocult.
 
-\- **A les masmorres:** pot amagar-se entre les ombres o darrere d'altres formes de cobertura i les possibilitats d'èxit són de 2-en-6.
+- **A les masmorres:** pot amagar-se entre les ombres o darrere d'altres formes de cobertura i les possibilitats d'èxit són de 2-en-6.
 
 ### Escoltar a les portes
 
@@ -839,11 +839,11 @@ Viatjant per les terres salvatges han après a passar desapercebuts.
 | 4 | 3-en-6 | 10+ | 9+ |
 | 5 | 3-en-6 | 9+ | 9+ |
 
-\- **Sentir sorolls (SS):** acostumats als sons naturals de la terra, els permet detectar sorolls o la seva absència.
+- **Sentir sorolls (SS):** acostumats als sons naturals de la terra, els permet detectar sorolls o la seva absència.
 
-\- **Amagar-se en les ombres (AO):** cal que s'estigui immòbil i no pot atacar ni moure's mentre s'amaga.
+- **Amagar-se en les ombres (AO):** cal que s'estigui immòbil i no pot atacar ni moure's mentre s'amaga.
 
-\- **Moure's en silenci (MS):** pot intentar esmunyir-se entre els enemics sense fer cap mena de soroll.
+- **Moure's en silenci (MS):** pot intentar esmunyir-se entre els enemics sense fer cap mena de soroll.
 
 ### Tirada d'habilitat
 
@@ -892,9 +892,9 @@ El botí es pot dividir entre els personatges supervivents de la manera que aque
 
 S’anomena ***temps de joc***, al que transcorre en el món imaginari on els jugadors viuen les aventures. És crucial que el director de joc en faci un seguiment acurat per tal d'assegurar-se que els personatges descansen i mengen regularment, penalitzar-los si no ho fan. També cal recordar que quan es fan servir torxes o llanternes enceses, aquestes tenen una duració determinada i en algun moment s'apagaran. Finalment, cal recordar que alguns efectes màgics també especifiquen una durada. 
 
-\- Quan s'explora una masmorra, es fa el seguiment del nombre de torns transcorreguts
+- Quan s'explora una masmorra, es fa el seguiment del nombre de torns transcorreguts
 
-\- Quan s'explora les terres salvatges, normalment tan sols es compten els dies viatjats.
+- Quan s'explora les terres salvatges, normalment tan sols es compten els dies viatjats.
 
 A mesura que transcorre el temps en el món de joc, també cal que el director de joc decideixi què està passant a altres bandes del món o de la masmorra; pot ser que un exèrcit orc comenci a abandonar la fortalesa d'un senyor fosc, o que una patrulla de kobolds vagi cap a on són els personatges per tal de comprovar un parany de la masmorra, etc.
 
@@ -996,9 +996,9 @@ Quan un personatge mor per l'efecte d'un encanteri destructiu o un atac especial
 
 Els objectes màgics d'un personatge mort per un encanteri destructiu o un atac especial tenen una oportunitat d'evitar la seva destrucció així:
 
-\- **Tirada de salvació:** per a cada objecte, es pot fer una tirada de salvació amb els valors del personatge.
+- **Tirada de salvació:** per a cada objecte, es pot fer una tirada de salvació amb els valors del personatge.
 
-\- **Bonificacions:** els objectes que atorguen una bonificació com les armes i les armadures màgiques, poden aplicar aquesta a la tirada de salvació.
+- **Bonificacions:** els objectes que atorguen una bonificació com les armes i les armadures màgiques, poden aplicar aquesta a la tirada de salvació.
 
 ### Curació
 
@@ -1026,15 +1026,15 @@ Es pot fer tirades de salvació per evitar parcialment o totalment els efectes d
 
 ### Categories
 
-\- **Mort “M” o metzina:** per dany instantani i mortal que podria ser esquivat, o per resistir l'efecte d'un tòxic o una metzina.
+- **Mort “M” o metzina:** per dany instantani i mortal que podria ser esquivat, o per resistir l'efecte d'un tòxic o una metzina.
 
-\- **Varetes “V”:** evita efectes de les varetes màgiques.
+- **Varetes “V”:** evita efectes de les varetes màgiques.
 
-\- **Paràlisi “P” o petrificació:** davant un efecte que altera tot el cos, el paralitza o el converteix en pedra.
+- **Paràlisi “P” o petrificació:** davant un efecte que altera tot el cos, el paralitza o el converteix en pedra.
 
-\- **Atacs d'alè “A”:** per esquivar l'arma d'alè d'un drac o d'una altra criatura amb un atac semblant.
+- **Atacs d'alè “A”:** per esquivar l'arma d'alè d'un drac o d'una altra criatura amb un atac semblant.
 
-\- **Encanteris “E”, ceptres o bastons:** quan s'és l'objectiu d'un encanteri, l'efecte d'un bastó o ceptre.
+- **Encanteris “E”, ceptres o bastons:** quan s'és l'objectiu d'un encanteri, l'efecte d'un bastó o ceptre.
 
 ### Quan es fa una tirada de salvació
 
@@ -1044,9 +1044,9 @@ La tirada de salvació adequada i l'efecte de superar-la o no s'indica a la desc
 
 Quan s'escau, el jugador o el director de joc ha de tirar 1d20 i comparar el resultat amb el valor de la taula de la categoria adequada:
 
-\- **Superior o igual:** quan el resultat és superior o igual al valor de la taula, llavors és un èxit.
+- **Superior o igual:** quan el resultat és superior o igual al valor de la taula, llavors és un èxit.
 
-\- **Inferior:** quan el resultat és inferior al valor de la taula, llavors és un fracàs.
+- **Inferior:** quan el resultat és inferior al valor de la taula, llavors és un fracàs.
 
 ### Èxit en la tirada de salvació
 
@@ -1276,9 +1276,9 @@ Sovint hi ha elements ocults com ara paranys i portes secretes que els personatg
 
 ### Paranys
 
-\- **Paranys de tresor:** són petits i estan col·locats en un objecte per evitar que es manipuli o se saquegi; per exemple, una agulla emmetzinada en el pany d'un calaix o una petita ballesta dins d'un cofre.
+- **Paranys de tresor:** són petits i estan col·locats en un objecte per evitar que es manipuli o se saquegi; per exemple, una agulla emmetzinada en el pany d'un calaix o una petita ballesta dins d'un cofre.
 
-\- **Parany d'habitació:** són grans i estan dissenyats per afectar qualsevol criatura que entri en una àrea concreta; per exemple, un pou on es cau quan es trepitja una trapa a terra.
+- **Parany d'habitació:** són grans i estan dissenyats per afectar qualsevol criatura que entri en una àrea concreta; per exemple, un pou on es cau quan es trepitja una trapa a terra.
 
 #### Activació dels paranys
 
@@ -1333,11 +1333,11 @@ L'única activitat durant tot un dia; no es pot ni viatjar ni descansar. Hi ha u
 
 Al començament de cada dia, el director de joc ha de tirar per determinar si el grup es perdrà i la probabilitat depèn del terreny que es travessa:
 
-\- **Clars, prats:** 1-en-6.
+- **Clars, prats:** 1-en-6.
 
-\- **Terres ermes, turons, muntanyes, boscos:** 2-en-6.
+- **Terres ermes, turons, muntanyes, boscos:** 2-en-6.
 
-\- **Desert, jungla, pantà:** 3-en-6.
+- **Desert, jungla, pantà:** 3-en-6.
 
 Les condicions de visibilitat i del temps meteorològic poden influir en la probabilitat de perdre's, llavors cal ajustar-les com sigui convenient. 
 
@@ -1353,11 +1353,11 @@ Es pot albirar fins a tres milles a la rodona, en terreny obert, però aquest ab
 
 Alguns terrenys poden dificultar o facilitar el viatge i cal ajustar-ne el factor de moviment en conseqüència.
 
-\- **Terreny difícil:** ermots, tarteres, cingles, serrats, deserts i boscos atapeïts, a ⅔ de la velocitat normal.
+- **Terreny difícil:** ermots, tarteres, cingles, serrats, deserts i boscos atapeïts, a ⅔ de la velocitat normal.
 
-\- **Selva, muntanyes, pantà:** meitat de la velocitat.
+- **Selva, muntanyes, pantà:** meitat de la velocitat.
 
-\- **Carreteres mantingudes:** un 50% més ràpid.
+- **Carreteres mantingudes:** un 50% més ràpid.
 
 #### Marxa forçada
 
@@ -1383,11 +1383,11 @@ Si els personatges necessiten viatjar més en un dia, poden realitzar una marxa 
 
 **Possibilitats:** depenen del terreny que s'està explorant.
 
-\- **Ciutat, clars, prats, terrenys habitats:** 1-en-6.
+- **Ciutat, clars, prats, terrenys habitats:** 1-en-6.
 
-\- **Deshabitat, erm, desert, bosc, turons:** 2-en-6.
+- **Deshabitat, erm, desert, bosc, turons:** 2-en-6.
 
-\- **Selva, muntanyes, pantà:** 3-en-6.
+- **Selva, muntanyes, pantà:** 3-en-6.
 
 **Distància:** els monstres errants es troben a 4d6×10 iardes de distància i quan qualsevol dels dos bàndols és sorprès es redueix a 1d4×10 iarde
 
@@ -1424,9 +1424,9 @@ Cada bàndol desconeixedor de la presència de l'altre tira un 1d6.
 
 La mateixa situació de l'encontre sovint ja defineix a quina distància es troben els oponents; tanmateix, quan això no està clar llavors es pot determinar aleatòriament.
 
-\- **Masmorra:** a 2d6×10 peus.
+- **Masmorra:** a 2d6×10 peus.
 
-\- **En terres salvatges o corrent d'aigua:** 4d6×10 o 1d4×10 iardes amb sorpresa.
+- **En terres salvatges o corrent d'aigua:** 4d6×10 o 1d4×10 iardes amb sorpresa.
 
 ## Iniciativa
 
@@ -1460,11 +1460,11 @@ Els jugadors decideixen com volen que actuïn els seus personatges.
 
 Les següents són les més comunes, però és possible realitzar qualsevol mena d'acció.
 
-\- **Parlamentar:** els personatges poden intentar comunicar-se amb les criatures i si s'avenen a parlamentar, llavors la negociació es pot interpretar.
+- **Parlamentar:** els personatges poden intentar comunicar-se amb les criatures i si s'avenen a parlamentar, llavors la negociació es pot interpretar.
 
-\- **Evasió:** si una de les parts decideix fugir, llavors l'altra pot decidir començar una persecució.
+- **Evasió:** si una de les parts decideix fugir, llavors l'altra pot decidir començar una persecució.
 
-\- **Combat:** si un bàndol ataca, llança encanteris, es mostra clarament hostil o pren posicions tàctiques, cal començar a fer el seguiment del temps en assalts d'acord amb el procediment de combat.
+- **Combat:** si un bàndol ataca, llança encanteris, es mostra clarament hostil o pren posicions tàctiques, cal començar a fer el seguiment del temps en assalts d'acord amb el procediment de combat.
 
 ## Moviment
 
@@ -1498,9 +1498,9 @@ Un encontre se suposa que almenys dura tot un torn sencer i s'inclou el temps pe
 
 Es compara el factor de moviment de les dues faccions:
 
-\- **Quan els fugitius són més ràpids:** l'evasió té èxit automàticament a menys que es vegin obligats a aturar-se.
+- **Quan els fugitius són més ràpids:** l'evasió té èxit automàticament a menys que es vegin obligats a aturar-se.
 
-\- **Quan els perseguidors són més ràpids:** es produeix la persecució.
+- **Quan els perseguidors són més ràpids:** es produeix la persecució.
 
 ### Persecució
 
@@ -1543,11 +1543,11 @@ La possibilitat d'evasió és una probabilitat de X-en-20 i quan es falla contin
 | 91' \- 120' per assalt més lent que el perseguidor | 5-en-20 |
 | 121'+ per assalt més lent que el perseguidor | 2-en-20 |
 
-\- **No hi ha sorpresa:** la possibilitat d'evasió depèn de la mida relativa dels dos grups; les possibilitats són a favor del grup més petit, ja que els grans no poden moure's tan ràpidament ni tan silenciosament.
+- **No hi ha sorpresa:** la possibilitat d'evasió depèn de la mida relativa dels dos grups; les possibilitats són a favor del grup més petit, ja que els grans no poden moure's tan ràpidament ni tan silenciosament.
 
-\- **Bàndol sorprès:** en general no es pot evadir. El DJ pot dictaminar que les condicions de l'entorn donen una petita possibilitat d'evasió fins i tot, quan siguin sorpresos. Per exemple, en un bosc dens pot donar a un bàndol sorprès 2-en-20 probabilitats d'evasió.
+- **Bàndol sorprès:** en general no es pot evadir. El DJ pot dictaminar que les condicions de l'entorn donen una petita possibilitat d'evasió fins i tot, quan siguin sorpresos. Per exemple, en un bosc dens pot donar a un bàndol sorprès 2-en-20 probabilitats d'evasió.
 
-\- **Bàndol que sorprèn:** el bàndol que sorprèn pot evadir-se automàticament; el bàndol sorprès ni tan sols és conscient que s'ha produït l'encontre.
+- **Bàndol que sorprèn:** el bàndol que sorprèn pot evadir-se automàticament; el bàndol sorprès ni tan sols és conscient que s'ha produït l'encontre.
 
 ### Persecució
 
@@ -1599,9 +1599,9 @@ Al principi de cada assalt es tira 1d6 per cada costat; actua primer qui té el 
 
 El DJ pot fer servir aquest sistema per decidir si les criatures (o els PNJ) es rendeixen o fugen del combat.
 
-\- **Moral de 2:** lluitarà tan sols quan estan acorralats.
+- **Moral de 2:** lluitarà tan sols quan estan acorralats.
 
-\- **Moral de 12:** la criatura lluitarà a mort.
+- **Moral de 12:** la criatura lluitarà a mort.
 
 ### Quan tirar per moral
 
@@ -1618,9 +1618,9 @@ El director de joc pot aplicar bonificacions o penalitzacions a la tirada de mor
 
 El director de joc tira 2d6 i compara el resultat amb el valor de moral de la criatura:
 
-\- **Superior:** l'oponent es rendeix o intenta fugir.
+- **Superior:** l'oponent es rendeix o intenta fugir.
 
-\- **Igual o inferior:** l'oponent continua lluitant.
+- **Igual o inferior:** l'oponent continua lluitant.
 
 **Amb dos èxits:** en la tirada de moral en un encontre, la criatura lluitarà a mort i no cal fer més tirades.
 
@@ -1632,15 +1632,15 @@ Pot moure’s a un terç del factor de moviment normal a cada assalt i a més at
 
 ### A la carrera
 
-\- **Factor de moviment:** un personatge es pot moure fins al factor de moviment d'encontre a cada assalt.  
-\- **Durada màxima:** els personatges poden moure's a aquesta velocitat durant un màxim de 60 assalts.
+- **Factor de moviment:** un personatge es pot moure fins al factor de moviment d'encontre a cada assalt.  
+- **Durada màxima:** els personatges poden moure's a aquesta velocitat durant un màxim de 60 assalts.
 
 ### En la lluita cos a cos
 
 Quan es lluita cos a cos amb un enemic, només són possibles les següents formes de moviment:
 
-\- **Abandonar:** el personatge es mou cap enrere a la meitat del factor de moviment d'encontre i cal un camí lliure per moure's.  
-\- **Retirada:** el personatge es gira i fuig al factor de moviment d'encontre. Aquest assalt no pot atacar i l'adversari pot fer un atac d'oportunitat bonificat amb \+2 i s'ignora la bonificació a la CA de l'escut si s'escau.
+- **Abandonar:** el personatge es mou cap enrere a la meitat del factor de moviment d'encontre i cal un camí lliure per moure's.  
+- **Retirada:** el personatge es gira i fuig al factor de moviment d'encontre. Aquest assalt no pot atacar i l'adversari pot fer un atac d'oportunitat bonificat amb \+2 i s'ignora la bonificació a la CA de l'escut si s'escau.
 
 ## Atacar
 
@@ -1742,9 +1742,9 @@ Per exemple, quan una criatura (o personatge, o PNJ) cau inconscient o és paral
 
 Algunes criatures tan sols poden ser danyades amb armes màgiques o de plata. Si el director de joc ho vol, aquestes també poden ser danyades per:
 
-\- Una altra criatura invulnerable.
+- Una altra criatura invulnerable.
 
-\- Una criatura de 5 daus de cop o més.
+- Una criatura de 5 daus de cop o més.
 
 ### Diversos atacants
 
@@ -1822,31 +1822,31 @@ El llibre d'encanteris conté inicialment tres encanteris que el DJ pot triar, p
 
 Els llançadors d'encanteris poden augmentar el seu repertori de dues maneres:
 
-\- **Tutela:** el personatge pot consultar una biblioteca o un mentor per aprendre encanteris nous; cal dedicar una setmana de temps de joc aproximadament. Els encanteris apresos els determinen el director de joc o pot deixar al jugador triar-los d'una llista.
+- **Tutela:** el personatge pot consultar una biblioteca o un mentor per aprendre encanteris nous; cal dedicar una setmana de temps de joc aproximadament. Els encanteris apresos els determinen el director de joc o pot deixar al jugador triar-los d'una llista.
 
-\- **Copiar encanteris:** un llançador d'encanteris arcans pot intentar afegir els encanteris al seu llibre copiant-los d'una altra font; per exemple, un pergamí o el llibre d'encanteris d'un altre mag.
+- **Copiar encanteris:** un llançador d'encanteris arcans pot intentar afegir els encanteris al seu llibre copiant-los d'una altra font; per exemple, un pergamí o el llibre d'encanteris d'un altre mag.
 
 ### Copiar encanteris
 
 Quan es permet afegir encanteris al llibre del llançador copiant-los de pergamins o d'altres llibres d'encanteris s'han de satisfer les condicions següents.
 
-\- No es pot copiar encanteris d'un nivell superior al que pot llançar el personatge.
+- No es pot copiar encanteris d'un nivell superior al que pot llançar el personatge.
 
-\- La possibilitat de poder copiar l'encanteri depèn de la puntuació d'***intel·ligència*** i del resultat d'una tirada amb 1d20 segons la taula; quan es falla, no es pot tornar-ho a intentar fins al següent nivell.
+- La possibilitat de poder copiar l'encanteri depèn de la puntuació d'***intel·ligència*** i del resultat d'una tirada amb 1d20 segons la taula; quan es falla, no es pot tornar-ho a intentar fins al següent nivell.
 
-\- Els encanteris de pergamins es poden copiar al llibre d'encanteris, però en fer-ho desapareixen del pergamí.
+- Els encanteris de pergamins es poden copiar al llibre d'encanteris, però en fer-ho desapareixen del pergamí.
 
-\- Quan es copia d'un altre llibre d'encanteris, aquest no desapareix del llibre original.
+- Quan es copia d'un altre llibre d'encanteris, aquest no desapareix del llibre original.
 
-\- Per copiar un encanteri des del llibre d'un altre mag primer cal llançar ***llegir màgia*** sobre el llibre.
+- Per copiar un encanteri des del llibre d'un altre mag primer cal llançar ***llegir màgia*** sobre el llibre.
 
 ### Llibres d'encanteris perduts
 
 Un llançador d'encanteris arcans pot reescriure els encanteris del seu llibre d'encanteris quan es perd o és destruït.
 
-\- **Cost:** per encanteri que s'ha de recuperar cal una setmana de temps de joc i 1.000 po per nivell. Per exemple, per reescriure dos encanteris de primer nivell i un de segon nivell es trigarà quatre setmanes i 4.000 po.
+- **Cost:** per encanteri que s'ha de recuperar cal una setmana de temps de joc i 1.000 po per nivell. Per exemple, per reescriure dos encanteris de primer nivell i un de segon nivell es trigarà quatre setmanes i 4.000 po.
 
-\- **L'única activitat:** cal una concentració total i no es pot participar en cap altra activitat a banda de satisfer les necessitats bàsiques de menjar i descansar.
+- **L'única activitat:** cal una concentració total i no es pot participar en cap altra activitat a banda de satisfer les necessitats bàsiques de menjar i descansar.
 
 ### Llibres d'encanteris capturats
 
@@ -1880,11 +1880,11 @@ Han de ser fidels als principis de la seva alineació, al clergat i a la religi�
 
 Es pot perdre el favor del Déu quan es llança encanteris (o els seus reversos) els efectes dels quals van en contra dels principis de la seva alineació.
 
-\- **Legals:** només utilitzen els reversos en circumstàncies extremes.
+- **Legals:** només utilitzen els reversos en circumstàncies extremes.
 
-\- **Caòtics:** sovint usen els reversos, i tan sols usen les versions normals en benefici dels seus aliats.
+- **Caòtics:** sovint usen els reversos, i tan sols usen les versions normals en benefici dels seus aliats.
 
-\- **Neutrals:** prefereixen els normals o reversos, segons la deïtat servida i cap afavoreix totes dues formes.
+- **Neutrals:** prefereixen els normals o reversos, segons la deïtat servida i cap afavoreix totes dues formes.
 
 # Encanteris de màgia divina
 
@@ -1907,7 +1907,7 @@ Segon nivell
 | :---: | :---- | :---: | :---: | :---: |
 | **1** | Beneir | Si | 6 torns | 60' |
 | **2** | Conèixer alineació | \- | un assalt | 10' |
-| **3** | Encís de serps | \- | 1d4+1 assaltso torns | 60' |
+| **3** | Encís de serps | \- | 1d4+1 assaltso torns | 60' |
 | **4** | Parlar amb els animals | \- | 6 torns | 30' |
 | **5** | Resistir el foc | \- | 2 torns | 30' |
 | **6** | Retenir persona | \- | 9 torns | 180' |
@@ -1923,9 +1923,9 @@ Segon nivell
 
 Aquest encanteri té dos usos possibles:
 
-\- **Curar dany:** restaura 1d6+1 punts de cop, però mai pot superar el màxim del personatge o la criatura objectiu.
+- **Curar dany:** restaura 1d6+1 punts de cop, però mai pot superar el màxim del personatge o la criatura objectiu.
 
-\- **Curar la paràlisi:** es neguen els efectes de la paràlisi.
+- **Curar la paràlisi:** es neguen els efectes de la paràlisi.
 
 #### Invertit: infligir ferides lleus
 
@@ -1938,9 +1938,9 @@ Infligeix ​​1d6+1 punts de dany a la criatura tocada. En combat cal superar 
 
 Els objectes encantats amb finalitats malignes o els éssers vius amb intencions malvades queden envoltats per una lluentor màgica. 
 
-\- **Tan sols la intenció:** aquest encanteri no atorga la capacitat de llegir ments, sinó que tan sols permet apreciar una sensació de les males intencions.
+- **Tan sols la intenció:** aquest encanteri no atorga la capacitat de llegir ments, sinó que tan sols permet apreciar una sensació de les males intencions.
 
-\- **Definició de mal:** el DJ ha de decidir què és el ***“mal”***, algunes coses potencialment nocives com ara les trampes no són malvades per se.
+- **Definició de mal:** el DJ ha de decidir què és el ***“mal”***, algunes coses potencialment nocives com ara les trampes no són malvades per se.
 
 ### Detectar màgia
 
@@ -1956,11 +1956,11 @@ Els objectes, les àrees o les criatures encantades brillen lleugerament a ulls 
 
 Aquest encanteri té tres usos possibles:
 
-\- **Conjurar llum:** en un radi de 15'. La llum màgica és suficient per llegir, encara que no és tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
+- **Conjurar llum:** en un radi de 15'. La llum màgica és suficient per llegir, encara que no és tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
 
-\- **Cegar una criatura:** llançant l'encanteri als ulls d'una criatura. Quan l'objectiu falla una ***tirada de salvació contra encanteris***, aquesta resta encegada durant 12 torns. Una criatura encegada no pot atacar.
+- **Cegar una criatura:** llançant l'encanteri als ulls d'una criatura. Quan l'objectiu falla una ***tirada de salvació contra encanteris***, aquesta resta encegada durant 12 torns. Una criatura encegada no pot atacar.
 
-\- **Cancel·lar foscor:** pot dissipar l'encanteri ***foscor***.
+- **Cancel·lar foscor:** pot dissipar l'encanteri ***foscor***.
 
 #### Invertit: foscor
 
@@ -1973,11 +1973,11 @@ Crea una àrea de 15' de radi de foscor màgica que impedeix la visió normal (p
 
 Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineació diferent de la seva.
 
-\- **Bonificacions:** s'obté una bonificació de \+1 a les tirades de salvació relatives als atacs o habilitats especials de les criatures amb una alineació diferent.
+- **Bonificacions:** s'obté una bonificació de \+1 a les tirades de salvació relatives als atacs o habilitats especials de les criatures amb una alineació diferent.
 
-\- **Tirades d'atac:** es penalitzen amb \-1 per les criatures amb una alineació diferent.
+- **Tirades d'atac:** es penalitzen amb \-1 per les criatures amb una alineació diferent.
 
-\- **Criatures encantades, construïdes o convocades:** el conjur impedeix que aquestes criatures ataquin cos a cos al llançador, tot i que sí que poden fer atacs a distància. Quan el llançador lluita cos a cos contra aquestes criatures, llavors es perd aquesta protecció, però encara s'apliquen les bonificacions a les tirades de salvació i la penalització a les tirades d'atac esmentades anteriorment.
+- **Criatures encantades, construïdes o convocades:** el conjur impedeix que aquestes criatures ataquin cos a cos al llançador, tot i que sí que poden fer atacs a distància. Quan el llançador lluita cos a cos contra aquestes criatures, llavors es perd aquesta protecció, però encara s'apliquen les bonificacions a les tirades de salvació i la penalització a les tirades d'atac esmentades anteriorment.
 
 ### Purificar menjar i aigua
 
@@ -1986,11 +1986,11 @@ Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineac
 
 Aquest fa que els aliments o l'aigua deteriorats, podrits, emmetzinats o contaminats d'alguna manera siguin adequats per menjar i beure. Afecta en una de les següents maneres:
 
-\- **Beguda**: 6 litres o fang en un toll d'aigua neta i clara.
+- **Beguda**: 6 litres o fang en un toll d'aigua neta i clara.
 
-\- **Racions:** una ració (de ferro o estàndard).
+- **Racions:** una ració (de ferro o estàndard).
 
-\- **Menjar sense conservar:** per a 12 éssers de mida humana.
+- **Menjar sense conservar:** per a 12 éssers de mida humana.
 
 ### Resistir el fred
 
@@ -1999,11 +1999,11 @@ Aquest fa que els aliments o l'aigua deteriorats, podrits, emmetzinats o contami
 
 Totes les criatures dins de l'abast indicat estan protegides del fred, de la següent manera:
 
-\- **Fred normal:** indemne a la congelació no màgica.
+- **Fred normal:** indemne a la congelació no màgica.
 
-\- **Bonificació:** s'obté una bonificació de \+2 a les tirades de salvació contra els atacs màgics o d'armes d'alè basats en el fred.
+- **Bonificació:** s'obté una bonificació de \+2 a les tirades de salvació contra els atacs màgics o d'armes d'alè basats en el fred.
 
-\- **Dany causat pel fred:** es redueix en un punt per cada dau de dany, però per cada dau s'​​infligeix com a mínim un punt de dany.
+- **Dany causat pel fred:** es redueix en un punt per cada dau de dany, però per cada dau s'​​infligeix com a mínim un punt de dany.
 
 ### Treure la por
 
@@ -2025,9 +2025,9 @@ Farà fugir a un objectiu a menys de 120' durant 2 torns, tret que superi una **
 
 Es pot utilitzar en una de les situacions següents:
 
-\- **Combat:** els aliats en una àrea quadrada de 20' que encara no estiguin lluitant cos a cos obtenen una bonificació de \+1 a les tirades d'atac, dany i moral.
+- **Combat:** els aliats en una àrea quadrada de 20' que encara no estiguin lluitant cos a cos obtenen una bonificació de \+1 a les tirades d'atac, dany i moral.
 
-\- **Ritual:** a criteri del DJ també pot formar part dels rituals de purificació o consagració.
+- **Ritual:** a criteri del DJ també pot formar part dels rituals de purificació o consagració.
 
 #### Invertit: malaurança
 
@@ -2047,9 +2047,9 @@ El llançador obté un coneixement immediat de l'alineació d'un personatge, mon
 
 Una o més serps deixen de ser hostils, s'alcen i mouen d'un costat a l'altre, però no ataquen.
 
-\- **Daus de cop afectats:** l'encanteri afecta les serps que el total de daus de cop no superi el nivell del llançador. Per exemple, un llançador de 7è nivell pot afectar a set daus de cop de serps, que pot ser tant set serps d'un dau de cop com dues serps de 3 daus de cop més una serp d'un dau de cop, o qualsevol altra combinació.
+- **Daus de cop afectats:** l'encanteri afecta les serps que el total de daus de cop no superi el nivell del llançador. Per exemple, un llançador de 7è nivell pot afectar a set daus de cop de serps, que pot ser tant set serps d'un dau de cop com dues serps de 3 daus de cop més una serp d'un dau de cop, o qualsevol altra combinació.
 
-\- **Durada:** quan es llança sobre serps que ja estan atacant al llançador, llavors l'encanteri dura 1d4+1 assalts i en cas contrari dura 1d4+1 torns.
+- **Durada:** quan es llança sobre serps que ja estan atacant al llançador, llavors l'encanteri dura 1d4+1 assalts i en cas contrari dura 1d4+1 torns.
 
 ### Parlar amb els animals
 
@@ -2058,11 +2058,11 @@ Una o més serps deixen de ser hostils, s'alcen i mouen d'un costat a l'altre, p
 
 El llançador es pot comunicar dins de l'abast indicat amb un tipus d'animal.
 
-\- **Tipus d'animal:** animals convencionals o les seves variants gegants.
+- **Tipus d'animal:** animals convencionals o les seves variants gegants.
 
-\- **Preguntes:** es pot interrogar als animals del tipus triat i obtenir-ne respostes. Però aquest encanteri no fa que es mostrin més amistosos o cooperatius del normal, pot ser que calgui fer alguna tirada de reacció.
+- **Preguntes:** es pot interrogar als animals del tipus triat i obtenir-ne respostes. Però aquest encanteri no fa que es mostrin més amistosos o cooperatius del normal, pot ser que calgui fer alguna tirada de reacció.
 
-\- **Favors o serveis:** si un animal es mostra amistosa amb el llançador, pot fer-li algun favor o servei.
+- **Favors o serveis:** si un animal es mostra amistosa amb el llançador, pot fer-li algun favor o servei.
 
 ### Resistir el foc
 
@@ -2071,11 +2071,11 @@ El llançador es pot comunicar dins de l'abast indicat amb un tipus d'animal.
 
 A una única criatura se li atorga una resistència sobrenatural al foc, de la següent manera:
 
-\- **Calor normal:** indemne per la calor o el foc no màgic.
+- **Calor normal:** indemne per la calor o el foc no màgic.
 
-\- **Bonificació:** s'obté una bonificació de \+2 a les tirades de salvació contra els atacs màgics o les armes d'alè basats en el foc.
+- **Bonificació:** s'obté una bonificació de \+2 a les tirades de salvació contra els atacs màgics o les armes d'alè basats en el foc.
 
-\- **Dany causat pel foc:** es redueix en un punt per cada dau de dany, però per cada dau s'​​infligeix com a mínim un punt de dany.
+- **Dany causat pel foc:** es redueix en un punt per cada dau de dany, però per cada dau s'​​infligeix com a mínim un punt de dany.
 
 ### Retenir persona
 
@@ -2084,11 +2084,11 @@ A una única criatura se li atorga una resistència sobrenatural al foc, de la s
 
 Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres humanoides) quedi paralitzat quan es falla una ***tirada de salvació contra encanteris***. Es pot fer servir de dues maneres:
 
-\- **Contra un únic individu:** la tirada de salvació de l'objectiu es penalitza amb \-2.
+- **Contra un únic individu:** la tirada de salvació de l'objectiu es penalitza amb \-2.
 
-\- **Contra un grup:** es dirigeix a 1d4 individus del grup triats pel llançador.
+- **Contra un grup:** es dirigeix a 1d4 individus del grup triats pel llançador.
 
-\- **Restriccions:** els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
+- **Restriccions:** els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
 
 ### Silenci (radi 15')
 
@@ -2097,11 +2097,11 @@ Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres huma
 
 Una àrea amb un radi de 15 peus queda totalment en silenci.
 
-\- **Dins de l'àrea:** tot el so desapareix, és impossible conversar i llançar encanteris.
+- **Dins de l'àrea:** tot el so desapareix, és impossible conversar i llançar encanteris.
 
-\- **Soroll de fora de la zona:** els de dins poden sentir els sons que provenen de fora de l'àrea afectada.
+- **Soroll de fora de la zona:** els de dins poden sentir els sons que provenen de fora de l'àrea afectada.
 
-\- **Llançament sobre una criatura:** es pot llançar silenci sobre una criatura, que se li permet una ***tirada de salvació contra encanteris***. Si falla aquesta tirada, l'àrea de silenci de 15 peus se situa sobre la criatura i es mou amb ella. Quan se supera la tirada de salvació, l'efecte de l'encanteri es manté estacionari i l'objectiu pot sortir-ne.
+- **Llançament sobre una criatura:** es pot llançar silenci sobre una criatura, que se li permet una ***tirada de salvació contra encanteris***. Si falla aquesta tirada, l'àrea de silenci de 15 peus se situa sobre la criatura i es mou amb ella. Quan se supera la tirada de salvació, l'efecte de l'encanteri es manté estacionari i l'objectiu pot sortir-ne.
 
 ### Trobar paranys
 
@@ -2110,9 +2110,9 @@ Una àrea amb un radi de 15 peus queda totalment en silenci.
 
 Quan el llançador s'acosta als paranys dins de l'abast indicat, aquests se li mostren amb una lluentor blava.
 
-\- **Paranys màgics i mecànics:** indiferentment.
+- **Paranys màgics i mecànics:** indiferentment.
 
-\- **Sense detalls:** no es percep la naturalesa del parany ni la manera de desactivar-lo.
+- **Sense detalls:** no es percep la naturalesa del parany ni la manera de desactivar-lo.
 
 # Encanteris de màgia arcana
 
@@ -2183,13 +2183,13 @@ Els objectes, les àrees o les criatures encantades brillen lleugerament a ulls 
 
 S'evoca un disc flotant de força màgica lleugerament còncau que segueix al llançador cap allà a on va i pot transportar càrregues. 
 
-\- **Mida:** el disc fa tres peus de diàmetre i una polzada de profunditat al centre.
+- **Mida:** el disc fa tres peus de diàmetre i una polzada de profunditat al centre.
 
-\- **Càrrega:** pot contenir una càrrega màxima de 5.000 monedes.
+- **Càrrega:** pot contenir una càrrega màxima de 5.000 monedes.
 
-\- **Moviment:** el disc flota a l'aire a l'altura de la cintura i es manté anivellat, desplaçant-se horitzontalment dins de l'abast de l'encanteri.
+- **Moviment:** el disc flota a l'aire a l'altura de la cintura i es manté anivellat, desplaçant-se horitzontalment dins de l'abast de l'encanteri.
 
-\- **Acaba:** quan el disc fa pampallugues al final de la durada de l'encanteri i llavors deixa caure tot el porti.
+- **Acaba:** quan el disc fa pampallugues al final de la durada de l'encanteri i llavors deixa caure tot el porti.
 
 ### Dormir
 
@@ -2198,23 +2198,23 @@ S'evoca un disc flotant de força màgica lleugerament còncau que segueix al ll
 
 Aquest encanteri provoca una somnolència màgica a un grup de criatures o un únic individu.
 
-\- **Una sola criatura:** de fins a 4+1 daus de cop.
+- **Una sola criatura:** de fins a 4+1 daus de cop.
 
-\- **Un grup:** un total de 2d8 daus de cop de criatures de 4 daus de cop o menys cadascuna.
+- **Un grup:** un total de 2d8 daus de cop de criatures de 4 daus de cop o menys cadascuna.
 
-\- **Matar:** les criatures encantades per aquest encanteri estan indefenses i es poden matar a l'instant amb una arma de fulla; tan sols cal tirar pel dany.
+- **Matar:** les criatures encantades per aquest encanteri estan indefenses i es poden matar a l'instant amb una arma de fulla; tan sols cal tirar pel dany.
 
-\- **Despertar:** les bufetades o les ferides no mortals desperten a la criatura afectada.
+- **Despertar:** les bufetades o les ferides no mortals desperten a la criatura afectada.
 
-\- **Restriccions:** no afecta les criatures no-mortes.
+- **Restriccions:** no afecta les criatures no-mortes.
 
 Quan es dirigeix a un grup de criatures de 4 daus de cop o menys, s'apliquen les regles següents:
 
-\- **Primer les més febles:** els objectius amb menys daus de cop es veuen afectades primer.
+- **Primer les més febles:** els objectius amb menys daus de cop es veuen afectades primer.
 
-\- **Daus de cop:** es compta tot un dau de cop pels monstres amb menys d'un dau de cop i els monstres amb una bonificació als daus de cop tan sols la quantitat base. Per exemple, un monstre de 3+2 daus de cop es calcula que té 3 daus de cop.
+- **Daus de cop:** es compta tot un dau de cop pels monstres amb menys d'un dau de cop i els monstres amb una bonificació als daus de cop tan sols la quantitat base. Per exemple, un monstre de 3+2 daus de cop es calcula que té 3 daus de cop.
 
-\- **Excés:** es descarten els daus de cop restants que no poden afectar del tot a una criatura.
+- **Excés:** es descarten els daus de cop restants que no poden afectar del tot a una criatura.
 
 ### Encisar persona
 
@@ -2223,15 +2223,15 @@ Quan es dirigeix a un grup de criatures de 4 daus de cop o menys, s'apliquen les
 
 Una única criatura de tipus “persona” li cal superar una ***tirada de salvació contra encanteris*** o restar encisada de la següent manera:
 
-\- **Amistat:** el subjecte encisat veu al llançador com un amic i aliat de confiança, i si cal, defensarà al llançador.
+- **Amistat:** el subjecte encisat veu al llançador com un amic i aliat de confiança, i si cal, defensarà al llançador.
 
-\- **Ordres:** si comparteixen un idioma, el subjecte encisat obeirà les ordres del llançador.
+- **Ordres:** si comparteixen un idioma, el subjecte encisat obeirà les ordres del llançador.
 
-\- **Alineació:** pot ignorar les ordres que contradiguin la naturalesa de la criatura o la seva alineació.
+- **Alineació:** pot ignorar les ordres que contradiguin la naturalesa de la criatura o la seva alineació.
 
-\- **Ordres suïcides:** el subjecte encisat mai obeeix les ordres suïcides o òbviament nocives.
+- **Ordres suïcides:** el subjecte encisat mai obeeix les ordres suïcides o òbviament nocives.
 
-\- **Durada:** indefinidament, però es permet fer més ***tirades de salvació contra encanteris*** segons la seva puntuació a ***intel·ligència*** i si alguna d'aquestes tirades de salvació té èxit, llavors l'encanteri finalitza.
+- **Durada:** indefinidament, però es permet fer més ***tirades de salvació contra encanteris*** segons la seva puntuació a ***intel·ligència*** i si alguna d'aquestes tirades de salvació té èxit, llavors l'encanteri finalitza.
 
 | INT | Tirades de salvació |
 | :---: | :---- |
@@ -2239,7 +2239,7 @@ Una única criatura de tipus “persona” li cal superar una ***tirada de salva
 | 9-12 | La criatura obté una tirada de salvació cada setmana. |
 | 13-18 | La criatura obté una tirada de salvació un cop al dia. |
 
-\- **Restriccions:** els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
+- **Restriccions:** els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
 
 ### Escut
 
@@ -2248,9 +2248,9 @@ Una única criatura de tipus “persona” li cal superar una ***tirada de salva
 
 Es crea un camp de força invisible que protegeix al llançador de la següent manera.
 
-\- **Contra projectils:** la CA del llançador és 17\.
+- **Contra projectils:** la CA del llançador és 17\.
 
-\- **Contra altres atacs:** la CA del llançador és 15\.
+- **Contra altres atacs:** la CA del llançador és 15\.
 
 ### Llegir idiomes
 
@@ -2266,13 +2266,13 @@ Durant els dos torns d'aquest encanteri, el llançador pot llegir qualsevol idio
 
 Amb aquest encanteri, el llançador pot desxifrar inscripcions o runes màgiques de la següent manera:
 
-\- **Pergamins:** es pot entendre el patró màgic d'un pergamí d'encanteris arcans. Aleshores, el llançador pot activar (o copiar) els encanteris del pergamí en qualsevol moment futur.
+- **Pergamins:** es pot entendre el patró màgic d'un pergamí d'encanteris arcans. Aleshores, el llançador pot activar (o copiar) els encanteris del pergamí en qualsevol moment futur.
 
-\- **Llibres d'encanteris:** pot desxifrar un llibre escrit per un altre llançador d'encanteris arcans.
+- **Llibres d'encanteris:** pot desxifrar un llibre escrit per un altre llançador d'encanteris arcans.
 
-\- **Inscripcions:** es pot entendre les runes o paraules màgiques inscrites en un objecte o una superfície.
+- **Inscripcions:** es pot entendre les runes o paraules màgiques inscrites en un objecte o una superfície.
 
-\- **Tornar a llegir:** un cop llegit un escrit mitjançant aquest encanteri, fa que es pugui rellegir aquest mateix text o inscripció sense necessitar la màgia.
+- **Tornar a llegir:** un cop llegit un escrit mitjançant aquest encanteri, fa que es pugui rellegir aquest mateix text o inscripció sense necessitar la màgia.
 
 ### Llum
 
@@ -2281,11 +2281,11 @@ Amb aquest encanteri, el llançador pot desxifrar inscripcions o runes màgiques
 
 El llançador escull un dels efectes següents.
 
-\- **Conjurar llum:** en un radi de 15'. Aquesta llum màgica és suficient per llegir, encara que no sigui tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
+- **Conjurar llum:** en un radi de 15'. Aquesta llum màgica és suficient per llegir, encara que no sigui tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
 
-\- **Encegar a una criatura:** llançant-lo sobre els seus ulls. Si l'objectiu falla la ***tirada de salvació contra encanteris***, aquest quedarà encegat durant 12 torns. Una criatura encegada no pot atacar.
+- **Encegar a una criatura:** llançant-lo sobre els seus ulls. Si l'objectiu falla la ***tirada de salvació contra encanteris***, aquest quedarà encegat durant 12 torns. Una criatura encegada no pot atacar.
 
-\- **Cancel·lar foscor:** pot dissipar l'encanteri ***foscor***.
+- **Cancel·lar foscor:** pot dissipar l'encanteri ***foscor***.
 
 #### Invertit: foscor
 
@@ -2298,11 +2298,11 @@ Es crea una àrea de 15' de radi de foscor màgica que impedeix la visió normal
 
 Aquest conjura un o més dards d'energia brillant que el llançador pot disparar contra un objectiu visible que es troba a dins l'abast de l'encanteri.
 
-\- **Colpeja:** el projectil colpeja inevitablement, no cal fer tirada d'atac ni es permet fer cap tirada de salvació.
+- **Colpeja:** el projectil colpeja inevitablement, no cal fer tirada d'atac ni es permet fer cap tirada de salvació.
 
-\- **Dany:** el projectil infligeix 1d6+1 punts de dany.
+- **Dany:** el projectil infligeix 1d6+1 punts de dany.
 
-\- **Nivells alts:** llavors es pot conjurar més projectils, es creen dos projectils addicionals per cada cinc nivells d'experiència obtinguts, és a dir tres projectils entre els nivells 6è-10è, cinc projectils entre els nivells 11è-15è, etc.). Es poden dirigir tots els projectils cap a un sol objectiu o contra diferents objectius a elecció del llançador.
+- **Nivells alts:** llavors es pot conjurar més projectils, es creen dos projectils addicionals per cada cinc nivells d'experiència obtinguts, és a dir tres projectils entre els nivells 6è-10è, cinc projectils entre els nivells 11è-15è, etc.). Es poden dirigir tots els projectils cap a un sol objectiu o contra diferents objectius a elecció del llançador.
 
 ### Protecció del mal
 
@@ -2311,11 +2311,11 @@ Aquest conjura un o més dards d'energia brillant que el llançador pot disparar
 
 Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineació diferent de la seva.
 
-\- **Bonificacions:** s'obté una bonificació de \+1 a les tirades de salvació relatives als atacs o habilitats especials de les criatures amb una alineació diferent.
+- **Bonificacions:** s'obté una bonificació de \+1 a les tirades de salvació relatives als atacs o habilitats especials de les criatures amb una alineació diferent.
 
-\- **Tirades d'atac:** es penalitzen amb \-1 per les criatures amb una alineació diferent.
+- **Tirades d'atac:** es penalitzen amb \-1 per les criatures amb una alineació diferent.
 
-\- **Criatures encantades, construïdes o convocades:** el conjur impedeix que aquestes criatures ataquin cos a cos al llançador, tot i que sí que poden fer atacs a distància. Quan el llançador lluita cos a cos contra aquestes criatures, llavors es perd aquesta protecció, però encara s'apliquen les bonificacions a les tirades de salvació i la penalització a les tirades d'atac esmentades anteriorment.
+- **Criatures encantades, construïdes o convocades:** el conjur impedeix que aquestes criatures ataquin cos a cos al llançador, tot i que sí que poden fer atacs a distància. Quan el llançador lluita cos a cos contra aquestes criatures, llavors es perd aquesta protecció, però encara s'apliquen les bonificacions a les tirades de salvació i la penalització a les tirades d'atac esmentades anteriorment.
 
 ### Retenir portal
 
@@ -2324,9 +2324,9 @@ Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineac
 
 Aquest encanteri manté una porta, una finestra o qualsevol altre tipus de portal tancat màgicament.
 
-\- **Obertura amb màgia:** l'encanteri ***obertura*** obre un portal retingut a l'instant.
+- **Obertura amb màgia:** l'encanteri ***obertura*** obre un portal retingut a l'instant.
 
-\- **Obertura per la força:** les criatures amb tres o més daus de cop per sobre del nivell del llançador (o els personatges amb tres o més nivells per sobre) poden obrir un portal retingut amb l'esforç d'un assalt.
+- **Obertura per la força:** les criatures amb tres o més daus de cop per sobre del nivell del llançador (o els personatges amb tres o més nivells per sobre) poden obrir un portal retingut amb l'esforç d'un assalt.
 
 ### Ventrilòquia
 
@@ -2346,9 +2346,9 @@ d'un animal.
 
 Els objectes encantats amb finalitats malignes o els éssers vius amb intencions malvades queden envoltats per una lluentor màgica.
 
-\- **Tan sols la intenció:** aquest encanteri no atorga la capacitat de llegir ments, sinó que tan sols permet apreciar una sensació de les males intencions.
+- **Tan sols la intenció:** aquest encanteri no atorga la capacitat de llegir ments, sinó que tan sols permet apreciar una sensació de les males intencions.
 
-\- **Definició de mal:** el DJ ha de decidir què és el ***“mal”***, algunes coses potencialment nocives com ara les trampes no són malvades per se.
+- **Definició de mal:** el DJ ha de decidir què és el ***“mal”***, algunes coses potencialment nocives com ara les trampes no són malvades per se.
 
 ### Detectar invisibilitat
 
@@ -2372,11 +2372,11 @@ Es pot triar entre els tres tipus d'il·lusions següents:
 
 ##### Condicions
 
-\- **Concentració:** és necessària per mantenir la il·lusió. Quan el llançador es mou o es distreu, llavors acaba l'encanteri.
+- **Concentració:** és necessària per mantenir la il·lusió. Quan el llançador es mou o es distreu, llavors acaba l'encanteri.
 
-\- **Els monstres o atacs il·lusoris:** semblen perjudicials, però mai infligeix un dany real. Un personatge que sembla morir tan sols cau inconscient, un personatge convertit en pedra quedarà paralitzat, etc. Aquests efectes duren 1d4 torns.
+- **Els monstres o atacs il·lusoris:** semblen perjudicials, però mai infligeix un dany real. Un personatge que sembla morir tan sols cau inconscient, un personatge convertit en pedra quedarà paralitzat, etc. Aquests efectes duren 1d4 torns.
 
-\- **Il·lusions de la imaginació:** si la il·lusió és alguna cosa que el llançador no ha vist mai personalment, el director de joc hauria d'atorgar una bonificació a qualsevol tirada de salvació aplicable.
+- **Il·lusions de la imaginació:** si la il·lusió és alguna cosa que el llançador no ha vist mai personalment, el director de joc hauria d'atorgar una bonificació a qualsevol tirada de salvació aplicable.
 
 ### Imatge mirall
 
@@ -2385,9 +2385,9 @@ Es pot triar entre els tres tipus d'il·lusions següents:
 
 Apareixen 1d4 duplicats il·lusoris del llançador.
 
-\- **Comportament:** els duplicats tenen l'aspecte i es comporten exactament igual que el llançador.
+- **Comportament:** els duplicats tenen l'aspecte i es comporten exactament igual que el llançador.
 
-\- **Atacs contra el llançador:** cada atac destrueix una de les imatges mirall, fins i tot quan l'atac falla.
+- **Atacs contra el llançador:** cada atac destrueix una de les imatges mirall, fins i tot quan l'atac falla.
 
 ### Invisibilitat
 
@@ -2396,11 +2396,11 @@ Apareixen 1d4 duplicats il·lusoris del llançador.
 
 El llançador, una criatura o un objecte que es trobi a dins de l'abast de l'encanteri es torna invisible.
 
-\- **Criatures:** tot l'equipament de l'objectiu també es torna invisible (inclòs roba i armadures). Els objectes deixats caure per una criatura invisible es fan visibles. Si el subjecte ataca o llança un encanteri, la invisibilitat s'interromp i acaba l'encanteri.
+- **Criatures:** tot l'equipament de l'objectiu també es torna invisible (inclòs roba i armadures). Els objectes deixats caure per una criatura invisible es fan visibles. Si el subjecte ataca o llança un encanteri, la invisibilitat s'interromp i acaba l'encanteri.
 
-\- **Objectes:** la invisibilitat és permanent.
+- **Objectes:** la invisibilitat és permanent.
 
-\- **Fonts de llum:** si una font de llum es fa invisible, ja sigui com a part de l'equipament d'una criatura o com a objecte individual, la llum que emet serà visible.
+- **Fonts de llum:** si una font de llum es fa invisible, ja sigui com a part de l'equipament d'una criatura o com a objecte individual, la llum que emet serà visible.
 
 ### Levitació
 
@@ -2409,11 +2409,11 @@ El llançador, una criatura o un objecte que es trobi a dins de l'abast de l'enc
 
 Aquest encanteri permet al llançador desplaçar-se amunt i avall flotant per l'aire.
 
-\- **Moviment vertical:** el llançador tan sols visualitza amb la ment el moviment que vol fer amb un factor de fins a 20 peus per assalt.
+- **Moviment vertical:** el llançador tan sols visualitza amb la ment el moviment que vol fer amb un factor de fins a 20 peus per assalt.
 
-\- **Moviment horitzontal:** el llançador es pot empènyer contra objectes sòlids per moure's lateralment.
+- **Moviment horitzontal:** el llançador es pot empènyer contra objectes sòlids per moure's lateralment.
 
-\- **Pes:** es pot transportar una càrrega normal mentre es levita.
+- **Pes:** es pot transportar una càrrega normal mentre es levita.
 
 ### Llum continua
 
@@ -2437,9 +2437,9 @@ Crea una àrea de negror màgica amb un radi de 30' que impedeix tant la visió 
 
 Aquest encanteri obre portes, portons, cofres, etc., que estan tancades amb un pany, barrades o travades d'alguna manera.
 
-\- **Portes retingudes amb màgia:** es veuen afectades, per exemple per ***retenir portal*** o ***pany de mag***.
+- **Portes retingudes amb màgia:** es veuen afectades, per exemple per ***retenir portal*** o ***pany de mag***.
 
-\- **Portes secretes:** es poden obrir, però el llançador ha de saber primer a on són.
+- **Portes secretes:** es poden obrir, però el llançador ha de saber primer a on són.
 
 ### Pany de mag
 
@@ -2450,11 +2450,11 @@ Aquest encanteri tanca una porta, un portó, un cofre o qualsevol altre objecte 
 
 **Superar el pany:** el pany màgic és permanent, però es pot superar de la manera següent:
 
-\- **El llançador:** del pany pot obrir-lo amb facilitat.
+- **El llançador:** del pany pot obrir-lo amb facilitat.
 
-\- **L'encanteri *obertura*:** permet obrir el pany.
+- **L'encanteri *obertura*:** permet obrir el pany.
 
-\- **Nivells alts:** qualsevol personatge que empri la màgia i que sigui d'almenys tres nivells (tres daus de cop) per sobre que el llançador del ***pany de mag*** pot obrir-lo sense cap impediment.
+- **Nivells alts:** qualsevol personatge que empri la màgia i que sigui d'almenys tres nivells (tres daus de cop) per sobre que el llançador del ***pany de mag*** pot obrir-lo sense cap impediment.
 
 **Se supera temporalment:** obrir el pany no destrueix el ***pany de mag***.
 
@@ -2465,15 +2465,15 @@ Aquest encanteri tanca una porta, un portó, un cofre o qualsevol altre objecte 
 
 Aquest encanteri atorga al llançador la capacitat de percebre i comprendre els pensaments d'altres criatures vives.
 
-\- **Enfocat durant un torn:** pot rebre pensaments, el llançador ha de centrar la seva concentració en una direcció durant un torn.
+- **Enfocat durant un torn:** pot rebre pensaments, el llançador ha de centrar la seva concentració en una direcció durant un torn.
 
-\- **Després del torn:** es poden percebre els pensaments de totes les criatures a l'abast en aquesta direcció.
+- **Després del torn:** es poden percebre els pensaments de totes les criatures a l'abast en aquesta direcció.
 
-\- **Diverses criatures:** si hi ha diverses criatures en la direcció enfocada, els seus pensaments es barregen en un embolic confús i el llançador ha de dedicar un torn addicional per discriminar els pensaments d'una única criatura.
+- **Diverses criatures:** si hi ha diverses criatures en la direcció enfocada, els seus pensaments es barregen en un embolic confús i el llançador ha de dedicar un torn addicional per discriminar els pensaments d'una única criatura.
 
-\- **Significat:** el llançador entén el significat de tots els pensaments encara que no entengui l’idioma de la criatura.
+- **Significat:** el llançador entén el significat de tots els pensaments encara que no entengui l’idioma de la criatura.
 
-\- **Obstruccions:** la capacitat de percebre els pensaments quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2' de gruix o més.
+- **Obstruccions:** la capacitat de percebre els pensaments quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2' de gruix o més.
 
 ### Teranyina
 
@@ -2482,17 +2482,17 @@ Aquest encanteri atorga al llançador la capacitat de percebre i comprendre els 
 
 S'evoca una massa de diverses capes de fils forts i enganxosos, que bloqueja una àrea cúbica de 10 peus de costat.
 
-\- **Enredar-se:** les criatures atrapades dins la teranyina queden enredades entre les fibres enganxoses i no es poden moure, però poden alliberar-se en funció de la seva força.
+- **Enredar-se:** les criatures atrapades dins la teranyina queden enredades entre les fibres enganxoses i no es poden moure, però poden alliberar-se en funció de la seva força.
 
-\- **Inflamable:** els fils que formen la teranyina són inflamables i poden ser destruïts pel foc en dos assalts. Totes les criatures atrapades dins de la teranyina en flames pateixen 1d6 punts de dany per les flames.
+- **Inflamable:** els fils que formen la teranyina són inflamables i poden ser destruïts pel foc en dos assalts. Totes les criatures atrapades dins de la teranyina en flames pateixen 1d6 punts de dany per les flames.
 
 Alliberar-se depèn de la força de la criatura de la manera següent:
 
-\- **Humà normal:** es pot alliberar en 2d4 torns.
+- **Humà normal:** es pot alliberar en 2d4 torns.
 
-\- **Més de 18 augmentada màgicament:** la criatura es pot alliberar en quatre assalts.
+- **Més de 18 augmentada màgicament:** la criatura es pot alliberar en quatre assalts.
 
-\- **Força de gegant:** la criatura es pot alliberar en dos assalts.
+- **Força de gegant:** la criatura es pot alliberar en dos assalts.
 
 ### Trobar objectes
 
@@ -2501,11 +2501,11 @@ Alliberar-se depèn de la força de la criatura de la manera següent:
 
 El llançador pot percebre la direcció (però no la distància) d'un objecte que vol localitzar en una de les formes següents:
 
-\- **Segons la classe general:** de l'objecte, per exemple, una escala, un altar, etc. Llavors es troba l'objecte més proper d'aquesta mena.
+- **Segons la classe general:** de l'objecte, per exemple, una escala, un altar, etc. Llavors es troba l'objecte més proper d'aquesta mena.
 
-\- **Un objecte específic:** que el llançador pot visualitzar clarament en tots els seus aspectes (mida, forma, color, etc.).
+- **Un objecte específic:** que el llançador pot visualitzar clarament en tots els seus aspectes (mida, forma, color, etc.).
 
-\- **Restriccions:** aquest encanteri no es pot utilitzar per localitzar criatures.
+- **Restriccions:** aquest encanteri no es pot utilitzar per localitzar criatures.
 
 ## Tercer nivell
 
@@ -2516,13 +2516,13 @@ El llançador pot percebre la direcció (però no la distància) d'un objecte qu
 
 Fins a 24 criatures a l'àrea de 60' de diàmetre encantada poden moure's i actuar el doble de ràpid del normal:
 
-\- **Moviment:** es duplica el factor de moviment màxim dels subjectes.
+- **Moviment:** es duplica el factor de moviment màxim dels subjectes.
 
-\- **Atacs:** els subjectes poden fer el doble d'atacs per assalt.
+- **Atacs:** els subjectes poden fer el doble d'atacs per assalt.
 
-\- **Encanteris:** el nombre d'encanteris que un subjecte pot llançar per assalt no es duplica.
+- **Encanteris:** el nombre d'encanteris que un subjecte pot llançar per assalt no es duplica.
 
-\- **Dispositius màgics:** l'ús de dispositius com ara varetes tampoc no es duplica.
+- **Dispositius màgics:** l'ús de dispositius com ara varetes tampoc no es duplica.
 
 ### Bola de foc
 
@@ -2531,7 +2531,7 @@ Fins a 24 criatures a l'àrea de 60' de diàmetre encantada poden moure's i actu
 
 Una flama es dirigeix ​​cap a un punt dins de l'abast i explota en una esfera de 20' de radi.
 
-\- **Dany:** les criatures atrapades en la bola de foc prenen 1d6 punts de dany per nivell del llançador, la meitat superant una **salvació contra encanteris**.
+- **Dany:** les criatures atrapades en la bola de foc prenen 1d6 punts de dany per nivell del llançador, la meitat superant una **salvació contra encanteris**.
 
 ### Clarividència
 
@@ -2540,13 +2540,13 @@ Una flama es dirigeix ​​cap a un punt dins de l'abast i explota en una esfer
 
 El llançador obté la capacitat de veure a través dels ulls d'altres éssers vius.
 
-\- **Enfocat durant un torn:** per establir una connexió amb una criatura, el llançador ha de centrar la seva concentració en una direcció particular durant un torn.
+- **Enfocat durant un torn:** per establir una connexió amb una criatura, el llançador ha de centrar la seva concentració en una direcció particular durant un torn.
 
-\- **Després del torn:** les percepcions visuals d'una criatura a l'abast en aquesta direcció es retransmeten a la ment del llançador.
+- **Després del torn:** les percepcions visuals d'una criatura a l'abast en aquesta direcció es retransmeten a la ment del llançador.
 
-\- **Canvi:** un cop establerta una connexió, el llançador pot triar mantenir-la o canviar-la cap a un altre subjecte.
+- **Canvi:** un cop establerta una connexió, el llançador pot triar mantenir-la o canviar-la cap a un altre subjecte.
 
-\- **Obstruccions:** la capacitat de l'encanteri quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2' de gruix o més.
+- **Obstruccions:** la capacitat de l'encanteri quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2' de gruix o més.
 
 ### Dissipar màgia
 
@@ -2555,9 +2555,9 @@ El llançador obté la capacitat de veure a través dels ulls d'altres éssers v
 
 Aquest finalitza els encanteris amb una durada no instantània que estan actius dins en un volum cúbic de 20' de costat.
 
-\- **Nivell de llançador:** si el nivell del llançador de l'efecte màgic a finalitzar és superior al nivell del llançador de l'encanteri ***dissipar màgia***, hi ha una probabilitat d'1-en-20 per nivell de diferència que l'intent de dissipar fracassi. Per exemple si qui llença ***dissipar màgia*** és de 4t nivell i l'efecte màgic a dissipar el va llançar un mag de nivell 7, llavors la diferència és 3 i hi ha 3-en-20 possibilitats que l'intent fracassi.
+- **Nivell de llançador:** si el nivell del llançador de l'efecte màgic a finalitzar és superior al nivell del llançador de l'encanteri ***dissipar màgia***, hi ha una probabilitat d'1-en-20 per nivell de diferència que l'intent de dissipar fracassi. Per exemple si qui llença ***dissipar màgia*** és de 4t nivell i l'efecte màgic a dissipar el va llançar un mag de nivell 7, llavors la diferència és 3 i hi ha 3-en-20 possibilitats que l'intent fracassi.
 
-\- **Objectes màgics:** no es veuen afectats.
+- **Objectes màgics:** no es veuen afectats.
 
 ### Infravisió
 
@@ -2573,17 +2573,17 @@ El subjecte pot veure fins a 60' en la foscor amb la infravisió.
 
 Una criatura seleccionada i totes les criatures que estan a 10 peus o menys d'ella es tornen invisibles.
 
-\- **Àrea:** amb radi de 10 peus i es mou amb la criatura triada.
+- **Àrea:** amb radi de 10 peus i es mou amb la criatura triada.
 
-\- **Sortir de l'àrea:** es fan visibles els subjectes que s'allunyen a més de 10 peus de la criatura triada.
+- **Sortir de l'àrea:** es fan visibles els subjectes que s'allunyen a més de 10 peus de la criatura triada.
 
-\- **Entrar a l'àrea:** les criatures que es mouen a l'àrea després de llançar l'encanteri no es tornen invisibles.
+- **Entrar a l'àrea:** les criatures que es mouen a l'àrea després de llançar l'encanteri no es tornen invisibles.
 
-\- **Equipament:** tot el que portin els subjectes també es torna invisible, però es fan visibles els objectes abandonats o deixats caure.
+- **Equipament:** tot el que portin els subjectes també es torna invisible, però es fan visibles els objectes abandonats o deixats caure.
 
-\- **Fonts de llum:** si una font de llum es fa invisible, ja sigui com a part de l'equipament d'una criatura o com a objecte individual, la llum que emet serà visible.
+- **Fonts de llum:** si una font de llum es fa invisible, ja sigui com a part de l'equipament d'una criatura o com a objecte individual, la llum que emet serà visible.
 
-\- **Interrompre:** si un subjecte ataca o llança un encanteri, aquest perd la invisibilitat.
+- **Interrompre:** si un subjecte ataca o llança un encanteri, aquest perd la invisibilitat.
 
 ### Llampec
 
@@ -2592,9 +2592,9 @@ Una criatura seleccionada i totes les criatures que estan a 10 peus o menys d'el
 
 Conjura un fort cop d'energia elèctrica de 60' de llarg i 5' d'ample.
 
-\- **Dany:** les criatures atrapades prenen 1d6 punts de dany per nivell del llançador, amb una tirada de salvació contra encanteris per la meitat del dany.
+- **Dany:** les criatures atrapades prenen 1d6 punts de dany per nivell del llançador, amb una tirada de salvació contra encanteris per la meitat del dany.
 
-\- **Rebot:** si el ***llampec*** impacta contra una barrera sòlida abans que no arribi a la seva longitud completa, rebota i recorre la distància restant de la seva longitud completa en la direcció del llançador.
+- **Rebot:** si el ***llampec*** impacta contra una barrera sòlida abans que no arribi a la seva longitud completa, rebota i recorre la distància restant de la seva longitud completa en la direcció del llançador.
 
 ### Protecció del mal (radi 10')
 
@@ -2603,11 +2603,11 @@ Conjura un fort cop d'energia elèctrica de 60' de llarg i 5' d'ample.
 
 Aquest encanteri protegeix el llançador i tots els seus aliats en un radi de 10 peus, dels atacs de criatures amb una alineació diferent de la del llançador.
 
-\- **Bonificacions:** tots els éssers a dins de l'àrea de protecció obtenen una bonificació de \+1 a les tirades de salvació relatives als atacs o habilitats especials de les criatures amb una alineació diferent.
+- **Bonificacions:** tots els éssers a dins de l'àrea de protecció obtenen una bonificació de \+1 a les tirades de salvació relatives als atacs o habilitats especials de les criatures amb una alineació diferent.
 
-\- **Tirades d'atac:** es penalitzen amb \-1 per les criatures amb una alineació diferent.
+- **Tirades d'atac:** es penalitzen amb \-1 per les criatures amb una alineació diferent.
 
-\- **Criatures encantades, construïdes o convocades:** el conjur impedeix que aquestes criatures ataquin cos a cos al llançador, tot i que sí que poden fer atacs a distància. Quan el llançador lluita cos a cos contra aquestes criatures, llavors es perd aquesta protecció, però encara s'apliquen les bonificacions a les tirades de salvació i la penalització a les tirades d'atac esmentades anteriorment.
+- **Criatures encantades, construïdes o convocades:** el conjur impedeix que aquestes criatures ataquin cos a cos al llançador, tot i que sí que poden fer atacs a distància. Quan el llançador lluita cos a cos contra aquestes criatures, llavors es perd aquesta protecció, però encara s'apliquen les bonificacions a les tirades de salvació i la penalització a les tirades d'atac esmentades anteriorment.
 
 ### Protecció dels projectils normals
 
@@ -2623,11 +2623,11 @@ Un sol subjecte a l'abast obté immunitat completa contra míssils petits no mà
 
 Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres humanoides) quedi paralitzat quan es falla una ***tirada de salvació contra encanteris***. Es pot fer servir de dues maneres:
 
-\- **Contra un únic individu:** la tirada de salvació de l'objectiu es penalitza amb \-2.
+- **Contra un únic individu:** la tirada de salvació de l'objectiu es penalitza amb \-2.
 
-\- **Contra un grup:** es dirigeix a 1d4 individus del grup triats pel llançador.
+- **Contra un grup:** es dirigeix a 1d4 individus del grup triats pel llançador.
 
-\- Restriccions: els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
+- Restriccions: els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
 
 ### Respirar dins l'aigua
 
@@ -2636,9 +2636,9 @@ Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres huma
 
 El subjecte pot respirar dins l'aigua mitjançant aquest encanteri.
 
-\- **Respiració d'aire:** l'encanteri no afecta la capacitat del subjecte per respirar aire.
+- **Respiració d'aire:** l'encanteri no afecta la capacitat del subjecte per respirar aire.
 
-\- **Natació:** no es concedeix cap competència addicional en natació.
+- **Natació:** no es concedeix cap competència addicional en natació.
 
 ### Volar
 
@@ -2647,9 +2647,9 @@ El subjecte pot respirar dins l'aigua mitjançant aquest encanteri.
 
 El subjecte obté la capacitat de volar per l'aire.
 
-\- **Factor de moviment:** fins a 360' (120').
+- **Factor de moviment:** fins a 360' (120').
 
-\- **Moviment:** és possible volar en qualsevol direcció, fins i tot levitar o flotar a l'aire.
+- **Moviment:** és possible volar en qualsevol direcció, fins i tot levitar o flotar a l'aire.
 
 # Regles opcionals
 
@@ -2659,23 +2659,23 @@ El subjecte obté la capacitat de volar per l'aire.
 
 Els personatges amb ***destresa*** o ***força*** alts poden voler empunyar una arma amb cada mà.
 
-\- L'arma secundària ha de ser de mida petita; per exemple, una daga o destral de mà.
+- L'arma secundària ha de ser de mida petita; per exemple, una daga o destral de mà.
 
-\- Els atacs amb l'arma principal tenen una penalització de \-2 a la tirada d'atac.
+- Els atacs amb l'arma principal tenen una penalització de \-2 a la tirada d'atac.
 
-\- Es pot fer un segon atac amb l'arma secundària amb una penalització de \-4 a la tirada d'atac. 
+- Es pot fer un segon atac amb l'arma secundària amb una penalització de \-4 a la tirada d'atac. 
 
 ### Carregar cap a la lluita
 
 Un cop per combat es pot carregar i atacar.
 
-\- Cal tenir un camí lliure i es mou com a mínim 20 peus (20 iardes a les terres salvatges) abans d'atacar.
+- Cal tenir un camí lliure i es mou com a mínim 20 peus (20 iardes a les terres salvatges) abans d'atacar.
 
-\- Obté una bonificació de \+2 a l'atac aquest assalt.
+- Obté una bonificació de \+2 a l'atac aquest assalt.
 
-\- La seva CA és penalitzada amb \-1 aquest assalt.
+- La seva CA és penalitzada amb \-1 aquest assalt.
 
-\- Les armes contra les criatures que carreguen també són eficaces contra la càrrega de personatges.
+- Les armes contra les criatures que carreguen també són eficaces contra la càrrega de personatges.
 
 ### Armes d'esquitx
 
@@ -2687,25 +2687,25 @@ Es pot intentar llançar vials perquè es trenquin sobre una superfície dura a 
 
 Quan un atac amb una arma d'esquitx erra el seu objectiu, llavors cau en una ubicació aleatòria:
 
-\- Tira 1d12 per determinar la direcció, interpretant el resultat com la direcció de les hores en un rellotge.
+- Tira 1d12 per determinar la direcció, interpretant el resultat com la direcció de les hores en un rellotge.
 
-\- El contenidor es trenca a 5 peus de l'objectiu previst en la direcció resultant.
+- El contenidor es trenca a 5 peus de l'objectiu previst en la direcció resultant.
 
-\- Les criatures a menys de 5 peus s'esquitxen amb el líquid que si és nociu infligeix 1d2 punts de dany.
+- Les criatures a menys de 5 peus s'esquitxen amb el líquid que si és nociu infligeix 1d2 punts de dany.
 
 ## Alternativa al drenatge de nivells
 
 Algunes criatures tenen un atac especial que pot prendre daus de cop o nivells a les criatures que toquen. És una forma d'atac que pot alentir molt el joc i desequilibrar els nivells del grup, per això es proposa una forma alternativa per aquesta mena d'atacs.
 
-\- Es drenen punts de ***constitució*** en comptes de nivells o daus de cop.
+- Es drenen punts de ***constitució*** en comptes de nivells o daus de cop.
 
-\- Les criatures que drenen un nivell o dau de cop prenen 1d6 punts de ***constitució***.
+- Les criatures que drenen un nivell o dau de cop prenen 1d6 punts de ***constitució***.
 
-\- Les criatures que drenen dos nivells o daus de cop prenen 2d4 punts de ***constitució***.
+- Les criatures que drenen dos nivells o daus de cop prenen 2d4 punts de ***constitució***.
 
-\- Les criatures que veuen la seva ***constitució*** reduïda a zero moren immediatament.
+- Les criatures que veuen la seva ***constitució*** reduïda a zero moren immediatament.
 
-\- Els punts de constitució drenats es recuperen de forma natural a un ritme d'un per dia i també es poden recuperar amb la màgia amb l'encanteri ***restaurar***.
+- Els punts de constitució drenats es recuperen de forma natural a un ritme d'un per dia i també es poden recuperar amb la màgia amb l'encanteri ***restaurar***.
 
 ## Rerefons
 
@@ -2752,11 +2752,11 @@ Quan es crea el personatge es tira 1d100 i es consulta la taula o si el director
 
 El director de joc ha de decidir-ne tots els usos, aquest coneixement tan sols permet realitzar les funcions d'una professió a un nivell bàsic, per exemple:
 
-\- Estimar el valor i la qualitat d'un objecte relacionat.
+- Estimar el valor i la qualitat d'un objecte relacionat.
 
-\- Fer reparacions menors a elements relacionats.
+- Fer reparacions menors a elements relacionats.
 
-\- Construir objectes senzills relacionats amb el rerefons.
+- Construir objectes senzills relacionats amb el rerefons.
 
 Un aventurer mai és capaç d'apropar-se al nivell d'habilitat d'algú dedicat a la professió.
 
@@ -2770,13 +2770,13 @@ El DJ és l'encarregat de decidir com reaccionen les criatures i els PNJs en els
 
 A l'hora de decidir com actua una criatura o un PNJ, el director de joc ha de considerar el seu nivell d'intel·ligència. Per exemple, les criatures intel·ligents poden fer servir alguna de les tàctiques següents:
 
-\- **Emboscades i sigil:** les criatures astutes i no gaire fortes, poden posar paranys o preparar emboscades i preferir atacar als personatges des de la distància amb armes de projectils.
+- **Emboscades i sigil:** les criatures astutes i no gaire fortes, poden posar paranys o preparar emboscades i preferir atacar als personatges des de la distància amb armes de projectils.
 
-\- **Guàrdies:** els enemics poden fer ús de guàrdies o mascotes per debilitar els personatges i protegir les seves principals vies de fugida.
+- **Guàrdies:** els enemics poden fer ús de guàrdies o mascotes per debilitar els personatges i protegir les seves principals vies de fugida.
 
-\- **Objectes màgics:** les criatures faran servir qualsevol objecte màgic al seu abast per frustrar les intencions dels jugadors.
+- **Objectes màgics:** les criatures faran servir qualsevol objecte màgic al seu abast per frustrar les intencions dels jugadors.
 
-\- **Aprenentatge i preparació:** quan els personatges tenen un encontre en què algunes les criatures fugen, llavors aquestes aprenen de l'experiència i es prepararan millor. Potser construint estructures defensives, buscant reforços, reubicant el seu cau, parant paranys i emboscades, etc.
+- **Aprenentatge i preparació:** quan els personatges tenen un encontre en què algunes les criatures fugen, llavors aquestes aprenen de l'experiència i es prepararan millor. Potser construint estructures defensives, buscant reforços, reubicant el seu cau, parant paranys i emboscades, etc.
 
 **Adaptació:** poden copiar o adaptar les tàctiques usades amb èxit pels personatges i preparar contramaniobres específiques per anul·lar-les.
 
@@ -2854,37 +2854,37 @@ Per a cada objecte inusual col·locat, el director de joc n'ha de detallar el va
 
 **Tresor inusual:** les aventures també es pot trobar objectes de valor, el valor del qual no sempre és obvi:
 
-\- **Obra d'art:** pintures, estàtues.
+- **Obra d'art:** pintures, estàtues.
 
-\- **Llibres:** toms rars o pergamins.
+- **Llibres:** toms rars o pergamins.
 
-\- **Aliments:** espècies, vins exquisits.
+- **Aliments:** espècies, vins exquisits.
 
-\- **Mobiliari:** catifes, tapissos.
+- **Mobiliari:** catifes, tapissos.
 
-\- **Estris:** coberts de plata, estris de cuina o de laboratori.
+- **Estris:** coberts de plata, estris de cuina o de laboratori.
 
-\- **Objectes de valor:** pells, marfil, minerals, sedes.
+- **Objectes de valor:** pells, marfil, minerals, sedes.
 
 ## Objectes màgics
 
 Els objectes sovint es classifiquen en una de les categories detallades a continuació.
 
-\- **Armadures i escuts:** que atorguen beneficis protectors a l'usuari.
+- **Armadures i escuts:** que atorguen beneficis protectors a l'usuari.
 
-\- **Espases:** que concedeixen bonificacions per colpir i al dany en combat, o de vegades estan encantades amb poders addicionals.
+- **Espases:** que concedeixen bonificacions per colpir i al dany en combat, o de vegades estan encantades amb poders addicionals.
 
-\- **Armes:** totes les armes encantades que no siguin espases que concedeixen bonificacions per colpir i el dany en combat, o encantades amb altres poders.
+- **Armes:** totes les armes encantades que no siguin espases que concedeixen bonificacions per colpir i el dany en combat, o encantades amb altres poders.
 
-\- **Pocions:** ungüents i líquids màgics emmagatzemats en vials de vidre.
+- **Pocions:** ungüents i líquids màgics emmagatzemats en vials de vidre.
 
-\- **Anells:** que fan l'efecte d'un encanteri sobre l'usuari.
+- **Anells:** que fan l'efecte d'un encanteri sobre l'usuari.
 
-\- **Ceptres, bastons i varetes:** vares màgiques de fusta, metall, cristall, etc., i de diferents mides que utilitzen els llançadors d'encanteris per desencadenar efectes màgics.
+- **Ceptres, bastons i varetes:** vares màgiques de fusta, metall, cristall, etc., i de diferents mides que utilitzen els llançadors d'encanteris per desencadenar efectes màgics.
 
-\- **Pergamins i mapes:** fulls envellits de pergamí o paper inscrits amb un encanteri o instruccions per trobar un tresor, fixat que els mapes de tresor es tiren a la taula d'objectes màgics tot i que no acostumen a ser màgics.
+- **Pergamins i mapes:** fulls envellits de pergamí o paper inscrits amb un encanteri o instruccions per trobar un tresor, fixat que els mapes de tresor es tiren a la taula d'objectes màgics tot i que no acostumen a ser màgics.
 
-\- **Objectes diversos:** els que no entren en cap altra categoria.
+- **Objectes diversos:** els que no entren en cap altra categoria.
 
 ### Identificació d'objectes màgics
 
@@ -2908,9 +2908,9 @@ Els objectes sovint es classifiquen en una de les categories detallades a contin
 
 Pels objectes màgics segueix el procediment següent:
 
-\- **Tipus especificat:** p. ex. 3 pocions, tira a la taula per aquesta classe d'objectes.
+- **Tipus especificat:** p. ex. 3 pocions, tira a la taula per aquesta classe d'objectes.
 
-\- **Tipus** **no** **especificat:** primer es tira a la següent taula per determinar la classe i després a les taules de tresors corresponents al llibre de tresors.
+- **Tipus** **no** **especificat:** primer es tira a la següent taula per determinar la classe i després a les taules de tresors corresponents al llibre de tresors.
 
 | 1d20 | Objecte màgic |
 | :---: | :---: |
@@ -2989,9 +2989,9 @@ Quan un tipus de tresor indica la presència de gemmes o joies, el director de j
 
 És perillós beure una poció quan ja s'està sota els efectes d'una altra.
 
-\- **Malaltia:** el personatge queda totalment incapacitat durant 3 torns.
+- **Malaltia:** el personatge queda totalment incapacitat durant 3 torns.
 
-\- **Cancel·lació:** els efectes de les dues pocions es cancel·len.
+- **Cancel·lació:** els efectes de les dues pocions es cancel·len.
 
 La norma no s'aplica per efectes instantanis o permanents.
 
@@ -3062,17 +3062,17 @@ Els pergamins contenen fórmules màgiques escrites per un llançador d'encanter
 
 #### Exemple de maleficis
 
-\- **Transformació:** el lector es transforma en una criatura inofensiva; per exemple, en una granota.
+- **Transformació:** el lector es transforma en una criatura inofensiva; per exemple, en una granota.
 
-\- **Convocació:** apareix al costat del lector un monstre errant del seu mateix nivell i l'ataca per sorpresa.
+- **Convocació:** apareix al costat del lector un monstre errant del seu mateix nivell i l'ataca per sorpresa.
 
-\- **Objecte** **perdut:** un objecte màgic posseït pel lector s'esvaeix, el DJ pot triar-lo o decidir-lo amb l'atzar.
+- **Objecte** **perdut:** un objecte màgic posseït pel lector s'esvaeix, el DJ pot triar-lo o decidir-lo amb l'atzar.
 
-\- **Drenatge** **d'energia:** en llegir-los es perd un nivell d'experiència (o dau de cop) i els punts de cop corresponents, així com tots els altres beneficis atorgats, per exemple, encanteris, tirades de salvació, etc. Els punts d'experiència del personatge es redueixen a mig camí entre el nivell anterior i l'actual; un personatge que perd tots els nivells mor.
+- **Drenatge** **d'energia:** en llegir-los es perd un nivell d'experiència (o dau de cop) i els punts de cop corresponents, així com tots els altres beneficis atorgats, per exemple, encanteris, tirades de salvació, etc. Els punts d'experiència del personatge es redueixen a mig camí entre el nivell anterior i l'actual; un personatge que perd tots els nivells mor.
 
-\- **Repetir la tirada d'habilitat:** el jugador ha de tornar a tirar els punts d'una habilitat.
+- **Repetir la tirada d'habilitat:** el jugador ha de tornar a tirar els punts d'una habilitat.
 
-\- **Curació lenta:** la curació natural necessita el doble del temps normal i els encanteris curatius tan sols restauren la meitat dels punts de cop.
+- **Curació lenta:** la curació natural necessita el doble del temps normal i els encanteris curatius tan sols restauren la meitat dels punts de cop.
 
 ### Pergamins de protecció
 
@@ -3092,11 +3092,11 @@ Els pergamins contenen fórmules màgiques escrites per un llançador d'encanter
 
 **Activació:** lectura en veu alta evoca l'efecte d'un encanteri específic i tan sols els llançadors del tipus de màgia del pergamí els poden activar.
 
-\- **Pergamí d'encanteri arcà:** s'escriu en un pergamí màgic fent servir un codi arcà i per llegir-lo primer cal desxifrar-lo amb l'encanteri ***llegir màgia***.
+- **Pergamí d'encanteri arcà:** s'escriu en un pergamí màgic fent servir un codi arcà i per llegir-lo primer cal desxifrar-lo amb l'encanteri ***llegir màgia***.
 
-\- **Pergamí d'encanteri diví:** s'escriu en un idioma normal (generalment en comú), però només pot ser utilitzat per llançadors d'encanteris divins.
+- **Pergamí d'encanteri diví:** s'escriu en un idioma normal (generalment en comú), però només pot ser utilitzat per llançadors d'encanteris divins.
 
-\- **Pergamí amb encanteris diversos:** si un pergamí conté diversos encanteris, tan sols desapareix del pergamí l'encanteri llançat.
+- **Pergamí amb encanteris diversos:** si un pergamí conté diversos encanteris, tan sols desapareix del pergamí l'encanteri llançat.
 
 # Les bestioles
 
@@ -3157,11 +3157,11 @@ Es pot fer servir la taula següent quan no s'indica en la descripció de la cri
 
 ###### Tirada de salvació (TS)
 
-\- **M:** mort o metzina.  
-\- **V:** varetes.  
-\- **P:** paràlisi / petrificació.  
-\- **A:** atacs d'arma d'alè.  
-\- **E:** encanteris / bastons / ceptres.
+- **M:** mort o metzina.  
+- **V:** varetes.  
+- **P:** paràlisi / petrificació.  
+- **A:** atacs d'arma d'alè.  
+- **E:** encanteris / bastons / ceptres.
 
 **Salva com:** s'indica entre parèntesis els daus de cop equivalents per a la tirada de salvació ('HN' vol dir que salva com a un home normal). No sempre és igual que els daus de cop de la criatura; les poc intel·ligents acostumen a salvar a la meitat dels seus DC mentre que les criatures màgiques poden tenir tirades de més altes.
 
@@ -3193,29 +3193,29 @@ S'indica sovint amb dos valors, el segon entre parèntesis. Aquests valors nomé
 
 **Zeros:** si el primer valor és zero, els d'aquest tipus no solen trobar-se a les masmorres. Quan el segon és zero, no solen descobrir-se a les terres salvatges i no solen tenir caus.
 
-\- **Errant en una masmorra:** el primer valor determina el nombre de monstres passejant-se en el nivell de la masmorra que és igual als seus DC. Si es descobreix en un nivell superior, el nombre pot augmentar i si és inferior disminuir.
+- **Errant en una masmorra:** el primer valor determina el nombre de monstres passejant-se en el nivell de la masmorra que és igual als seus DC. Si es descobreix en un nivell superior, el nombre pot augmentar i si és inferior disminuir.
 
-\- **Catau:** el segon valor indica el nombre de monstres en la masmorra on tenen el seu cau.
+- **Catau:** el segon valor indica el nombre de monstres en la masmorra on tenen el seu cau.
 
-\- **Errant per terres salvatges:** el segon valor indica el nombre descobert viatjant per les terres salvatges.
+- **Errant per terres salvatges:** el segon valor indica el nombre descobert viatjant per les terres salvatges.
 
-\- **Hàbitat a les terres salvatges:** el segon valor multiplicat per 5 indica el nombre en una comunitat.
+- **Hàbitat a les terres salvatges:** el segon valor multiplicat per 5 indica el nombre en una comunitat.
 
 ###### Tipus de tresor (TT)
 
 El codi de lletra utilitzat per determinar la quantitat i tipus de tresor posseït per la criatura. Les lletres signifiquen el següent:
 
-\- **A** **a** **O:** una fortuna: tota la riquesa d'una comunitat o un monstre gran amagat al seu catau quan el nombre és superior a 1d4 a quantitat de tresor es pot reduir quan el nombre de monstres està per sota de la mitjana.
+- **A** **a** **O:** una fortuna: tota la riquesa d'una comunitat o un monstre gran amagat al seu catau quan el nombre és superior a 1d4 a quantitat de tresor es pot reduir quan el nombre de monstres està per sota de la mitjana.
 
-\- **P** **a** **la** **V:** quan apareix per un monstre intel·ligent, indica el tresor que porten els individus (P a T) o el grup (U i V). Quan apareix per a un monstre no intel·ligent, indica el tresor trobat entre les restes de les seves víctimes.
+- **P** **a** **la** **V:** quan apareix per un monstre intel·ligent, indica el tresor que porten els individus (P a T) o el grup (U i V). Quan apareix per a un monstre no intel·ligent, indica el tresor trobat entre les restes de les seves víctimes.
 
 ## Moral (regla opcional)
 
 El DJ pot fer servir aquest sistema per decidir si les criatures (o els PNJ) es rendeixen o fugen del combat.
 
-\- **Moral de 2:** significa que lluiten tan sols quan estan acorralats.
+- **Moral de 2:** significa que lluiten tan sols quan estan acorralats.
 
-\- **Moral de 12:** significa que la criatura lluitarà a mort.
+- **Moral de 12:** significa que la criatura lluitarà a mort.
 
 ### Quan tirar per moral
 
@@ -3232,9 +3232,9 @@ El director de joc pot aplicar bonificacions o penalitzacions a la tirada de mor
 
 El director de joc tira 2d6 i compara el resultat amb el valor de moral de la criatura:
 
-\- **Superior:** l'oponent es rendeix o intenta fugir.
+- **Superior:** l'oponent es rendeix o intenta fugir.
 
-\- **Igual o inferior:** l'oponent continua lluitant.
+- **Igual o inferior:** l'oponent continua lluitant.
 
 **Amb dos èxits:** en la tirada de moral en un encontre, la criatura lluitarà a mort i no cal fer més tirades.
 
@@ -3310,7 +3310,7 @@ Acostumen a atacar des d'una gran altura, fent un picat cap a terra a gran veloc
 
 Una àliga geganta solitària normalment està caçant o patrullant a la vora del seu niu, i generalment ignorarà les criatures que no semblin amenaçadores. 
 
-\- **Niu:** una parella atacarà coordinadament lluitant a mort (moral 12\) per defensar el seu niu o les seves cries.
+- **Niu:** una parella atacarà coordinadament lluitant a mort (moral 12\) per defensar el seu niu o les seves cries.
 
 #### Aranya, taràntula
 
@@ -3318,11 +3318,11 @@ Una àliga geganta solitària normalment està caçant o patrullant a la vora de
 
 Aquestes són aranyes peludes, de la mida d'un poni i naturalesa màgica que persegueixen les seves preses tal com ho fan els llops.
 
-\- **Mossegada:** cal superar una ***tirada de salvació contra metzina*** o ballar durant 2d10 assalts, sofrint de dolor i espasmes sobtats que semblen una dansa macabra.
+- **Mossegada:** cal superar una ***tirada de salvació contra metzina*** o ballar durant 2d10 assalts, sofrint de dolor i espasmes sobtats que semblen una dansa macabra.
 
-\- **Espectadors:** cal que superin una ***tirada de salvació contra encanteris*** o començar a ballar fins que la víctima emmetzinada acabi.
+- **Espectadors:** cal que superin una ***tirada de salvació contra encanteris*** o començar a ballar fins que la víctima emmetzinada acabi.
 
-\- **Ballant:** tots els afectats pateixen una penalització de \-4 a la CA i a les tirades d'atac. 
+- **Ballant:** tots els afectats pateixen una penalització de \-4 a la CA i a les tirades d'atac. 
 
 L'encanteri ***neutralitzar metzina*** pot guarir a la víctima mossegada i ***dissipar màgia*** aturarà la dansa per a tothom en la zona d'efecte.
 
@@ -3342,11 +3342,11 @@ Un assetjador invisible convocat emprèn qualsevol tasca que el convocant ordeni
 
 Els assetjadors invisibles no tenen forma i un encanteri per ***detectar invisible*** només mostrarà una silueta difuminada i nebulosa.
 
-\- **Rastrejar:** sense dificultat i amb encert total.
+- **Rastrejar:** sense dificultat i amb encert total.
 
-\- **Sorpresa:** 5-en-6 probabilitats a menys que l'objectiu pugui detectar l'invisible.
+- **Sorpresa:** 5-en-6 probabilitats a menys que l'objectiu pugui detectar l'invisible.
 
-\- **Quan mor:** torna al seu pla d'origen.
+- **Quan mor:** torna al seu pla d'origen.
 
 #### Au funesta
 
@@ -3354,7 +3354,7 @@ Els assetjadors invisibles no tenen forma i un encanteri per ***detectar invisib
 
 Són ocells, molt sovint corbs, que han estat alçats com a no morts molt intel·ligents gràcies a la màgia d'un nigromant; sovint fan de familiars.
 
-\- **Malaltia:** fa emmalaltir per les ferides que infligeix i cal superar una ***tirada de salvació contra metzina*** o contraure la ***febre funesta***, aquesta és una malaltia degenerativa que es manifesta impedint la curació (la màgica és totalment ineficaç i la natural es redueix a 1 pc per descans llarg). La infecció només es pot eliminar amb l'encanteri ***curar malalties***.
+- **Malaltia:** fa emmalaltir per les ferides que infligeix i cal superar una ***tirada de salvació contra metzina*** o contraure la ***febre funesta***, aquesta és una malaltia degenerativa que es manifesta impedint la curació (la màgica és totalment ineficaç i la natural es redueix a 1 pc per descans llarg). La infecció només es pot eliminar amb l'encanteri ***curar malalties***.
 
 #### Aparegut (wraith)
 
@@ -3372,11 +3372,11 @@ Quan toca a una criatura es perd de forma permanent un nivell d'experiència o d
 
 Mercenaris i criminals que viuen d'assaltar assentaments i viatgers.
 
-\- **Infanteria:** la meitat del grup i porten armadura de cuir, escut, espasa i arc curt.
+- **Infanteria:** la meitat del grup i porten armadura de cuir, escut, espasa i arc curt.
 
-\- **Cavalleria:** l'altra meitat munta a cavall i porten cota de malla, escut i espasa.
+- **Cavalleria:** l'altra meitat munta a cavall i porten cota de malla, escut i espasa.
 
-\- **Líder i comandant:** per cada 20 bandolers hi ha un líder (guerrer de 2n nivell) i per cada 40 un comandant (guerrer 4t nivell) que munten en un cavall de guerra (amb guarniments) i porten armadura de plaques, espasa i llança.
+- **Líder i comandant:** per cada 20 bandolers hi ha un líder (guerrer de 2n nivell) i per cada 40 un comandant (guerrer 4t nivell) que munten en un cavall de guerra (amb guarniments) i porten armadura de plaques, espasa i llança.
 
 #### Banshee
 
@@ -3386,7 +3386,7 @@ Són esperits de dones que romanen en indrets desolats després de morir turment
 
 Igual que molts no-morts, poden ser expulsats pels clergues i paladins, són invulnerabilitat a la màgia per ***dormir***, ***encisar*** i ***retenir*** i tan sols poden ser danyats per armes màgiques o de plata. No són vulnerables als atacs basats en el fred o l'electricitat.
 
-\- **Gemec:** totes les criatures en un radi de 30 peus han de superar una ***tirada de salvació contra mort*** o morir. Un cop al dia i tan sols durant les hores de foscor.
+- **Gemec:** totes les criatures en un radi de 30 peus han de superar una ***tirada de salvació contra mort*** o morir. Un cop al dia i tan sols durant les hores de foscor.
 
 #### Basilisc
 
@@ -3404,7 +3404,7 @@ Quan un basilisc es veu a si mateix en un mirall, ha de superar una ***tirada de
 
 Bolets carnívors gegants, de 5 peus d'alçada, que s'arrosseguen molt a poc a poc. Viuen sota terra entre xiscladors a qui s'assemblen força. S'alimenten de les restes dels cadàvers en descomposició que s'han acostat massa.
 
-\- **Podrir:** els tentacles descomponen la carn. Cal superar una ***tirada de salvació contra metzina*** per evitar-ho o el dany infligit pel contacte tan sols pot curar-se amb màgia.
+- **Podrir:** els tentacles descomponen la carn. Cal superar una ***tirada de salvació contra metzina*** per evitar-ho o el dany infligit pel contacte tan sols pot curar-se amb màgia.
 
 #### Centaure
 
@@ -3429,13 +3429,13 @@ Qualsevol criatura tocada per una cocatriu o que en toqui una (encara que dugui 
 
 Els corbs mecànics són creacions de mags que combinen parts d'un corb viu amb mecanismes d'acer i ulls de robí. 
 
-\- **Infravisió:** amb un abast de 90 peus.
+- **Infravisió:** amb un abast de 90 peus.
 
-\- **Idiomes:** entenen qualsevol idioma i per això són uns espies excel·lents.
+- **Idiomes:** entenen qualsevol idioma i per això són uns espies excel·lents.
 
-\- **Oïda millorada:** senten qualsevol so en un radi de 40 peus.
+- **Oïda millorada:** senten qualsevol so en un radi de 40 peus.
 
-\- **Silenci:** són capaços de volar en un silenci absolut.
+- **Silenci:** són capaços de volar en un silenci absolut.
 
 #### Centpeus gegant
 
@@ -3451,9 +3451,9 @@ Els centpeus gegants ataquen a qualsevol cosa que s'assembli al menjar, mossegan
 
 Els cucs de femer són paràsits de color blanc o marró i fins a dues polzades de llarg que es troben entre la carronya, els fems i d'altres escombraries de matèria orgànica.
 
-\- **Excavar:** ràpidament la carn buscant el cor i mata en 1d3 torns.
+- **Excavar:** ràpidament la carn buscant el cor i mata en 1d3 torns.
 
-\- **Matar:** l'encanteri ***curar malalties***, o el foc en els primers dos assalts després del contacte, però fa 1d6 punts de dany a la víctima.
+- **Matar:** l'encanteri ***curar malalties***, o el foc en els primers dos assalts després del contacte, però fa 1d6 punts de dany a la víctima.
 
 #### Cuc tentaculat
 
@@ -3471,13 +3471,13 @@ Quan tots els oponents d'un cuc tentaculat quedin paralitzats, llavors començar
 
 Criatura semblant a un dromedari, d'un color blavós i semitransparent. Té unes trompes llargues i flexibles per on s'alimenta d'energia màgica.
 
-\- **Detectar objectes màgics:** abast de 60 peus i pot diferenciar els objectes pel nivell de poder.
+- **Detectar objectes màgics:** abast de 60 peus i pot diferenciar els objectes pel nivell de poder.
 
-\- **Atacar objectes màgics:** ataca a l'objecte més poderós de les proximitats. Els objectes amagats o petits, pateixen una penalització de \-4 a la tirada d'atac. Per exemple un anell o una poció dins la motxilla.
+- **Atacar objectes màgics:** ataca a l'objecte més poderós de les proximitats. Els objectes amagats o petits, pateixen una penalització de \-4 a la tirada d'atac. Per exemple un anell o una poció dins la motxilla.
 
-\- **Desencisar:** un objecte tocat per la trompa perd tota la màgia.
+- **Desencisar:** un objecte tocat per la trompa perd tota la màgia.
 
-\- **Invulnerabilitat:** al dany mundà i tan sols pot ser danyat pels atacs màgics.
+- **Invulnerabilitat:** al dany mundà i tan sols pot ser danyat pels atacs màgics.
 
 #### Desori
 
@@ -3485,11 +3485,11 @@ Criatura semblant a un dromedari, d'un color blavós i semitransparent. Té unes
 
 És una criatura amorfa i vaporosa, en un caos de canvis de forma. No té mai una forma definida, a cada minut canvia entre una forma vagament humanoide amb cap i extremitats per convertir-se en una massa de matèria negra i viscosa com el petroli.
 
-\- **Esclafit:** un soroll, sec, agut i sobtat dirigit a un oponent.
+- **Esclafit:** un soroll, sec, agut i sobtat dirigit a un oponent.
 
-\- **Descarregar:** un cop per encontre pot alliberar energia de cop infligint 4d8 punts de dany a totes les criatures en un radi de 10 peus.
+- **Descarregar:** un cop per encontre pot alliberar energia de cop infligint 4d8 punts de dany a totes les criatures en un radi de 10 peus.
 
-\- **Desestabilitzar la màgia:** els mags han de superar una ***tirada de salvació contra encanteris*** per poder fer la seva màgia.
+- **Desestabilitzar la màgia:** els mags han de superar una ***tirada de salvació contra encanteris*** per poder fer la seva màgia.
 
 #### Drapat
 
@@ -3497,9 +3497,9 @@ Criatura semblant a un dromedari, d'un color blavós i semitransparent. Té unes
 
 Aquesta criatura és un no-mort amb forma humanoide i una existència corporal que aconsegueix gràcies al fet que s'embolica de teles per obtenir-la i de vegades es confon amb una mòmia; és capaç d'empunyar armes.
 
-\- **Toc:** a més del dany infligit cal superar una ***tirada de salvació contra mort*** o perdre un punt de carisma de forma permanent. Quan es mor d'aquesta manera la víctima es converteix en un drapat al cap de 24 hores.
+- **Toc:** a més del dany infligit cal superar una ***tirada de salvació contra mort*** o perdre un punt de carisma de forma permanent. Quan es mor d'aquesta manera la víctima es converteix en un drapat al cap de 24 hores.
 
-\- **Il·lusió:** tres cops al dia pot llançar un efecte equivalent a l'encanteri a voluntat per canviar la seva aparença durant un torn.
+- **Il·lusió:** tres cops al dia pot llançar un efecte equivalent a l'encanteri a voluntat per canviar la seva aparença durant un torn.
 
 #### Dríada
 
@@ -3584,9 +3584,9 @@ Tan sols et pots alliberar de la criatura matant-la; qualsevol atac a la criatur
 
 Són plantes altes i esveltes amb grans bulbs de flors i arrels dures. Desprèn un pol·len olorós que atrau a totes les criatures en un radi de 50 peus a menys que se superi una ***tirada de salvació contra metzina***. 
 
-\- **Atordir:** quan mossega deixa anar una sàvia en el torrent sanguini de la víctima, que la deixa sedada si no se supera una ***tirada de salvació contra metzina***.
+- **Atordir:** quan mossega deixa anar una sàvia en el torrent sanguini de la víctima, que la deixa sedada si no se supera una ***tirada de salvació contra metzina***.
 
-\- **Drenar vida:** infligeix 1d3 punts de dany per assalt automàticament mentre la víctima està sedada.
+- **Drenar vida:** infligeix 1d3 punts de dany per assalt automàticament mentre la víctima està sedada.
 
 #### Fong groc
 
@@ -3616,11 +3616,11 @@ Les gàrgoles no necessiten ni menjar, ni aigua, ni aire per respirar i tan sols
 
 Els atacs d'electricitat o llampec divideixen la criatura en 1d4+1 gelatines més petites de 2 DC que fan la meitat del dany.
 
-\- **Esmunyir-se:** entre esquerdes i forats petits.
+- **Esmunyir-se:** entre esquerdes i forats petits.
 
-\- **Invulnerabilitat:** a tot excepte al foc i al fred.
+- **Invulnerabilitat:** a tot excepte al foc i al fred.
 
-\- **Àcid:** s'enganxen a la víctima i segreguen àcid que infligeix 2d6 punts de dany a cada assalt (o la meitat per 2 DC). Destrueix la roba, cuir o fusta en un assalt (no afecta ni la pedra ni el metall).
+- **Àcid:** s'enganxen a la víctima i segreguen àcid que infligeix 2d6 punts de dany a cada assalt (o la meitat per 2 DC). Destrueix la roba, cuir o fusta en un assalt (no afecta ni la pedra ni el metall).
 
 #### Gentmalgama o malgamic
 
@@ -3628,13 +3628,13 @@ Els atacs d'electricitat o llampec divideixen la criatura en 1d4+1 gelatines mé
 
 Humanoides amb parts del cos barrejades de moltes i diferents criatures (per exemple rèptils, crustacis, ocells, mamífers, etc.). Cada individu té una parença única. Evitats per les altres espècies, viuen amagats en grans assentaments o habiten com a bandes entre ruïnes. Es rumoreja que van ser creats per un mag, possiblement per accident.
 
-\- **Sorpresa:** amb una probabilitat de 3-en-6 gràcies a la seva gran habilitat per amagar-se. Els cal 1 torn de preparació.
+- **Sorpresa:** amb una probabilitat de 3-en-6 gràcies a la seva gran habilitat per amagar-se. Els cal 1 torn de preparació.
 
-\- **Imitació:** poden imitar el so de qualsevol monstre o animal.
+- **Imitació:** poden imitar el so de qualsevol monstre o animal.
 
-\- **Líder:** els grups de 10 o més són dirigits per un individu amb **DC** 2 (9 pc), **PX** 20\.
+- **Líder:** els grups de 10 o més són dirigits per un individu amb **DC** 2 (9 pc), **PX** 20\.
 
-\- **Cap:** les tribus amb 40 o més són dirigides per un cap amb **DC** 4 (18 pc), **PX** 75\.
+- **Cap:** les tribus amb 40 o més són dirigides per un cap amb **DC** 4 (18 pc), **PX** 75\.
 
 #### Gnoll
 
@@ -3644,9 +3644,9 @@ Aquest són humanoides amb cap de hiena, mandrosos i no massa intel·ligents que
 
 Són uns carnívors cruels que prefereixen menjar criatures intel·ligents perquè criden més, però mostren poca disciplina quan lluiten a menys que tinguin un líder fort.
 
-\- **Infravisió:** amb un abast de 60 peus.
+- **Infravisió:** amb un abast de 60 peus.
 
-\- **Líder:** els grups de 20 o més són dirigits per l'individu més fort (bonificació \+1 al dany), **DC** 3 (16 pc) i **PX** 35\.
+- **Líder:** els grups de 20 o més són dirigits per l'individu més fort (bonificació \+1 al dany), **DC** 3 (16 pc) i **PX** 35\.
 
 Mentre aquest estigui viu es bonifiquen les tirades  
 de moral de la tribu amb \+1.
@@ -3657,19 +3657,19 @@ de moral de la tribu amb \+1.
 
 Són petits humanoides malgirbats que sempre estan maquinant quina en poden fer, les emboscades, els trucs bruts i qualsevol altre estratagema que puguin inventar són les seves eines. Un adult fa de 3 a 3 peus i mig d'alçada, i pesa entre 40 i 45 lliures. Tenen ulls brillants i astuts que van del color vermell al groc, la pell d'un va des del groc fins a un vermell intens passant per qualsevol to de taronja (en general tots els membres d'una tribu tenen el mateix color). Vesteixen de cuir fosc, amb colors terrossos i mates.
 
-\- **Infravisió:** amb un abast de 90 peus.
+- **Infravisió:** amb un abast de 90 peus.
 
-\- **Odi al sol:** penalització \-1 a les tirades d'atac a ple sol.
+- **Odi al sol:** penalització \-1 a les tirades d'atac a ple sol.
 
-\- **Odi als nans:** els atacaran sense pensar-s'ho gens.
+- **Odi als nans:** els atacaran sense pensar-s'ho gens.
 
-\- **Genet de llop:** una cinquena part munta ***llops terribles***.
+- **Genet de llop:** una cinquena part munta ***llops terribles***.
 
 En un cau hi viuen:
 
-\- **Guardaespatlles:** 2d6 amb **DC** 2 (2d6 pc), **PX** 20 que poden suportar la llum del sol.
+- **Guardaespatlles:** 2d6 amb **DC** 2 (2d6 pc), **PX** 20 que poden suportar la llum del sol.
 
-\- **Rei:** amb **DC** 3 (16 pc), **PX** 35 que suporta el sol i té una bonificació \+1 al dany.
+- **Rei:** amb **DC** 3 (16 pc), **PX** 35 que suporta el sol i té una bonificació \+1 al dany.
 
 #### Granota i gripau gegant
 
@@ -3678,7 +3678,7 @@ En un cau hi viuen:
 Aquestes són versions engrandides de les granotes comunes; la majoria s'assemblen a les granotes toro en aparença, però una granota geganta adulta farà 3 peus de llarg i pesa unes 250 lliures. Són depredadors, però tan sols acostumen a atacar criatures més petites que elles mateixes. Els gripaus gegants són estadísticament igual que les granotes gegants; tanmateix, sovint es troben en zones "més seques", ja que no han de mantenir la seva pell humida.
 
 Aquestes criatures poden estirar la llengua fins a 15 peus i arrossegar preses petites (fins a la mida dels nans) cap a la seva boca, llavors en cada assalt posterior la víctima pren 1d4 punts de dany automàticament.  
-\- **Engolir:** amb un 20 natural a la tirada d'atac s'empassarà la víctima sencera i aquesta pren 1d6 punts de dany per assalt en els assalts següents. Tan sols pot empassar-se una criatura d'aquesta manera.
+- **Engolir:** amb un 20 natural a la tirada d'atac s'empassarà la víctima sencera i aquesta pren 1d6 punts de dany per assalt en els assalts següents. Tan sols pot empassar-se una criatura d'aquesta manera.
 
 #### Granyotic (home granota)
 
@@ -3686,13 +3686,13 @@ Aquestes criatures poden estirar la llengua fins a 15 peus i arrossegar preses p
 
 Humanoides bàrbars i tribals amb aparença de granota. Habiten els llocs foscos i pantanosos.
 
-\- **Sorpresa:** amb una probabilitat de 3-en-6 gràcies a la seva pell camaleònica.
+- **Sorpresa:** amb una probabilitat de 3-en-6 gràcies a la seva pell camaleònica.
 
-\- **Atac aeri:** salta fins a 30 peus endavant i obté una bonificació \+1 a la tirada d'atac. Si empunya una arma per empalar (p. ex., una llança) llavors conta com carregar i infligeix doble dany quan colpeja.
+- **Atac aeri:** salta fins a 30 peus endavant i obté una bonificació \+1 a la tirada d'atac. Si empunya una arma per empalar (p. ex., una llança) llavors conta com carregar i infligeix doble dany quan colpeja.
 
-\- **Líder:** els grups són dirigits per l'individu més fort amb **DC** 2 (8 pc), **PX** 13 i bonificació \+1 al dany. 
+- **Líder:** els grups són dirigits per l'individu més fort amb **DC** 2 (8 pc), **PX** 13 i bonificació \+1 al dany. 
 
-\- **Cap:** amb **DC** 3 (15 pc), **PX** 125 i bonificació \+2 al dany, que governa la tribu.
+- **Cap:** amb **DC** 3 (15 pc), **PX** 125 i bonificació \+2 al dany, que governa la tribu.
 
 #### Gul (necròfag)
 
@@ -3720,13 +3720,13 @@ Aquests són els cosins grans dels goblins, fan gairebé la mateixa mida que un 
 
 Els hobgoblins són guerrers cruels i calculadors, tenen una gran comprensió de l'estratègia i la tàctica, i poden posar en pràctica sofisticats plans de batalla. Sota el lideratge d'un estrateg o especialista tàctic competent, la seva disciplina pot ser un factor determinant. 
 
-\- **Infravisió:** amb un abast de 60 peus.
+- **Infravisió:** amb un abast de 60 peus.
 
-\- **Odi als elfs:** atacaran primer sense pensar-s'ho gens.
+- **Odi als elfs:** atacaran primer sense pensar-s'ho gens.
 
-\- **Rei:** en un cau hi ha un governant, és un individu fort (bonificació \+2 al dany) amb **DC** 5 (22 pc) i **PX** 175 que millora les tirades de moral a **ML** 10 mentre estigui viu.
+- **Rei:** en un cau hi ha un governant, és un individu fort (bonificació \+2 al dany) amb **DC** 5 (22 pc) i **PX** 175 que millora les tirades de moral a **ML** 10 mentre estigui viu.
 
-\- **Guardaespatlles:** té una guàrdia personal formada pels 1d4 individus més resistents, **DC** 4 (3d6 pc) i **PX** 75\.
+- **Guardaespatlles:** té una guàrdia personal formada pels 1d4 individus més resistents, **DC** 4 (3d6 pc) i **PX** 75\.
 
 #### Kobold
 
@@ -3736,13 +3736,13 @@ Els kobolds són petits humanoides reptilians amb cara de gos. Un individu adult
 
 Els kobolds són uns enemics astuts que veuen a totes les races més grans com a enemics i és probable que es mostrin hostils, però són covards, i prefereixen evitar combatre, conduir els enemics a emboscades o trampes en comptes d'un enfrontament directe. De vegades, les tribus construeixen i habiten zones àmplies de les masmorres que omplen de trampes mortals que només ells saben com evitar.
 
-\- **Infravisió:** amb un abast de 90 peus.
+- **Infravisió:** amb un abast de 90 peus.
 
-\- **Cap:** en un cau de kobolds hi viu un cap que els governa amb **DC** 2 (9 pc) i **PX** 20\.
+- **Cap:** en un cau de kobolds hi viu un cap que els governa amb **DC** 2 (9 pc) i **PX** 20\.
 
-\- **Guardaespatlles:** el cap té una escorta formada pels 1d6 kobolds més resistents, **DC** 1+1 (6 pc) i **PX** 15\.
+- **Guardaespatlles:** el cap té una escorta formada pels 1d6 kobolds més resistents, **DC** 1+1 (6 pc) i **PX** 15\.
 
-\- **Odi als gnoms:** els atacaran sense pensar-s'ho gens.
+- **Odi als gnoms:** els atacaran sense pensar-s'ho gens.
 
 #### Licantrops
 
@@ -3750,17 +3750,17 @@ Aquest són éssers humans que poden transformar-se en animals, s'assemblen a qu
 
 La licantropia es propaga com una malaltia i qualsevol ésser humà que perd la meitat o més dels seus punts de cop pels atacs d'un licantrop (mossegades i urpes) contrau la mateixa forma de licantropia en 2d12 dies i comença a mostrar signes de la transformació en la meitat del temps; els semihumans i humanoides moren en el mateix temps. Un encanteri de ***curar malaltia*** a temps pot frenar aquesta transformació, però un cop s'ha completat aquesta és permanent i quan moren tornen a la forma humana.
 
-\- **Invulnerabilitat:** al dany de les armes normals.
+- **Invulnerabilitat:** al dany de les armes normals.
 
-\- **Idiomes:** en forma humana pot parlar normalment i en la forma animal tan sols amb els animals del seu tipus.
+- **Idiomes:** en forma humana pot parlar normalment i en la forma animal tan sols amb els animals del seu tipus.
 
-\- **Armadura:** no en porten perquè dificulten el canvi de forma.
+- **Armadura:** no en porten perquè dificulten el canvi de forma.
 
-\- **Aliats:** poden convocar 1d2 animals del seu tipus que estiguin en la rodalia i que arriben en 1d4 assalts.
+- **Aliats:** poden convocar 1d2 animals del seu tipus que estiguin en la rodalia i que arriben en 1d4 assalts.
 
-\- **Acònit:** també conegut com a "matallops", cal superar una tirada de ***salvació contra metzina*** o fugir de terror.
+- **Acònit:** també conegut com a "matallops", cal superar una tirada de ***salvació contra metzina*** o fugir de terror.
 
-\- **Olor:** els cavalls i altres animals poden olorar els licantrops, es posaran nerviosos i espantats.
+- **Olor:** els cavalls i altres animals poden olorar els licantrops, es posaran nerviosos i espantats.
 
 #### Licantrop, home llop
 
@@ -3768,7 +3768,7 @@ La licantropia es propaga com una malaltia i qualsevol ésser humà que perd la 
 
 En la forma humana no tenen cap tret distintiu i poden trobar-se entre humans en qualsevol lloc, però són depredadors ferotges, disposats a menjar tant carn humana com d'animal.
 
-\- **Líder:** **DC** 5 (30 pc), **PX** 300 i una bonificació de \+2 al dany comanda els grups de 5 o més.
+- **Líder:** **DC** 5 (30 pc), **PX** 300 i una bonificació de \+2 al dany comanda els grups de 5 o més.
 
 #### Licantrop, home os
 
@@ -3776,7 +3776,7 @@ En la forma humana no tenen cap tret distintiu i poden trobar-se entre humans en
 
 Els homes os són humans que poden transformar-se en grans ossos. Aparèixer com humans musculosos, imponents, amb cabells gruixuts i abundants que habiten en les profunditats del bosc, allunyats de la civilització. Són molt intel·ligents (fins i tot en la forma d'os) i desconfiats, però es poden mostrar amistosos amb qui s'acostin pacíficament i defensarà els seus amics amb ferocitat.
 
-\- **Abraçada d'os:** una tirada amb èxit per les dues urpes indica un atac d'abraçada amb 2d8 punts de dany addicionals.
+- **Abraçada d'os:** una tirada amb èxit per les dues urpes indica un atac d'abraçada amb 2d8 punts de dany addicionals.
 
 #### Licantrop, home rata
 
@@ -3784,11 +3784,11 @@ Els homes os són humans que poden transformar-se en grans ossos. Aparèixer com
 
 Aparèixer com individus prims de poca alçada, força nerviosos i amb la mirada contínuament escrutant l'entorn. Sovint arrufen el nas i la boca quan estan excitats i els mascles acostumen a dur bigotis prims i irregulars. A diferència de la majoria dels licantrops, prefereixen habitar les zones civilitzades, en especial les ciutats i sovint es troben a les clavegueres, en altres zones subterrànies o sortint de nit per robar (i matar) a gent de la ciutat.
 
-\- **Sorpresa:** amb una probabilitat de 4-en-6.
+- **Sorpresa:** amb una probabilitat de 4-en-6.
 
-\- **Idiomes:** el comú en ambdues formes.
+- **Idiomes:** el comú en ambdues formes.
 
-\- **Armes:** poden dur armes amb la forma animal.
+- **Armes:** poden dur armes amb la forma animal.
 
 #### Llagosta de cova gegant
 
@@ -3810,7 +3810,7 @@ Finalment, una llagosta gegant pot llançar una gota verd-marró (els seus sucs 
 
 De llangardaixos gegants n'hi ha de moltes menes, però aquí només se'n detallen uns pocs. Sovint es confonen aquestes criatures amb els dracs, però són simples depredadors. Molts tenen el seu cau en coves i s'aventuren sovint a l'exterior per atrapar criatures petites que semblin fàcil de caçar. Com que són animals de sang freda (excepte el llangardaix dragó), acostumen a viure en llocs amb un clima temperat i que amb un hivern no gaire fred. 
 
-\- **Mossegada:** amb un 20 natural fa doble dany.
+- **Mossegada:** amb un 20 natural fa doble dany.
 
 #### Llangardaix dragó
 
@@ -3824,7 +3824,7 @@ Un llangardaix dragó gegant mitjà fa 8 peus de llarg, incloent-hi la seva cua 
 
 Els gecònids gegants fan entre 4 i 6 polzades de llarg, i generalment són de color verd, però també se’n pot trobar exemplars en gris anomenats “talla-robes”, o de blancs a sota terra. Poden escalar parets i córrer pels sostres amb tot el moviment gràcies a l'adherència dels seus dits encoixinats. Són carnívors i normalment ataquen a preses més febles que ells saltant des de sobre.
 
-\- **Sorpresa:** amb una probabilitat de 3-en-6 camuflat.
+- **Sorpresa:** amb una probabilitat de 3-en-6 camuflat.
 
 #### Llangardanic (home llangardaix)
 
@@ -3856,7 +3856,7 @@ Una víctima en contacte amb el llim durant sis assalts es transforma en llim ve
 
 Parent carnívor dels gossos que sovint caça en grup. Principalment, es poden trobar rondant per les terres salvatges, encara que de vegades també en coves on fan el cau. 
 
-\- **Moral:** els grups de 4 o més llops tenen 8 de moral, però si són reduïts a la meitat, tan sols serà de 6\.
+- **Moral:** els grups de 4 o més llops tenen 8 de moral, però si són reduïts a la meitat, tan sols serà de 6\.
 
 #### Llop hivernal
 
@@ -3864,11 +3864,11 @@ Parent carnívor dels gossos que sovint caça en grup. Principalment, es poden t
 
 Llop de 8 peus de llarg de pells platejades i ulls d'un blau pàl·lid com el glaç. És malèvol i força intel·ligent. Habita en climes freds.
 
-\- **Alè gelat:** tothom a 10 peus del seu morro pateix dany, cal superar una ***tirada de salvació contra alè*** per la meitat. Pot repetir aquest atac cada deu assalts.
+- **Alè gelat:** tothom a 10 peus del seu morro pateix dany, cal superar una ***tirada de salvació contra alè*** per la meitat. Pot repetir aquest atac cada deu assalts.
 
-\- **Invulnerabilitat:** als atacs basats en el fred.
+- **Invulnerabilitat:** als atacs basats en el fred.
 
-\- **Vulnerabilitat:** al foc, rep un punt de dany extra per cada dau de dany basat en el foc.
+- **Vulnerabilitat:** al foc, rep un punt de dany extra per cada dau de dany basat en el foc.
 
 #### Llop terrible
 
@@ -3876,7 +3876,7 @@ Llop de 8 peus de llarg de pells platejades i ulls d'un blau pàl·lid com el gl
 
 Els llops terribles generalment tenen el pèl amb clapes grises o negres, fan uns 9 peus de llarg i pesen al voltant de les 800 lliures. Són animals intel·ligents i astuts que habiten en coves, a les muntanyes i als boscos.
 
-\- **Genets:** els goblins de vegades els entrenen com a muntura.
+- **Genets:** els goblins de vegades els entrenen com a muntura.
 
 #### Llot gris
 
@@ -3886,7 +3886,7 @@ Els llots grisos són criatures amorfes que viuen en àrees subterrànies, recor
 
 Un llot gris segrega un àcid digestiu que ràpidament dissol la matèria orgànica i el metall, però no la pedra. Després de colpejar amb èxit, ell llot s'adherirà a la criatura atacada causant 2d8 punts de dany per assalt automàticament. Les armadures normals (no màgiques) o la roba es dissolen i es tornen inútils immediatament. Les armes de metall o de fusta no màgica que colpegen un llot gris també es dissolen immediatament. Les armes, armadures i roba màgica resisteixen un torn i llavors es dissolen.
 
-\- **Invulnerabilitat:** a foc i al fred.
+- **Invulnerabilitat:** a foc i al fred.
 
 #### Mercader
 
@@ -3894,21 +3894,21 @@ Un llot gris segrega un àcid digestiu que ràpidament dissol la matèria orgàn
 
 Traginers organitzats que viatgen entre assentaments en caravanes ben armades per comprar i vendre productes comercials, per exemple or, joies, seda, espècies, vi, etc.
 
-\- **Armes:** espasa i daga.
+- **Armes:** espasa i daga.
 
-\- **Muntures:** cavalls, camells o mules segons el terreny. 
+- **Muntures:** cavalls, camells o mules segons el terreny. 
 
-\- **Carros:** dos per mercader estirats per cavall, mules o camells.
+- **Carros:** dos per mercader estirats per cavall, mules o camells.
 
-\- Guardaespatlles: per cada mercader quatre guerrers de primer nivell, CA 15 amb ballestes, espases i dagues.
+- Guardaespatlles: per cada mercader quatre guerrers de primer nivell, CA 15 amb ballestes, espases i dagues.
 
-\- **Tinent:** per cada cinc mercaders hi ha dos tinents, guerrers de 2n o 3r nivell amb el mateix equipament que els guardes.
+- **Tinent:** per cada cinc mercaders hi ha dos tinents, guerrers de 2n o 3r nivell amb el mateix equipament que els guardes.
 
-\- **Capità:** els guardes són dirigits per un guerrer de 5è nivell equipat igual que les guardes.
+- **Capità:** els guardes són dirigits per un guerrer de 5è nivell equipat igual que les guardes.
 
-\- **Animals de refresc:** duen 1d12 cavalls, mules o camells extres.
+- **Animals de refresc:** duen 1d12 cavalls, mules o camells extres.
 
-\- **Tresor:** cal reduir-lo si hi ha menys de 10 mercaders en el grup.
+- **Tresor:** cal reduir-lo si hi ha menys de 10 mercaders en el grup.
 
 #### Micèlic
 
@@ -3916,11 +3916,11 @@ Traginers organitzats que viatgen entre assentaments en caravanes ben armades pe
 
 Aquests són petits humanoides d'uns 4 peus d'alçada emparentats amb els fongs i els bolets, amb un cos llarg i prim coronat per un cap amb una forma molt semblant a la del capell d'un bolet. Quan es deixen veure en destaca els estranys ulls brillants. No tenen boca, però es comuniquen telepàticament (fins a 120 peus). Habiten en cavernes sense llum en les profunditats de l'inframon.
 
-\- **Sensibilitat a la llum:** quan es troben sota una llum intensa (la llum del dia, o l'encanteri ***llum contínua***), pateixen una penalització de \-2 a les tirades d'atac i de \-1 a la classe d'armadura.
+- **Sensibilitat a la llum:** quan es troben sota una llum intensa (la llum del dia, o l'encanteri ***llum contínua***), pateixen una penalització de \-2 a les tirades d'atac i de \-1 a la classe d'armadura.
 
-\- **Líder:** els grups de 10 o més són dirigits per un individu més alt (6 peus) amb **DC** 3 (13 pc), **PX** 50 que pot llançar un esprai d'espores, tres cops per dia, a objectius fins a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o restar totalment passius, incapaces de moure's durant tres assalts.
+- **Líder:** els grups de 10 o més són dirigits per un individu més alt (6 peus) amb **DC** 3 (13 pc), **PX** 50 que pot llançar un esprai d'espores, tres cops per dia, a objectius fins a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o restar totalment passius, incapaces de moure's durant tres assalts.
 
-\- **Rei:** en un cau hi ha un governant, és un individu alt (10 peus) amb **DC** 6 (27 pc) i **PX** 725\. Sis cops per dia, pot llançar un esprai d'espores contra objectius a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o bé restar totalment passius durant sis assalts o patir al·lucinacions durant 6 torns;  
+- **Rei:** en un cau hi ha un governant, és un individu alt (10 peus) amb **DC** 6 (27 pc) i **PX** 725\. Sis cops per dia, pot llançar un esprai d'espores contra objectius a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o bé restar totalment passius durant sis assalts o patir al·lucinacions durant 6 torns;  
  tira 1d6:
 
 **1-2:** la víctima fuig aterrida.
@@ -3929,7 +3929,7 @@ Aquests són petits humanoides d'uns 4 peus d'alçada emparentats amb els fongs 
 
 **5-6:** intenta matar a la criatura més propera. 
 
-\- **Zombis fúngics:** el cau està guardat per 1d6 zombis animats pel rei. Es comporten com els zombis encara que el seu aspecte pugui ser diferent, però no són no-morts i no poden ser expulsats pels clergues o els paladins.
+- **Zombis fúngics:** el cau està guardat per 1d6 zombis animats pel rei. Es comporten com els zombis encara que el seu aspecte pugui ser diferent, però no són no-morts i no poden ser expulsats pels clergues o els paladins.
 
 #### Mímic
 
@@ -3937,11 +3937,11 @@ Aquests són petits humanoides d'uns 4 peus d'alçada emparentats amb els fongs 
 
 Monstres semi intel·ligents que poden canviar de forma i prendre l'aspecte d'objectes inanimats. Per exemple, portes, cofres, miralls, estàtues, etc. 
 
-\- **Atac:** resta quiet i tan sols ataca quan és tocat, llavors fueteja i atrapa amb el seu pseudopodi a la víctima.
+- **Atac:** resta quiet i tan sols ataca quan és tocat, llavors fueteja i atrapa amb el seu pseudopodi a la víctima.
 
-\- **Cola:** qualsevol cosa que toqui al mímic queda atrapat ràpidament per la cola que traspua i tan sols es pot alliberar matant al mímic.
+- **Cola:** qualsevol cosa que toqui al mímic queda atrapat ràpidament per la cola que traspua i tan sols es pot alliberar matant al mímic.
 
-\- **Sensibilitat a la llum:** quan es troba sota una llum intensa (la llum del dia, o l'encanteri llum contínua), pateix una penalització de \-2 a les tirades d'atac i de \-1 a la classe d'armadura.
+- **Sensibilitat a la llum:** quan es troba sota una llum intensa (la llum del dia, o l'encanteri llum contínua), pateix una penalització de \-2 a les tirades d'atac i de \-1 a la classe d'armadura.
 
 #### Mòmia
 
@@ -3952,9 +3952,9 @@ Les mòmies són monstres no-morts, cadàvers preservats embolicats amb teles de
 La majoria fan de 5 a 6 peus d'alçada, pesen unes 120 lliures i s'acostumen a trobar en ruïnes, complexos subterranis i en tombes.  
 Com la majoria dels no-morts no fan soroll en moure's, són invulnerables als encanteris ***dormir***, ***encisar*** i ***retenir*** i als efectes que només afecten les criatures vives (per exemple, les metzines). Tan sols prenen dany dels encanteris, el foc (que fa el doble de dany) o les armes màgiques (que només fan la meitat de dany). Els ferits pels atacs d'una mòmia contrauran la putrefacció de la mòmia, una malaltia que evita la curació normal o màgica; un encanteri de curar malaltia s'ha d'aplicar a la víctima abans que ell o ella torni a poder recuperar punts de cop.
 
-\- **Terror:** qualsevol que vegi la mòmia ha de superar una ***tirada de salvació contra paràlisis*** o restar paralitzat incapaç de fer cap acció fins que la mòmia ataqui o quedi fora de la seva vista.
+- **Terror:** qualsevol que vegi la mòmia ha de superar una ***tirada de salvació contra paràlisis*** o restar paralitzat incapaç de fer cap acció fins que la mòmia ataqui o quedi fora de la seva vista.
 
-\- **Malaltia:** qualsevol que la toqui ha de superar una tirada de ***salvació contra metzina*** o contraure la ***corrupció de les mòmies***. Aquesta és una malaltia degenerativa que primer es manifesta impedint la curació (la màgica és totalment ineficaç i la natural es redueix a 1 pc per descans llarg). Al cap de set dies es comença a perdre un punt de ***carisma*** per setmana a mesura que la pell es torna putrefacte i ennegrida i quan el carisma del personatge es redueix a zero llavors mor. La infecció només es pot eliminar amb l'encanteri ***curar malalties***.
+- **Malaltia:** qualsevol que la toqui ha de superar una tirada de ***salvació contra metzina*** o contraure la ***corrupció de les mòmies***. Aquesta és una malaltia degenerativa que primer es manifesta impedint la curació (la màgica és totalment ineficaç i la natural es redueix a 1 pc per descans llarg). Al cap de set dies es comença a perdre un punt de ***carisma*** per setmana a mesura que la pell es torna putrefacte i ennegrida i quan el carisma del personatge es redueix a zero llavors mor. La infecció només es pot eliminar amb l'encanteri ***curar malalties***.
 
 #### Ofídic (home serp)
 
@@ -3965,16 +3965,16 @@ d'escates. Capturen a altres criatures per menjar-se
 les o sacrificar-les en rituals en favor dels seus  
 mestres demoníacs. Habiten en jungles.
 
-\- **Mossegada:** cal superar una tirada  
+- **Mossegada:** cal superar una tirada  
 de ***salvació contra metzina*** o morir en 1d6 torns.
 
-\- **Resistència màgica:** bonificació \+4 a totes  
+- **Resistència màgica:** bonificació \+4 a totes  
 les tirades de salvació contra màgia.
 
-\- **Xaman:** per cada 10, n'hi ha un que té  
+- **Xaman:** per cada 10, n'hi ha un que té  
 l'habilitat de llançar encanteris com un clergue de 5è nivell.
 
-\- **Cultes:** de vegades es troben entre cultes humans que adoren a les serps.
+- **Cultes:** de vegades es troben entre cultes humans que adoren a les serps.
 
 #### Ogre
 
@@ -3982,10 +3982,10 @@ l'habilitat de llançar encanteris com un clergue de 5è nivell.
 
 Apareixen com a humans grans i molt lletjos, els adults fan de 9 a 10 peus d'alçada, pesen entre 600 i 650 lliures i tenen la pell d'un color entre groc i marró apagat. La seva indumentària consisteix en pells pudents i mal adobades que van afegint en capes accentuant-la ja per si repel·lent pròpia olor natural. Són brutals i agressius, però també molt mandrosos, generalment utilitzant grans garrots, destrals o llances atacant directament. 
 
-\- **Sac:** fora del cau porta un sac  
+- **Sac:** fora del cau porta un sac  
 amb 1d6 × 100 po.
 
-\- **Odi als neandertals:** els atacaran sense pensar-s'ho gens.
+- **Odi als neandertals:** els atacaran sense pensar-s'ho gens.
 
 #### Orc
 
@@ -3995,17 +3995,17 @@ Aquests són humanoides grotescs amb orelles de llop, ulls vermellosos, el nas t
 
 Les diferents tribus sovint lluitaran entre elles a menys que els seus líders ho impedeixin i parlen el seu propi idioma rústic i senzill, però molts també parlen el comú o el goblinès.
 
-\- **Infravisió:** amb un abast de 60 peus.
+- **Infravisió:** amb un abast de 60 peus.
 
-\- **Odi al sol:** penalització \-1 a les tirades d'atac a ple sol.
+- **Odi al sol:** penalització \-1 a les tirades d'atac a ple sol.
 
-\- **Armes:** prefereixen destrals, garrots, llances o espases, i tan sols els líders poden fer servir ballestes o catapultes.
+- **Armes:** prefereixen destrals, garrots, llances o espases, i tan sols els líders poden fer servir ballestes o catapultes.
 
-\- **Líder:** els grups els dirigeix un individu amb **DC** 2 (8 pc), **PX** 20 i \+1 al dany que ha derrotat a tots els altres i els empeny a lluitar, bonificador \+2 a la moral del grup. 
+- **Líder:** els grups els dirigeix un individu amb **DC** 2 (8 pc), **PX** 20 i \+1 al dany que ha derrotat a tots els altres i els empeny a lluitar, bonificador \+2 a la moral del grup. 
 
-\- **Cap dels orcs:** amb **DC** 4 (15 pc), **PX** 75 i bonificació \+2 al dany.
+- **Cap dels orcs:** amb **DC** 4 (15 pc), **PX** 75 i bonificació \+2 al dany.
 
-\- **Companys gegants:** per cada 20 orcs hi ha una probabilitat d'1-en-6 que també hi hagi un ogre acompanyant-los i una probabilitat d'1-en-10 que hi hagi un trol vivint amb ells en un cau.
+- **Companys gegants:** per cada 20 orcs hi ha una probabilitat d'1-en-6 que també hi hagi un ogre acompanyant-los i una probabilitat d'1-en-10 que hi hagi un trol vivint amb ells en un cau.
 
 #### Osgo
 
@@ -4017,9 +4017,9 @@ Els osgos prefereixen emboscar als oponents i quan cacen envien exploradors per 
 
 Per moure's furtivament i en silenci han de portar armadura de cuir (ja inclosa en la CA).
 
-\- **Infravisió:** amb un abast de 60 peus.
+- **Infravisió:** amb un abast de 60 peus.
 
-\- **Dany:** obtenen una bonificació \+1 al dany per la seva força.
+- **Dany:** obtenen una bonificació \+1 al dany per la seva força.
 
 #### Ossos
 
@@ -4063,15 +4063,15 @@ El púding negre típic mesura 10 peus d'alçada i 2 peus de gruix, i pesa unes 
 
 Aquests rosegadors omnívors prosperen gairebé en qualsevol lloc, ataquen en grup i cada punt de dany en redueix la mida.
 
-\- **Malaltia:** la mossegada té una probabilitat d'1-en-20 d'infectar (***tirada de salvació contra metzina***). La malaltia té una probabilitat d'1-en-4 de ser mortal en 1d6 dies o en cas contrari la víctima està malalta i incapacitada durant un mes
+- **Malaltia:** la mossegada té una probabilitat d'1-en-20 d'infectar (***tirada de salvació contra metzina***). La malaltia té una probabilitat d'1-en-4 de ser mortal en 1d6 dies o en cas contrari la víctima està malalta i incapacitada durant un mes
 
-\- **Por al foc:** fugen del foc a menys que siguin forçades a lluitar en una invocació.
+- **Por al foc:** fugen del foc a menys que siguin forçades a lluitar en una invocació.
 
-\- **Nedar:** són unes nadadores excel·lents i poden atacar a l'aigua sense penalització.
+- **Nedar:** són unes nadadores excel·lents i poden atacar a l'aigua sense penalització.
 
-\- **Bandada:** cada grup de 5 a 10 rates ataca com una sola entitat, cada grup fa una sola tirada d'atac contra una única criatura.
+- **Bandada:** cada grup de 5 a 10 rates ataca com una sola entitat, cada grup fa una sola tirada d'atac contra una única criatura.
 
-\- **Envoltar:** les criatures atacades han de superar una ***tirada de salvació contra mort*** o caure per terra i incapaces d'atacar fins que es tornin a aixecar.
+- **Envoltar:** les criatures atacades han de superar una ***tirada de salvació contra mort*** o caure per terra i incapaces d'atacar fins que es tornin a aixecar.
 
 #### Rata gegant
 
@@ -4079,11 +4079,11 @@ Aquests rosegadors omnívors prosperen gairebé en qualsevol lloc, ataquen en gr
 
 Les rates gegants són principalment carronyaires, però atacaran per defensar els seus nius i territoris. Pot arribar a fer fins a 4 peus de llarg i pesar més de 50 lliures. Una rata gegant sola o un grup petit (fins a quatre), generalment serà cautelosa, però els grups més grans ataquen sense por, mossegant i clavant els seus forts incisius.
 
-\- **Malaltia:** la mossegada té una probabilitat d'1-en-20 d'infectar (***tirada de salvació contra metzina***). La malaltia té una probabilitat d'1-en-4 de ser mortal en 1d6 dies o en cas contrari la víctima està malalta i incapacitada durant un mes
+- **Malaltia:** la mossegada té una probabilitat d'1-en-20 d'infectar (***tirada de salvació contra metzina***). La malaltia té una probabilitat d'1-en-4 de ser mortal en 1d6 dies o en cas contrari la víctima està malalta i incapacitada durant un mes
 
-\- **Por al foc:** fugen del foc a menys que siguin forçades a lluitar en una invocació.
+- **Por al foc:** fugen del foc a menys que siguin forçades a lluitar en una invocació.
 
-\- **Nedar:** són unes nadadores excel·lents i poden atacar a l'aigua sense penalització.
+- **Nedar:** són unes nadadores excel·lents i poden atacar a l'aigua sense penalització.
 
 #### Ratpenat
 
@@ -4119,11 +4119,11 @@ Quan un trol perd una part del cos o una de les extremitats, aquesta torna a cr�
 
 Són unes criatures odioses, que gaudeixen del combat i el vessament de sang. Tot i que pot fer servir fàcilment diverses armes, prefereixen experimentar la sensació de la carn esquinçada per les seves urpes i dents.
 
-\- **Regeneració:** tres assalts després de ser danyat comença a recuperar 3 pc per assalt i les ferides es tanquen.
+- **Regeneració:** tres assalts després de ser danyat comença a recuperar 3 pc per assalt i les ferides es tanquen.
 
-\- **Tornar de la mort:** quan és reduït a 0 punts de cop començarà a regenerar-se en 2d6 assalts i tornarà a lluitar.
+- **Tornar de la mort:** quan és reduït a 0 punts de cop començarà a regenerar-se en 2d6 assalts i tornarà a lluitar.
 
-\- **Foc i àcid:** no pot regenerar el dany d'aquesta mena i és l'única manera de matar un trol permanentment.
+- **Foc i àcid:** no pot regenerar el dany d'aquesta mena i és l'única manera de matar un trol permanentment.
 
 #### Uarg
 
@@ -4133,7 +4133,7 @@ Semblant a un llop, però més gran, més ferotge i més intel·ligent; entén u
 
 El seu origen és incert, ja qui creu que són descendents d'homes llop que van participar en els experiments d'un antic mag maligne o que és la progènie entre orcs i homes llop.
 
-\- **Genets:** són aliats dels orcs, a qui els permeten muntar sobre les seves esquenes en la batalla.
+- **Genets:** són aliats dels orcs, a qui els permeten muntar sobre les seves esquenes en la batalla.
 
 #### Víbria
 
