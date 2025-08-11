@@ -98,7 +98,6 @@ export class LibraryHub {
         if (!statsTarget && !linksTarget) return;
 
         let tooltipContent = '';
-
         try {
             if (statsTarget) {
                 const statsRaw = statsTarget.dataset.structuredStats;
@@ -107,7 +106,7 @@ export class LibraryHub {
             } else if (linksTarget) {
                 const linksRaw = linksTarget.dataset.linkedChunks;
                 const linkIds = JSON.parse(linksRaw);
-                const allDocs = this.kbDataCache[this.selectedKb.name]?.content || [];
+                const allDocs = this.kbDataCache[this.selectedKb.name]?.explore?.documents || [];
                 const linkedTitles = linkIds.map(id => {
                     const doc = allDocs.find(d => d.chunk_id === id);
                     return doc ? doc.section_title : 'Unknown Section';
@@ -190,7 +189,6 @@ export class LibraryHub {
         const chunkId = card.dataset.chunkId;
         const contentEl = card.querySelector('.text-chunk-content');
         const summaryText = card.dataset.summary;
-
         if (card.classList.contains('is-expanded')) {
             // Collapse
             contentEl.innerHTML = window.marked.parse(summaryText || '');
@@ -371,6 +369,7 @@ export class LibraryHub {
         this.switchTab('dashboard');
         this.renderDashboard();
         this._loadAndRenderEntityList();
+        this._getKbExploreData(); // Proactively fetch and cache all document data
     }
 
     _updateSearchScope() {
@@ -577,7 +576,6 @@ export class LibraryHub {
         const linksAttr = hasLinks ? `data-linked-chunks='${linksStr}'` : '';
         const content = summaryText ? summaryText : doc.document;
         const expandButton = summaryText ? `<button class="chunk-expand-btn">[ ▾ Expand ]</button>` : '';
-
         return `
         <div class="text-chunk-card" data-chunk-id="${doc.chunk_id}"
              data-summary="${summaryText ?
@@ -585,7 +583,7 @@ export class LibraryHub {
             <div class="chunk-breadcrumb">
                 <span>${kbName} > </span>
                 <span class="breadcrumb-link"
-                       data-action="breadcrumb-search"
+                    data-action="breadcrumb-search"
                       data-kb-scope="${kbName}"
                       data-section-query="${sectionTitle}">
                     ${sectionTitle}
@@ -829,6 +827,18 @@ export class LibraryHub {
         try {
             const { svg } = await mermaid.render('mindmap-svg', mermaidSyntax);
             this.mindmapContainer.innerHTML = svg;
+
+            const svgElement = this.mindmapContainer.querySelector('svg');
+            if (svgElement) {
+                svgPanZoom(svgElement, {
+                    zoomEnabled: true,
+                    controlIconsEnabled: true,
+                    fit: true,
+                    center: true,
+                    minZoom: 0.1,
+                    maxZoom: 10,
+                });
+            }
         } catch (e) {
             this.mindmapContainer.innerHTML = '<p class="error">Error rendering mind map.</p>';
             console.error("Mermaid rendering error:", e);
@@ -840,7 +850,6 @@ export class LibraryHub {
         const documents = (isDeep && data.summaries) ? data.summaries : data.documents;
         const sections = {};
         const entityToSections = {};
-
         documents.forEach(doc => {
             const title = doc.section_title || 'Uncategorized';
             if (!sections[title]) {
