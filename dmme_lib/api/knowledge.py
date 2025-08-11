@@ -244,6 +244,7 @@ def ingest_document():
     extract_images = data.get("extract_images", True)
     kickoff_cue = data.get("kickoff_cue", "")
     deep_indexing = data.get("deep_indexing", False)
+    force_paragraph_chunking = data.get("force_paragraph_chunking", False)
 
     if not metadata or not tmp_path:
         return jsonify({"error": "Missing metadata or temp_file_path"}), 400
@@ -266,7 +267,10 @@ def ingest_document():
                     with open(tmp_path, "r", encoding="utf-8") as f:
                         content = f.read()
                     for msg in ingestion_service.ingest_markdown(
-                        content, metadata, deep_indexing=deep_indexing
+                        content,
+                        metadata,
+                        deep_indexing=deep_indexing,
+                        force_paragraph_chunking=force_paragraph_chunking,
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
                 elif is_pdf:
@@ -277,6 +281,7 @@ def ingest_document():
                         sections_to_include,
                         kickoff_cue,
                         deep_indexing=deep_indexing,
+                        force_paragraph_chunking=force_paragraph_chunking,
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
 

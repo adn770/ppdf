@@ -426,11 +426,11 @@ PROMPT_REGISTRY = {
             "For tables that only list spell names, use `table:spell_list`. Your response "
             "MUST be ONLY a single, valid JSON array of strings. Do not wrap it in "
             "Markdown code fences.</task>\n"
-            "<vocabulary>[\"type:prose\", \"type:spell\", \"type:mechanics\", "
-            "\"type:item\", \"access:dm_only\", \"type:table\", \"table:stats\", \"table:random\", "
-            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulary>\n"
+            '<vocabulary>["type:prose", "type:spell", "type:mechanics", '
+            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>\n'
             "<example><input>| 1d12 | Name | Rev. | Duration | Range |</input>"
-            "<output>[\"type:table\", \"table:spell_list\"]</output></example>"
+            '<output>["type:table", "table:spell_list"]</output></example>'
         ),
         "es": (
             "<tasca>Analiza el texto dentro de la etiqueta <text_input>. Elige todas las "
@@ -441,11 +441,11 @@ PROMPT_REGISTRY = {
             "de hechizos, usa `table:spell_list`. Tu respuesta DEBE SER ÚNICAMENTE un único "
             "array JSON válido de strings. No lo envuelvas en bloques de código Markdown."
             "</tasca>\n"
-            "<vocabulario>[\"type:prose\", \"type:spell\", \"type:mechanics\", "
-            "\"type:item\", \"access:dm_only\", \"type:table\", \"table:stats\", \"table:random\", "
-            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulario>\n"
+            '<vocabulario>["type:prose", "type:spell", "type:mechanics", '
+            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulario>\n'
             "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
-            "<output>[\"type:table\", \"table:spell_list\"]</output></ejemplo>"
+            '<output>["type:table", "table:spell_list"]</output></ejemplo>'
         ),
         "ca": (
             "<tasca>Analitza el text dins l'etiqueta <text_input>. Tria totes les etiquetes "
@@ -456,11 +456,11 @@ PROMPT_REGISTRY = {
             "d'encanteris, fes servir `table:spell_list`. La teva resposta HA DE SER "
             "ÚNICAMENT una única matriu JSON vàlida de strings. No l'embolcallis amb "
             "blocs de codi Markdown.</tasca>\n"
-            "<vocabulari>[\"type:prose\", \"type:spell\", \"type:mechanics\", "
-            "\"type:item\", \"access:dm_only\", \"type:table\", \"table:stats\", \"table:random\", "
-            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulario>\n"
+            '<vocabulari>["type:prose", "type:spell", "type:mechanics", '
+            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulario>\n'
             "<exemple><input>| 1d12 | Nom | Inv. | Durada | Abast |</input>"
-            "<output>[\"type:table\", \"table:spell_list\"]</output></exemple>"
+            '<output>["type:table", "table:spell_list"]</output></exemple>'
         ),
     },
     "SEMANTIC_LABELER_ADVENTURE_XML": {
@@ -470,14 +470,14 @@ PROMPT_REGISTRY = {
             "`type:table` tag AND one specific `table:*` sub-tag (e.g., `table:stats`). "
             "Your response MUST be ONLY a single, valid JSON array of strings. "
             "Do not wrap it in Markdown code fences.</task>\n"
-            "<vocabulary>[\"type:prose\", \"type:read_aloud\", \"type:spell\", \"type:mechanics\", "
-            "\"type:lore\", \"type:dialogue\", \"type:item\", \"type:location\", "
-            "\"access:dm_only\", \"narrative:kickoff\", \"narrative:hook\", \"narrative:clue\", "
-            "\"narrative:plot_twist\", \"gameplay:trap\", \"gameplay:puzzle\", "
-            "\"gameplay:secret\", \"type:table\", \"table:stats\", \"table:random\", "
-            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulary>\n"
+            '<vocabulary>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
+            '"type:lore", "type:dialogue", "type:item", "type:location", '
+            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
+            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
+            '"gameplay:secret", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>\n'
             "<example><input>The bandits will ambush the party on the road.</input>"
-            "<output>[\"type:prose\", \"access:dm_only\"]</output></example>"
+            '<output>["type:prose", "access:dm_only"]</output></example>'
         ),
         "es": (
             "<tasca>Analiza el texto dentro de la etiqueta <text_input>. Elige todas las "
@@ -485,14 +485,14 @@ PROMPT_REGISTRY = {
             "DEBES USAR la etiqueta `type:table` Y una sub-etiqueta `table:*` específica "
             "(p. ej., `table:stats`). Tu respuesta DEBE SER ÚNICAMENTE un único array JSON "
             "válido de strings. No lo envuelvas en bloques de código Markdown.</tasca>\n"
-            "<vocabulary>[\"type:prose\", \"type:read_aloud\", \"type:spell\", \"type:mechanics\", "
-            "\"type:lore\", \"type:dialogue\", \"type:item\", \"type:location\", "
-            "\"access:dm_only\", \"narrative:kickoff\", \"narrative:hook\", \"narrative:clue\", "
-            "\"narrative:plot_twist\", \"gameplay:trap\", \"gameplay:puzzle\", "
-            "\"gameplay:secret\", \"type:table\", \"table:stats\", \"table:random\", "
-            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulary>\n"
+            '<vocabulary>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
+            '"type:lore", "type:dialogue", "type:item", "type:location", '
+            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
+            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
+            '"gameplay:secret", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>\n'
             "<ejemplo><input>Los bandidos emboscarán al grupo en el camino.</input>"
-            "<output>[\"type:prose\", \"access:dm_only\"]</output></ejemplo>"
+            '<output>["type:prose", "access:dm_only"]</output></ejemplo>'
         ),
         "ca": (
             "<tasca>Analitza el text dins l'etiqueta <text_input>. Tria totes les etiquetes "
@@ -500,14 +500,14 @@ PROMPT_REGISTRY = {
             "l'etiqueta `type:table` I una sub-etiqueta `table:*` específica (p. ex., "
             "`table:stats`). La teva resposta HA DE SER ÚNICAMENT una única matriu JSON "
             "vàlida de strings. No l'embolcallis amb blocs de codi Markdown.</tasca>\n"
-            "<vocabulari>[\"type:prose\", \"type:read_aloud\", \"type:spell\", \"type:mechanics\", "
-            "\"type:lore\", \"type:dialogue\", \"type:item\", \"type:location\", "
-            "\"access:dm_only\", \"narrative:kickoff\", \"narrative:hook\", \"narrative:clue\", "
-            "\"narrative:plot_twist\", \"gameplay:trap\", \"gameplay:puzzle\", "
-            "\"gameplay:secret\", \"type:table\", \"table:stats\", \"table:random\", "
-            "\"table:equipment\", \"table:progression\", \"table:spell_list\"]</vocabulari>\n"
+            '<vocabulari>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
+            '"type:lore", "type:dialogue", "type:item", "type:location", '
+            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
+            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
+            '"gameplay:secret", "type:table", "table:stats", "table:random", '
+            '"table:equipment", "table:progression", "table:spell_list"]</vocabulari>\n'
             "<exemple><input>Els bandits emboscaran el grup al camí.</input>"
-            "<output>[\"type:prose\", \"access:dm_only\"]</output></exemple>"
+            '<output>["type:prose", "access:dm_only"]</output></exemple>'
         ),
     },
 }

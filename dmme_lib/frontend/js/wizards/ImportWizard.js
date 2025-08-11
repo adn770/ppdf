@@ -287,6 +287,7 @@ export class ImportWizard {
                 extract_images: this.extractImagesCheckbox.checked,
                 kickoff_cue: document.getElementById('kb-kickoff-cue').value.trim(),
                 deep_indexing: document.getElementById('deep-indexing-checkbox').checked,
+                force_paragraph_chunking: document.getElementById('force-paragraph-chunking-checkbox').checked,
                 metadata: {
                     kb_name: this.knowledgeBaseName,
                     kb_type: document.getElementById('kb-type').value,

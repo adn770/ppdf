@@ -111,7 +111,13 @@ class IngestionService:
             log.warning("Could not parse spell JSON from LLM: %s", e)
             return {}
 
-    def ingest_markdown(self, file_content: str, metadata: dict):
+    def ingest_markdown(
+        self,
+        file_content: str,
+        metadata: dict,
+        deep_indexing: bool = False,
+        force_paragraph_chunking: bool = False,
+    ):
         """Processes and ingests a Markdown file's content, yielding progress."""
         kb_name = metadata.get("kb_name")
         lang = metadata.get("language", "en")
@@ -202,17 +208,30 @@ class IngestionService:
         final_metadatas = self._link_entities_in_document(processed_chunks, lang)
         documents = [chunk["text"] for chunk in processed_chunks]
 
-        for meta in final_metadatas:
+        # Finalize metadata and IDs
+        kb_metadata = metadata.copy()
+        ids = [f"{kb_name}_{i}" for i in range(len(documents))]
+        for i, meta in enumerate(final_metadatas):
+            meta["chunk_id"] = ids[i]
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
             meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
 
+        # Conditional Deep Indexing
+        if deep_indexing:
+            kb_metadata["indexing_strategy"] = "deep"
+            yield from self._perform_deep_indexing(kb_name, documents, final_metadatas, lang)
+        else:
+            kb_metadata["indexing_strategy"] = "standard"
+
         msg = "Generating embeddings and saving to vector store..."
         log.info(msg)
         yield msg
-        self.vector_store.add_to_kb(kb_name, documents, final_metadatas, kb_metadata=metadata)
+        self.vector_store.add_to_kb(
+            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=ids
+        )
         msg = "✔ Saved to vector store."
         log.info(msg)
         yield msg
@@ -283,6 +302,8 @@ class IngestionService:
         pages_str: str = "all",
         sections_to_include: list[str] | None = None,
         kickoff_cue: str = "",
+        deep_indexing: bool = False,
+        force_paragraph_chunking: bool = False,
     ):
         """Processes and ingests a PDF file's text content, yielding progress."""
         kb_name = metadata.get("kb_name")
@@ -399,23 +420,32 @@ class IngestionService:
             log.info(msg)
             yield msg
 
-            section_text_for_llm = section.get_llm_text()
+            # Determine the chunks to process based on the chunking strategy
             chunks_to_process = []
-            if len(section_text_for_llm) <= fmt_target_chars:
-                # Process the whole section as a single chunk
-                chunks_to_process.append((section, section.paragraphs))
-            else:
-                # Fallback: process paragraph by paragraph for very large sections
-                log.warning(
-                    "Section '%s' is too large (%d chars). Falling back to para-chunking.",
-                    section.title,
-                    len(section_text_for_llm),
-                )
+            section_text_for_llm = section.get_llm_text()
+
+            # The main conditional for the chunking strategy
+            if force_paragraph_chunking:
+                log.debug("Forcing paragraph chunking for section '%s'.", section.title)
                 for para in section.paragraphs:
                     temp_section = Section()
                     temp_section.add_paragraph(para)
                     chunks_to_process.append((temp_section, [para]))
+            else:
+                if len(section_text_for_llm) <= fmt_target_chars:
+                    chunks_to_process.append((section, section.paragraphs))
+                else:
+                    log.warning(
+                        "Section '%s' is too large (%d chars). Falling back to para-chunking.",
+                        section.title,
+                        len(section_text_for_llm),
+                    )
+                    for para in section.paragraphs:
+                        temp_section = Section()
+                        temp_section.add_paragraph(para)
+                        chunks_to_process.append((temp_section, [para]))
 
+            # Process the generated list of chunks
             for section_chunk, source_paras in chunks_to_process:
                 stream = reformat_section_with_llm(
                     section=section_chunk,
@@ -476,13 +506,23 @@ class IngestionService:
         final_metadatas = self._link_entities_in_document(processed_chunks, lang)
         documents = [chunk["text"] for chunk in processed_chunks]
 
-        # Convert complex fields to JSON strings for storage
-        for meta in final_metadatas:
+        # --- Finalize and Save to Vector Store ---
+        kb_metadata = metadata.copy()
+        ids = [f"{kb_name}_{i}" for i in range(len(documents))]
+        for i, meta in enumerate(final_metadatas):
+            meta["chunk_id"] = ids[i]
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
             meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
+
+        # Conditional Deep Indexing
+        if deep_indexing:
+            kb_metadata["indexing_strategy"] = "deep"
+            yield from self._perform_deep_indexing(kb_name, documents, final_metadatas, lang)
+        else:
+            kb_metadata["indexing_strategy"] = "standard"
 
         msg = f"✔ Processing complete. Found {len(documents)} valid chunks."
         log.info(msg)
@@ -495,10 +535,59 @@ class IngestionService:
             log.info(msg)
             yield msg
             return
-        self.vector_store.add_to_kb(kb_name, documents, final_metadatas, kb_metadata=metadata)
+        self.vector_store.add_to_kb(
+            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=ids
+        )
         msg = "✔ Saved to vector store."
         log.info(msg)
         yield msg
+
+    def _perform_deep_indexing(self, kb_name, documents, metadatas, lang):
+        """Generates and stores summaries for a list of documents."""
+        msg = f"Performing deep indexing for {len(documents)} chunks..."
+        log.info(msg)
+        yield msg
+
+        summaries = []
+        summary_metadatas = []
+        summarizer_prompt = self._get_prompt("SUMMARIZE_CHUNK", lang)
+        util_config = self.config_service.get_model_config("classify")
+
+        for i, doc in enumerate(documents):
+            parent_meta = metadatas[i]
+            msg = f"  -> Summarizing chunk {i + 1}/{len(documents)}..."
+            log.info(msg)
+            yield msg
+
+            response_data = query_text_llm(
+                summarizer_prompt,
+                doc,
+                util_config["url"],
+                util_config["model"],
+                temperature=0.2,
+                context_window=util_config["context_window"],
+            )
+            summary = response_data.get("response", "").strip()
+
+            if summary:
+                summaries.append(summary)
+                summary_metadatas.append(
+                    {
+                        "parent_id": parent_meta["chunk_id"],
+                        "parent_text_snippet": doc[:250] + "...",
+                    }
+                )
+
+        if summaries:
+            summary_collection_name = f"{kb_name}_summaries"
+            msg = f"✔ Summarization complete. Saving {len(summaries)} summaries to '{summary_collection_name}'."
+            log.info(msg)
+            yield msg
+            self.vector_store.add_to_kb(summary_collection_name, summaries, summary_metadatas)
+        else:
+            msg = "⚠ Deep indexing enabled, but no summaries were generated."
+            log.warning(msg)
+            yield msg
 
     def process_and_extract_images(
         self, pdf_path: str, assets_path: str, metadata: dict, pages_str: str = "all"
