@@ -572,7 +572,8 @@ export class LibraryHub {
         const sourceInfo = isSearchResult ?
             `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>` :
             `<span>p. ${doc.page_start || 'N/A'}</span>`;
-        const statsAttr = hasStats ? `data-structured-stats='${statsStr}'` : '';
+        const escapedStatsStr = statsStr.replace(/'/g, "&apos;");
+        const statsAttr = hasStats ? `data-structured-stats='${escapedStatsStr}'` : '';
         const linksAttr = hasLinks ? `data-linked-chunks='${linksStr}'` : '';
         const content = summaryText ? summaryText : doc.document;
         const expandButton = summaryText ? `<button class="chunk-expand-btn">[ ▾ Expand ]</button>` : '';

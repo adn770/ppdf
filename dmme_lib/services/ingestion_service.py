@@ -199,8 +199,6 @@ class IngestionService:
         util_config = self.config_service.get_model_config("classify")
 
         processed_chunks = []
-        chunk_id_counter = 0
-
         for section_text in sections:
             if not section_text.strip():
                 continue
@@ -254,14 +252,12 @@ class IngestionService:
                 chunk_metadata = {
                     "source_file": metadata.get("filename", "unknown.md"),
                     "section_title": title,
-                    "chunk_id": chunk_id_counter,
                     "tags": final_tags,
                     "is_dm_only": is_dm_only,
                     "key_terms": json.dumps(key_terms),
                 }
                 log.debug("Final metadata for chunk from '%s': %s", title, chunk_metadata)
                 processed_chunks.append({"text": chunk, "metadata": chunk_metadata})
-                chunk_id_counter += 1
 
         if not processed_chunks:
             msg = "✔ No valid text chunks found to ingest."
@@ -269,15 +265,18 @@ class IngestionService:
             yield msg
             return
 
-        # Post-processing for entity linking
+        # Generate and assign final string IDs BEFORE linking
+        final_ids = [f"{kb_name}_{i}" for i in range(len(processed_chunks))]
+        for i, chunk_data in enumerate(processed_chunks):
+            chunk_data["metadata"]["chunk_id"] = final_ids[i]
+
+        # Post-processing for entity linking (now uses the correct string IDs)
         final_metadatas = yield from self._link_entities_in_document(processed_chunks, lang)
         documents = [chunk["text"] for chunk in processed_chunks]
 
-        # Finalize metadata and IDs
+        # Finalize metadata for storage
         kb_metadata = metadata.copy()
-        ids = [f"{kb_name}_{i}" for i in range(len(documents))]
-        for i, meta in enumerate(final_metadatas):
-            meta["chunk_id"] = ids[i]
+        for meta in final_metadatas:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
@@ -295,7 +294,7 @@ class IngestionService:
         log.info(msg)
         yield msg
         self.vector_store.add_to_kb(
-            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=ids
+            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=final_ids
         )
         msg = "✔ Saved to vector store."
         log.info(msg)
@@ -500,7 +499,7 @@ class IngestionService:
         )
         labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
-        processed_chunks, chunk_id = [], 0
+        processed_chunks = []
         fmt_config = self.config_service.get_model_config("format")
         fmt_model_details = get_model_details(fmt_config["url"], fmt_config["model"])
         fmt_ctx = fmt_model_details.get("context_length", 4096)
@@ -594,7 +593,6 @@ class IngestionService:
                     "source_file": metadata.get("filename", "unknown.pdf"),
                     "section_title": section.title or "Untitled",
                     "page_start": section.page_start,
-                    "chunk_id": chunk_id,
                     "tags": final_tags,
                     "is_dm_only": is_dm_only,
                     "key_terms": json.dumps(key_terms),
@@ -605,17 +603,17 @@ class IngestionService:
                     chunk_metadata,
                 )
                 processed_chunks.append({"text": chunk, "metadata": chunk_metadata})
-                chunk_id += 1
 
-        # --- Post-processing: Entity Extraction and Linking ---
+        final_ids = [f"{kb_name}_{i}" for i in range(len(processed_chunks))]
+        for i, chunk_data in enumerate(processed_chunks):
+            chunk_data["metadata"]["chunk_id"] = final_ids[i]
+
         final_metadatas = yield from self._link_entities_in_document(processed_chunks, lang)
         documents = [chunk["text"] for chunk in processed_chunks]
 
         # --- Finalize and Save to Vector Store ---
         kb_metadata = metadata.copy()
-        ids = [f"{kb_name}_{i}" for i in range(len(documents))]
-        for i, meta in enumerate(final_metadatas):
-            meta["chunk_id"] = ids[i]
+        for meta in final_metadatas:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
@@ -641,7 +639,7 @@ class IngestionService:
             yield msg
             return
         self.vector_store.add_to_kb(
-            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=ids
+            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=final_ids
         )
         msg = "✔ Saved to vector store."
         log.info(msg)
