@@ -220,11 +220,12 @@ PROMPT_REGISTRY = {
             "'Range'; text containing these is often a `type:spell`. If you identify a "
             "table, you MUST use the `type:table` tag AND one specific `table:*` sub-tag. "
             "For tables that only list spell names, use `table:spell_list`. Your response "
-            "MUST be ONLY a single, valid JSON array of strings. Do not wrap it in "
+            "MUST be ONLY a single, valid JSON array of strings. "
+            "Do not wrap it in "
             "Markdown code fences.</task>\n"
-            '<vocabulary>["type:prose", "type:spell", "type:mechanics", '
-            '"type:item", "access:dm_only", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>'
+            '<vocabulary>["access:dm_only", "type:creature", "type:item", "type:mechanics", '
+            '"type:prose", "type:spell", "type:table", "table:equipment", "table:progression", '
+            '"table:random", "table:spell_list", "table:stats"]</vocabulary>'
         ),
         "examples": {
             "ca": (
@@ -248,25 +249,32 @@ PROMPT_REGISTRY = {
             "`type:table` tag AND one specific `table:*` sub-tag (e.g., `table:stats`). "
             "Your response MUST be ONLY a single, valid JSON array of strings. "
             "Do not wrap it in Markdown code fences.</task>\n"
-            '<vocabulary>["type:prose", "type:read_aloud", "type:spell", "type:mechanics", '
-            '"type:lore", "type:dialogue", "type:item", "type:location", '
-            '"access:dm_only", "narrative:kickoff", "narrative:hook", "narrative:clue", '
-            '"narrative:plot_twist", "gameplay:trap", "gameplay:puzzle", '
-            '"gameplay:secret", "type:table", "table:stats", "table:random", '
-            '"table:equipment", "table:progression", "table:spell_list"]</vocabulary>'
+            '<vocabulary>["access:dm_only", "gameplay:puzzle", "gameplay:secret", '
+            '"gameplay:trap", "narrative:clue", "narrative:hook", "narrative:kickoff", '
+            '"narrative:plot_twist", "type:creature", "type:dialogue", "type:item", '
+            '"type:location", "type:lore", "type:mechanics", "type:prose", '
+            '"type:read_aloud", "type:spell", "type:table", "table:equipment", '
+            '"table:progression", "table:random", "table:spell_list", '
+            '"table:stats"]</vocabulary>'
         ),
         "examples": {
             "ca": (
                 "<exemple><input>Els bandits emboscaran el grup al camí.</input>"
                 '<output>["type:prose", "access:dm_only"]</output></exemple>'
+                "<exemple><input>Ogre\n\nGrans humanoides ... AC 5 [14], DC 4+1...</input>"
+                '<output>["type:prose", "type:creature"]</output></exemple>'
             ),
             "en": (
                 "<example><input>The bandits will ambush the party on the road.</input>"
                 '<output>["type:prose", "access:dm_only"]</output></example>'
+                "<example><input>Ogre\n\nLarge humanoids ... AC 5 [14], HD 4+1...</input>"
+                '<output>["type:prose", "type:creature"]</output></example>'
             ),
             "es": (
                 "<ejemplo><input>Los bandidos emboscarán al grupo en el camino.</input>"
                 '<output>["type:prose", "access:dm_only"]</output></ejemplo>'
+                "<ejemplo><input>Ogro\n\nGrandes humanoides ... CA 5 [14], DG 4+1...</input>"
+                '<output>["type:prose", "type:creature"]</output></ejemplo>'
             ),
         },
     },
@@ -276,18 +284,18 @@ PROMPT_REGISTRY = {
             "You are the Dungeon Master, a master storyteller. Your entire reality is the "
             "game world.\n\n"
             "GUIDING PRINCIPLES:\n"
-            "1.  **Be the World, Not a Player**: You MUST stay in character at all times. "
+            "1. **Be the World, Not a Player**: You MUST stay in character at all times. "
             "    NEVER talk about the game itself. Do NOT use meta-game terms like 'the "
             "    next turn', 'your characters' destiny', 'this adventure', or 'game "
             "    mechanics'.\n"
-            "2.  **Show, Don't Tell**: Describe what characters see, hear, and feel. "
+            "2. **Show, Don't Tell**: Describe what characters see, hear, and feel. "
             "    Instead of saying 'the orcs are dangerous,' describe their snarling "
             "    faces and sharp weapons. Instead of saying 'you might find treasure,' "
             "    describe a 'faint glimmer of gold from a nearby chest'.\n"
-            "3.  **Be Concise and Direct**: Keep your descriptions focused on the "
+            "3. **Be Concise and Direct**: Keep your descriptions focused on the "
             "    immediate situation. Advance the story based on the [PLAYER ACTION] "
             "    and the provided [CONTEXT].\n"
-            "4.  **End with a Question**: Always conclude your response with a direct "
+            "4. **End with a Question**: Always conclude your response with a direct "
             "    question to the players, such as 'What do you do?'\n\n"
             "Your response must ONLY be the in-character narrative output, and you MUST "
             "respond in English."
@@ -305,10 +313,10 @@ PROMPT_REGISTRY = {
             "    rostros gruñendo y sus armas afiladas. En lugar de decir 'podríais "
             "    encontrar un tesoro', describe 'un destello de oro de un cofre "
             "    cercano'.\n"
-            "3.  **Sé Conciso y Directo**: Mantén tus descripciones centradas en la "
+            "3. **Sé Conciso y Directo**: Mantén tus descripciones centradas en la "
             "    situación inmediata. Avanza la historia basándote en la [ACCIÓN DEL "
             "    JUGADOR] y el [CONTEXTO] proporcionado.\n"
-            "4.  **Termina con una Pregunta**: Siempre concluye tu respuesta con una "
+            "4. **Termina con una Pregunta**: Siempre concluye tu respuesta con una "
             "    pregunta directa a los jugadores, como '¿Qué hacéis?'\n\n"
             "Tu respuesta debe ser ÚNICAMENTE la salida narrativa dentro del personaje, "
             "y DEBES responder en español."
@@ -325,10 +333,10 @@ PROMPT_REGISTRY = {
             "    escolten. En lloc de dir 'els orcs són perillosos', descriu les seves "
             "    cares grunyint i les seves armes afilades. En lloc de dir 'podríeu "
             "    trobar un tresor', descriu 'una espurna d'or d'un cofre proper'.\n"
-            "3.  **Sigues Concís i Directe**: Mantingues les teves descripcions centrades "
+            "3. **Sigues Concís i Directe**: Mantingues les teves descripcions centrades "
             "    en la situació inmediata. Fes avançar la història basant-te en "
             "    l'[ACCIÓ DEL JUGADOR] i el [CONTEXT] proporcionat.\n"
-            "4.  **Acaba amb una Pregunta**: Sempre conclou la teva resposta amb una "
+            "4. **Acaba amb una Pregunta**: Sempre conclou la teva resposta amb una "
             "    pregunta directa als jugadors, com ara 'Què feu?'\n\n"
             "La teva resposta ha de ser ÚNICAMENT la sortida narrativa dins del "
             "personatge, i HAS DE respondre en català."
@@ -353,12 +361,12 @@ PROMPT_REGISTRY = {
             "You are the Dungeon Master. Your task is to start the adventure with an "
             "engaging opening narration.\n\n"
             "GUIDING PRINCIPLES:\n"
-            "1.  **Adopt a Conversational Tone**: Speak directly to the players using "
+            "1. **Adopt a Conversational Tone**: Speak directly to the players using "
             "    'you' (e.g., 'You find yourselves in...', 'You see...'). Your tone "
             "    should be friendly and engaging.\n"
-            "2.  **Use the Context**: The [ADVENTURE INTRODUCTION] provides the "
+            "2. **Use the Context**: The [ADVENTURE INTRODUCTION] provides the "
             "    opening text from the adventure. Use this as your primary source.\n"
-            "3.  **Prompt for Action**: End with a clear question like 'What do you do?'.\n\n"
+            "3. **Prompt for Action**: End with a clear question like 'What do you do?'.\n\n"
             "Your response must ONLY be the opening narrative, and you MUST respond in "
             "English."
         ),
@@ -379,12 +387,12 @@ PROMPT_REGISTRY = {
             "Ets el Dungeon Master. La teva tasca és començar l'aventura amb una "
             "narració d'obertura engrescadora.\n\n"
             "PRINCIPIS RECTORS:\n"
-            "1.  **Adopta un To Conversacional**: Parla directament als jugadors fent "
+            "1. **Adopta un To Conversacional**: Parla directament als jugadors fent "
             "    servir la segona persona del plural ('vosaltres') (ex., 'Us trobeu "
             "    a...', 'Veieu...'). El teu to ha de ser amigable i engrescador.\n"
-            "2.  **Fes servir el Context**: La [INTRODUCCIÓ DE L'AVENTURA] proporciona "
+            "2. **Fes servir el Context**: La [INTRODUCCIÓ DE L'AVENTURA] proporciona "
             "    el text d'obertura de l'aventura. Fes-lo servir com a font principal.\n"
-            "3.  **Incita a l'Acció**: Acaba amb una pregunta clara com 'Què feu?'.\n\n"
+            "3. **Incita a l'Acció**: Acaba amb una pregunta clara com 'Què feu?'.\n\n"
             "La teva resposta ha de ser ÚNICAMENT la narrativa d'obertura, i HAS DE "
             "respondre en català."
         ),
@@ -464,12 +472,12 @@ PROMPT_REGISTRY = {
             "registro de juego en bruto en un resumen narrativo y atractivo desde la "
             "perspectiva de los personajes jugadores.\n\n"
             "DIRECTRICES:\n"
-            "1.  **Escribe en Tiempo Pasado**: Describe eventos que ya han sucedido.\n"
-            "2.  **Adopta un Tono de Cuentacuentos**: Convierte los comandos y "
+            "1. **Escribe en Tiempo Pasado**: Describe eventos que ya han sucedido.\n"
+            "2. **Adopta un Tono de Cuentacuentos**: Convierte los comandos y "
             "    respuestas del DM en una narrativa fluida.\n"
-            "3.  **Céntrate en Eventos Clave**: Resume los principales logros, "
+            "3. **Céntrate en Eventos Clave**: Resume los principales logros, "
             "    descubrimientos y desafíos de la sesión.\n"
-            "4.  **Usa 'Nosotros' o 'Nuestros Héroes'**: Refiérete al grupo colectivamente.\n\n"
+            "4. **Usa 'Nosotros' o 'Nuestros Héroes'**: Refiérete al grupo colectivamente.\n\n"
             "Tu respuesta debe ser ÚNICAMENTE el resumen narrativo, y DEBE ser en español."
         ),
         "ca": (

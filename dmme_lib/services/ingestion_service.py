@@ -70,28 +70,37 @@ class IngestionService:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
         return f'"{single_line_text}"'
 
-    def _extract_key_terms_from_chunk(self, chunk: str, tags: list[str]) -> list[str]:
+    def _extract_key_terms_from_chunk(
+        self, chunk: str, tags: list[str], section_title: str
+    ) -> list[str]:
         """
-        Extracts and sanitizes key terms from a chunk.
-        - For stat blocks, it extracts the title.
-        - For tables, it splits the header into individual terms.
-        - For prose, it extracts bolded text.
-        - All terms are sanitized to remove trailing colons.
+        Extracts and sanitizes key terms from a chunk using context-aware rules.
         """
         raw_terms = []
-        if "table:stats" in tags:
-            first_line = chunk.split("\n", 1)[0]
-            raw_terms = [re.sub(r"[\*#]", "", first_line).strip()]
-        elif "type:table" in tags:
-            header_line = chunk.split("\n", 1)[0]
-            # Split by '|', filter empty strings, and strip whitespace/colons
-            raw_terms = [term.strip() for term in header_line.split("|") if term.strip()]
+
+        # Rule 1: Creature chunks are identified solely by their title.
+        if "type:creature" in tags:
+            if section_title:
+                raw_terms.append(section_title)
         else:
-            # Find all non-overlapping matches of text between double asterisks
-            raw_terms = re.findall(r"\*\*(.*?)\*\*", chunk)
+            # Rule 2: All other chunks include their section title for linking.
+            if section_title:
+                raw_terms.append(section_title)
+
+            # Rule 3: For tables, also parse the header.
+            if "type:table" in tags:
+                header_line = chunk.split("\n", 1)[0]
+                raw_terms.extend(
+                    [term.strip() for term in header_line.split("|") if term.strip()]
+                )
+            # Rule 4: For prose, also extract bolded text.
+            else:
+                raw_terms.extend(re.findall(r"\*\*(.*?)\*\*", chunk))
 
         # Sanitize all extracted terms
-        sanitized_terms = [term.strip().rstrip(":").strip() for term in raw_terms if term.strip()]
+        sanitized_terms = [
+            term.strip().rstrip(":").strip() for term in raw_terms if term.strip()
+        ]
         return sorted(list(set(sanitized_terms)))
 
     def _parse_stat_block(self, chunk: str, lang: str) -> dict:
@@ -199,7 +208,9 @@ class IngestionService:
             if force_paragraph_chunking:
                 log.debug("Applying forced paragraph chunking to section '%s'.", title)
                 chunks_to_process = [
-                    c.strip() for c in re.split(r"\n{2,}", content) if c.strip() and len(c) >= 50
+                    c.strip()
+                    for c in re.split(r"\n{2,}", content)
+                    if c.strip() and len(c) >= 50
                 ]
             else:
                 log.debug("Applying section-as-chunk strategy to section '%s'.", title)
@@ -217,13 +228,16 @@ class IngestionService:
                     util_config["model"],
                     context_window=util_config["context_window"],
                 )
-                # Apply secrecy rule for all tables
+                # Apply secrecy rule for creatures and tables
+                if "type:creature" in tags:
+                    tags.append("access:dm_only")
+                    log.debug("Applying security rule: Added access:dm_only to creature.")
                 if "type:table" in tags:
                     tags.append("access:dm_only")
                     log.debug("Applying structural rule: Added access:dm_only to table.")
 
                 final_tags = sorted(list(set(tags)))
-                key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
+                key_terms = self._extract_key_terms_from_chunk(chunk, final_tags, title)
                 is_dm_only = "access:dm_only" in final_tags
 
                 processed_chunks.append(
@@ -259,9 +273,7 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            meta["structured_spell_data"] = json.dumps(
-                meta.get("structured_spell_data", {})
-            )
+            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         # Conditional Deep Indexing
@@ -297,8 +309,8 @@ class IngestionService:
             yield msg
             metadata = chunk_data["metadata"]
 
-            # Deep parse stat blocks if applicable
-            if "table:stats" in metadata.get("tags", []):
+            # Deep parse creature stat blocks if applicable
+            if "type:creature" in metadata.get("tags", []):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
 
@@ -531,6 +543,9 @@ class IngestionService:
                         context_window=util_config["context_window"],
                     )
 
+                if "type:creature" in tags:
+                    tags.append("access:dm_only")
+                    log.debug("Applying security rule: Added access:dm_only to creature.")
                 if "type:table" in tags:
                     tags.append("access:dm_only")
                     log.debug("Applying security rule: Added access:dm_only to table.")
@@ -539,7 +554,9 @@ class IngestionService:
                     tags.append("type:read_aloud")
 
                 final_tags = sorted(list(set(tags)))
-                key_terms = self._extract_key_terms_from_chunk(chunk, final_tags)
+                key_terms = self._extract_key_terms_from_chunk(
+                    chunk, final_tags, section.title or "Untitled"
+                )
                 is_dm_only = "access:dm_only" in final_tags
 
                 processed_chunks.append(
@@ -570,9 +587,7 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            meta["structured_spell_data"] = json.dumps(
-                meta.get("structured_spell_data", {})
-            )
+            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         # Conditional Deep Indexing
