@@ -2021,6 +2021,67 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome:** The backend is able to correctly construct and use the new hybrid
         prompts, sending the correct instructions to the LLM for any supported language.
 
+### Phase 29: Ingestion Pipeline for Creatures and Linking
+
+-   **Milestone 95: Enhance the Vocabulary for Creature Identification**
+    -   **Goal**: Update the semantic labeling prompts to recognize and use the new
+        `type:creature` tag.
+    -   **Description**: This foundational step modifies the LLM's instructions, adding
+        `type:creature` to its vocabulary. It also provides a clear example of how
+        to tag a monster entry that contains both prose and a stat block, enabling
+        the model to correctly classify this content type.
+    -   **Key Tasks**:
+        1.  In `dmme_lib/constants.py`, add `"type:creature"` to the `<vocabulary>`
+            string in the `SEMANTIC_LABELER_RULES_XML` prompt.
+        2.  Add `"type:creature"` to the `<vocabulary>` string in the
+            `SEMANTIC_LABELER_ADVENTURE_XML` prompt.
+        3.  Add a new few-shot `<example>` to `SEMANTIC_LABELER_ADVENTURE_XML`
+            showing a monster entry and the expected `["type:prose", "type:creature"]`
+            output.
+    -   **Outcome**: The LLM is now capable of correctly identifying and tagging
+        chunks containing creature stat blocks during the semantic labeling phase
+        of ingestion.
+
+-   **Milestone 96: Implement Creature-Specific Processing Rules**
+    -   **Goal**: Refactor the ingestion service to apply special processing rules for
+        chunks tagged as `type:creature`.
+    -   **Description**: This milestone makes the ingestion pipeline "aware" of the new
+        creature tag. It adds logic to automatically enforce that all creature
+        information is DM-only and to trigger the deep stat block parser for any
+        chunk identified as a creature.
+    -   **Key Tasks**:
+        1.  Modify `dmme_lib/services/ingestion_service.py` in the main ingestion
+            loops (for both PDF and Markdown).
+        2.  After the `get_semantic_tags` call, add a conditional block: `if
+            "type:creature" in tags:`.
+        3.  Inside this block, append `"access:dm_only"` to the `tags` list.
+        4.  Inside the same block, call `self._parse_stat_block()` and save the
+            structured result to the `structured_stats` key of the chunk's metadata.
+    -   **Outcome**: Chunks tagged as `type:creature` are now automatically marked as
+        `access:dm_only` and have their stat blocks parsed into structured JSON,
+        significantly improving the quality and security of the ingested data.
+
+-   **Milestone 97: Refactor Key Term Extraction to Fix Entity Linking**
+    -   **Goal**: Fix the entity linking bug by refactoring the key term extraction
+        logic to be context-aware.
+    -   **Description**: This milestone replaces the simplistic key term extraction with
+        an intelligent, rule-based system. It ensures the primary subject of a
+        chunk is always identified, which directly fixes the "Linked Sections"
+        bug and improves searchability.
+    -   **Key Tasks**:
+        1.  In `dmme_lib/services/ingestion_service.py`, modify the signature of
+            `_extract_key_terms_from_chunk` to accept `section_title` and `tags`
+            as arguments.
+        2.  Rewrite the function's body with new prioritized logic: a) If `type:creature`
+            is in `tags`, return only the `section_title`. b) If `type:table`, split
+            the header and add the `section_title`. c) Otherwise, return the `section_title`
+            plus any bolded text.
+        3.  Update the calls to this function in the main ingestion loops to pass the
+            new arguments.
+    -   **Outcome**: Key term extraction is now highly accurate. The "Linked Sections"
+        tooltip works correctly because primary entities are reliably extracted,
+        allowing the linking system to build the necessary connections.
+
 ---
 
 ## 7. Potential Future Extensions
