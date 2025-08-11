@@ -9,6 +9,7 @@ from PIL import Image
 from io import BytesIO
 from flask import current_app
 from collections import defaultdict
+
 from .vector_store_service import VectorStoreService
 from .config_service import ConfigService
 from core.llm_utils import (
@@ -383,6 +384,10 @@ class IngestionService:
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         processed_chunks, chunk_id = [], 0
         fmt_config = self.config_service.get_model_config("format")
+        fmt_model_details = get_model_details(fmt_config["url"], fmt_config["model"])
+        fmt_ctx = fmt_model_details.get("context_length", 4096)
+        fmt_target_chars = int(fmt_ctx * 0.8)
+
         final_labeler_prompt = labeler_prompt_template.format(
             kickoff_cue=kickoff_cue or "No hint provided."
         )
@@ -394,25 +399,39 @@ class IngestionService:
             log.info(msg)
             yield msg
 
-            for para in section.paragraphs:
-                # Create a temporary section with just this paragraph for reformatting
-                temp_section = Section()
-                temp_section.add_paragraph(para)
+            section_text_for_llm = section.get_llm_text()
+            chunks_to_process = []
+            if len(section_text_for_llm) <= fmt_target_chars:
+                # Process the whole section as a single chunk
+                chunks_to_process.append((section, section.paragraphs))
+            else:
+                # Fallback: process paragraph by paragraph for very large sections
+                log.warning(
+                    "Section '%s' is too large (%d chars). Falling back to para-chunking.",
+                    section.title,
+                    len(section_text_for_llm),
+                )
+                for para in section.paragraphs:
+                    temp_section = Section()
+                    temp_section.add_paragraph(para)
+                    chunks_to_process.append((temp_section, [para]))
+
+            for section_chunk, source_paras in chunks_to_process:
                 stream = reformat_section_with_llm(
-                    section=temp_section,
+                    section=section_chunk,
                     system_prompt=PROMPT_STRICT,
                     ollama_url=fmt_config["url"],
                     model=fmt_config["model"],
-                    chunk_size=4000,
+                    chunk_size=fmt_target_chars,
                 )
                 chunk = "".join(list(stream))
                 if not chunk.strip():
                     continue
 
-                # Get initial tags from the LLM or structural rules
+                is_table_chunk = any(p.is_table for p in source_paras)
                 tags = []
-                if para.is_table:
-                    tags.append("type:table")  # Now assign the general table tag
+                if is_table_chunk:
+                    tags.append("type:table")
                     log.debug("Applying structural rule: Identified a table.")
                 else:
                     tags = get_semantic_tags(
@@ -423,7 +442,6 @@ class IngestionService:
                         context_window=util_config["context_window"],
                     )
 
-                # Apply additional hard-coded semantic rules
                 if "type:table" in tags:
                     tags.append("access:dm_only")
                     log.debug("Applying security rule: Added access:dm_only to table.")
