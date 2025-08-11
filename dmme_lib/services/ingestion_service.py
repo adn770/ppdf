@@ -91,9 +91,7 @@ class IngestionService:
             raw_terms = re.findall(r"\*\*(.*?)\*\*", chunk)
 
         # Sanitize all extracted terms
-        sanitized_terms = [
-            term.strip().rstrip(":").strip() for term in raw_terms if term.strip()
-        ]
+        sanitized_terms = [term.strip().rstrip(":").strip() for term in raw_terms if term.strip()]
         return sorted(list(set(sanitized_terms)))
 
     def _parse_stat_block(self, chunk: str, lang: str) -> dict:
@@ -201,9 +199,7 @@ class IngestionService:
             if force_paragraph_chunking:
                 log.debug("Applying forced paragraph chunking to section '%s'.", title)
                 chunks_to_process = [
-                    c.strip()
-                    for c in re.split(r"\n{2,}", content)
-                    if c.strip() and len(c) >= 50
+                    c.strip() for c in re.split(r"\n{2,}", content) if c.strip() and len(c) >= 50
                 ]
             else:
                 log.debug("Applying section-as-chunk strategy to section '%s'.", title)
@@ -263,7 +259,9 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
+            meta["structured_spell_data"] = json.dumps(
+                meta.get("structured_spell_data", {})
+            )
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         # Conditional Deep Indexing
@@ -572,7 +570,9 @@ class IngestionService:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
+            meta["structured_spell_data"] = json.dumps(
+                meta.get("structured_spell_data", {})
+            )
             meta["tags"] = json.dumps(meta.get("tags", []))
 
         # Conditional Deep Indexing
@@ -629,12 +629,14 @@ class IngestionService:
 
             if summary:
                 summaries.append(summary)
-                summary_metadatas.append(
-                    {
-                        "parent_id": parent_meta["chunk_id"],
-                        "parent_text_snippet": doc[:250] + "...",
-                    }
-                )
+                # Inherit key metadata from the parent chunk for the summary
+                summary_meta = {
+                    "parent_id": parent_meta["chunk_id"],
+                    "parent_text_snippet": doc[:250] + "...",
+                    "section_title": parent_meta.get("section_title", "Uncategorized"),
+                    "entities": parent_meta.get("entities", "{}"),
+                }
+                summary_metadatas.append(summary_meta)
 
         if summaries:
             summary_collection_name = f"{kb_name}_summaries"
