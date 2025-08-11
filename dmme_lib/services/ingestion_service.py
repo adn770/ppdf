@@ -129,6 +129,17 @@ class IngestionService:
         log.info(msg)
         yield msg
 
+        msg = f"Deep Indexing: {'Enabled' if deep_indexing else 'Disabled'}"
+        log.info(msg)
+        yield msg
+
+        msg = (
+            f"Chunking Strategy: "
+            f"{'Paragraph-based (Forced)' if force_paragraph_chunking else 'Section-based'}"
+        )
+        log.info(msg)
+        yield msg
+
         # Split content into sections based on Markdown headers
         sections = re.split(r"\n(?=#+ )", file_content)
         msg = f"Splitting file into {len(sections)} logical sections based on headers."
@@ -310,6 +321,17 @@ class IngestionService:
         lang = metadata.get("language", "en")
         if not kb_name:
             raise ValueError("Knowledge base name is required for ingestion.")
+
+        msg = f"Deep Indexing: {'Enabled' if deep_indexing else 'Disabled'}"
+        log.info(msg)
+        yield msg
+
+        msg = (
+            f"Chunking Strategy: "
+            f"{'Paragraph-based (Forced)' if force_paragraph_chunking else 'Section-based'}"
+        )
+        log.info(msg)
+        yield msg
 
         msg = f"Analyzing PDF structure for '{kb_name}' (Pages: {pages_str})..."
         log.info(msg)
@@ -580,7 +602,10 @@ class IngestionService:
 
         if summaries:
             summary_collection_name = f"{kb_name}_summaries"
-            msg = f"✔ Summarization complete. Saving {len(summaries)} summaries to '{summary_collection_name}'."
+            msg = (
+                f"✔ Summarization complete. Saving {len(summaries)} summaries to "
+                f"'{summary_collection_name}'."
+            )
             log.info(msg)
             yield msg
             self.vector_store.add_to_kb(summary_collection_name, summaries, summary_metadatas)

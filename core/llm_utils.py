@@ -15,8 +15,8 @@ log_llm = logging.getLogger("dmme.llm")
 def _format_text_for_log(text: str) -> str:
     """Formats a long text block into a concise, single-line summary for logging."""
     single_line_text = str(text).replace("\n", " ").strip()
-    if len(single_line_text) > 120:
-        return f'"{single_line_text[:55]}...{single_line_text[-55:]}"'
+    if len(single_line_text) > 240:
+        return f'"{single_line_text[:115]}...{single_line_text[-115:]}"'
     return f'"{single_line_text}"'
 
 
@@ -68,11 +68,13 @@ def query_text_llm(
     context_window: int = None,
 ):
     """
-    Sends a standard text prompt to an Ollama model.
+    Sends a standard text prompt to an Ollama model with a retry mechanism.
     Can operate in both streaming and non-streaming modes.
-    In streaming mode, it yields the raw JSON chunk from the API.
-    In non-streaming mode, it returns the full JSON response dictionary.
     """
+    MAX_RETRIES = 3
+    RETRY_DELAY_S = 2
+    last_exception = None
+
     log_llm.debug(
         "Querying LLM:\n  - Model: %s (Stream: %s)\n  - System: %s\n  - User: %s",
         model,
@@ -128,46 +130,59 @@ def query_text_llm(
         duration = time.monotonic() - start_time
         log_llm.debug("LLM stream finished for model '%s' in %.2f seconds.", model, duration)
 
-    try:
-        response = requests.post(
-            f"{ollama_url}/api/generate", json=payload, stream=stream, timeout=60
-        )
-        response.raise_for_status()
-
-        if stream:
-            return _stream_generator(response)
-        else:
-            data = response.json()
-            # Performance Metrics Calculation
-            eval_ns = data.get("eval_duration", 0)
-            eval_count = data.get("eval_count", 0)
-            eval_sec = eval_ns / 1_000_000_000
-            tps = (eval_count / eval_sec) if eval_sec > 0 else 0
-            duration_sec = data.get("total_duration", 0) / 1_000_000_000
-            # Log rich performance data in a single line
-            log_llm.debug(
-                "LLM Query OK: model=%s duration=%.2fs prompt_tk=%d response_tk=%d tps=%.1f response=%s",
-                model,
-                duration_sec,
-                data.get("prompt_eval_count", 0),
-                eval_count,
-                tps,
-                _format_text_for_log(data.get("response", "").strip()),
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.post(
+                f"{ollama_url}/api/generate", json=payload, stream=stream, timeout=60
             )
-            return data
+            response.raise_for_status()
 
-    except requests.exceptions.RequestException as e:
-        log_llm.error("Failed to query text LLM: %s", e)
-        if stream:
-            return (chunk for chunk in [{"error": str(e)}])
-        else:
-            return {"error": str(e)}
+            if stream:
+                return _stream_generator(response)
+            else:
+                data = response.json()
+                eval_ns = data.get("eval_duration", 0)
+                eval_count = data.get("eval_count", 0)
+                eval_sec = eval_ns / 1_000_000_000
+                tps = (eval_count / eval_sec) if eval_sec > 0 else 0
+                duration_sec = data.get("total_duration", 0) / 1_000_000_000
+                log_llm.debug(
+                    "LLM Query OK: model=%s duration=%.2fs prompt_tk=%d response_tk=%d "
+                    "tps=%.1f response=%s",
+                    model,
+                    duration_sec,
+                    data.get("prompt_eval_count", 0),
+                    eval_count,
+                    tps,
+                    _format_text_for_log(data.get("response", "").strip()),
+                )
+                return data
+
+        except requests.exceptions.RequestException as e:
+            last_exception = e
+            log_llm.warning(
+                "LLM query failed on attempt %d/%d: %s", attempt + 1, MAX_RETRIES, e
+            )
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY_S)
+            else:
+                log_llm.error("Failed to query text LLM after %d retries.", MAX_RETRIES)
+
+    # This part is reached only after all retries have failed
+    if stream:
+        return (chunk for chunk in [{"error": str(last_exception)}])
+    else:
+        return {"error": str(last_exception)}
 
 
 def query_multimodal_llm(
     prompt: str, image_bytes: bytes, ollama_url: str, model: str, temperature: float = None
 ) -> str:
-    """Sends a prompt and a single image to an Ollama multimodal model."""
+    """Sends a prompt and an image to an Ollama multimodal model with a retry mechanism."""
+    MAX_RETRIES = 3
+    RETRY_DELAY_S = 2
+    last_exception = None
+
     if not image_bytes:
         log_llm.error("No image bytes provided for multimodal query.")
         return ""
@@ -179,40 +194,46 @@ def query_multimodal_llm(
         _format_text_for_log(prompt),
         len(image_bytes),
     )
-    start_time = time.monotonic()
 
-    try:
-        payload = {
-            "model": model,
-            "prompt": prompt,
-            "images": [encoded_image],
-            "stream": False,
-        }
-        options = {}
-        if temperature is not None:
-            options["temperature"] = temperature
-        if options:
-            payload["options"] = options
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "images": [encoded_image],
+        "stream": False,
+    }
+    options = {}
+    if temperature is not None:
+        options["temperature"] = temperature
+    if options:
+        payload["options"] = options
 
-        response = requests.post(
-            f"{ollama_url}/api/generate",
-            json=payload,
-            timeout=90,
-        )
-        response.raise_for_status()
-        data = response.json()
-        duration = time.monotonic() - start_time
-        response_text = data.get("response", "").strip()
-        log_llm.debug(
-            "Multimodal LLM response received:\n  - Model: %s\n  - Duration: %.2fs\n  - Response: %s",
-            model,
-            duration,
-            _format_text_for_log(response_text),
-        )
-        return response_text
-    except requests.exceptions.RequestException as e:
-        log_llm.error("Failed to query multimodal LLM: %s", e)
-        return ""
+    for attempt in range(MAX_RETRIES):
+        try:
+            start_time = time.monotonic()
+            response = requests.post(f"{ollama_url}/api/generate", json=payload, timeout=90)
+            response.raise_for_status()
+            data = response.json()
+            duration = time.monotonic() - start_time
+            response_text = data.get("response", "").strip()
+            log_llm.debug(
+                "Multimodal LLM response received:\n  - Model: %s\n  - Duration: %.2fs\n"
+                "  - Response: %s",
+                model,
+                duration,
+                _format_text_for_log(response_text),
+            )
+            return response_text
+        except requests.exceptions.RequestException as e:
+            last_exception = e
+            log_llm.warning(
+                "Multimodal LLM query failed on attempt %d/%d: %s", attempt + 1, MAX_RETRIES, e
+            )
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY_S)
+            else:
+                log_llm.error("Failed to query multimodal LLM after %d retries.", MAX_RETRIES)
+
+    return ""
 
 
 def generate_embeddings_ollama(
