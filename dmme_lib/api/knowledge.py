@@ -45,9 +45,11 @@ def list_knowledge_bases():
 @bp.route("/explore/<kb_name>", methods=["GET"])
 def explore_knowledge_base(kb_name):
     """Retrieves all documents and assets for a given knowledge base."""
+    log.debug("Request received to explore knowledge base: '%s'", kb_name)
     try:
         kb_meta = current_app.vector_store.get_kb_metadata(kb_name)
         strategy = kb_meta.get("indexing_strategy", "standard")
+        log.debug("Using '%s' indexing strategy for retrieval.", strategy)
 
         # 1. Get all text documents from the vector store
         documents = current_app.vector_store.get_all_from_kb(kb_name)
@@ -74,6 +76,12 @@ def explore_knowledge_base(kb_name):
                 assets.append(asset)
 
         response_data["assets"] = assets
+        log.debug(
+            "Returning %d documents and %d assets for '%s'",
+            len(documents),
+            len(assets),
+            kb_name,
+        )
         return jsonify(response_data)
     except Exception as e:
         log.error("Failed to explore knowledge base '%s': %s", kb_name, e, exc_info=True)
@@ -83,6 +91,7 @@ def explore_knowledge_base(kb_name):
 @bp.route("/chunk/<kb_name>/<chunk_id>", methods=["GET"])
 def get_chunk(kb_name, chunk_id):
     """Retrieves a single full-text document by its ID."""
+    log.debug("Request received for chunk_id '%s' in kb '%s'", chunk_id, kb_name)
     try:
         docs, metas = current_app.vector_store.get_by_ids(kb_name, ids=[chunk_id])
         if not docs:
@@ -103,6 +112,11 @@ def get_dashboard_stats(kb_name):
         results = current_app.vector_store.get_all_documents_and_metadata(kb_name)
         metadatas = results.get("metadatas", [])
         chunk_count = len(metadatas)
+        log.debug(
+            "Generating dashboard stats for '%s' from %d metadata records.",
+            kb_name,
+            chunk_count,
+        )
         entity_distribution = defaultdict(int)
         key_terms_counter = Counter()
 
@@ -144,6 +158,11 @@ def get_entities(kb_name):
     try:
         results = current_app.vector_store.get_all_documents_and_metadata(kb_name)
         metadatas = results.get("metadatas", [])
+        log.debug(
+            "Extracting unique entities for '%s' from %d metadata records.",
+            kb_name,
+            len(metadatas),
+        )
         all_entities = set()
 
         for meta in metadatas:
@@ -264,6 +283,7 @@ def ingest_document():
     Processes a previously uploaded temporary file.
     """
     data = request.get_json()
+    log.debug("Ingest document request received with payload: %s", data)
     metadata = data.get("metadata")
     tmp_path = data.get("temp_file_path")
     pages_str = data.get("pages", "all")

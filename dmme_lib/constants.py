@@ -223,22 +223,29 @@ PROMPT_REGISTRY = {
             "MUST be ONLY a single, valid JSON array of strings. "
             "Do not wrap it in "
             "Markdown code fences.</task>\n"
-            '<vocabulary>["access:dm_only", "type:creature", "type:item", "type:mechanics", '
-            '"type:prose", "type:spell", "type:table", "table:equipment", "table:progression", '
-            '"table:random", "table:spell_list", "table:stats"]</vocabulary>'
+            '<vocabulary>["access:dm_only", "type:character_creation", "type:creature", '
+            '"type:item", "type:mechanics", "type:prose", "type:spell", "type:table", '
+            '"table:equipment", "table:progression", "table:random", "table:spell_list", '
+            '"table:stats"]</vocabulary>'
         ),
         "examples": {
             "ca": (
                 "<exemple><input>| 1d12 | Nom | Inv. | Durada | Abast |</input>"
                 '<output>["type:table", "table:spell_list"]</output></exemple>'
+                "<exemple><input>Segueix aquests passos per crear un personatge...</input>"
+                '<output>["type:character_creation", "type:prose"]</output></exemple>'
             ),
             "en": (
                 "<example><input>| 1d12 | Name | Rev. | Duration | Range |</input>"
                 '<output>["type:table", "table:spell_list"]</output></example>'
+                "<example><input>Follow these steps to create a player character...</input>"
+                '<output>["type:character_creation", "type:prose"]</output></example>'
             ),
             "es": (
                 "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
                 '<output>["type:table", "table:spell_list"]</output></ejemplo>'
+                "<ejemplo><input>Sigue estos pasos para crear un personaje...</input>"
+                '<output>["type:character_creation", "type:prose"]</output></ejemplo>'
             ),
         },
     },

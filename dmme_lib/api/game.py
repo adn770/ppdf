@@ -93,11 +93,25 @@ def generate_character():
         return jsonify({"error": "Description and rules_kb are required."}), 400
 
     try:
-        query = "Core rules for character creation, attributes, classes, and levels."
-        rules_docs, _, _ = current_app.vector_store.query(rules_kb, query, n_results=5)
+        log.debug("Fetching character creation rules from '%s'", rules_kb)
+        rules_docs, _, _ = current_app.vector_store.query(
+            rules_kb,
+            query_text="character creation rules",
+            n_results=10,  # Fetch more docs to get all relevant sections
+            where_filter={"tags": {"$contains": "type:character_creation"}},
+        )
         rules_context = "\n\n".join(rules_docs)
         if not rules_context:
-            rules_context = f"No specific rules found. Use general knowledge for '{rules_kb}'."
+            log.warning(
+                "No chunks with 'type:character_creation' found in '%s'. "
+                "Falling back to generic knowledge.",
+                rules_kb,
+            )
+            rules_context = (
+                f"No specific character creation rules found in '{rules_kb}'. "
+                "Use general OSR knowledge."
+            )
+
         char_creation_config = current_app.config_service.get_model_config("char")
         char_data = generate_character_json(
             description=description,

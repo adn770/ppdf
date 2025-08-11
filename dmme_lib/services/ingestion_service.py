@@ -76,19 +76,23 @@ class IngestionService:
         """
         Extracts and sanitizes key terms from a chunk using context-aware rules.
         """
+        log.debug("Extracting key terms for section '%s' with tags %s", section_title, tags)
         raw_terms = []
 
         # Rule 1: Creature chunks are identified solely by their title.
         if "type:creature" in tags:
+            log.debug("Applying 'creature' rule for key term extraction.")
             if section_title:
                 raw_terms.append(section_title)
         else:
+            log.debug("Applying default rule for key term extraction.")
             # Rule 2: All other chunks include their section title for linking.
             if section_title:
                 raw_terms.append(section_title)
 
             # Rule 3: For tables, also parse the header.
             if "type:table" in tags:
+                log.debug("Applying 'table' rule for key term extraction.")
                 header_line = chunk.split("\n", 1)[0]
                 raw_terms.extend(
                     [term.strip() for term in header_line.split("|") if term.strip()]
@@ -101,6 +105,7 @@ class IngestionService:
         sanitized_terms = [
             term.strip().rstrip(":").strip() for term in raw_terms if term.strip()
         ]
+        log.debug("Final sanitized key terms: %s", sanitized_terms)
         return sorted(list(set(sanitized_terms)))
 
     def _parse_stat_block(self, chunk: str, lang: str) -> dict:
@@ -228,6 +233,11 @@ class IngestionService:
                     util_config["model"],
                     context_window=util_config["context_window"],
                 )
+                # Refine tags by removing redundant 'prose' if more specific tags exist
+                if len(tags) > 1 and "type:prose" in tags:
+                    tags.remove("type:prose")
+                    log.debug("Refined tags by removing redundant 'type:prose'.")
+
                 # Apply secrecy rule for creatures and tables
                 if "type:creature" in tags:
                     tags.append("access:dm_only")
@@ -237,22 +247,20 @@ class IngestionService:
                     log.debug("Applying structural rule: Added access:dm_only to table.")
 
                 final_tags = sorted(list(set(tags)))
+                log.debug("Final tags for chunk from '%s': %s", title, final_tags)
                 key_terms = self._extract_key_terms_from_chunk(chunk, final_tags, title)
                 is_dm_only = "access:dm_only" in final_tags
 
-                processed_chunks.append(
-                    {
-                        "text": chunk,
-                        "metadata": {
-                            "source_file": metadata.get("filename", "unknown.md"),
-                            "section_title": title,
-                            "chunk_id": chunk_id_counter,
-                            "tags": final_tags,
-                            "is_dm_only": is_dm_only,
-                            "key_terms": json.dumps(key_terms),
-                        },
-                    }
-                )
+                chunk_metadata = {
+                    "source_file": metadata.get("filename", "unknown.md"),
+                    "section_title": title,
+                    "chunk_id": chunk_id_counter,
+                    "tags": final_tags,
+                    "is_dm_only": is_dm_only,
+                    "key_terms": json.dumps(key_terms),
+                }
+                log.debug("Final metadata for chunk from '%s': %s", title, chunk_metadata)
+                processed_chunks.append({"text": chunk, "metadata": chunk_metadata})
                 chunk_id_counter += 1
 
         if not processed_chunks:
@@ -303,6 +311,8 @@ class IngestionService:
         msg = f"✔ Starting entity extraction for {len(processed_chunks)} chunks..."
         log.info(msg)
         yield msg
+        log.debug("Starting entity linking process for %d chunks.", len(processed_chunks))
+
         for i, chunk_data in enumerate(processed_chunks):
             msg = f"  -> Extracting entities from chunk {i + 1}/{len(processed_chunks)}..."
             log.info(msg)
@@ -323,7 +333,7 @@ class IngestionService:
             if not key_terms:
                 continue
 
-            log.debug("Extracting entities from terms: %s", key_terms)
+            log.debug("... Key terms for NER: %s", key_terms)
             try:
                 response_data = query_text_llm(
                     entity_extractor_prompt,
@@ -335,6 +345,7 @@ class IngestionService:
                 )
                 response_str = response_data.get("response", "").strip()
                 entities = json.loads(response_str)
+                log.debug("... NER result: %s", entities)
                 metadata["entities"] = entities
                 for entity_name in entities.keys():
                     entity_map[entity_name].append(metadata["chunk_id"])
@@ -343,6 +354,7 @@ class IngestionService:
             except Exception as e:
                 log.error("Unexpected error during entity extraction: %s", e)
 
+        log.debug("Completed entity map: %s", dict(entity_map))
         # Stage 2: Create links based on the entity map
         msg = "  -> Building relational links between chunks..."
         log.info(msg)
@@ -350,12 +362,23 @@ class IngestionService:
         for chunk_data in processed_chunks:
             metadata = chunk_data["metadata"]
             linked_chunk_ids = set()
+            chunk_entities = metadata.get("entities", {}).keys()
+            log.debug(
+                "... Linking chunk '%s' with entities: %s",
+                metadata["chunk_id"],
+                chunk_entities,
+            )
             if "entities" in metadata:
-                for entity_name in metadata["entities"].keys():
+                for entity_name in chunk_entities:
                     for chunk_id in entity_map[entity_name]:
                         if chunk_id != metadata["chunk_id"]:
                             linked_chunk_ids.add(chunk_id)
             metadata["linked_chunks"] = sorted(list(linked_chunk_ids))
+            log.debug(
+                "... Found linked chunks for '%s': %s",
+                metadata["chunk_id"],
+                linked_chunk_ids,
+            )
 
         return [chunk["metadata"] for chunk in processed_chunks]
 
@@ -543,6 +566,9 @@ class IngestionService:
                         context_window=util_config["context_window"],
                     )
 
+                if len(tags) > 1 and "type:prose" in tags:
+                    tags.remove("type:prose")
+                    log.debug("Refined tags by removing redundant 'type:prose'.")
                 if "type:creature" in tags:
                     tags.append("access:dm_only")
                     log.debug("Applying security rule: Added access:dm_only to creature.")
@@ -554,25 +580,31 @@ class IngestionService:
                     tags.append("type:read_aloud")
 
                 final_tags = sorted(list(set(tags)))
+                log.debug(
+                    "Final tags for chunk from '%s': %s",
+                    section.title or "Untitled",
+                    final_tags,
+                )
                 key_terms = self._extract_key_terms_from_chunk(
                     chunk, final_tags, section.title or "Untitled"
                 )
                 is_dm_only = "access:dm_only" in final_tags
 
-                processed_chunks.append(
-                    {
-                        "text": chunk,
-                        "metadata": {
-                            "source_file": metadata.get("filename", "unknown.pdf"),
-                            "section_title": section.title or "Untitled",
-                            "page_start": section.page_start,
-                            "chunk_id": chunk_id,
-                            "tags": final_tags,
-                            "is_dm_only": is_dm_only,
-                            "key_terms": json.dumps(key_terms),
-                        },
-                    }
+                chunk_metadata = {
+                    "source_file": metadata.get("filename", "unknown.pdf"),
+                    "section_title": section.title or "Untitled",
+                    "page_start": section.page_start,
+                    "chunk_id": chunk_id,
+                    "tags": final_tags,
+                    "is_dm_only": is_dm_only,
+                    "key_terms": json.dumps(key_terms),
+                }
+                log.debug(
+                    "Final metadata for chunk from '%s': %s",
+                    section.title or "Untitled",
+                    chunk_metadata,
                 )
+                processed_chunks.append({"text": chunk, "metadata": chunk_metadata})
                 chunk_id += 1
 
         # --- Post-processing: Entity Extraction and Linking ---
