@@ -85,8 +85,8 @@ class IngestionService:
             if section_title:
                 raw_terms.append(section_title)
         else:
-            log.debug("Applying default rule for key term extraction.")
             # Rule 2: All other chunks include their section title for linking.
+            log.debug("Applying default rule for key term extraction.")
             if section_title:
                 raw_terms.append(section_title)
 
@@ -130,15 +130,17 @@ class IngestionService:
             log.warning("Could not parse stat block JSON from LLM: %s", e)
             return {}
 
-    def _parse_spell(self, chunk: str, lang: str) -> dict:
+    def _parse_spell(self, chunk: str, lang: str, section_title: str) -> dict:
         """Uses an LLM to parse a spell description into a structured dictionary."""
-        log.debug("Parsing spell with LLM...")
+        log.debug("Parsing spell '%s' with LLM...", section_title)
         prompt = self._get_prompt("SPELL_PARSER", lang)
+        user_content = f"[SPELL NAME]\n{section_title}\n\n[SPELL TEXT]\n{chunk}"
+
         try:
             util_config = self.config_service.get_model_config("classify")
             response_data = query_text_llm(
                 prompt,
-                chunk,
+                user_content,
                 util_config["url"],
                 util_config["model"],
                 temperature=0.0,
@@ -147,12 +149,52 @@ class IngestionService:
             response_str = response_data.get("response", "").strip()
             json_match = re.search(r"\{.*\}", response_str, re.DOTALL)
             if json_match:
-                return json.loads(json_match.group(0))
+                llm_json = json.loads(json_match.group(0))
+                # Merge the known-correct name with the extracted details
+                final_data = {"name": section_title, **llm_json}
+                return final_data
             log.warning("No JSON object found in spell parser response: %s", response_str)
-            return {}
+            return {"name": section_title}  # Return at least the name on failure
         except (json.JSONDecodeError, TypeError) as e:
             log.warning("Could not parse spell JSON from LLM: %s", e)
-            return {}
+            return {"name": section_title}  # Return at least the name on failure
+
+    def _parse_markdown_hierarchy(self, file_content: str):
+        """Parses a Markdown string into a list of hierarchically-aware sections."""
+        sections = []
+        current_path = []
+        current_content = []
+
+        for line in file_content.split("\n"):
+            match = re.match(r"^(#+)\s(.*)", line)
+            if match:
+                if current_content and current_path:
+                    sections.append(
+                        {
+                            "title": current_path[-1],
+                            "content": "\n".join(current_content).strip(),
+                            "hierarchy": list(current_path),
+                        }
+                    )
+
+                level = len(match.group(1))
+                title = match.group(2).strip()
+                current_path = current_path[: level - 1]
+                current_path.append(title)
+                current_content = []
+            else:
+                current_content.append(line)
+
+        if current_content and current_path:
+            sections.append(
+                {
+                    "title": current_path[-1],
+                    "content": "\n".join(current_content).strip(),
+                    "hierarchy": list(current_path),
+                }
+            )
+
+        return sections
 
     def ingest_markdown(
         self,
@@ -184,8 +226,8 @@ class IngestionService:
         yield msg
 
         # Split content into sections based on Markdown headers
-        sections = re.split(r"\n(?=#+ )", file_content)
-        msg = f"Splitting file into {len(sections)} logical sections based on headers."
+        sections = self._parse_markdown_hierarchy(file_content)
+        msg = f"Splitting file into {len(sections)} hierarchical sections."
         log.info(msg)
         yield msg
 
@@ -194,18 +236,18 @@ class IngestionService:
             if kb_type == "rules"
             else "SEMANTIC_LABELER_ADVENTURE_XML"
         )
-        labeler_prompt = self._get_prompt(prompt_key, lang)
+        base_labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         util_config = self.config_service.get_model_config("classify")
 
         processed_chunks = []
-        for section_text in sections:
-            if not section_text.strip():
+        for section in sections:
+            if not section["content"]:
                 continue
 
-            lines = section_text.strip().split("\n")
-            title = lines[0].lstrip("# ").strip()
-            content = "\n".join(lines[1:])
+            title = section["title"]
+            content = section["content"]
+            hierarchy = section["hierarchy"]
 
             chunks_to_process = []
             if force_paragraph_chunking:
@@ -224,9 +266,15 @@ class IngestionService:
                 msg = f"  -> Labeling chunk from section '{title}'..."
                 log.info(msg)
                 yield msg
+
+                hierarchy_context = " > ".join(hierarchy)
+                contextual_labeler_prompt = base_labeler_prompt.format(
+                    hierarchy_context=hierarchy_context
+                )
+
                 tags = get_semantic_tags(
                     chunk,
-                    labeler_prompt,
+                    contextual_labeler_prompt,
                     util_config["url"],
                     util_config["model"],
                     context_window=util_config["context_window"],
@@ -244,6 +292,11 @@ class IngestionService:
                     tags.append("access:dm_only")
                     log.debug("Applying structural rule: Added access:dm_only to table.")
 
+                # Safeguard: Remove 'spell' tag from class descriptions
+                if "type:class_description" in tags and "type:spell" in tags:
+                    tags.remove("type:spell")
+                    log.debug("Safeguard rule: Removed 'spell' from 'class_description'.")
+
                 final_tags = sorted(list(set(tags)))
                 log.debug("Final tags for chunk from '%s': %s", title, final_tags)
                 key_terms = self._extract_key_terms_from_chunk(chunk, final_tags, title)
@@ -252,6 +305,7 @@ class IngestionService:
                 chunk_metadata = {
                     "source_file": metadata.get("filename", "unknown.md"),
                     "section_title": title,
+                    "hierarchy": hierarchy,
                     "tags": final_tags,
                     "is_dm_only": is_dm_only,
                     "key_terms": json.dumps(key_terms),
@@ -282,6 +336,7 @@ class IngestionService:
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
             meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
+            meta["hierarchy"] = json.dumps(meta.get("hierarchy", []))
 
         # Conditional Deep Indexing
         if deep_indexing:
@@ -325,7 +380,9 @@ class IngestionService:
 
             # Deep parse spells if applicable
             if "type:spell" in metadata.get("tags", []):
-                spell_data = self._parse_spell(chunk_data["text"], lang)
+                spell_data = self._parse_spell(
+                    chunk_data["text"], lang, metadata["section_title"]
+                )
                 metadata["structured_spell_data"] = spell_data
 
             key_terms = json.loads(metadata.get("key_terms", "[]"))
@@ -497,7 +554,7 @@ class IngestionService:
             if kb_type == "rules"
             else "SEMANTIC_LABELER_ADVENTURE_XML"
         )
-        labeler_prompt = self._get_prompt(prompt_key, lang)
+        base_labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         processed_chunks = []
         fmt_config = self.config_service.get_model_config("format")
@@ -551,6 +608,11 @@ class IngestionService:
                 if not chunk.strip():
                     continue
 
+                hierarchy_context = section.title or "Untitled"
+                contextual_labeler_prompt = base_labeler_prompt.format(
+                    hierarchy_context=hierarchy_context
+                )
+
                 is_table_chunk = any(p.is_table for p in source_paras)
                 tags = []
                 if is_table_chunk:
@@ -559,7 +621,7 @@ class IngestionService:
                 else:
                     tags = get_semantic_tags(
                         chunk,
-                        labeler_prompt,
+                        contextual_labeler_prompt,
                         util_config["url"],
                         util_config["model"],
                         context_window=util_config["context_window"],
@@ -577,6 +639,11 @@ class IngestionService:
                 if "narrative:kickoff" in tags and section.page_start > 10:
                     tags.remove("narrative:kickoff")
                     tags.append("type:read_aloud")
+
+                # Safeguard: Remove 'spell' tag from class descriptions
+                if "type:class_description" in tags and "type:spell" in tags:
+                    tags.remove("type:spell")
+                    log.debug("Safeguard rule: Removed 'spell' from 'class_description'.")
 
                 final_tags = sorted(list(set(tags)))
                 log.debug(
@@ -596,6 +663,7 @@ class IngestionService:
                     "tags": final_tags,
                     "is_dm_only": is_dm_only,
                     "key_terms": json.dumps(key_terms),
+                    "hierarchy": json.dumps([section.title or "Untitled"]),
                 }
                 log.debug(
                     "Final metadata for chunk from '%s': %s",
@@ -680,6 +748,7 @@ class IngestionService:
                     "parent_text_snippet": doc[:250] + "...",
                     "section_title": parent_meta.get("section_title", "Uncategorized"),
                     "entities": parent_meta.get("entities", "{}"),
+                    "hierarchy": parent_meta.get("hierarchy", "[]"),
                 }
                 summary_metadatas.append(summary_meta)
 

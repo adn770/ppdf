@@ -513,15 +513,6 @@ export class LibraryHub {
         });
     }
 
-    _filterEntityList() {
-        const filter = this.entityFilterInput.value.toLowerCase();
-        this.entityMasterList.querySelectorAll('li').forEach(li => {
-            if (!li.dataset.entityName) return;
-            const name = li.dataset.entityName.toLowerCase();
-            li.style.display = name.includes(filter) ? '' : 'none';
-        });
-    }
-
     async _handleEntitySelection(event) {
         const li = event.target.closest('li[data-entity-name]');
         if (!li) return;
@@ -558,6 +549,7 @@ export class LibraryHub {
         const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
         const tags = JSON.parse(doc.tags || '[]');
         const tagsForAttr = doc.tags || '[]';
+        const hierarchy = JSON.parse(doc.hierarchy || '[]');
         const tagsHTML = tags.map(tag => {
             const [category] = tag.split(':', 1);
             return `<span class="tag-chip tag-category--${category}">${tag}</span>`;
@@ -569,26 +561,34 @@ export class LibraryHub {
         const statsStr = doc.structured_stats || doc.structured_spell_data || '{}';
         const hasStats = statsStr && statsStr !== '{}';
         const sectionTitle = doc.section_title || 'Untitled Section';
+
+        const breadcrumbPath = hierarchy.length > 0 ? hierarchy.slice(0, -1).join(' > ') + ' > ' : '';
+        const breadcrumbHTML = `
+            <span>${kbName} > </span>
+            <span>${breadcrumbPath}</span>
+            <span class="breadcrumb-link"
+                  data-action="breadcrumb-search"
+                  data-kb-scope="${kbName}"
+                  data-section-query="${sectionTitle}">
+                ${sectionTitle}
+            </span>`;
+
         const sourceInfo = isSearchResult ?
             `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>` :
             `<span>p. ${doc.page_start || 'N/A'}</span>`;
         const escapedStatsStr = statsStr.replace(/'/g, "&apos;");
         const statsAttr = hasStats ? `data-structured-stats='${escapedStatsStr}'` : '';
-        const linksAttr = hasLinks ? `data-linked-chunks='${linksStr}'` : '';
+        const linksAttr = hasLinks ?
+            `data-linked-chunks='${linksStr}'` : '';
         const content = summaryText ? summaryText : doc.document;
-        const expandButton = summaryText ? `<button class="chunk-expand-btn">[ ▾ Expand ]</button>` : '';
+        const expandButton = summaryText ?
+            `<button class="chunk-expand-btn">[ ▾ Expand ]</button>` : '';
         return `
         <div class="text-chunk-card" data-chunk-id="${doc.chunk_id}"
              data-summary="${summaryText ?
             summaryText.replace(/"/g, '&quot;') : ''}" data-tags='${tagsForAttr}'>
             <div class="chunk-breadcrumb">
-                <span>${kbName} > </span>
-                <span class="breadcrumb-link"
-                    data-action="breadcrumb-search"
-                      data-kb-scope="${kbName}"
-                      data-section-query="${sectionTitle}">
-                    ${sectionTitle}
-                </span>
+                ${breadcrumbHTML}
             </div>
             <div class="text-chunk-header">
                 <div class="tag-list">${tagsHTML}</div>
@@ -822,8 +822,8 @@ export class LibraryHub {
             return;
         }
 
-        const { nodes, links } = this._buildGraphData(data);
-        const mermaidSyntax = this._generateMermaidSyntax(nodes, links);
+        const graphData = this._buildGraphData(data);
+        const mermaidSyntax = this._generateMermaidSyntax(graphData);
 
         try {
             const { svg } = await mermaid.render('mindmap-svg', mermaidSyntax);
@@ -848,52 +848,66 @@ export class LibraryHub {
 
     _buildGraphData(data) {
         const isDeep = this.selectedKb.metadata?.indexing_strategy === 'deep';
-        const documents = (isDeep && data.summaries) ? data.summaries : data.documents;
-        const sections = {};
-        const entityToSections = {};
+        const documents = data.documents; // Always use full documents for hierarchy
+        const nodes = new Map();
+        const adjacencyList = new Map();
+        const docType = this.selectedKb.metadata?.filename?.endsWith('.md') ? 'md' : 'pdf';
+        const separator = '\u001F';
+
+        const rootId = 'kb_root';
+        nodes.set(rootId, { id: rootId, label: this.selectedKb.name });
+        adjacencyList.set(rootId, []);
+
         documents.forEach(doc => {
-            const title = doc.section_title || 'Uncategorized';
-            if (!sections[title]) {
-                sections[title] = { id: `s${Object.keys(sections).length}`, page: doc.page_start || 0 };
-            }
-            try {
-                const entities = JSON.parse(doc.entities || '{}');
-                for (const entityName of Object.keys(entities)) {
-                    if (!entityToSections[entityName]) entityToSections[entityName] = new Set();
-                    entityToSections[entityName].add(title);
+            const hierarchy = docType === 'md' ?
+                JSON.parse(doc.hierarchy || '[]') :
+                [doc.section_title || 'Uncategorized'];
+            if (hierarchy.length === 0) return;
+
+            for (let i = 0; i < hierarchy.length; i++) {
+                const nodePath = hierarchy.slice(0, i + 1).join(separator);
+                if (!nodes.has(nodePath)) {
+                    const nodeId = `n${nodes.size}`;
+                    nodes.set(nodePath, { id: nodeId, label: hierarchy[i] });
+                    adjacencyList.set(nodeId, []);
                 }
-            } catch (e) { /* ignore */ }
-        });
-        const nodes = Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
-        const links = new Set();
-        for (const entity in entityToSections) {
-            const connectedSections = Array.from(entityToSections[entity]);
-            if (connectedSections.length > 1) {
-                for (let i = 0; i < connectedSections.length; i++) {
-                    for (let j = i + 1; j < connectedSections.length; j++) {
-                        const s1 = sections[connectedSections[i]].id;
-                        const s2 = sections[connectedSections[j]].id;
-                        links.add(`${s1} -- "${entity}" --> ${s2}`);
+
+                const parentPath = (i === 0) ? rootId : hierarchy.slice(0, i).join(separator);
+                const parentNode = nodes.get(parentPath);
+                const childNode = nodes.get(nodePath);
+
+                if (parentNode && childNode) {
+                    const children = adjacencyList.get(parentNode.id);
+                    if (children && !children.includes(childNode.id)) {
+                        children.push(childNode.id);
                     }
                 }
             }
-        }
-        return { nodes, links };
+        });
+
+        return { nodes, adjacencyList, rootId };
     }
 
-    _generateMermaidSyntax(nodes, links) {
-        let syntax = 'graph TD;\n';
-        nodes.forEach(([title, data], index) => {
-            const safeTitle = title.replace(/"/g, '#quot;');
-            syntax += `    ${data.id}["${safeTitle}"];\n`;
-            if (index > 0) {
-                const prevId = nodes[index - 1][1].id;
-                syntax += `    ${prevId} --> ${data.id};\n`;
+    _generateMermaidSyntax({ nodes, adjacencyList, rootId }) {
+        const lines = ['mindmap'];
+        const buildBranch = (nodeId, level) => {
+            const node = Array.from(nodes.values()).find(n => n.id === nodeId);
+            if (!node) return;
+
+            const indent = '    '.repeat(level);
+            const safeLabel = node.label.replace(/"/g, '#quot;').replace(/\(/g, '#40;').replace(/\)/g, '#41;');
+
+            if (level === 0) {
+                lines.push(`${indent}root((${safeLabel}))`);
+            } else {
+                lines.push(`${indent}${safeLabel}`);
             }
-        });
-        links.forEach(link => {
-            syntax += `    ${link};\n`;
-        });
-        return syntax;
+
+            const children = adjacencyList.get(nodeId) || [];
+            children.forEach(childId => buildBranch(childId, level + 1));
+        };
+
+        buildBranch(rootId, 0);
+        return lines.join('\n');
     }
 }

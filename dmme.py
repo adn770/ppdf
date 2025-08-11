@@ -101,7 +101,7 @@ def main():
         # Use waitress or another production-ready server in a real deployment
         from waitress import serve
 
-        serve(app, host="127.0.0.1", port=5000)
+        serve(app, host="127.0.0.1", port=5000, channel_timeout=600)
     except KeyboardInterrupt:
         log.info("\nServer stopped by user. Exiting.")
         sys.exit(0)

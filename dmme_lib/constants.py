@@ -119,30 +119,33 @@ PROMPT_REGISTRY = {
             "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
             "raw text spell description and convert it into a structured JSON object.\n\n"
             "RULES:\n"
-            "1. Extract values for these keys: `name`, `level`, `school`, "
+            "1. The spell's name is provided for context. Do NOT include it in your output.\n"
+            "2. Extract values for these keys: `level`, `school`, "
             "`casting_time`, `range`, `components`, `duration`.\n"
-            "2. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
+            "3. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
             "if not explicitly in the text.\n"
-            "3. If a value is not present, omit its key from the JSON.\n"
-            "4. Your response MUST be ONLY the single, valid JSON object and nothing else. "
+            "4. If a value is not present, omit its key from the JSON.\n"
+            "5. Your response MUST be ONLY the single, valid JSON object and nothing else. "
             "Do not wrap it in Markdown code fences."
         ),
         "examples": {
             "ca": (
-                "EXEMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
-                "Bola de foc\nDurada: instantani.\nAbast: 240'.\n"
+                "EXEMPLE INPUT:\n"
+                "[SPELL NAME]\nBola de foc\n\n"
+                "[SPELL TEXT]\n(Context: 3rd-Level Arcane Spells)\n"
+                "Durada: instantani.\nAbast: 240'.\n"
                 "Una flama es dirigeix ​​cap a un punt dins de l'abast i explota...\n\n"
                 "EXEMPLE OUTPUT:\n"
-                '{"name": "Bola de foc", "level": 3, "school": "Arcà", '
-                '"range": "240\'", "duration": "instantani"}'
+                '{"level": 3, "school": "Arcà", "range": "240\'", "duration": "instantani"}'
             ),
             "en": (
-                "EXAMPLE INPUT (Context: 3rd-Level Arcane Spells):\n"
-                "Fireball\nDuration: instantaneous.\nRange: 240'.\n"
+                "EXAMPLE INPUT:\n"
+                "[SPELL NAME]\nFireball\n\n"
+                "[SPELL TEXT]\n(Context: 3rd-Level Arcane Spells)\n"
+                "Duration: instantaneous.\nRange: 240'.\n"
                 "A flame streaks towards a point within range and explodes...\n\n"
                 "EXAMPLE OUTPUT:\n"
-                '{"name": "Fireball", "level": 3, "school": "Arcane", '
-                '"range": "240\'", "duration": "instantaneous"}'
+                '{"level": 3, "school": "Arcane", "range": "240\'", "duration": "instantaneous"}'
             ),
         },
     },
@@ -215,17 +218,18 @@ PROMPT_REGISTRY = {
     },
     "SEMANTIC_LABELER_RULES_XML": {
         "base_prompt": (
-            "<task>Analyze the text in the <text_input> tag. Select all applicable tags from "
-            "the <vocabulary> list. Pay close attention to keywords like 'Duration' and "
-            "'Range'; text containing these is often a `type:spell`. If you identify a "
-            "table, you MUST use the `type:table` tag AND one specific `table:*` sub-tag. "
-            "For tables that only list spell names, use `table:spell_list`. Your response "
-            "MUST be ONLY a single, valid JSON array of strings. "
-            "Do not wrap it in "
-            "Markdown code fences.</task>\n"
-            '<vocabulary>["access:dm_only", "type:character_creation", "type:creature", '
-            '"type:item", "type:mechanics", "type:prose", "type:spell", "type:table", '
-            '"table:equipment", "table:progression", "table:random", "table:spell_list", '
+            "<task>Analyze the text in the <text_input> tag. Use the surrounding document "
+            "structure provided in <document_context> to better understand the text's "
+            "purpose. Select all applicable tags from the <vocabulary> list. Pay close "
+            "attention to keywords like 'Duration' and 'Range'; text containing these is "
+            "often a `type:spell`. If you identify a table, you MUST use the `type:table` "
+            "tag AND one specific `table:*` sub-tag. Your response MUST be ONLY a single, "
+            "valid JSON array of strings. Do not wrap it in Markdown code fences.</task>\n"
+            "<document_context>{hierarchy_context}</document_context>\n"
+            '<vocabulary>["access:dm_only", "type:character_creation", '
+            '"type:class_description", "type:creature", "type:item", "type:mechanics", '
+            '"type:prose", "type:spell", "type:table", "table:equipment", '
+            '"table:progression", "table:random", "table:spell_list", '
             '"table:stats"]</vocabulary>'
         ),
         "examples": {
@@ -240,6 +244,9 @@ PROMPT_REGISTRY = {
                 '<output>["type:table", "table:spell_list"]</output></example>'
                 "<example><input>Follow these steps to create a player character...</input>"
                 '<output>["type:character_creation", "type:prose"]</output></example>'
+                "<example><input>**Requirements:** Minimum INT 9 and DEX 9, **Hit Dice:** 1d6... "
+                "Elves are immune to the paralyzing attacks of ghouls.</input>"
+                '<output>["type:class_description", "type:table", "table:progression"]</output></example>'
             ),
             "es": (
                 "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
@@ -251,11 +258,13 @@ PROMPT_REGISTRY = {
     },
     "SEMANTIC_LABELER_ADVENTURE_XML": {
         "base_prompt": (
-            "<task>Analyze the text in the <text_input> tag. Select all applicable tags "
-            "from the <vocabulary> list. If you identify a table, you MUST use the "
-            "`type:table` tag AND one specific `table:*` sub-tag (e.g., `table:stats`). "
-            "Your response MUST be ONLY a single, valid JSON array of strings. "
-            "Do not wrap it in Markdown code fences.</task>\n"
+            "<task>Analyze the text in the <text_input> tag. Use the surrounding document "
+            "structure provided in <document_context> to better understand the text's "
+            "purpose. Select all applicable tags from the <vocabulary> list. If you "
+            "identify a table, you MUST use the `type:table` tag AND one specific `table:*` "
+            "sub-tag (e.g., `table:stats`). Your response MUST be ONLY a single, valid "
+            "JSON array of strings. Do not wrap it in Markdown code fences.</task>\n"
+            "<document_context>{hierarchy_context}</document_context>\n"
             '<vocabulary>["access:dm_only", "gameplay:puzzle", "gameplay:secret", '
             '"gameplay:trap", "narrative:clue", "narrative:hook", "narrative:kickoff", '
             '"narrative:plot_twist", "type:creature", "type:dialogue", "type:item", '

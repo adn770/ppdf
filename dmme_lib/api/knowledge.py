@@ -76,6 +76,12 @@ def explore_knowledge_base(kb_name):
                 assets.append(asset)
 
         response_data["assets"] = assets
+        for doc in documents:
+            log.debug(
+                "Mindmap data for doc '%s': hierarchy=%s",
+                doc.get("chunk_id"),
+                doc.get("hierarchy"),
+            )
         log.debug(
             "Returning %d documents and %d assets for '%s'",
             len(documents),
