@@ -60,14 +60,14 @@ class VectorStoreService:
 
     def query(
         self, kb_name: str, query_text: str, n_results: int = 5, where_filter: dict = None
-    ) -> tuple[list[str], list[dict]]:
-        """Queries a knowledge base, returning documents and their metadata."""
+    ) -> tuple[list[str], list[dict], list[float]]:
+        """Queries a knowledge base, returning documents, metadata, and distances."""
         try:
             log.debug("Querying KB '%s' for: '%s'", kb_name, query_text)
             collection = self.get_or_create_collection(kb_name)
             if collection.count() == 0:
                 log.warning("Query attempted on empty collection '%s'.", kb_name)
-                return [], []
+                return [], [], []
 
             results = collection.query(
                 query_texts=[query_text],
@@ -81,6 +81,16 @@ class VectorStoreService:
             return docs, metas, dists
         except Exception as e:
             log.error("Failed to query knowledge base '%s': %s", kb_name, e)
+            raise
+
+    def get_by_ids(self, kb_name: str, ids: list[str]) -> tuple[list[str], list[dict]]:
+        """Retrieves documents and metadata for a list of specific IDs."""
+        try:
+            collection = self.client.get_collection(name=kb_name)
+            results = collection.get(ids=ids, include=["documents", "metadatas"])
+            return results.get("documents", []), results.get("metadatas", [])
+        except Exception as e:
+            log.error("Failed to get documents by ID from '%s': %s", kb_name, e)
             raise
 
     def search_collections(
@@ -143,8 +153,9 @@ class VectorStoreService:
         try:
             collection = self.client.get_collection(name=kb_name)
             return collection.metadata or {}
-        except Exception as e:
-            log.error("Failed to retrieve metadata for KB '%s': %s", kb_name, e)
+        except Exception:
+            # This can happen if the collection doesn't exist, which is a valid case.
+            log.debug("Could not retrieve metadata for KB '%s'. It may not exist.", kb_name)
             return {}
 
     def delete_kb(self, kb_name: str):

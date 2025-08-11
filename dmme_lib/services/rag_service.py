@@ -443,19 +443,41 @@ class RAGService:
 
 
 def execute_queries(vector_store, kb_name, queries, filter=None, n_results=2):
-    """Helper function to run a list of queries against a KB and return unique results."""
+    """
+    Helper to run queries against a KB, respecting its indexing strategy.
+    Returns unique results.
+    """
     if not kb_name:
         return [], []
     unique_docs = {}
     try:
-        # Access the vector store from the current application context
-        for query in queries:
-            docs, metas, _ = vector_store.query(
-                kb_name, query, n_results=n_results, where_filter=filter
+        kb_meta = vector_store.get_kb_metadata(kb_name)
+        strategy = kb_meta.get("indexing_strategy", "standard")
+        log.debug("Executing queries on '%s' with strategy: '%s'", kb_name, strategy)
+
+        if strategy == "deep":
+            summary_kb_name = f"{kb_name}_summaries"
+            summary_docs, summary_metas, _ = vector_store.query(
+                summary_kb_name, " ".join(queries), n_results=n_results
             )
-            for doc, meta in zip(docs, metas):
-                if doc not in unique_docs:
-                    unique_docs[doc] = meta
+            parent_ids = [m.get("parent_id") for m in summary_metas if m.get("parent_id")]
+            if not parent_ids:
+                return [], []
+
+            docs, metas = vector_store.get_by_ids(kb_name, ids=parent_ids)
+        else:  # Standard strategy
+            docs, metas = [], []
+            for query in queries:
+                q_docs, q_metas, _ = vector_store.query(
+                    kb_name, query, n_results=n_results, where_filter=filter
+                )
+                docs.extend(q_docs)
+                metas.extend(q_metas)
+
+        for doc, meta in zip(docs, metas):
+            if doc not in unique_docs:
+                unique_docs[doc] = meta
+
     except Exception as e:
         log.warning("Could not query KB '%s' for queries. Error: %s", kb_name, e)
 
