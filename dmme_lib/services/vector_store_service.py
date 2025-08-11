@@ -35,6 +35,7 @@ class VectorStoreService:
         documents: list[str],
         metadatas: list[dict],
         kb_metadata: dict = None,
+        ids: list[str] = None,
     ):
         """Adds documents to a knowledge base, letting ChromaDB handle embeddings."""
         if not documents:
@@ -45,9 +46,10 @@ class VectorStoreService:
         try:
             collection = self.get_or_create_collection(kb_name, metadata=kb_metadata)
 
-            # Generate unique IDs to avoid collisions
-            start_id = collection.count()
-            ids = [f"{kb_name}_{i + start_id}" for i in range(len(documents))]
+            # Generate unique IDs if not provided, to avoid collisions
+            if not ids:
+                start_id = collection.count()
+                ids = [f"{kb_name}_{i + start_id}" for i in range(len(documents))]
 
             # ChromaDB will now use the configured Ollama function to create embeddings
             collection.add(documents=documents, metadatas=metadatas, ids=ids)

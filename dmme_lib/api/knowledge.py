@@ -27,7 +27,7 @@ def list_knowledge_bases():
         collections = current_app.vector_store.list_collections()
         kbs = []
         for c in collections:
-            if not c.name.endswith("_reviewing"):
+            if not c.name.endswith(("_reviewing", "_summaries")):
                 kbs.append(
                     {
                         "name": c.name,
@@ -136,8 +136,9 @@ def get_entities(kb_name):
 def delete_knowledge_base(kb_name):
     """Deletes a knowledge base and its associated assets."""
     try:
-        # Delete the ChromaDB collection
+        # Delete the ChromaDB collection and its summary collection if it exists
         current_app.vector_store.delete_kb(kb_name)
+        current_app.vector_store.delete_kb(f"{kb_name}_summaries")
 
         # Delete the associated asset directory
         assets_path = current_app.config["ASSETS_PATH"]
@@ -242,6 +243,7 @@ def ingest_document():
     sections_to_include = data.get("sections_to_include")
     extract_images = data.get("extract_images", True)
     kickoff_cue = data.get("kickoff_cue", "")
+    deep_indexing = data.get("deep_indexing", False)
 
     if not metadata or not tmp_path:
         return jsonify({"error": "Missing metadata or temp_file_path"}), 400
@@ -263,11 +265,18 @@ def ingest_document():
                 if filename.lower().endswith(".md"):
                     with open(tmp_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                    for msg in ingestion_service.ingest_markdown(content, metadata):
+                    for msg in ingestion_service.ingest_markdown(
+                        content, metadata, deep_indexing=deep_indexing
+                    ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
                 elif is_pdf:
                     for msg in ingestion_service.ingest_pdf_text(
-                        tmp_path, metadata, pages_str, sections_to_include, kickoff_cue
+                        tmp_path,
+                        metadata,
+                        pages_str,
+                        sections_to_include,
+                        kickoff_cue,
+                        deep_indexing=deep_indexing,
                     ):
                         yield f"data: {json.dumps({'message': msg})}\n\n"
 

@@ -74,11 +74,9 @@ export class ImportWizard {
         this.discardImgBtn = document.getElementById('discard-image-btn');
         this.classificationRadios =
             this.modal.querySelectorAll('input[name="image-classification"]');
-
         this.prevImgBtn.addEventListener('click', () => this.navigateReviewImage(-1));
         this.nextImgBtn.addEventListener('click', () => this.navigateReviewImage(1));
         this.discardImgBtn.addEventListener('click', () => this.discardCurrentImage());
-
         // Autosave listeners
         this.imgDesc.addEventListener('input', () => this.debouncedSaveImageChanges());
         this.classificationRadios.forEach(radio => {
@@ -138,14 +136,12 @@ export class ImportWizard {
         this.panes.forEach((pane, index) => {
             pane.classList.toggle('active', index === this.currentStep);
         });
-
         const finalizeContainer = this.modal.querySelector('.modal-footer');
         let finalizeBtn = this.modal.querySelector('#finalize-btn');
 
         this.backBtn.style.display = (this.currentStep > 0 && this.currentStep !== 2) ?
             'block' : 'none';
         this.nextBtn.style.display = this.currentStep < 2 ? 'block' : 'none';
-
         if (this.currentStep === 3) { // Image review pane
             if (!finalizeBtn) {
                 const btnHTML =
@@ -290,6 +286,7 @@ export class ImportWizard {
                 sections_to_include: sectionsToInclude,
                 extract_images: this.extractImagesCheckbox.checked,
                 kickoff_cue: document.getElementById('kb-kickoff-cue').value.trim(),
+                deep_indexing: document.getElementById('deep-indexing-checkbox').checked,
                 metadata: {
                     kb_name: this.knowledgeBaseName,
                     kb_type: document.getElementById('kb-type').value,
