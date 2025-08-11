@@ -205,6 +205,13 @@ The RAG system is built upon four types of knowledge bases:
         allowing users to add their own images to a KB via drag-and-drop. The
         system automatically generates a description, classification, and thumbnail for
         the uploaded asset.
+    -   **Progressive Reveal Content Explorer**: An enhancement to the Library Hub's Content
+        Explorer. For KBs created with "Deep Indexing," the UI initially displays the
+        concise, AI-generated summary for each chunk, with a button to expand and view
+        the full text on demand.
+    -   **Summary-Driven Mind Map**: An improvement to the Library Hub's Mind Map tab.
+        For "Deep Indexed" KBs, the graph visualization is generated from the entities
+        found in the high-level summaries, resulting in a cleaner, more conceptual overview.
     -   **Tiered LLM Configuration Panel**: An advanced settings panel that allows
         for fine-grained control over LLM configurations. It enables users to assign
         different models and Ollama server endpoints for distinct workloads (e.g.,
@@ -309,11 +316,16 @@ game state, and interacts with the LLM.
 -   **REST API (Enhanced)**:
     -   **Campaigns**: Full CRUD APIs for managing campaigns.
     -   **Parties**: Full CRUD APIs for managing saved parties.
-    -   **Knowledge**: APIs to orchestrate the multi-step ingestion process,
-        including `POST /api/knowledge/analyze` and `POST /api/knowledge/ingest-document`,
-        which now accepts an optional `deep_indexing: boolean` parameter.
-        -   `GET /api/knowledge/dashboard/<kb_name>` for aggregated KB stats.
-        -   `GET /api/knowledge/entities/<kb_name>` for a list of all unique entities.
+    -   **Knowledge**: APIs to orchestrate the multi-step ingestion process.
+        -   `POST /api/knowledge/analyze`: Analyzes a document's structure.
+        -   `POST /api/knowledge/ingest-document`: Ingests content, now accepts an
+            optional `deep_indexing: boolean` parameter.
+        -   `GET /api/knowledge/dashboard/<kb_name>`: Aggregated KB stats.
+        -   `GET /api/knowledge/entities/<kb_name>`: A list of all unique entities.
+        -   `GET /api/knowledge/explore/<kb_name>`: Retrieves all documents and assets. For
+            deep-indexed KBs, it will also return a `summaries` array.
+        -   `GET /api/knowledge/chunk/<kb_name>/<chunk_id>`: Retrieves a single, full-text
+            document by its ID.
     -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
         images, and maps).
     -   **Settings**: `GET` and `POST` APIs for the `ConfigService` to manage the
@@ -322,6 +334,24 @@ game state, and interacts with the LLM.
         enhanced to return a `type_hint` for each model to aid frontend filtering.
     -   **Search**: `GET /api/search` with `q` and `scope` parameters to perform
         vector searches across one or all knowledge bases.
+
+#### 3.2.1. Multilingual Prompt Strategy
+
+To simplify maintenance and improve consistency, the backend employs a hybrid,
+English-first prompting strategy for all ingestion-related LLM tasks.
+
+-   **English as Source of Truth**: The core logic, rules, and instructions for all
+    system prompts are written and maintained exclusively in English.
+-   **Dynamic Language Clause**: For prompts that generate user-facing natural language
+    (e.g., `DESCRIBE_IMAGE`), a final instruction is dynamically appended to the prompt,
+    such as `Your response MUST be generated in Spanish`, based on the user's selection.
+-   **Hybrid Prompts with Translated Examples**: For complex data-extraction tasks
+    (e.g., `STAT_BLOCK_PARSER`), the prompt combines the English-language rules with
+    translated few-shot examples (`EXAMPLE INPUT`/`OUTPUT`) in the target language.
+    This provides strong guidance on the expected format and language of the response.
+-   **Internal Prompts**: Prompts that generate data for internal system use (e.g.,
+    `ENTITY_EXTRACTOR`, `CLASSIFY_IMAGE`) are kept entirely in English to ensure
+    consistent, predictable output for backend parsing.
 
 ### 3.3. `dmme-eval` - The Evaluation Utility
 
@@ -436,13 +466,15 @@ A two-panel layout for all KB-related tasks.
     -   **Default State (Inspector):** A multi-tab interface for the selected KB:
         -   **Dashboard:** An overview with stats, an entity distribution chart, and a
             key terms word cloud.
-        -   **Content Explorer:** A view of all text chunks, presented in enhanced
-            cards that display semantic labels and key terms. It features a toggle for
-            a linear "Section Flow" view.
+        -   **Content Explorer:** A view of all text chunks. For deep-indexed KBs, it
+            defaults to a "Progressive Reveal" mode, showing summaries with an option
+            to expand to the full text. It also features a toggle for a linear
+            "Section Flow" view.
         -   **Entities:** A detail view that displays all text chunks related to a
             single entity selected from the master list in the left panel.
-        -   **Mind Map:** A graphical visualization of the document's structure,
-            showing sections and their entity-based relationships.
+        -   **Mind Map:** A graphical visualization of the document's structure. For
+            deep-indexed KBs, the graph is generated from the high-level summaries for
+            a cleaner, more conceptual visualization of section relationships.
         -   **Asset Explorer:** The grid view for visual assets, featuring a
             drag-and-drop area for custom asset uploads.
     -   **Search State:** When a search is performed, this panel displays a list of
@@ -528,8 +560,8 @@ root, a shared `core` library, and dedicated libraries for each application.
 │
 └── **dmme_lib/**: A self-contained package for the `dmme` web server.
     ├── `app.py`: The Flask app factory (`create_app`) and service initialization.
-    ├── `constants.py`: Stores DM persona presets and all internationalized prompts,
-    │   including a new `SUMMARIZE_CHUNK` prompt for Deep Indexing.
+    ├── `constants.py`: Stores DM persona presets and a registry of system prompts.
+    │   Prompts follow a hybrid, English-first structure with translated examples.
     ├── `api/`: Contains all Flask Blueprints for the REST API (e.g., `game.py`, `knowledge.py`).
     ├── `services/`: Contains all backend business logic (`storage_service.py`, `rag_service.py`, `config_service.py`, etc.).
     └── `frontend/`: All frontend code for the web UI, built with ES6 modules.
@@ -1901,6 +1933,93 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The RAG service can dynamically leverage the higher-quality context
         from deeply indexed knowledge bases, leading to more accurate and relevant LLM
         responses.
+
+### Phase 27: Deep Indexing UI Integration
+
+-   **Milestone 89: Backend - Single Chunk API Endpoint**
+    -   **Goal:** Create an API to efficiently fetch a single full-text chunk by its ID.
+    -   **Description:** This endpoint is a prerequisite for the "Progressive Reveal"
+        feature, allowing the frontend to dynamically load full-text content without
+        re-fetching the entire knowledge base.
+    -   **Key Tasks:** Implement the `GET /api/knowledge/chunk/<kb_name>/<chunk_id>`
+        endpoint in `dmme_lib/api/knowledge.py`. The handler will call the existing
+        `vector_store.get_by_ids` method to retrieve and return the specified document.
+    -   **Outcome:** A functional and performant API for retrieving individual chunks
+        of text from any knowledge base.
+
+-   **Milestone 90: Backend - Enhance Explore Endpoint**
+    -   **Goal:** Modify the explore endpoint to return summaries for deep-indexed KBs.
+    -   **Description:** This change provides the frontend with all necessary data (both
+        full text and summaries) in a single, efficient API call when a user selects
+        a deep-indexed knowledge base.
+    -   **Key Tasks:** In `dmme_lib/api/knowledge.py`, update the
+        `explore_knowledge_base` function. Add logic to check the KB's metadata. If
+        `indexing_strategy` is `deep`, query the corresponding `_summaries`
+        collection and include its documents in the JSON response under a new
+        `summaries` key.
+    -   **Outcome:** The `/api/knowledge/explore/` endpoint now conditionally returns
+        an additional `summaries` array for deep-indexed KBs.
+
+-   **Milestone 91: Frontend - Implement Progressive Reveal UI**
+    -   **Goal:** Update the Content Explorer to display summaries by default for deep-
+        indexed KBs, with an option to expand and view the full text.
+    -   **Description:** This milestone implements the user-facing "Progressive Reveal"
+        feature, making the Library Hub much faster and easier to skim for deeply
+        indexed content.
+    -   **Key Tasks:**
+        -   In `LibraryHub.js`, modify `_createChunkCardHTML` to check if a KB is
+            deeply indexed.
+        -   If so, render the summary text and an "Expand" button, storing the full
+            chunk's ID on the card.
+        -   Implement the click handler to call the new single-chunk API, replace the
+            card's content with the full text, and toggle the button's state.
+    -   **Outcome:** A fully interactive Content Explorer where users can seamlessly
+        switch between summary and full-text views on a per-chunk basis.
+
+-   **Milestone 92: Frontend - Implement Summary-Driven Mind Map**
+    -   **Goal:** Adapt the Mind Map generation to use the more concise summary data
+        for deep-indexed KBs.
+    -   **Description:** This completes the second feature, resulting in cleaner and more
+        conceptually relevant mind maps by filtering out the noise of the full text.
+    -   **Key Tasks:** In `LibraryHub.js`, modify the `_buildGraphData` function.
+        It must now check if the cached KB data contains a `summaries` array. If it
+        does, it will use the `summaries` as the data source for entity
+        extraction and link generation.
+    -   **Outcome:** The Mind Map tab now intelligently adapts its visualization method
+        based on the indexing strategy of the selected knowledge base.
+
+### Phase 28: Multilingual Prompt Refactoring
+
+-   **Milestone 93: Restructure `PROMPT_REGISTRY` and Refactor Prompts**
+    -   **Goal:** Update the data structure in `dmme_lib/constants.py` and convert all
+        ingestion-related prompts to the new hybrid, English-first format.
+    -   **Description:** This is the core data-layer change. It involves editing the
+        `PROMPT_REGISTRY` to the new format and rewriting the prompts according to the
+        approved strategy (English logic, translated examples, and/or language clauses).
+    -   **Key Tasks:**
+        -   Modify the `PROMPT_REGISTRY` dictionary structure in `constants.py`.
+        -   Rewrite all ingestion-related prompts (`DESCRIBE_IMAGE`, `STAT_BLOCK_PARSER`,
+            `SEMANTIC_LABELER_...`, etc.) into the new component format.
+        -   Ensure examples are translated for `ca` and `es`.
+        -   Remove full translations for prompts that will now be English-only.
+    -   **Outcome:** A fully refactored `PROMPT_REGISTRY` in `constants.py` that is
+        easier to maintain and adheres to the new single-source-of-truth principle.
+
+-   **Milestone 94: Update Backend Prompt Assembly Logic**
+    -   **Goal:** Refactor the backend services to correctly build and use prompts from
+        the new, restructured `PROMPT_REGISTRY`.
+    -   **Description:** The existing logic for retrieving a prompt must be replaced with a
+        new system that assembles the final prompt from its base components (base
+        prompt, optional translated example, and optional language clause).
+    -   **Key Tasks:**
+        -   Rewrite the `_get_prompt` helper function in all relevant services (e.g.,
+            `ingestion_service.py`).
+        -   The new function will accept a prompt key and a language code.
+        -   It will assemble the final prompt by combining the `base_prompt`, the
+            correct `example` for the given language, and the final language clause
+            where appropriate.
+    -   **Outcome:** The backend is able to correctly construct and use the new hybrid
+        prompts, sending the correct instructions to the LLM for any supported language.
 
 ---
 
