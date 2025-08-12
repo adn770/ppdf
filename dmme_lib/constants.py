@@ -72,9 +72,9 @@ PROMPT_REGISTRY = {
             "raw text stat block and convert it into a structured JSON object. "
             "The input format is inconsistent.\n\n"
             "RULES:\n"
-            "1. Extract values for the keys: `ca`, `dc`, `at`, `ba`, `mv`, `ts`, `ml`, "
+            "1. Extract values for the keys: `ac`, `hd`, `at`, `ab`, `mv`, `st`, `ml`, "
             "`al`, `px`, `na`, `tt`.\n"
-            "2. Also extract the average hit points into a separate `pc` key if present.\n"
+            "2. Also extract the average hit points into a separate `hp` key if present.\n"
             "3. If a value is not present, omit its key from the JSON.\n"
             "4. If any other attributes are present (e.g., 'Special'), include them as "
             "key-value pairs, using a lowercase key.\n"
@@ -88,8 +88,8 @@ PROMPT_REGISTRY = {
                 "SV M10 V11 P12 B13 S14 (6), ML 9, AL neutral, XP 950, "
                 "Special: Immune to sleep and charm spells.\n\n"
                 "EXAMPLE OUTPUT:\n"
-                '{"ca": 15, "dc": "6+1**", "pc": 28, "at": "1×bite (1d10+petrify)", '
-                '"ts": "M10 V11 P12 B13 S14 (6)", "ml": 9, "al": "neutral", "xp": 950, '
+                '{"ac": 15, "hd": "6+1**", "hp": 28, "at": "1×bite (1d10+petrify)", '
+                '"st": "M10 V11 P12 B13 S14 (6)", "ml": 9, "al": "neutral", "xp": 950, '
                 '"special": "Immune to sleep and charm spells"}'
             ),
             "ca": (
@@ -118,30 +118,22 @@ PROMPT_REGISTRY = {
         "base_prompt": (
             "You are a precise data extraction engine for a TTRPG. Your task is to parse a "
             "raw text spell description and convert it into a structured JSON object.\n\n"
-            "RULES:\n"
+            "## RULES\n"
             "1. The spell's name is provided for context. Do NOT include it in your output.\n"
-            "2. Extract values for these keys: `level`, `school`, "
-            "`casting_time`, `range`, `components`, `duration`.\n"
-            "3. Infer the `level` and `school` (e.g., 'Arcane' or 'Divine') from context "
-            "if not explicitly in the text.\n"
+            "2. Extract values for these keys: `level`, `school`, `casting_time`, `range`, "
+            "`components`, `duration`.\n"
+            "3. If `level` or `school` are not in the spell text, you MUST infer them from "
+            "the `[DOCUMENT CONTEXT]` provided.\n"
             "4. If a value is not present, omit its key from the JSON.\n"
             "5. Your response MUST be ONLY the single, valid JSON object and nothing else. "
-            "Do not wrap it in Markdown code fences."
+            "Do not wrap it in Markdown code fences.\n\n"
+            "[DOCUMENT CONTEXT]\n{hierarchy_context}"
         ),
         "examples": {
-            "ca": (
-                "EXEMPLE INPUT:\n"
-                "[SPELL NAME]\nBola de foc\n\n"
-                "[SPELL TEXT]\n(Context: 3rd-Level Arcane Spells)\n"
-                "Durada: instantani.\nAbast: 240'.\n"
-                "Una flama es dirigeix ​​cap a un punt dins de l'abast i explota...\n\n"
-                "EXEMPLE OUTPUT:\n"
-                '{"level": 3, "school": "Arcà", "range": "240\'", "duration": "instantani"}'
-            ),
             "en": (
                 "EXAMPLE INPUT:\n"
                 "[SPELL NAME]\nFireball\n\n"
-                "[SPELL TEXT]\n(Context: 3rd-Level Arcane Spells)\n"
+                "[SPELL TEXT]\n"
                 "Duration: instantaneous.\nRange: 240'.\n"
                 "A flame streaks towards a point within range and explodes...\n\n"
                 "EXAMPLE OUTPUT:\n"
@@ -153,23 +145,25 @@ PROMPT_REGISTRY = {
         "base_prompt": (
             "You are a Named Entity Recognition (NER) engine for a TTRPG. "
             "Your task is to analyze a JSON list of key terms and classify each one.\n\n"
-            "ENTITY TYPES:\n"
+            "## ENTITY TYPES\n"
             "- `creature`: A monster, animal, or NPC with stats.\n"
             "- `character`: An important named NPC, often without full stats.\n"
             "- `location`: A specific place, area, room, or geographical feature.\n"
-            "- `item`: A specific object, treasure, or piece of equipment.\n"
+            "- `item`: A specific physical object, treasure, or piece of equipment.\n"
+            "- `spell`: The name of a specific spell or magical ability.\n"
+            "- `game_term`: An abstract rule or mechanic (e.g., 'Hit Dice', 'Saving Throw').\n"
             "- `organization`: A faction, guild, or group of people.\n"
             "- `other`: A term that does not fit into the other categories.\n\n"
-            "OUTPUT: Your response MUST be a single, valid JSON object mapping each "
+            "## OUTPUT\n"
+            "Your response MUST be a single, valid JSON object mapping each "
             "input term to its classified entity type. Do not include any other text or "
             "Markdown code fences."
         ),
         "examples": {
             "en": (
-                'INPUT: ["Goblin", "Cragmaw Hideout", "Sildar Hallwinter", '
-                '"Potion of Healing"]\n\n'
+                'INPUT: ["Goblin", "Cragmaw Hideout", "Magic Missile", "Armor Class"]\n\n'
                 'OUTPUT: {"Goblin": "creature", "Cragmaw Hideout": "location", '
-                '"Sildar Hallwinter": "character", "Potion of Healing": "item"}'
+                '"Magic Missile": "spell", "Armor Class": "game_term"}'
             )
         },
     },
@@ -216,82 +210,92 @@ PROMPT_REGISTRY = {
         ),
         "examples": {},
     },
-    "SEMANTIC_LABELER_RULES_XML": {
+    "SEMANTIC_LABELER_RULES_MD": {
         "base_prompt": (
-            "<task>Analyze the text in the <text_input> tag. Use the surrounding document "
-            "structure provided in <document_context> to better understand the text's "
-            "purpose. Select all applicable tags from the <vocabulary> list. Pay close "
-            "attention to keywords like 'Duration' and 'Range'; text containing these is "
-            "often a `type:spell`. If you identify a table, you MUST use the `type:table` "
-            "tag AND one specific `table:*` sub-tag. Your response MUST be ONLY a single, "
-            "valid JSON array of strings. Do not wrap it in Markdown code fences.</task>\n"
-            "<document_context>{hierarchy_context}</document_context>\n"
-            '<vocabulary>["access:dm_only", "type:character_creation", '
-            '"type:class_description", "type:creature", "type:item", "type:mechanics", '
-            '"type:prose", "type:spell", "type:table", "table:equipment", '
-            '"table:progression", "table:random", "table:spell_list", '
-            '"table:stats"]</vocabulary>'
+            "## TASK\n"
+            "Analyze the text provided below. Your goal is to select all applicable "
+            "tags from the vocabulary list that accurately describe the text's content "
+            "and purpose. You MUST only use the `type:table` tag if the input text is "
+            "formatted as a Markdown table using `|` characters. Assign all applicable "
+            "`table:*` subtypes. For example, a class progression table that also shows "
+            "spell slots should receive both `table:progression` and "
+            "`table:spell_progression`. Your response MUST be ONLY a single, valid JSON "
+            "array of strings without any Markdown fences.\n\n"
+            "## DOCUMENT CONTEXT\n"
+            "> {hierarchy_context}\n\n"
+            "## VOCABULARY\n"
+            "# type: \n"
+            "`type:ability_description`, `type:character_creation`, "
+            "`type:class_description`, `type:creature`, `type:item`, `type:mechanics`, "
+            "`type:monster_ability`, `type:prose`, `type:spell`\n"
+            "# table:\n"
+            "`type:table`, `table:ability_modifiers`, `table:equipment`, "
+            "`table:progression`, `table:random`, `table:skills`, `table:spell_list`, "
+            "`table:spell_progression`, `table:stats`\n"
+            "# access:\n"
+            "`access:dm_only`"
         ),
         "examples": {
-            "ca": (
-                "<exemple><input>| 1d12 | Nom | Inv. | Durada | Abast |</input>"
-                '<output>["type:table", "table:spell_list"]</output></exemple>'
-                "<exemple><input>Segueix aquests passos per crear un personatge...</input>"
-                '<output>["type:character_creation", "type:prose"]</output></exemple>'
-            ),
             "en": (
-                "<example><input>| 1d12 | Name | Rev. | Duration | Range |</input>"
-                '<output>["type:table", "table:spell_list"]</output></example>'
-                "<example><input>Follow these steps to create a player character...</input>"
-                '<output>["type:character_creation", "type:prose"]</output></example>'
-                "<example><input>**Requirements:** Minimum INT 9 and DEX 9, **Hit Dice:** 1d6... "
-                "Elves are immune to the paralyzing attacks of ghouls.</input>"
-                '<output>["type:class_description", "type:table", "table:progression"]</output></example>'
-            ),
-            "es": (
-                "<ejemplo><input>| 1d12 | Nombre | Inv. | Duración | Alcance |</input>"
-                '<output>["type:table", "table:spell_list"]</output></ejemplo>'
-                "<ejemplo><input>Sigue estos pasos para crear un personaje...</input>"
-                '<output>["type:character_creation", "type:prose"]</output></ejemplo>'
-            ),
+                "## EXAMPLES\n"
+                "> **INPUT:**\n"
+                "> * **Referee (Ref):** The player who designs the game world...\n"
+                "> **OUTPUT:**\n"
+                '> ["type:mechanics"]\n\n'
+                "> **INPUT:**\n"
+                "> | Skill | Lvl 1 | Lvl 2 |\n"
+                "> |:---|:---:|:---:|\n"
+                "> | Climb Sheer Surfaces | 87% | 88% |\n"
+                "> **OUTPUT:**\n"
+                '> ["type:table", "table:skills"]\n\n'
+                "> **INPUT:**\n"
+                "> | Level | XP | HD | AB | Spells |\n"
+                "> |:---|:---:|:---:|:---:|:---:|\n"
+                "> | 1 | 0 | 1d6 | +0 | 1, -, - |\n"
+                "> **OUTPUT:**\n"
+                '> ["type:table", "table:progression", "table:spell_progression"]'
+            )
         },
     },
-    "SEMANTIC_LABELER_ADVENTURE_XML": {
+    "SEMANTIC_LABELER_ADVENTURE_MD": {
         "base_prompt": (
-            "<task>Analyze the text in the <text_input> tag. Use the surrounding document "
-            "structure provided in <document_context> to better understand the text's "
-            "purpose. Select all applicable tags from the <vocabulary> list. If you "
-            "identify a table, you MUST use the `type:table` tag AND one specific `table:*` "
-            "sub-tag (e.g., `table:stats`). Your response MUST be ONLY a single, valid "
-            "JSON array of strings. Do not wrap it in Markdown code fences.</task>\n"
-            "<document_context>{hierarchy_context}</document_context>\n"
-            '<vocabulary>["access:dm_only", "gameplay:puzzle", "gameplay:secret", '
-            '"gameplay:trap", "narrative:clue", "narrative:hook", "narrative:kickoff", '
-            '"narrative:plot_twist", "type:creature", "type:dialogue", "type:item", '
-            '"type:location", "type:lore", "type:mechanics", "type:prose", '
-            '"type:read_aloud", "type:spell", "type:table", "table:equipment", '
-            '"table:progression", "table:random", "table:spell_list", '
-            '"table:stats"]</vocabulary>'
+            "## TASK\n"
+            "Analyze the text provided below. Your goal is to select all applicable "
+            "tags from the vocabulary list that accurately describe the text's content "
+            "and purpose. If you identify a table, you MUST use the `type:table` tag "
+            "AND one specific `table:*` sub-tag (e.g., `table:stats`). Your response "
+            "MUST be ONLY a single, valid JSON array of strings without any Markdown "
+            "fences.\n\n"
+            "## DOCUMENT CONTEXT\n"
+            "> {hierarchy_context}\n\n"
+            "## VOCABULARY\n"
+            "# type:\n"
+            "`type:creature`, `type:dialogue`, `type:item`, `type:location`, "
+            "`type:lore`, `type:mechanics`, `type:monster_ability`, `type:prose`, "
+            "`type:read_aloud`, `type:spell`\n"
+            "# narrative:\n"
+            "`narrative:clue`, `narrative:hook`, `narrative:kickoff`, "
+            "`narrative:plot_twist`\n"
+            "# gameplay:\n"
+            "`gameplay:puzzle`, `gameplay:secret`, `gameplay:trap`\n"
+            "# table:\n"
+            "`type:table`, `table:equipment`, `table:progression`, `table:random`, "
+            "`table:spell_list`, `table:stats`\n"
+            "# access:\n"
+            "`access:dm_only`"
         ),
         "examples": {
-            "ca": (
-                "<exemple><input>Els bandits emboscaran el grup al camí.</input>"
-                '<output>["type:prose", "access:dm_only"]</output></exemple>'
-                "<exemple><input>Ogre\n\nGrans humanoides ... AC 5 [14], DC 4+1...</input>"
-                '<output>["type:prose", "type:creature"]</output></exemple>'
-            ),
             "en": (
-                "<example><input>The bandits will ambush the party on the road.</input>"
-                '<output>["type:prose", "access:dm_only"]</output></example>'
-                "<example><input>Ogre\n\nLarge humanoids ... AC 5 [14], HD 4+1...</input>"
-                '<output>["type:prose", "type:creature"]</output></example>'
-            ),
-            "es": (
-                "<ejemplo><input>Los bandidos emboscarán al grupo en el camino.</input>"
-                '<output>["type:prose", "access:dm_only"]</output></ejemplo>'
-                "<ejemplo><input>Ogro\n\nGrandes humanoides ... CA 5 [14], DG 4+1...</input>"
-                '<output>["type:prose", "type:creature"]</output></ejemplo>'
-            ),
+                "## EXAMPLES\n"
+                "> **INPUT:**\n"
+                "> The bandits will ambush the party on the road.\n"
+                "> **OUTPUT:**\n"
+                '> ["type:prose", "access:dm_only"]\n\n'
+                "> **INPUT:**\n"
+                "> Ogre\n> Large humanoids ... AC 5 [14], HD 4+1...\n"
+                "> **OUTPUT:**\n"
+                '> ["type:prose", "type:creature"]'
+            )
         },
     },
     # --- Gameplay Prompts (Unchanged) ---

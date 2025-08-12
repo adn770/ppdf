@@ -20,10 +20,12 @@ class RAGService:
         vector_store: VectorStoreService,
         config_service: ConfigService,
         assets_path: str,
+        raw_llm_log: bool = False,
     ):
         self.vector_store = vector_store
         self.config_service = config_service
         self.assets_path = assets_path
+        self.raw_llm_log = raw_llm_log
         self.context_cache = {}
         self.current_location = None
         log.info("RAGService initialized.")
@@ -116,42 +118,48 @@ class RAGService:
 
         for label in priority_labels:
             log.debug("Searching for kickoff content with priority label: '%s'", label)
+            # Fetch a larger batch of results to filter in-app
             docs, metas, _ = self.vector_store.query(
                 active_kb,
                 query_text=f"Text for starting an adventure, like a {label.replace('_', ' ')}",
-                n_results=1,
-                where_filter={"tags": {"$contains": label}},
+                n_results=10,
             )
-            if docs:
-                log.info("Found high-priority kickoff content with label '%s'.", label)
-                # Get all chunks from the same section to ensure we have the full sequence
-                all_docs, all_metas = self._get_full_section(active_kb, metas[0])
-                # Combine and sort chunks by their original ingestion order
-                s_chunks = sorted(
-                    zip(all_docs, all_metas), key=lambda i: i[1].get("chunk_id", 0)
-                )
-                # Find the starting point of our kickoff sequence
-                start_idx = next((i for i, (d, _) in enumerate(s_chunks) if d == docs[0]), -1)
-                if start_idx != -1:
-                    sequence = [s_chunks[start_idx]]
-                    for i in range(start_idx + 1, len(s_chunks)):
-                        chunk_tags = json.loads(s_chunks[i][1].get("tags", "[]"))
-                        if "type:mechanics" in chunk_tags:
-                            sequence.append(s_chunks[i])
-                        else:
-                            break
-                    found_docs = [item[0] for item in sequence]
-                    found_metas = [item[1] for item in sequence]
-                    log.info("Built kickoff sequence with %d chunks.", len(found_docs))
-                else:
-                    found_docs, found_metas = self._get_full_section(active_kb, metas[0])
-                break
+            # In-app filtering
+            for i, meta in enumerate(metas):
+                if label in meta.get("tags", ""):
+                    log.info("Found high-priority kickoff content with label '%s'.", label)
+                    # Get all chunks from the same section
+                    all_docs, all_metas = self._get_full_section(active_kb, meta)
+                    s_chunks = sorted(
+                        zip(all_docs, all_metas),
+                        key=lambda item: item[1].get("chunk_id", 0),
+                    )
+                    start_idx = next(
+                        (j for j, (d, _) in enumerate(s_chunks) if d == docs[i]), -1
+                    )
+                    if start_idx != -1:
+                        sequence = [s_chunks[start_idx]]
+                        # Append subsequent mechanics chunks
+                        for k in range(start_idx + 1, len(s_chunks)):
+                            if "type:mechanics" in s_chunks[k][1].get("tags", ""):
+                                sequence.append(s_chunks[k])
+                            else:
+                                break
+                        found_docs = [item[0] for item in sequence]
+                        found_metas = [item[1] for item in sequence]
+                    else:
+                        found_docs, found_metas = all_docs, all_metas
+                    break  # Exit inner loop once a match is found
+            if found_docs:
+                break  # Exit outer loop if content was found
 
         # Fallback: General search if no priority content was found
         if not found_docs:
             log.debug("No high-priority content found. Falling back to general search.")
             docs, metas, _ = self.vector_store.query(
-                active_kb, "adventure introduction, summary, or starting location", n_results=1
+                active_kb,
+                "adventure introduction, summary, or starting location",
+                n_results=1,
             )
             if docs:
                 found_docs, found_metas = self._get_full_section(active_kb, metas[0])
@@ -181,6 +189,7 @@ class RAGService:
             stream=True,
             temperature=dm_config["temperature"],
             context_window=dm_config["context_window"],
+            raw_response_log=self.raw_llm_log,
         )
         for chunk_data in llm_stream:
             yield {"type": "narrative_chunk", "content": chunk_data.get("response", "")}
@@ -238,6 +247,7 @@ class RAGService:
                 stream=False,
                 temperature=util_config["temperature"],
                 context_window=util_config["context_window"],
+                raw_response_log=self.raw_llm_log,
             )
             response_str = response_data.get("response", "[]")
             json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
@@ -265,7 +275,8 @@ class RAGService:
         # --- Stage 3: Build Context (Cache or Live) ---
         if primary_location and primary_location["name"] == self.current_location:
             log.info(
-                "CACHE HIT: Using cached context for location: '%s'", self.current_location
+                "CACHE HIT: Using cached context for location: '%s'",
+                self.current_location,
             )
             cache_entry = self.context_cache[self.current_location]
             narrative_context_str = cache_entry["narrative_context"]
@@ -274,13 +285,16 @@ class RAGService:
             log.info("CACHE MISS: Building live context.")
             if primary_location:
                 log.info(
-                    "New location detected: '%s'. Building cache.", primary_location["name"]
+                    "New location detected: '%s'. Building cache.",
+                    primary_location["name"],
                 )
                 self.current_location = primary_location["name"]
 
                 # Build player-safe context for the new location
                 narrative_docs, _ = self._get_full_section(
-                    module_kb, primary_location["meta"], where_filter=narrative_filter
+                    module_kb,
+                    primary_location["meta"],
+                    where_filter=narrative_filter,
                 )
                 narrative_context_str = "\n\n---\n\n".join(narrative_docs)
 
@@ -343,6 +357,7 @@ class RAGService:
             stream=True,
             temperature=dm_config["temperature"],
             context_window=dm_config["context_window"],
+            raw_response_log=self.raw_llm_log,
         )
         full_narrative = ""
         for chunk_data in llm_stream:
@@ -400,25 +415,23 @@ class RAGService:
         log.debug("Searching for relevant visual aid in '%s'.", kb_name)
         image_query = f"Scene described by: {command}. {narrative}"
         try:
-            docs, metas, _ = self.vector_store.query(
-                kb_name,
-                image_query,
-                n_results=1,
-                where_filter={"tags": {"$contains": "type:image"}},
-            )
-            if docs and metas:
-                image_doc = docs[0]
-                image_meta = metas[0]
-                full_url = image_meta.get("image_url")
-                thumb_url = image_meta.get("thumbnail_url")
-                if full_url and thumb_url:
-                    log.info("Found relevant visual aid: %s", full_url)
-                    yield {
-                        "type": "visual_aid",
-                        "full_url": f"/assets/{full_url}",
-                        "thumb_url": f"/assets/{thumb_url}",
-                        "caption": image_doc,
-                    }
+            docs, metas, _ = self.vector_store.query(kb_name, image_query, n_results=5)
+            # In-app filtering
+            for i, meta in enumerate(metas):
+                if '"type:image"' in meta.get("tags", ""):
+                    image_doc = docs[i]
+                    image_meta = meta
+                    full_url = image_meta.get("image_url")
+                    thumb_url = image_meta.get("thumbnail_url")
+                    if full_url and thumb_url:
+                        log.info("Found relevant visual aid: %s", full_url)
+                        yield {
+                            "type": "visual_aid",
+                            "full_url": f"/assets/{full_url}",
+                            "thumb_url": f"/assets/{thumb_url}",
+                            "caption": image_doc,
+                        }
+                        return  # Yield only the first match
         except Exception as e:
             log.error("Failed during visual aid search: %s", e)
 
@@ -435,6 +448,7 @@ class RAGService:
                 util_config["model"],
                 temperature=util_config["temperature"],
                 context_window=util_config["context_window"],
+                raw_response_log=self.raw_llm_log,
             )
             map_response = response_data.get("response", "").strip()
             if map_response:
@@ -458,6 +472,7 @@ class RAGService:
             dm_config["model"],
             temperature=dm_config["temperature"],
             context_window=dm_config["context_window"],
+            raw_response_log=self.raw_llm_log,
         )
         summary = response_data.get("response", "").strip()
         return summary

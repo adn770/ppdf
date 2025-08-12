@@ -17,6 +17,7 @@ from core.llm_utils import (
     query_text_llm,
     get_model_details,
     query_multimodal_llm,
+    _extract_json_from_llm_response,
 )
 from ppdf_lib.api import process_pdf_text, process_pdf_images, reformat_section_with_llm
 from ppdf_lib.models import Section
@@ -32,10 +33,12 @@ class IngestionService:
         vector_store: VectorStoreService,
         config_service: ConfigService,
         utility_model: str,
+        raw_llm_log: bool = False,
     ):
         self.vector_store = vector_store
         self.config_service = config_service
         self.utility_model = utility_model
+        self.raw_llm_log = raw_llm_log
         log.info("IngestionService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
@@ -79,27 +82,28 @@ class IngestionService:
         log.debug("Extracting key terms for section '%s' with tags %s", section_title, tags)
         raw_terms = []
 
-        # Rule 1: Creature chunks are identified solely by their title.
-        if "type:creature" in tags:
-            log.debug("Applying 'creature' rule for key term extraction.")
-            if section_title:
-                raw_terms.append(section_title)
-        else:
-            # Rule 2: All other chunks include their section title for linking.
-            log.debug("Applying default rule for key term extraction.")
-            if section_title:
-                raw_terms.append(section_title)
+        # Rule 1: Always add the section title (unless it's a creature).
+        if "type:creature" not in tags and section_title:
+            raw_terms.append(section_title)
 
-            # Rule 3: For tables, also parse the header.
-            if "type:table" in tags:
-                log.debug("Applying 'table' rule for key term extraction.")
-                header_line = chunk.split("\n", 1)[0]
+        # Rule 2: Always extract bolded text from the main body.
+        raw_terms.extend(re.findall(r"\*\*(.*?)\*\*", chunk))
+
+        # Rule 3: For tables, also parse the header line specifically.
+        if "type:table" in tags:
+            log.debug("Applying 'table' rule for key term extraction.")
+            # Find the line that looks like a Markdown table header
+            header_match = re.search(r"\|(.*)\|", chunk)
+            if header_match:
+                header_line = header_match.group(1)
                 raw_terms.extend(
                     [term.strip() for term in header_line.split("|") if term.strip()]
                 )
-            # Rule 4: For prose, also extract bolded text.
-            else:
-                raw_terms.extend(re.findall(r"\*\*(.*?)\*\*", chunk))
+
+        # Rule 4: Creature chunks are identified solely by their title.
+        if "type:creature" in tags and section_title:
+            log.debug("Applying 'creature' rule for key term extraction.")
+            raw_terms = [section_title]  # Overwrite all other terms
 
         # Sanitize all extracted terms
         sanitized_terms = [
@@ -112,52 +116,54 @@ class IngestionService:
         """Uses an LLM to parse a stat block string into a structured dictionary."""
         log.debug("Parsing stat block with LLM...")
         prompt = self._get_prompt("STAT_BLOCK_PARSER", lang)
-        try:
-            util_config = self.config_service.get_model_config("classify")
-            response_data = query_text_llm(
-                prompt,
-                chunk,
-                util_config["url"],
-                util_config["model"],
-                temperature=0.0,
-                context_window=util_config["context_window"],
-            )
-            response_str = response_data.get("response", "").strip()
-            # Clean potential markdown fences from the response
-            clean_str = re.sub(r"```(json)?\n?|\n?```", "", response_str).strip()
-            return json.loads(clean_str)
-        except (json.JSONDecodeError, TypeError) as e:
-            log.warning("Could not parse stat block JSON from LLM: %s", e)
-            return {}
+        util_config = self.config_service.get_model_config("classify")
+        response_data = query_text_llm(
+            prompt,
+            chunk,
+            util_config["url"],
+            util_config["model"],
+            temperature=0.0,
+            context_window=util_config["context_window"],
+            raw_response_log=self.raw_llm_log,
+        )
+        response_str = response_data.get("response", "").strip()
+        parsed_json = _extract_json_from_llm_response(response_str)
 
-    def _parse_spell(self, chunk: str, lang: str, section_title: str) -> dict:
+        if isinstance(parsed_json, dict):
+            return parsed_json
+
+        log.warning("Could not parse stat block JSON from LLM: %s", response_str)
+        return {}
+
+    def _parse_spell(
+        self, chunk: str, lang: str, section_title: str, hierarchy: list[str]
+    ) -> dict:
         """Uses an LLM to parse a spell description into a structured dictionary."""
         log.debug("Parsing spell '%s' with LLM...", section_title)
-        prompt = self._get_prompt("SPELL_PARSER", lang)
+        prompt_template = self._get_prompt("SPELL_PARSER", lang)
+        hierarchy_context = " > ".join(hierarchy)
+        prompt = prompt_template.replace("{hierarchy_context}", hierarchy_context)
         user_content = f"[SPELL NAME]\n{section_title}\n\n[SPELL TEXT]\n{chunk}"
 
-        try:
-            util_config = self.config_service.get_model_config("classify")
-            response_data = query_text_llm(
-                prompt,
-                user_content,
-                util_config["url"],
-                util_config["model"],
-                temperature=0.0,
-                context_window=util_config["context_window"],
-            )
-            response_str = response_data.get("response", "").strip()
-            json_match = re.search(r"\{.*\}", response_str, re.DOTALL)
-            if json_match:
-                llm_json = json.loads(json_match.group(0))
-                # Merge the known-correct name with the extracted details
-                final_data = {"name": section_title, **llm_json}
-                return final_data
-            log.warning("No JSON object found in spell parser response: %s", response_str)
-            return {"name": section_title}  # Return at least the name on failure
-        except (json.JSONDecodeError, TypeError) as e:
-            log.warning("Could not parse spell JSON from LLM: %s", e)
-            return {"name": section_title}  # Return at least the name on failure
+        util_config = self.config_service.get_model_config("classify")
+        response_data = query_text_llm(
+            prompt,
+            user_content,
+            util_config["url"],
+            util_config["model"],
+            temperature=0.0,
+            context_window=util_config["context_window"],
+            raw_response_log=self.raw_llm_log,
+        )
+        response_str = response_data.get("response", "").strip()
+        parsed_json = _extract_json_from_llm_response(response_str)
+
+        if isinstance(parsed_json, dict):
+            # Merge the known-correct name with the extracted details
+            return {"name": section_title, **parsed_json}
+
+        log.warning("Could not parse spell JSON from LLM: %s", response_str)
+        return {"name": section_title}  # Return at least the name on failure
 
     def _parse_markdown_hierarchy(self, file_content: str):
         """Parses a Markdown string into a list of hierarchically-aware sections."""
@@ -232,9 +238,9 @@ class IngestionService:
         yield msg
 
         prompt_key = (
-            "SEMANTIC_LABELER_RULES_XML"
+            "SEMANTIC_LABELER_RULES_MD"
             if kb_type == "rules"
-            else "SEMANTIC_LABELER_ADVENTURE_XML"
+            else "SEMANTIC_LABELER_ADVENTURE_MD"
         )
         base_labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
@@ -278,6 +284,7 @@ class IngestionService:
                     util_config["url"],
                     util_config["model"],
                     context_window=util_config["context_window"],
+                    raw_response_log=self.raw_llm_log,
                 )
                 # Refine tags by removing redundant 'prose' if more specific tags exist
                 if len(tags) > 1 and "type:prose" in tags:
@@ -349,7 +356,11 @@ class IngestionService:
         log.info(msg)
         yield msg
         self.vector_store.add_to_kb(
-            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=final_ids
+            kb_name,
+            documents,
+            final_metadatas,
+            kb_metadata=kb_metadata,
+            ids=final_ids,
         )
         msg = "✔ Saved to vector store."
         log.info(msg)
@@ -378,12 +389,17 @@ class IngestionService:
                 stats = self._parse_stat_block(chunk_data["text"], lang)
                 metadata["structured_stats"] = stats
 
-            # Deep parse spells if applicable
+            # Deep parse spells only if they look like actual spell blocks
             if "type:spell" in metadata.get("tags", []):
-                spell_data = self._parse_spell(
-                    chunk_data["text"], lang, metadata["section_title"]
-                )
-                metadata["structured_spell_data"] = spell_data
+                text = chunk_data["text"]
+                if "**Duration:**" in text and "**Range:**" in text:
+                    spell_data = self._parse_spell(
+                        text,
+                        lang,
+                        metadata["section_title"],
+                        metadata["hierarchy"],
+                    )
+                    metadata["structured_spell_data"] = spell_data
 
             key_terms = json.loads(metadata.get("key_terms", "[]"))
             if not key_terms:
@@ -398,15 +414,19 @@ class IngestionService:
                     util_config["model"],
                     temperature=0.0,
                     context_window=util_config["context_window"],
+                    raw_response_log=self.raw_llm_log,
                 )
                 response_str = response_data.get("response", "").strip()
-                entities = json.loads(response_str)
-                log.debug("... NER result: %s", entities)
-                metadata["entities"] = entities
-                for entity_name in entities.keys():
-                    entity_map[entity_name].append(metadata["chunk_id"])
-            except (json.JSONDecodeError, TypeError) as e:
-                log.warning("Could not parse entity JSON from LLM: %s", e)
+                entities = _extract_json_from_llm_response(response_str)
+
+                if isinstance(entities, dict):
+                    log.debug("... NER result: %s", entities)
+                    metadata["entities"] = entities
+                    for entity_name in entities.keys():
+                        entity_map[entity_name].append(metadata["chunk_id"])
+                else:
+                    log.warning("Could not parse entity JSON from LLM: %s", response_str)
+
             except Exception as e:
                 log.error("Unexpected error during entity extraction: %s", e)
 
@@ -469,7 +489,12 @@ class IngestionService:
         yield msg
         extraction_options = {"num_cols": "auto", "rm_footers": True, "style": True}
         sections, page_models = process_pdf_text(
-            pdf_path, extraction_options, "", "", apply_labeling=False, pages_str=pages_str
+            pdf_path,
+            extraction_options,
+            "",
+            "",
+            apply_labeling=False,
+            pages_str=pages_str,
         )
         msg = f"✔ Structure analysis complete. Found {len(sections)} logical sections."
         log.info(msg)
@@ -520,6 +545,7 @@ class IngestionService:
                 util_config["model"],
                 temperature=0.1,
                 context_window=util_config["context_window"],
+                raw_response_log=self.raw_llm_log,
             )
             final_tag = response_data.get("response", "").strip()
 
@@ -550,9 +576,9 @@ class IngestionService:
         # --- Paragraph-level Reformatting and Semantic Labeling ---
         kb_type = metadata.get("kb_type", "module")
         prompt_key = (
-            "SEMANTIC_LABELER_RULES_XML"
+            "SEMANTIC_LABELER_RULES_MD"
             if kb_type == "rules"
-            else "SEMANTIC_LABELER_ADVENTURE_XML"
+            else "SEMANTIC_LABELER_ADVENTURE_MD"
         )
         base_labeler_prompt = self._get_prompt(prompt_key, lang)
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
@@ -625,6 +651,7 @@ class IngestionService:
                         util_config["url"],
                         util_config["model"],
                         context_window=util_config["context_window"],
+                        raw_response_log=self.raw_llm_log,
                     )
 
                 if len(tags) > 1 and "type:prose" in tags:
@@ -687,6 +714,7 @@ class IngestionService:
             meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
             meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
+            meta["hierarchy"] = json.dumps(meta.get("hierarchy", []))
 
         # Conditional Deep Indexing
         if deep_indexing:
@@ -707,7 +735,11 @@ class IngestionService:
             yield msg
             return
         self.vector_store.add_to_kb(
-            kb_name, documents, final_metadatas, kb_metadata=kb_metadata, ids=final_ids
+            kb_name,
+            documents,
+            final_metadatas,
+            kb_metadata=kb_metadata,
+            ids=final_ids,
         )
         msg = "✔ Saved to vector store."
         log.info(msg)
@@ -737,6 +769,7 @@ class IngestionService:
                 util_config["model"],
                 temperature=0.2,
                 context_window=util_config["context_window"],
+                raw_response_log=self.raw_llm_log,
             )
             summary = response_data.get("response", "").strip()
 
@@ -923,17 +956,32 @@ class IngestionService:
         # Stage 1: Describe with vision model
         describe_prompt = self._get_prompt("DESCRIBE_IMAGE", lang)
         description = query_multimodal_llm(
-            describe_prompt, image_bytes, vision_config["url"], vision_config["model"]
+            describe_prompt,
+            image_bytes,
+            vision_config["url"],
+            vision_config["model"],
         )
 
         # Stage 2: Classify description with utility model
         classify_prompt = self._get_prompt("CLASSIFY_IMAGE", lang)
         classification_data = query_text_llm(
-            classify_prompt, description, util_config["url"], util_config["model"], 0.1
+            classify_prompt,
+            description,
+            util_config["url"],
+            util_config["model"],
+            0.1,
+            raw_response_log=self.raw_llm_log,
         )
         classification = classification_data.get("response", "").strip()
 
-        if classification not in {"cover", "art", "map", "handout", "decoration", "other"}:
+        if classification not in {
+            "cover",
+            "art",
+            "map",
+            "handout",
+            "decoration",
+            "other",
+        }:
             classification = "art"
 
         # 4. Save metadata JSON

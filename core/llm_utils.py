@@ -20,6 +20,30 @@ def _format_text_for_log(text: str) -> str:
     return f'"{single_line_text}"'
 
 
+def _extract_json_from_llm_response(text: str) -> dict | list | None:
+    """Finds and parses the first valid JSON object or array in a string."""
+    # Find the first potential JSON object or array
+    match = re.search(r"(\{.*\}|\[.*\])", text, re.DOTALL)
+    if not match:
+        log_llm.warning("No JSON object or array found in LLM response.")
+        return None
+
+    json_str = match.group(0)
+
+    # Attempt to fix common errors, like trailing commas
+    json_str = re.sub(r",\s*([\]}])", r"\1", json_str)
+
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        log_llm.warning(
+            "Failed to parse extracted JSON string. Error: %s\nString: %s",
+            e,
+            json_str,
+        )
+        return None
+
+
 def _get_prompt_from_registry(key: str, lang: str) -> str:
     """Safely retrieves a prompt, falling back to English."""
     return PROMPT_REGISTRY.get(key, {}).get(lang, PROMPT_REGISTRY.get(key, {}).get("en"))
@@ -66,6 +90,7 @@ def query_text_llm(
     stream: bool = False,
     temperature: float = None,
     context_window: int = None,
+    raw_response_log: bool = False,
 ):
     """
     Sends a standard text prompt to an Ollama model with a retry mechanism.
@@ -141,6 +166,11 @@ def query_text_llm(
                 return _stream_generator(response)
             else:
                 data = response.json()
+                if raw_response_log:
+                    log_llm.debug(
+                        "--- Raw LLM Response Text ---\n%s",
+                        data.get("response", "[No response text found]"),
+                    )
                 eval_ns = data.get("eval_duration", 0)
                 eval_count = data.get("eval_count", 0)
                 eval_sec = eval_ns / 1_000_000_000
@@ -176,7 +206,11 @@ def query_text_llm(
 
 
 def query_multimodal_llm(
-    prompt: str, image_bytes: bytes, ollama_url: str, model: str, temperature: float = None
+    prompt: str,
+    image_bytes: bytes,
+    ollama_url: str,
+    model: str,
+    temperature: float = None,
 ) -> str:
     """Sends a prompt and an image to an Ollama multimodal model with a retry mechanism."""
     MAX_RETRIES = 3
@@ -226,7 +260,10 @@ def query_multimodal_llm(
         except requests.exceptions.RequestException as e:
             last_exception = e
             log_llm.warning(
-                "Multimodal LLM query failed on attempt %d/%d: %s", attempt + 1, MAX_RETRIES, e
+                "Multimodal LLM query failed on attempt %d/%d: %s",
+                attempt + 1,
+                MAX_RETRIES,
+                e,
             )
             if attempt < MAX_RETRIES - 1:
                 time.sleep(RETRY_DELAY_S)
@@ -255,7 +292,9 @@ def generate_embeddings_ollama(
             embeddings.append(response.json()["embedding"])
         duration = time.monotonic() - start_time
         log_llm.debug(
-            "Successfully generated %d embeddings in %.2f seconds.", len(chunks), duration
+            "Successfully generated %d embeddings in %.2f seconds.",
+            len(chunks),
+            duration,
         )
         return embeddings
     except requests.exceptions.RequestException as e:
@@ -264,63 +303,33 @@ def generate_embeddings_ollama(
 
 
 def get_semantic_tags(
-    chunk: str, prompt: str, ollama_url: str, model: str, context_window: int = None
+    chunk: str,
+    prompt: str,
+    ollama_url: str,
+    model: str,
+    context_window: int = None,
+    raw_response_log: bool = False,
 ) -> list[str]:
     """Gets a list of semantic tags for a text chunk, handling various LLM JSON outputs."""
     response_data = query_text_llm(
-        prompt, chunk, ollama_url, model, temperature=0.1, context_window=context_window
+        prompt,
+        chunk,
+        ollama_url,
+        model,
+        temperature=0.1,
+        context_window=context_window,
+        raw_response_log=raw_response_log,
     )
     response_str = response_data.get("response", "").strip()
 
     if not response_str:
         return ["type:prose"]
 
-    # Clean response string from markdown fences or other text
-    clean_str = response_str
-    if "```json" in clean_str:
-        clean_str = clean_str.split("```json")[1]
-    clean_str = clean_str.split("```")[0].strip()
+    parsed_json = _extract_json_from_llm_response(response_str)
+    if isinstance(parsed_json, list) and all(isinstance(t, str) for t in parsed_json):
+        return parsed_json if parsed_json else ["type:prose"]
 
-    try:
-        # First, try to parse the entire cleaned string as JSON
-        parsed_json = json.loads(clean_str)
-
-        # Case 1: It's already a valid list of strings
-        if isinstance(parsed_json, list):
-            if all(isinstance(t, str) for t in parsed_json):
-                return parsed_json if parsed_json else ["type:prose"]
-
-        # Case 2: It's an object, let's inspect it
-        if isinstance(parsed_json, dict):
-            # Check for a 'tags' key which is the most common correct wrapper
-            if "tags" in parsed_json and isinstance(parsed_json["tags"], list):
-                tags = parsed_json["tags"]
-                return tags if tags else ["type:prose"]
-
-            # Handle cases like {"type": "stat_block"} or {"type": ["mechanics"]}
-            tags = []
-            for value in parsed_json.values():
-                if isinstance(value, str):
-                    tags.append(value)
-                elif isinstance(value, list):
-                    tags.extend([str(item) for item in value])
-            if tags:
-                return sorted(list(set(tags)))
-
-    except json.JSONDecodeError:
-        # JSON parsing failed, fall back to regex search for an array
-        json_match = re.search(r"\[\s*.*?\s*\]", clean_str, re.DOTALL)
-        if json_match:
-            try:
-                tags = json.loads(json_match.group(0))
-                if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
-                    return tags if tags else ["type:prose"]
-            except json.JSONDecodeError:
-                pass  # Fall through to the warning
-
-    log_llm.warning(
-        "Could not parse a valid tag structure from LLM response: %s", response_str
-    )
+    log_llm.warning("Could not parse a valid tag list from LLM response: %s", response_str)
     return ["type:prose"]
 
 
@@ -331,6 +340,7 @@ def generate_character_json(
     ollama_url: str,
     model: str,
     context_window: int = None,
+    raw_response_log: bool = False,
 ) -> dict:
     """
     High-level function to generate a character JSON from a description.
@@ -341,26 +351,28 @@ def generate_character_json(
 
     # For this specific task, the complex prompt is the user content
     response_data = query_text_llm(
-        "", prompt, ollama_url, model, context_window=context_window
+        "",
+        prompt,
+        ollama_url,
+        model,
+        context_window=context_window,
+        raw_response_log=raw_response_log,
     )
     response_str = response_data.get("response", "").strip()
 
     if not response_str:
         raise ValueError("LLM returned an empty response.")
 
-    try:
-        # Use regex to find the JSON object, ignoring surrounding text
-        json_match = re.search(r"\{.*\}", response_str, re.DOTALL)
-        if not json_match:
-            log_llm.error("Could not find a JSON object in the LLM's response.")
-            raise ValueError("LLM did not return a valid JSON object.")
-
-        json_str = json_match.group(0)
-        char_data = json.loads(json_str)
+    char_data = _extract_json_from_llm_response(response_str)
+    if isinstance(char_data, dict):
         log_llm.debug(
-            "Successfully parsed generated character JSON for '%s'.", char_data.get("name")
+            "Successfully parsed generated character JSON for '%s'.",
+            char_data.get("name"),
         )
         return char_data
-    except json.JSONDecodeError:
-        log_llm.error("LLM returned invalid JSON for character generation: %s", response_str)
-        raise ValueError("LLM returned invalid JSON. Please try again.")
+
+    log_llm.error(
+        "LLM returned invalid or un-extractable JSON for character generation: %s",
+        response_str,
+    )
+    raise ValueError("LLM returned invalid JSON. Please try again.")

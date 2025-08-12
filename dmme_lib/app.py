@@ -32,6 +32,7 @@ def create_app(config_overrides=None):
         CONFIG_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "dmme.cfg"),
         CHROMA_PATH=os.path.join(os.path.expanduser("~"), ".dmme", "chroma"),
         ASSETS_PATH=ASSETS_DIR,
+        RAW_LLM_RESPONSE=False,  # Default value
     )
 
     if config_overrides:
@@ -41,12 +42,15 @@ def create_app(config_overrides=None):
     # --- Initialize Services ---
     log.info("Initializing application services...")
     try:
+        raw_llm_log_enabled = app.config.get("RAW_LLM_RESPONSE", False)
         app.storage = StorageService(app.config["DATABASE"])
         app.config_service = ConfigService(app.config["CONFIG_PATH"])
 
         embed_config = app.config_service.get_model_config("embed")
         app.vector_store = VectorStoreService(
-            app.config["CHROMA_PATH"], embed_config["url"], embed_config["model"]
+            app.config["CHROMA_PATH"],
+            embed_config["url"],
+            embed_config["model"],
         )
 
         util_config = app.config_service.get_model_config("classify")
@@ -54,11 +58,13 @@ def create_app(config_overrides=None):
             vector_store=app.vector_store,
             config_service=app.config_service,
             utility_model=util_config["model"],
+            raw_llm_log=raw_llm_log_enabled,
         )
         app.rag_service = RAGService(
             vector_store=app.vector_store,
             config_service=app.config_service,
             assets_path=app.config["ASSETS_PATH"],
+            raw_llm_log=raw_llm_log_enabled,
         )
         with app.app_context():
             app.storage.init_db()

@@ -89,18 +89,22 @@ def _run_single_scenario_eval(suite, user_input, args):
         ollama_url=args.url,
         model=suite.config.get("model", args.dm_model),
         temperature=suite.config.get("temperature"),
+        raw_response_log=args.raw_llm_response,
     )
     response_text = resp_data.get("response", "").strip()
 
     # 2. Get judge's critique
     judge_input = PROMPT_LLM_AS_JUDGE.format(
-        system_prompt=suite.prompt, user_input=user_input, response=response_text
+        system_prompt=suite.prompt,
+        user_input=user_input,
+        response=response_text,
     )
     critique_data = query_text_llm(
         prompt="",  # The whole thing is the user content for the judge
         user_content=judge_input,
         ollama_url=args.url,
         model=args.utility_model,
+        raw_response_log=args.raw_llm_response,
     )
     critique_text = critique_data.get("response", "").strip()
     score, critique = 0, "Evaluation failed."
@@ -316,10 +320,15 @@ def parse_arguments(args=None):
     # --- Global arguments ---
     g_log = parser.add_argument_group("Logging & Output")
     g_log.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable INFO logging for progress."
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable INFO logging for progress.",
     )
     g_log.add_argument(
-        "--color-logs", action="store_true", help="Enable colored logging output."
+        "--color-logs",
+        action="store_true",
+        help="Enable colored logging output.",
     )
     g_log.add_argument(
         "-d",
@@ -333,6 +342,11 @@ def parse_arguments(args=None):
         metavar="FILE",
         default=None,
         help="Redirect all logging output to a specified file.",
+    )
+    g_log.add_argument(
+        "--raw-llm-response",
+        action="store_true",
+        help="Print the full, raw JSON response from the LLM for debugging.",
     )
     # --- Subparsers ---
     subparsers = parser.add_subparsers(dest="command", required=True)

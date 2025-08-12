@@ -549,6 +549,19 @@ export class LibraryHub {
         const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
         const tags = JSON.parse(doc.tags || '[]');
         const tagsForAttr = doc.tags || '[]';
+
+        // Sort tags by category
+        const categoryOrder = ['type', 'narrative', 'gameplay', 'table', 'access'];
+        tags.sort((a, b) => {
+            const catA = a.split(':', 1)[0];
+            const catB = b.split(':', 1)[0];
+            const indexA = categoryOrder.indexOf(catA);
+            const indexB = categoryOrder.indexOf(catB);
+            const finalIndexA = indexA === -1 ? categoryOrder.length : indexA;
+            const finalIndexB = indexB === -1 ? categoryOrder.length : indexB;
+            return finalIndexA - finalIndexB;
+        });
+
         const hierarchy = JSON.parse(doc.hierarchy || '[]');
         const tagsHTML = tags.map(tag => {
             const [category] = tag.split(':', 1);
@@ -561,7 +574,6 @@ export class LibraryHub {
         const statsStr = doc.structured_stats || doc.structured_spell_data || '{}';
         const hasStats = statsStr && statsStr !== '{}';
         const sectionTitle = doc.section_title || 'Untitled Section';
-
         const breadcrumbPath = hierarchy.length > 0 ? hierarchy.slice(0, -1).join(' > ') + ' > ' : '';
         const breadcrumbHTML = `
             <span>${kbName} > </span>
@@ -572,7 +584,6 @@ export class LibraryHub {
                   data-section-query="${sectionTitle}">
                 ${sectionTitle}
             </span>`;
-
         const sourceInfo = isSearchResult ?
             `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>` :
             `<span>p. ${doc.page_start || 'N/A'}</span>`;
@@ -824,7 +835,6 @@ export class LibraryHub {
 
         const graphData = this._buildGraphData(data);
         const mermaidSyntax = this._generateMermaidSyntax(graphData);
-
         try {
             const { svg } = await mermaid.render('mindmap-svg', mermaidSyntax);
             this.mindmapContainer.innerHTML = svg;
@@ -853,11 +863,9 @@ export class LibraryHub {
         const adjacencyList = new Map();
         const docType = this.selectedKb.metadata?.filename?.endsWith('.md') ? 'md' : 'pdf';
         const separator = '\u001F';
-
         const rootId = 'kb_root';
         nodes.set(rootId, { id: rootId, label: this.selectedKb.name });
         adjacencyList.set(rootId, []);
-
         documents.forEach(doc => {
             const hierarchy = docType === 'md' ?
                 JSON.parse(doc.hierarchy || '[]') :
@@ -884,7 +892,6 @@ export class LibraryHub {
                 }
             }
         });
-
         return { nodes, adjacencyList, rootId };
     }
 

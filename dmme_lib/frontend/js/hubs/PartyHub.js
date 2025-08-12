@@ -9,9 +9,11 @@ export class PartyHub {
         this.isInitialized = false;
         this.selectedPartyId = null;
         this.selectedCharacterId = null;
-        this.characterData = {}; // Cache for character data
+        this.characterData = {};
+        // Cache for character data
         this.autosaveTimer = null;
-        this._statSizerSpan = null; // For dynamic input sizing
+        this._statSizerSpan = null;
+        // For dynamic input sizing
         this.draggedItem = null;
     }
 
@@ -337,8 +339,16 @@ export class PartyHub {
         this.inspectorPlaceholder.style.display = 'flex';
     }
 
+    stopAutosave() {
+        if (this.autosaveTimer) {
+            clearTimeout(this.autosaveTimer);
+            this.autosaveTimer = null;
+        }
+    }
+
     _triggerAutosave() {
-        clearTimeout(this.autosaveTimer);
+        this.stopAutosave();
+        console.trace("TRACE: PartyHub autosave timer starting.");
         status.setText('savingStatus');
         this.autosaveTimer = setTimeout(() => this._performAutosave(), 1500);
     }
@@ -550,11 +560,11 @@ export class PartyHub {
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="name" placeholder="Description">
                 <input type="text" class="cs-input-underline-small"
-                         data-field-key="type" placeholder="Type">
+                       data-field-key="type" placeholder="Type">
                 <input type="text" class="cs-input-underline-small"
                        data-field-key="to_hit" placeholder="To Hit">
                 <input type="text" class="cs-input-underline-small"
-                         data-field-key="damage" placeholder="Damage">
+                       data-field-key="damage" placeholder="Damage">
                 <button class="delete-row-btn">🗑️</button>`,
             armour: `
                 <div class="drag-handle">⠿</div>

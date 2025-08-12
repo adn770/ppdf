@@ -12,6 +12,7 @@ import { Lightbox } from './components/Lightbox.js';
 import { status, confirmationModal } from './ui.js';
 import { i18n } from './i18n.js';
 import { apiCall } from './wizards/ApiHelper.js';
+
 class App {
     constructor() {
         this.settings = null;
@@ -50,8 +51,19 @@ class App {
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => this.switchView(btn.dataset.view));
         });
+
+        // Add a cleanup listener to stop timers when the page is closed/reloaded
+        window.addEventListener('beforeunload', () => this.cleanup());
+
         this.updateHeader(this.currentView);
         await this.checkForRecovery();
+    }
+
+    cleanup() {
+        console.log("TRACE: Master cleanup running before page unload.");
+        this.gameplayHandler.stopAutosave();
+        this.partyHub.stopAutosave();
+        this.settingsManager.stopAutosave();
     }
 
     async loadComponents() {
@@ -107,6 +119,7 @@ class App {
             button.addEventListener('click', onClick);
             return button;
         };
+
         if (viewName === 'game') {
             container.appendChild(createButton('new-game-btn', 'newGameBtn', () => this.newGameWizard.open()));
             container.appendChild(createButton('load-game-btn', 'loadGameBtn', () => this.loadCampaignWizard.open()));
@@ -127,6 +140,7 @@ class App {
         const welcomeView = document.getElementById('welcome-view');
         const recoveryView = document.getElementById('recovery-view');
         const gameViewContent = document.getElementById('game-view-content');
+
         if (recoveredState && Object.keys(recoveredState).length > 0) {
             welcomeView.style.display = 'none';
             gameViewContent.style.display = 'none';
@@ -139,6 +153,7 @@ class App {
             };
             document.getElementById('recover-discard-btn').onclick = async () => {
                 await apiCall('/api/session/autosave', { method: 'DELETE' });
+                this.gameplayHandler.endGame(); // Clean up session and stop autosave
                 recoveryView.style.display = 'none';
                 welcomeView.style.display = 'block';
                 status.setText('statusBarReady');

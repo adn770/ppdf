@@ -114,9 +114,17 @@ export class SettingsManager {
         return this.settings;
     }
 
+    stopAutosave() {
+        if (this.saveDebounceTimer) {
+            clearTimeout(this.saveDebounceTimer);
+            this.saveDebounceTimer = null;
+        }
+    }
+
     _debounceSave() {
+        this.stopAutosave();
+        console.trace("TRACE: SettingsManager autosave timer starting.");
         this.statusEl.textContent = this.app.i18n.t('savingStatus');
-        clearTimeout(this.saveDebounceTimer);
         this.saveDebounceTimer = setTimeout(() => this.saveSettings(), 500);
     }
 

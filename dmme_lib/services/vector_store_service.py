@@ -22,7 +22,9 @@ class VectorStoreService:
     def get_or_create_collection(self, collection_name: str, metadata: dict = None):
         """Gets or creates a ChromaDB collection with the Ollama embedding function."""
         return self.client.get_or_create_collection(
-            name=collection_name, metadata=metadata, embedding_function=self.embedding_function
+            name=collection_name,
+            metadata=metadata,
+            embedding_function=self.embedding_function,
         )
 
     def list_collections(self):
@@ -159,13 +161,17 @@ class VectorStoreService:
             return {}
 
     def delete_kb(self, kb_name: str):
-        """Deletes an entire knowledge base (collection)."""
+        """
+        Deletes an entire knowledge base, first checking if it exists.
+        """
         try:
-            log.warning("Deleting knowledge base: '%s'", kb_name)
-            self.client.delete_collection(name=kb_name)
-            log.info("Knowledge base '%s' deleted successfully.", kb_name)
-        except ValueError:
-            log.info("Knowledge base '%s' did not exist, nothing to delete.", kb_name)
+            existing_collections = [c.name for c in self.client.list_collections()]
+            if kb_name in existing_collections:
+                log.warning("Deleting knowledge base: '%s'", kb_name)
+                self.client.delete_collection(name=kb_name)
+                log.info("Knowledge base '%s' deleted successfully.", kb_name)
+            else:
+                log.info("Knowledge base '%s' did not exist, nothing to delete.", kb_name)
         except Exception as e:
             log.error("Failed to delete knowledge base '%s': %s", kb_name, e)
             raise

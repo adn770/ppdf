@@ -94,13 +94,21 @@ def generate_character():
 
     try:
         log.debug("Fetching character creation rules from '%s'", rules_kb)
-        rules_docs, _, _ = current_app.vector_store.query(
+        # Fetch a large number of results to filter in-app
+        rules_docs, rules_metas, _ = current_app.vector_store.query(
             rules_kb,
             query_text="character creation rules",
-            n_results=10,  # Fetch more docs to get all relevant sections
-            where_filter={"tags": {"$contains": "type:character_creation"}},
+            n_results=50,
         )
-        rules_context = "\n\n".join(rules_docs)
+
+        # In-app filtering
+        filtered_docs = [
+            doc
+            for i, doc in enumerate(rules_docs)
+            if '"type:character_creation"' in rules_metas[i].get("tags", "")
+        ]
+
+        rules_context = "\n\n".join(filtered_docs)
         if not rules_context:
             log.warning(
                 "No chunks with 'type:character_creation' found in '%s'. "
@@ -113,6 +121,7 @@ def generate_character():
             )
 
         char_creation_config = current_app.config_service.get_model_config("char")
+        raw_llm_log = current_app.config.get("RAW_LLM_RESPONSE", False)
         char_data = generate_character_json(
             description=description,
             rules_context=rules_context,
@@ -120,6 +129,7 @@ def generate_character():
             ollama_url=char_creation_config["url"],
             model=char_creation_config["model"],
             context_window=char_creation_config["context_window"],
+            raw_response_log=raw_llm_log,
         )
         return jsonify(char_data)
     except ValueError as e:

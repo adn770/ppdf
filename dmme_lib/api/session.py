@@ -8,6 +8,7 @@ bp = Blueprint("session", __name__)
 log = logging.getLogger("dmme.api")
 
 AUTOSAVE_FILENAME = "autosave.json"
+ACTIVE_SESSION_ID = None
 
 
 def _get_autosave_path():
@@ -16,12 +17,45 @@ def _get_autosave_path():
     return os.path.join(app_dir, AUTOSAVE_FILENAME)
 
 
+@bp.route("/start", methods=["POST"])
+def start_session():
+    """Receives and sets the active session ID from the frontend."""
+    global ACTIVE_SESSION_ID
+    data = request.get_json()
+    session_id = data.get("sessionId")
+    if not session_id:
+        return jsonify({"error": "No sessionId provided"}), 400
+    ACTIVE_SESSION_ID = session_id
+    log.info("New active session started: %s", ACTIVE_SESSION_ID)
+    return jsonify({"success": True, "active_session": ACTIVE_SESSION_ID})
+
+
+@bp.route("/end", methods=["POST"])
+def end_session():
+    """Clears the active session ID."""
+    global ACTIVE_SESSION_ID
+    log.info("Ending active session: %s", ACTIVE_SESSION_ID)
+    ACTIVE_SESSION_ID = None
+    return jsonify({"success": True, "message": "Session ended."})
+
+
 @bp.route("/autosave", methods=["POST"])
 def autosave_session():
     """Saves the current game state to a temporary recovery file."""
+    global ACTIVE_SESSION_ID
     state = request.get_json()
     if not state or not state.get("config"):
         return jsonify({"error": "No valid game state provided"}), 400
+
+    session_id = state.get("sessionId")
+    if not ACTIVE_SESSION_ID or session_id != ACTIVE_SESSION_ID:
+        log.warning(
+            "Rejected stale autosave attempt for session '%s' (active is '%s').",
+            session_id,
+            ACTIVE_SESSION_ID,
+        )
+        # Return success to prevent frontend errors, but do not save.
+        return jsonify({"success": True, "message": "Stale session, save rejected."})
 
     autosave_path = _get_autosave_path()
     log.debug("Autosaving session state to: %s", autosave_path)
@@ -88,7 +122,9 @@ def summarize_session():
         # Step 1: Create a new session record in the database
         session_id = current_app.storage.create_session(campaign_id)
         log.info(
-            "Created new session record (ID: %d) for campaign %d.", session_id, campaign_id
+            "Created new session record (ID: %d) for campaign %d.",
+            session_id,
+            campaign_id,
         )
 
         # Step 2: Use the RAG service to generate the summary
@@ -104,6 +140,9 @@ def summarize_session():
 
     except Exception as e:
         log.error(
-            "Failed to summarize session for campaign %d: %s", campaign_id, e, exc_info=True
+            "Failed to summarize session for campaign %d: %s",
+            campaign_id,
+            e,
+            exc_info=True,
         )
         return jsonify({"error": "Failed to create session summary."}), 500

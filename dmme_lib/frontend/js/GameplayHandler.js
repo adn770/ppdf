@@ -8,6 +8,7 @@ export class GameplayHandler {
         this.dmInsight = dmInsightInstance;
         this.lightbox = lightboxInstance;
         this.gameConfig = null;
+        this.sessionId = null;
         this.narrativeView = document.getElementById('narrative-view');
         this.playerInput = document.getElementById('player-input');
         this.sendCommandBtn = document.getElementById('send-command-btn');
@@ -26,11 +27,21 @@ export class GameplayHandler {
         this.insightToolbarBtn = document.getElementById('dm-insight-btn-toolbar');
 
         this._addEventListeners();
+        console.log('TRACE: GameplayHandler constructed.');
     }
 
     async init(gameConfig, recoveredState = null) {
         this.gameConfig = gameConfig;
-        console.log("GameplayHandler initialized with config:", this.gameConfig);
+        this.sessionId = recoveredState?.sessionId || Date.now().toString();
+        console.log("TRACE: GameplayHandler.init() called with gameConfig:", gameConfig);
+        console.log(`TRACE: Active session ID set to: ${this.sessionId}`);
+
+        // Inform the backend that a new session is starting
+        apiCall('/api/session/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId: this.sessionId }),
+        });
 
         this._updateKnowledgePanel();
         this._applyInitialStyles();
@@ -38,6 +49,7 @@ export class GameplayHandler {
         await this._populatePartyStatusPanel();
         // Make the main game content visible
         document.getElementById('game-view-content').style.display = 'flex';
+
         if (recoveredState) {
             this.loadState(recoveredState);
         } else {
@@ -99,6 +111,7 @@ export class GameplayHandler {
             item.appendChild(body);
             this.partyAccordionContainer.appendChild(item);
         });
+
         // Add event listeners to the newly created headers
         this.partyAccordionContainer.querySelectorAll('.accordion-header').forEach(button => {
             button.addEventListener('click', () => {
@@ -352,8 +365,7 @@ export class GameplayHandler {
         let buffer = '';
         let currentParagraph = initialParagraph;
         let currentParagraphMarkdown = '';
-        this.lastInsightContent = '';
-        // Reset for this turn
+        this.lastInsightContent = ''; // Reset for this turn
 
         while (true) {
             const { value, done } = await reader.read();
@@ -361,8 +373,7 @@ export class GameplayHandler {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop();
-            // Keep the potentially incomplete last line
+            buffer = lines.pop(); // Keep the potentially incomplete last line
 
             for (const line of lines) {
                 if (!line.trim()) continue;
@@ -415,33 +426,38 @@ export class GameplayHandler {
 
     startAutosave() {
         if (this.autosaveInterval) clearInterval(this.autosaveInterval);
+        console.trace("TRACE: Autosave interval starting.");
         this.autosaveInterval = setInterval(() => this._performAutosave(), 15000);
-        console.log("Autosave interval started.");
     }
 
     stopAutosave() {
         if (this.autosaveInterval) {
+            console.log(`TRACE: Autosave interval stopping with ID: ${this.autosaveInterval}.`);
             clearInterval(this.autosaveInterval);
             this.autosaveInterval = null;
-            console.log("Autosave interval stopped.");
         }
     }
 
     endGame() {
+        console.log('TRACE: GameplayHandler.endGame() called.');
         this.stopAutosave();
         this.gameConfig = null;
-        console.log("Game session ended and autosave stopped.");
+        this.sessionId = null;
+        apiCall('/api/session/end', { method: 'POST' }); // Tell backend to clear active ID
     }
 
     async _performAutosave() {
+        console.log('TRACE: _performAutosave() triggered.');
         if (!this.gameConfig) {
-            console.log("No active game, skipping autosave.");
+            console.log('TRACE: Autosave SKIPPED. Reason: this.gameConfig is null.');
             return;
         }
 
+        console.log(`TRACE: Autosave PROCEEDING for sessionId: ${this.sessionId}`);
         const state = {
             config: this.gameConfig,
             narrativeHTML: this.narrativeView.innerHTML,
+            sessionId: this.sessionId,
         };
         try {
             await fetch('/api/session/autosave', {
@@ -450,13 +466,14 @@ export class GameplayHandler {
                 body: JSON.stringify(state),
                 keepalive: true
             });
-            console.log("Autosave successful.");
+            console.log("TRACE: Autosave successful.");
         } catch (error) {
-            console.error("Autosave failed:", error);
+            console.error("TRACE: Autosave failed:", error);
         }
     }
 
     loadState(recoveredState) {
+        console.log('TRACE: GameplayHandler.loadState() called.');
         this.narrativeView.innerHTML = recoveredState.narrativeHTML;
         this.narrativeView.scrollTop = this.narrativeView.scrollHeight;
         this.playerInput.disabled = false;

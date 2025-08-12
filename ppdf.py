@@ -595,6 +595,7 @@ class Application:
             ollama_url=self.args.url,
             model=self.args.model,
             stream=False,
+            raw_response_log=self.args.raw_llm_response,
         )
         if "error" in response_data:
             log_llm.error("Ollama API request failed: %s", response_data["error"])
@@ -645,7 +646,7 @@ class Application:
             '  python ppdf.py document.pdf -o "output.md"',
             '  python ppdf.py document.pdf --extract-images "assets/images/my_module"',
             "  python ppdf.py document.pdf --semantic-labeling -e out.txt",
-            "  python ppdf.py document.pdf -d llm,struct --color-logs",
+            "  python ppdf.py document.pdf -d llm,struct --color-logs --raw-llm-response",
         ]
         presets_details = ["\nPrompt Preset Details:"]
         for name in sorted(PROMPT_PRESETS.keys()):
@@ -811,6 +812,11 @@ class Application:
             action="store_true",
             help="Enable Stage 0 to have the LLM analyze the selected presets."
             " (default: %(default)s)",
+        )
+        g_out.add_argument(
+            "--raw-llm-response",
+            action="store_true",
+            help="Print the full, raw JSON response from the LLM for debugging.",
         )
         g_out.add_argument(
             "-v",

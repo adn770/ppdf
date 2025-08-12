@@ -62,6 +62,11 @@ def main():
         metavar="TOPICS",
         help="Enable DEBUG logging (all,api,rag,ingest,storage,config,llm).",
     )
+    g_log.add_argument(
+        "--raw-llm-response",
+        action="store_true",
+        help="Print the full, raw JSON response from the LLM for debugging.",
+    )
     args = parser.parse_args()
 
     # --- Logging Setup ---
@@ -80,6 +85,7 @@ def main():
             "OLLAMA_URL": args.ollama_url,
             "OLLAMA_MODEL": args.ollama_model,
             "EMBEDDING_MODEL": args.embedding_model,
+            "RAW_LLM_RESPONSE": args.raw_llm_response,
         }.items()
         if value is not None
     }
