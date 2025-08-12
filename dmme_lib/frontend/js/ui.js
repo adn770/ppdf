@@ -1,7 +1,12 @@
 // dmme_lib/frontend/js/ui.js
 import { i18n } from './i18n.js';
 
-const _gameSpinner = document.getElementById('game-spinner');
+let _gameSpinner = null;
+
+export function initSpinner() {
+    _gameSpinner = document.getElementById('game-spinner');
+}
+
 export function showGameSpinner() {
     if (_gameSpinner) _gameSpinner.style.display = 'flex';
 }

@@ -74,6 +74,11 @@ class IngestionService:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
         return f'"{single_line_text}"'
 
+    def _cleanup_markdown(self, text: str) -> str:
+        """Removes common markdown syntax (bold, italics, headers) from a string."""
+        # This regex removes **, *, and #+ prefixes.
+        return re.sub(r"#+\s*|\*+", "", text).strip()
+
     def _extract_key_terms_from_chunk(
         self, chunk: str, tags: list[str], section_title: str
     ) -> list[str]:
@@ -106,9 +111,12 @@ class IngestionService:
             log.debug("Applying 'creature' rule for key term extraction.")
             raw_terms = [section_title]  # Overwrite all other terms
 
+        # Clean markdown from all collected raw terms before sanitizing
+        cleaned_terms = [self._cleanup_markdown(term) for term in raw_terms]
+
         # Sanitize all extracted terms
         sanitized_terms = [
-            term.strip().rstrip(":").strip() for term in raw_terms if term.strip()
+            term.strip().rstrip(":").strip() for term in cleaned_terms if term.strip()
         ]
         log.debug("Final sanitized key terms: %s", sanitized_terms)
         return sorted(list(set(sanitized_terms)))
@@ -185,7 +193,7 @@ class IngestionService:
                     )
 
                 level = len(match.group(1))
-                title = match.group(2).strip()
+                title = self._cleanup_markdown(match.group(2))
                 current_path = current_path[: level - 1]
                 current_path.append(title)
                 current_content = []
@@ -248,7 +256,7 @@ class IngestionService:
         util_config = self.config_service.get_model_config("classify")
 
         processed_chunks = []
-        for section in sections:
+        for i, section in enumerate(sections):
             if not section["content"]:
                 continue
 
@@ -313,6 +321,7 @@ class IngestionService:
                 chunk_metadata = {
                     "source_file": metadata.get("filename", "unknown.md"),
                     "section_title": title,
+                    "section_number": i,
                     "hierarchy": hierarchy,
                     "tags": final_tags,
                     "is_dm_only": is_dm_only,
@@ -514,7 +523,7 @@ class IngestionService:
         classifier_prompt = self._get_prompt("SECTION_CLASSIFIER", lang)
         valid_section_tags = {"content", "appendix"}
         valid_llm_tags = valid_section_tags.union(
-            {"preface", "table_of_contents", "legal", "credits", "index"}
+            {"table_of_contents", "legal", "credits", "index"}
         )
         util_config = self.config_service.get_model_config("classify")
         model_details = get_model_details(util_config["url"], util_config["model"])
@@ -689,6 +698,7 @@ class IngestionService:
                 chunk_metadata = {
                     "source_file": metadata.get("filename", "unknown.pdf"),
                     "section_title": section.title or "Untitled",
+                    "section_number": i,
                     "page_start": section.page_start,
                     "tags": final_tags,
                     "is_dm_only": is_dm_only,

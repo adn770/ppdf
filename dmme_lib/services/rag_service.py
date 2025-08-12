@@ -28,6 +28,7 @@ class RAGService:
         self.raw_llm_log = raw_llm_log
         self.context_cache = {}
         self.current_location = None
+        self.last_kickoff_section = None
         log.info("RAGService initialized.")
 
     def _get_prompt(self, key: str, lang: str) -> str:
@@ -91,6 +92,7 @@ class RAGService:
         # Reset cache for the new game session
         self.context_cache = {}
         self.current_location = None
+        self.last_kickoff_section = None
         log.info("Context cache cleared for new game session.")
 
         # --- Get Session-Specific Configuration ---
@@ -116,46 +118,56 @@ class RAGService:
         priority_labels = ["narrative:kickoff", "narrative:hook"]
         found_docs, found_metas = [], []
 
+        # Find the best kickoff chunk by searching for kickoff/hook tags
+        # and selecting the one with the lowest section_number.
+        candidate_chunks = []
         for label in priority_labels:
             log.debug("Searching for kickoff content with priority label: '%s'", label)
-            # Fetch a larger batch of results to filter in-app
             docs, metas, _ = self.vector_store.query(
                 active_kb,
-                query_text=f"Text for starting an adventure, like a {label.replace('_', ' ')}",
-                n_results=10,
+                query_text=f"Adventure start, beginning, introduction, or {label}",
+                n_results=20,
             )
-            # In-app filtering
             for i, meta in enumerate(metas):
                 if label in meta.get("tags", ""):
-                    log.info("Found high-priority kickoff content with label '%s'.", label)
-                    # Get all chunks from the same section
-                    all_docs, all_metas = self._get_full_section(active_kb, meta)
-                    s_chunks = sorted(
-                        zip(all_docs, all_metas),
-                        key=lambda item: item[1].get("chunk_id", 0),
-                    )
-                    start_idx = next(
-                        (j for j, (d, _) in enumerate(s_chunks) if d == docs[i]), -1
-                    )
-                    if start_idx != -1:
-                        sequence = [s_chunks[start_idx]]
-                        # Append subsequent mechanics chunks
-                        for k in range(start_idx + 1, len(s_chunks)):
-                            if "type:mechanics" in s_chunks[k][1].get("tags", ""):
-                                sequence.append(s_chunks[k])
-                            else:
-                                break
-                        found_docs = [item[0] for item in sequence]
-                        found_metas = [item[1] for item in sequence]
-                    else:
-                        found_docs, found_metas = all_docs, all_metas
-                    break  # Exit inner loop once a match is found
-            if found_docs:
-                break  # Exit outer loop if content was found
+                    candidate_chunks.append({"doc": docs[i], "meta": meta})
 
-        # Fallback: General search if no priority content was found
-        if not found_docs:
-            log.debug("No high-priority content found. Falling back to general search.")
+        best_kickoff_chunk = None
+        if candidate_chunks:
+            best_kickoff_chunk = min(
+                candidate_chunks, key=lambda x: x["meta"].get("section_number", 9999)
+            )
+
+        if best_kickoff_chunk:
+            kickoff_meta = best_kickoff_chunk["meta"]
+            self.last_kickoff_section = kickoff_meta.get("section_number")
+            log.info(
+                "Found best kickoff content in section #%s ('%s').",
+                self.last_kickoff_section,
+                kickoff_meta.get("section_title"),
+            )
+            all_docs, all_metas = self._get_full_section(active_kb, kickoff_meta)
+            # Find the sequence of read-aloud/mechanics chunks for the kickoff
+            s_chunks = sorted(
+                zip(all_docs, all_metas), key=lambda item: item[1].get("chunk_id", 0)
+            )
+            start_idx = next(
+                (j for j, (d, _) in enumerate(s_chunks) if d == best_kickoff_chunk["doc"]),
+                -1,
+            )
+            if start_idx != -1:
+                sequence = [s_chunks[start_idx]]
+                for k in range(start_idx + 1, len(s_chunks)):
+                    if "type:mechanics" in s_chunks[k][1].get("tags", ""):
+                        sequence.append(s_chunks[k])
+                    else:
+                        break
+                found_docs = [item[0] for item in sequence]
+                found_metas = [item[1] for item in sequence]
+            else:
+                found_docs, found_metas = all_docs, all_metas
+        else:
+            log.warning("No kickoff/hook tags found. Falling back to general search.")
             docs, metas, _ = self.vector_store.query(
                 active_kb,
                 "adventure introduction, summary, or starting location",
@@ -163,6 +175,8 @@ class RAGService:
             )
             if docs:
                 found_docs, found_metas = self._get_full_section(active_kb, metas[0])
+                if found_metas:
+                    self.last_kickoff_section = found_metas[0].get("section_number")
 
         if not found_docs:
             found_docs = ["No introductory text was found in the knowledge base."]
@@ -231,114 +245,141 @@ class RAGService:
         rules_kb = game_config.get("rules")
         history_str = "\n".join([f"{t['role'].title()}: {t['content']}" for t in history])
 
-        # --- Stage 1: Expand player command into multiple search queries ---
-        expander_prompt = self._get_prompt("QUERY_EXPANDER", lang)
-        expander_user_content = expander_prompt.format(
-            history=history_str, command=player_command
+        # --- State Check: Is this the first move after kickoff? ---
+        is_first_move = (
+            self.last_kickoff_section is not None
+            and len(history) == 2
+            and history[0].get("role") == "assistant"
         )
-        queries = [player_command]
-        try:
-            util_config = self.config_service.get_model_config("classify")
-            response_data = query_text_llm(
-                "",
-                expander_user_content,
-                util_config["url"],
-                util_config["model"],
-                stream=False,
-                temperature=util_config["temperature"],
-                context_window=util_config["context_window"],
-                raw_response_log=self.raw_llm_log,
+
+        if is_first_move:
+            log.info("First move detected. Applying sequential retrieval logic.")
+            target_section = self.last_kickoff_section + 1
+            where_filter = {"section_number": target_section}
+            docs, metas, _ = self.vector_store.query(
+                module_kb,
+                "The room or area immediately following the introduction.",
+                n_results=10,  # Get all chunks from the section
+                where_filter=where_filter,
             )
-            response_str = response_data.get("response", "[]")
-            json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
-                expanded_queries = json.loads(json_str)
-            else:
-                expanded_queries = []
-
-            if isinstance(expanded_queries, list):
-                queries.extend(expanded_queries)
-            log.info("Expanded into %d search queries: %s", len(queries), queries)
-        except (json.JSONDecodeError, TypeError) as e:
-            log.warning("Could not parse query expansion response. Error: %s", e)
-
-        # --- Stage 2: Execute all queries and check for cacheable location ---
-        narrative_filter = {"is_dm_only": False}
-
-        # We query for insight first to identify a primary location
-        insight_module_docs, insight_module_metas = execute_queries(
-            self.vector_store, module_kb, queries, n_results=3
-        )
-        primary_location = self._find_primary_location(insight_module_metas)
-
-        # --- Stage 3: Build Context (Cache or Live) ---
-        if primary_location and primary_location["name"] == self.current_location:
-            log.info(
-                "CACHE HIT: Using cached context for location: '%s'",
-                self.current_location,
-            )
-            cache_entry = self.context_cache[self.current_location]
-            narrative_context_str = cache_entry["narrative_context"]
-            insight_data = cache_entry["insight_data"]
+            narrative_context_str = "\n\n---\n\n".join(docs) or "No context found."
+            insight_data = [
+                {"text": d, "tags": json.loads(m.get("tags", "[]"))}
+                for d, m in zip(docs, metas)
+            ]
+            self.last_kickoff_section = None  # Consume the state
         else:
-            log.info("CACHE MISS: Building live context.")
-            if primary_location:
+            # --- Stage 1: Expand player command into multiple search queries ---
+            expander_prompt = self._get_prompt("QUERY_EXPANDER", lang)
+            expander_user_content = expander_prompt.format(
+                history=history_str, command=player_command
+            )
+            queries = [player_command]
+            try:
+                util_config = self.config_service.get_model_config("classify")
+                response_data = query_text_llm(
+                    "",
+                    expander_user_content,
+                    util_config["url"],
+                    util_config["model"],
+                    stream=False,
+                    temperature=util_config["temperature"],
+                    context_window=util_config["context_window"],
+                    raw_response_log=self.raw_llm_log,
+                )
+                response_str = response_data.get("response", "[]")
+                json_match = re.search(r"\[.*\]", response_str, re.DOTALL)
+                if json_match:
+                    json_str = json_match.group(0)
+                    expanded_queries = json.loads(json_str)
+                else:
+                    expanded_queries = []
+
+                if isinstance(expanded_queries, list):
+                    queries.extend(expanded_queries)
+                log.info("Expanded into %d search queries: %s", len(queries), queries)
+            except (json.JSONDecodeError, TypeError) as e:
+                log.warning("Could not parse query expansion response. Error: %s", e)
+
+            # --- Stage 2: Execute all queries and check for cacheable location ---
+            narrative_filter = {"is_dm_only": False}
+
+            # We query for insight first to identify a primary location
+            insight_module_docs, insight_module_metas = execute_queries(
+                self.vector_store, module_kb, queries, n_results=3
+            )
+            primary_location = self._find_primary_location(insight_module_metas)
+
+            # --- Stage 3: Build Context (Cache or Live) ---
+            if primary_location and primary_location["name"] == self.current_location:
                 log.info(
-                    "New location detected: '%s'. Building cache.",
-                    primary_location["name"],
+                    "CACHE HIT: Using cached context for location: '%s'",
+                    self.current_location,
                 )
-                self.current_location = primary_location["name"]
-
-                # Build player-safe context for the new location
-                narrative_docs, _ = self._get_full_section(
-                    module_kb,
-                    primary_location["meta"],
-                    where_filter=narrative_filter,
-                )
-                narrative_context_str = "\n\n---\n\n".join(narrative_docs)
-
-                # Build full insight context for the new location
-                full_docs, full_metas = self._get_full_section(
-                    module_kb, primary_location["meta"]
-                )
-                insight_data = [
-                    {"text": d, "tags": json.loads(m.get("tags", "[]"))}
-                    for d, m in zip(full_docs, full_metas)
-                ]
-                # Store both in cache
-                self.context_cache[self.current_location] = {
-                    "narrative_context": narrative_context_str,
-                    "insight_data": insight_data,
-                }
+                cache_entry = self.context_cache[self.current_location]
+                narrative_context_str = cache_entry["narrative_context"]
+                insight_data = cache_entry["insight_data"]
             else:
-                # No primary location, use multi-query results directly and clear cache
-                self.current_location = None
-                log.info("No primary location. Using merged query results.")
-                narrative_module_docs, _ = execute_queries(
-                    self.vector_store, module_kb, queries, filter=narrative_filter
-                )
-                rules_docs, _ = execute_queries(
-                    self.vector_store, rules_kb, queries, n_results=3
-                )
+                log.info("CACHE MISS: Building live context.")
+                if primary_location:
+                    log.info(
+                        "New location detected: '%s'. Building cache.",
+                        primary_location["name"],
+                    )
+                    self.current_location = primary_location["name"]
 
-                context_blocks = []
-                if narrative_module_docs:
-                    context_blocks.append("\n\n---\n\n".join(narrative_module_docs))
-                if rules_docs:
-                    context_blocks.append("\n\n---\n\n".join(rules_docs))
-                narrative_context_str = "\n\n".join(context_blocks) or "No context found."
+                    # Build player-safe context for the new location
+                    narrative_docs, _ = self._get_full_section(
+                        module_kb,
+                        primary_location["meta"],
+                        where_filter=narrative_filter,
+                    )
+                    narrative_context_str = "\n\n---\n\n".join(narrative_docs)
 
-                insight_rules_docs, _ = execute_queries(
-                    self.vector_store, rules_kb, queries, n_results=3
-                )
-                insight_data = [
-                    {"text": d, "tags": json.loads(m.get("tags", "[]"))}
-                    for d, m in zip(insight_module_docs, insight_module_metas)
-                ]
-                insight_data.extend(
-                    [{"text": doc, "tags": ["type:mechanics"]} for doc in insight_rules_docs]
-                )
+                    # Build full insight context for the new location
+                    full_docs, full_metas = self._get_full_section(
+                        module_kb, primary_location["meta"]
+                    )
+                    insight_data = [
+                        {"text": d, "tags": json.loads(m.get("tags", "[]"))}
+                        for d, m in zip(full_docs, full_metas)
+                    ]
+                    # Store both in cache
+                    self.context_cache[self.current_location] = {
+                        "narrative_context": narrative_context_str,
+                        "insight_data": insight_data,
+                    }
+                else:
+                    # No primary location, use multi-query results directly and clear cache
+                    self.current_location = None
+                    log.info("No primary location. Using merged query results.")
+                    narrative_module_docs, _ = execute_queries(
+                        self.vector_store, module_kb, queries, filter=narrative_filter
+                    )
+                    rules_docs, _ = execute_queries(
+                        self.vector_store, rules_kb, queries, n_results=3
+                    )
+
+                    context_blocks = []
+                    if narrative_module_docs:
+                        context_blocks.append("\n\n---\n\n".join(narrative_module_docs))
+                    if rules_docs:
+                        context_blocks.append("\n\n---\n\n".join(rules_docs))
+                    narrative_context_str = "\n\n".join(context_blocks) or "No context found."
+
+                    insight_rules_docs, _ = execute_queries(
+                        self.vector_store, rules_kb, queries, n_results=3
+                    )
+                    insight_data = [
+                        {"text": d, "tags": json.loads(m.get("tags", "[]"))}
+                        for d, m in zip(insight_module_docs, insight_module_metas)
+                    ]
+                    insight_data.extend(
+                        [
+                            {"text": doc, "tags": ["type:mechanics"]}
+                            for doc in insight_rules_docs
+                        ]
+                    )
 
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
