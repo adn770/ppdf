@@ -40,7 +40,8 @@ export class LibraryHub {
         this.entityListKbNameEl = document.getElementById('entity-list-kb-name');
         this.entityFilterInput = document.getElementById('entity-filter-input');
         this.entityMasterList = document.getElementById('entity-master-list');
-        this.entityDetailsPlaceholder = document.getElementById('entity-details-placeholder');
+        this.entityDetailsPlaceholder =
+            document.getElementById('entity-details-placeholder');
         this.entityRelatedChunks = document.getElementById('entity-related-chunks');
 
         this.assetsView = document.getElementById('library-assets-view');
@@ -66,17 +67,22 @@ export class LibraryHub {
         this.listEl.addEventListener('click', (e) => this._handleKbListInteraction(e));
         this.assetGrid.addEventListener('click', (e) => this._handleAssetInteraction(e));
         this.entityFilterInput.addEventListener('input', () => this._filterEntityList());
-        this.entityMasterList.addEventListener('click', (e) => this._handleEntitySelection(e));
+        this.entityMasterList.addEventListener(
+            'click', (e) => this._handleEntitySelection(e)
+        );
         this.searchInput.addEventListener('input', () => this._debounceSearch());
         this.searchScope.addEventListener('change', () => this._performSearch());
         this.contentViewToggleBtn.addEventListener('click', () => this._toggleContentView());
         this._addTooltipListeners();
         // Delegated listener for clicks inside content areas
-        const contentAreas = [this.contentListEl, this.searchResultsView, this.entityRelatedChunks];
+        const contentAreas =
+            [this.contentListEl, this.searchResultsView, this.entityRelatedChunks];
         contentAreas.forEach(area => {
             area.addEventListener('click', (e) => this._handleContentAreaClick(e));
         });
-        this.clearContentFilterBtn.addEventListener('click', () => this._clearContentFilter());
+        this.clearContentFilterBtn.addEventListener(
+            'click', () => this._clearContentFilter()
+        );
 
         this.isInitialized = true;
     }
@@ -93,20 +99,21 @@ export class LibraryHub {
     }
 
     _handleTooltipShow(event) {
-        const statsTarget = event.target.closest('[data-structured-stats]');
+        const dataTarget = event.target.closest('[data-structured-data]');
         const linksTarget = event.target.closest('[data-linked-chunks]');
-        if (!statsTarget && !linksTarget) return;
+        if (!dataTarget && !linksTarget) return;
 
         let tooltipContent = '';
         try {
-            if (statsTarget) {
-                const statsRaw = statsTarget.dataset.structuredStats;
-                const statsObj = JSON.parse(statsRaw);
-                tooltipContent = JSON.stringify(statsObj, null, 2);
+            if (dataTarget) {
+                const dataRaw = dataTarget.dataset.structuredData;
+                const dataObj = JSON.parse(dataRaw);
+                tooltipContent = JSON.stringify(dataObj, null, 2);
             } else if (linksTarget) {
                 const linksRaw = linksTarget.dataset.linkedChunks;
                 const linkIds = JSON.parse(linksRaw);
-                const allDocs = this.kbDataCache[this.selectedKb.name]?.explore?.documents || [];
+                const allDocs =
+                    this.kbDataCache[this.selectedKb.name]?.explore?.documents || [];
                 const linkedTitles = linkIds.map(id => {
                     const doc = allDocs.find(d => d.chunk_id === id);
                     return doc ? doc.section_title : 'Unknown Section';
@@ -124,7 +131,8 @@ export class LibraryHub {
     }
 
     _handleTooltipHide(event) {
-        const target = event.target.closest('[data-structured-stats], [data-linked-chunks]');
+        const target =
+            event.target.closest('[data-structured-data], [data-linked-chunks]');
         if (target && this.tooltip) {
             this.tooltip.style.display = 'none';
         }
@@ -250,7 +258,8 @@ export class LibraryHub {
         this._showSearchResults();
         this.searchResultsView.innerHTML = '<div class="spinner"></div>';
         try {
-            const results = await apiCall(`/api/search?q=${encodeURIComponent(query)}&scope=${scope}`);
+            const results =
+                await apiCall(`/api/search?q=${encodeURIComponent(query)}&scope=${scope}`);
             this._renderSearchResults(results);
         } catch (error) {
             this.searchResultsView.innerHTML = '<p class="error">Search failed.</p>';
@@ -260,7 +269,8 @@ export class LibraryHub {
     _renderSearchResults(results) {
         this.searchResultsView.innerHTML = '';
         if (!results || results.length === 0) {
-            this.searchResultsView.innerHTML = `<p>No results for "${this.searchInput.value}".</p>`;
+            this.searchResultsView.innerHTML =
+                `<p>No results for "${this.searchInput.value}".</p>`;
             return;
         }
         results.forEach(result => {
@@ -300,10 +310,14 @@ export class LibraryHub {
             document.body.addEventListener(eventName, this._preventDefaults, false);
         });
         ['dragenter', 'dragover'].forEach(eventName => {
-            this.dropzone.addEventListener(eventName, () => this.dropzone.classList.add('drag-over'), false);
+            this.dropzone.addEventListener(
+                eventName, () => this.dropzone.classList.add('drag-over'), false
+            );
         });
         ['dragleave', 'drop'].forEach(eventName => {
-            this.dropzone.addEventListener(eventName, () => this.dropzone.classList.remove('drag-over'), false);
+            this.dropzone.addEventListener(
+                eventName, () => this.dropzone.classList.remove('drag-over'), false
+            );
         });
         this.dropzone.addEventListener('drop', (e) => this._handleFileDrop(e), false);
     }
@@ -314,7 +328,8 @@ export class LibraryHub {
             const kbs = await apiCall('/api/knowledge/');
             this.renderKbList(kbs);
         } catch (error) {
-            this.listEl.innerHTML = `<li class="error">${this.app.i18n.t('kbMgmtFailed')}</li>`;
+            this.listEl.innerHTML =
+                `<li class="error">${this.app.i18n.t('kbMgmtFailed')}</li>`;
         }
     }
 
@@ -344,7 +359,8 @@ export class LibraryHub {
                     <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
                 </button>
             `;
-            li.querySelector('.item-main-content').addEventListener('click', () => this.showKbDetails(kb));
+            li.querySelector('.item-main-content')
+              .addEventListener('click', () => this.showKbDetails(kb));
             this.listEl.appendChild(li);
         });
     }
@@ -388,7 +404,8 @@ export class LibraryHub {
         this.entityChartEl.innerHTML = '<div class="spinner"></div>';
         this.wordCloudEl.innerHTML = '<div class="spinner"></div>';
         try {
-            const data = await apiCall(`/api/knowledge/dashboard/${this.selectedKb.name}`);
+            const data =
+                await apiCall(`/api/knowledge/dashboard/${this.selectedKb.name}`);
             this.kbDataCache[this.selectedKb.name].dashboard = data;
             this.chunkCountEl.textContent = data.chunk_count.toLocaleString();
             this._renderEntityChart(data.entity_distribution);
@@ -461,14 +478,17 @@ export class LibraryHub {
         this.kbDataCache[this.selectedKb.name].content = data.documents;
         wrapper.innerHTML = '';
         if (!data.documents || data.documents.length === 0) {
-            wrapper.innerHTML = `<p>No text documents found in this knowledge base.</p>`;
+            wrapper.innerHTML =
+                `<p>No text documents found in this knowledge base.</p>`;
             return;
         }
 
         if (this.contentViewMode === 'list') {
             data.documents.forEach(doc => {
                 const summary = isDeep ? summaryMap.get(doc.chunk_id) : null;
-                wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc, false, summary));
+                wrapper.insertAdjacentHTML(
+                    'beforeend', this._createChunkCardHTML(doc, false, summary)
+                );
             });
         } else { // 'flow' mode
             const sections = data.documents.reduce((acc, doc) => {
@@ -479,7 +499,8 @@ export class LibraryHub {
                 acc[title].chunks.push(doc);
                 return acc;
             }, {});
-            const sortedSections = Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
+            const sortedSections =
+                Object.entries(sections).sort((a, b) => a[1].page - b[1].page);
 
             for (const [title, sectionData] of sortedSections) {
                 const header = document.createElement('h4');
@@ -488,7 +509,9 @@ export class LibraryHub {
                 wrapper.appendChild(header);
                 sectionData.chunks.forEach(doc => {
                     const summary = isDeep ? summaryMap.get(doc.chunk_id) : null;
-                    wrapper.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc, false, summary));
+                    wrapper.insertAdjacentHTML(
+                        'beforeend', this._createChunkCardHTML(doc, false, summary)
+                    );
                 });
             }
         }
@@ -519,7 +542,8 @@ export class LibraryHub {
 
         this.searchInput.value = '';
         this.selectedEntity = li.dataset.entityName;
-        this.entityMasterList.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
+        this.entityMasterList.querySelectorAll('li')
+            .forEach(el => el.classList.remove('selected'));
         li.classList.add('selected');
 
         this.entityRelatedChunks.innerHTML = '<div class="spinner"></div>';
@@ -535,10 +559,13 @@ export class LibraryHub {
         });
         this.entityRelatedChunks.innerHTML = '';
         if (relatedChunks.length === 0) {
-            this.entityRelatedChunks.innerHTML = `<p>No chunks for "${this.selectedEntity}".</p>`;
+            this.entityRelatedChunks.innerHTML =
+                `<p>No chunks for "${this.selectedEntity}".</p>`;
         } else {
             relatedChunks.forEach(doc => {
-                this.entityRelatedChunks.insertAdjacentHTML('beforeend', this._createChunkCardHTML(doc));
+                this.entityRelatedChunks.insertAdjacentHTML(
+                    'beforeend', this._createChunkCardHTML(doc)
+                );
             });
         }
     }
@@ -549,7 +576,6 @@ export class LibraryHub {
         const kbName = isSearchResult ? result.kb_name : this.selectedKb.name;
         const tags = JSON.parse(doc.tags || '[]');
         const tagsForAttr = doc.tags || '[]';
-
         // Sort tags by category
         const categoryOrder = ['type', 'narrative', 'gameplay', 'table', 'access'];
         tags.sort((a, b) => {
@@ -561,20 +587,21 @@ export class LibraryHub {
             const finalIndexB = indexB === -1 ? categoryOrder.length : indexB;
             return finalIndexA - finalIndexB;
         });
-
         const hierarchy = JSON.parse(doc.hierarchy || '[]');
         const tagsHTML = tags.map(tag => {
             const [category] = tag.split(':', 1);
             return `<span class="tag-chip tag-category--${category}">${tag}</span>`;
         }).join('');
         const keyTerms = JSON.parse(doc.key_terms || '[]');
-        const keyTermsHTML = keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
+        const keyTermsHTML =
+            keyTerms.map(term => `<span class="key-term-chip">${term}</span>`).join('');
         const linksStr = doc.linked_chunks || '[]';
         const hasLinks = JSON.parse(linksStr).length > 0;
-        const statsStr = doc.structured_stats || doc.structured_spell_data || '{}';
-        const hasStats = statsStr && statsStr !== '{}';
+        const dataStr = doc.structured_data || '{}';
+        const hasData = dataStr && dataStr !== '{}';
         const sectionTitle = doc.section_title || 'Untitled Section';
-        const breadcrumbPath = hierarchy.length > 0 ? hierarchy.slice(0, -1).join(' > ') + ' > ' : '';
+        const breadcrumbPath =
+            hierarchy.length > 0 ? hierarchy.slice(0, -1).join(' > ') + ' > ' : '';
         const breadcrumbHTML = `
             <span>${kbName} > </span>
             <span>${breadcrumbPath}</span>
@@ -587,8 +614,8 @@ export class LibraryHub {
         const sourceInfo = isSearchResult ?
             `<span class="search-result-score">Score: ${result.distance.toFixed(2)}</span>` :
             `<span>p. ${doc.page_start || 'N/A'}</span>`;
-        const escapedStatsStr = statsStr.replace(/'/g, "&apos;");
-        const statsAttr = hasStats ? `data-structured-stats='${escapedStatsStr}'` : '';
+        const escapedDataStr = dataStr.replace(/'/g, "&apos;");
+        const dataAttr = hasData ? `data-structured-data='${escapedDataStr}'` : '';
         const linksAttr = hasLinks ?
             `data-linked-chunks='${linksStr}'` : '';
         const content = summaryText ? summaryText : doc.document;
@@ -612,8 +639,8 @@ export class LibraryHub {
                     ${expandButton}
                     ${hasLinks ?
             `<span title="Show linked sections" ${linksAttr}>🔗</span>` : ''}
-                    ${hasStats ?
-            `<span title="Show structured data" ${statsAttr}>{}</span>` : ''}
+                    ${hasData ?
+            `<span title="Show structured data" ${dataAttr}>{}</span>` : ''}
                 </div>
             </div>
         </div>`;
@@ -635,7 +662,8 @@ export class LibraryHub {
     async _getKbExploreData() {
         const cacheKey = this.selectedKb.name;
         if (!this.kbDataCache[cacheKey]?.explore) {
-            this.kbDataCache[cacheKey].explore = await apiCall(`/api/knowledge/explore/${cacheKey}`);
+            this.kbDataCache[cacheKey].explore =
+                await apiCall(`/api/knowledge/explore/${cacheKey}`);
         }
         return this.kbDataCache[cacheKey].explore;
     }
@@ -643,7 +671,8 @@ export class LibraryHub {
     async _getKbEntityData() {
         const cacheKey = this.selectedKb.name;
         if (!this.kbDataCache[cacheKey]?.entities) {
-            this.kbDataCache[cacheKey].entities = await apiCall(`/api/knowledge/entities/${cacheKey}`);
+            this.kbDataCache[cacheKey].entities =
+                await apiCall(`/api/knowledge/entities/${cacheKey}`);
         }
         return this.kbDataCache[cacheKey].entities;
     }
@@ -658,7 +687,8 @@ export class LibraryHub {
         card.innerHTML = `
             <img src="${asset.thumb_url}" alt="${asset.description}" title="${asset.description}">
             <p>${asset.classification}</p>
-            <button class="contextual-delete-btn slide-in-bottom" data-thumb-filename="${asset.thumb_url.split('/').pop()}">
+            <button class="contextual-delete-btn slide-in-bottom"
+                    data-thumb-filename="${asset.thumb_url.split('/').pop()}">
                 <span class="icon">&times;</span>
                 <span data-i18n-key="deleteBtn">${this.app.i18n.t('deleteBtn')}</span>
             </button>
@@ -686,10 +716,11 @@ export class LibraryHub {
         const formData = new FormData();
         formData.append('file', file);
         try {
-            const response = await fetch(`/api/knowledge/${this.selectedKb.name}/upload-asset`, {
-                method: 'POST',
-                body: formData,
-            });
+            const response =
+                await fetch(`/api/knowledge/${this.selectedKb.name}/upload-asset`, {
+                    method: 'POST',
+                    body: formData,
+                });
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -755,7 +786,8 @@ export class LibraryHub {
         );
         if (confirmed) {
             try {
-                const url = `/api/knowledge/${this.selectedKb.name}/asset/${thumbFilename}`;
+                const url =
+                    `/api/knowledge/${this.selectedKb.name}/asset/${thumbFilename}`;
                 await apiCall(url, { method: 'DELETE' });
                 deleteBtn.closest('.asset-card').remove();
                 status.setText('deleteAssetSuccess', false, { filename: thumbFilename });
@@ -817,7 +849,8 @@ export class LibraryHub {
 
     _updateContentViewToggle() {
         const isFlow = this.contentViewMode === 'flow';
-        this.contentViewToggleBtn.title = isFlow ? 'Switch to List View' : 'Switch to Section Flow View';
+        this.contentViewToggleBtn.title =
+            isFlow ? 'Switch to List View' : 'Switch to Section Flow View';
         this.contentViewToggleBtn.innerHTML = isFlow ?
             `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"></line><line x1="8" x2="21" y1="12" y2="12"></line><line x1="8" x2="21" y1="18" y2="18"></line><line x1="3" x2="3.01" y1="6" y2="6"></line><line x1="3" x2="3.01" y1="12" y2="12"></line><line x1="3" x2="3.01" y1="18" y2="18"></line></svg>` :
             `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="2"></rect><path d="M3 11h18M3 19h18"></path></svg>`;
@@ -828,8 +861,10 @@ export class LibraryHub {
         const data = await this._getKbExploreData();
         this.kbDataCache[this.selectedKb.name].mindmap = true; // Mark as loaded
 
-        if ((!data.documents || data.documents.length === 0) && (!data.summaries || data.summaries.length === 0)) {
-            this.mindmapContainer.innerHTML = '<p>No content to generate a mind map.</p>';
+        if ((!data.documents || data.documents.length === 0) &&
+            (!data.summaries || data.summaries.length === 0)) {
+            this.mindmapContainer.innerHTML =
+                '<p>No content to generate a mind map.</p>';
             return;
         }
 
@@ -851,7 +886,8 @@ export class LibraryHub {
                 });
             }
         } catch (e) {
-            this.mindmapContainer.innerHTML = '<p class="error">Error rendering mind map.</p>';
+            this.mindmapContainer.innerHTML =
+                '<p class="error">Error rendering mind map.</p>';
             console.error("Mermaid rendering error:", e);
         }
     }
@@ -880,7 +916,8 @@ export class LibraryHub {
                     adjacencyList.set(nodeId, []);
                 }
 
-                const parentPath = (i === 0) ? rootId : hierarchy.slice(0, i).join(separator);
+                const parentPath =
+                    (i === 0) ? rootId : hierarchy.slice(0, i).join(separator);
                 const parentNode = nodes.get(parentPath);
                 const childNode = nodes.get(nodePath);
 
@@ -902,7 +939,8 @@ export class LibraryHub {
             if (!node) return;
 
             const indent = '    '.repeat(level);
-            const safeLabel = node.label.replace(/"/g, '#quot;').replace(/\(/g, '#40;').replace(/\)/g, '#41;');
+            const safeLabel =
+                node.label.replace(/"/g, '#quot;').replace(/\(/g, '#40;').replace(/\)/g, '#41;');
 
             if (level === 0) {
                 lines.push(`${indent}root((${safeLabel}))`);

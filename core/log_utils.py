@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# --- core/log_utils.py ---
 """
 core/utils.py: Provides auxiliary and utility classes for the main application.
 This module contains:
@@ -11,7 +11,7 @@ import logging
 
 PROJECT_TOPICS = {
     "ppdf": {"layout", "structure", "reconstruct", "llm", "tts", "tables", "api", "prescan"},
-    "dmme": {"api", "rag", "ingest", "storage", "config", "llm"},
+    "dmme": {"api", "rag", "ingest", "storage", "config", "llm", "meta"},
 }
 
 
@@ -71,6 +71,7 @@ def setup_logging(
             valid_topics = PROJECT_TOPICS.get(proj, set())
             if "all" in user_topics:
                 topics_to_set = valid_topics
+                topics_to_set.discard("meta")
             else:
                 topics_to_set = {
                     full for u in user_topics for full in valid_topics if full.startswith(u)

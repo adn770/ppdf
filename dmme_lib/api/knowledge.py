@@ -10,6 +10,7 @@ from ppdf_lib.api import analyze_pdf_structure
 
 bp = Blueprint("knowledge", __name__)
 log = logging.getLogger("dmme.api")
+log_meta = logging.getLogger("dmme.meta")
 log_ingest = logging.getLogger("dmme.ingest")
 
 TEMP_DIR = os.path.join(os.path.expanduser("~"), ".dmme", "temp")
@@ -53,6 +54,9 @@ def explore_knowledge_base(kb_name):
 
         # 1. Get all text documents from the vector store
         documents = current_app.vector_store.get_all_from_kb(kb_name)
+        log_meta.debug("Metadata retrieved for frontend explore view:")
+        for doc in documents:
+            log_meta.debug("  - CHUNK: %s", doc)
         response_data = {"documents": documents}
 
         # 2. If deep-indexed, also fetch the summaries
@@ -426,6 +430,9 @@ def ingest_images():
         return jsonify({"success": True, "message": "Image ingestion complete."})
     except Exception as e:
         log.error(
-            "Image ingestion finalization failed for KB '%s': %s", kb_name, e, exc_info=True
+            "Image ingestion finalization failed for KB '%s': %s",
+            kb_name,
+            e,
+            exc_info=True,
         )
         return jsonify({"error": str(e)}), 500

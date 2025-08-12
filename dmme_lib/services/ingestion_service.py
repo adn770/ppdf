@@ -25,6 +25,7 @@ from dmme_lib.constants import PROMPT_REGISTRY
 from ppdf_lib.constants import PROMPT_STRICT
 
 log = logging.getLogger("dmme.ingest")
+log_meta = logging.getLogger("dmme.meta")
 
 
 class IngestionService:
@@ -340,8 +341,7 @@ class IngestionService:
         for meta in final_metadatas:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
-            meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
+            meta["structured_data"] = json.dumps(meta.get("structured_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
             meta["hierarchy"] = json.dumps(meta.get("hierarchy", []))
 
@@ -355,6 +355,9 @@ class IngestionService:
         msg = "Generating embeddings and saving to vector store..."
         log.info(msg)
         yield msg
+        log_meta.debug("Final metadata prepared for vector store commit:")
+        for meta in final_metadatas:
+            log_meta.debug("  - ID: %s, METADATA: %s", meta.get("chunk_id"), meta)
         self.vector_store.add_to_kb(
             kb_name,
             documents,
@@ -387,7 +390,7 @@ class IngestionService:
             # Deep parse creature stat blocks if applicable
             if "type:creature" in metadata.get("tags", []):
                 stats = self._parse_stat_block(chunk_data["text"], lang)
-                metadata["structured_stats"] = stats
+                metadata["structured_data"] = stats
 
             # Deep parse spells only if they look like actual spell blocks
             if "type:spell" in metadata.get("tags", []):
@@ -399,7 +402,7 @@ class IngestionService:
                         metadata["section_title"],
                         metadata["hierarchy"],
                     )
-                    metadata["structured_spell_data"] = spell_data
+                    metadata["structured_data"] = spell_data
 
             key_terms = json.loads(metadata.get("key_terms", "[]"))
             if not key_terms:
@@ -711,8 +714,7 @@ class IngestionService:
         for meta in final_metadatas:
             meta["entities"] = json.dumps(meta.get("entities", {}))
             meta["linked_chunks"] = json.dumps(meta.get("linked_chunks", []))
-            meta["structured_stats"] = json.dumps(meta.get("structured_stats", {}))
-            meta["structured_spell_data"] = json.dumps(meta.get("structured_spell_data", {}))
+            meta["structured_data"] = json.dumps(meta.get("structured_data", {}))
             meta["tags"] = json.dumps(meta.get("tags", []))
             meta["hierarchy"] = json.dumps(meta.get("hierarchy", []))
 
@@ -734,6 +736,9 @@ class IngestionService:
             log.info(msg)
             yield msg
             return
+        log_meta.debug("Final metadata prepared for vector store commit:")
+        for meta in final_metadatas:
+            log_meta.debug("  - ID: %s, METADATA: %s", meta.get("chunk_id"), meta)
         self.vector_store.add_to_kb(
             kb_name,
             documents,
