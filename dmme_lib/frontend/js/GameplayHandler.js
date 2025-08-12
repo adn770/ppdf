@@ -1,4 +1,4 @@
-// dmme_lib/frontend/js/GameplayHandler.js
+// --- dmme_lib/frontend/js/GameplayHandler.js ---
 import { showGameSpinner, hideGameSpinner } from './ui.js';
 import { apiCall } from './wizards/ApiHelper.js';
 
@@ -35,21 +35,18 @@ export class GameplayHandler {
         this.sessionId = recoveredState?.sessionId || Date.now().toString();
         console.log("TRACE: GameplayHandler.init() called with gameConfig:", gameConfig);
         console.log(`TRACE: Active session ID set to: ${this.sessionId}`);
-
         // Inform the backend that a new session is starting
         apiCall('/api/session/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sessionId: this.sessionId }),
         });
-
         this._updateKnowledgePanel();
         this._applyInitialStyles();
         this._updateToolbarState();
         await this._populatePartyStatusPanel();
         // Make the main game content visible
         document.getElementById('game-view-content').style.display = 'flex';
-
         if (recoveredState) {
             this.loadState(recoveredState);
         } else {
@@ -111,7 +108,6 @@ export class GameplayHandler {
             item.appendChild(body);
             this.partyAccordionContainer.appendChild(item);
         });
-
         // Add event listeners to the newly created headers
         this.partyAccordionContainer.querySelectorAll('.accordion-header').forEach(button => {
             button.addEventListener('click', () => {
@@ -180,7 +176,8 @@ export class GameplayHandler {
                 modelToDisplay = 'N/A';
             }
         }
-        kbHtml += ` | <span>${i18n.t('dmModel')}: <strong>${modelToDisplay}</strong></span>`;
+        kbHtml += ` |
+ <span>${i18n.t('dmModel')}: <strong>${modelToDisplay}</strong></span>`;
         this.kbDisplay.innerHTML = kbHtml;
     }
 
@@ -281,9 +278,8 @@ export class GameplayHandler {
 
     _showLastInsight() {
         if (!this.lastInsightContent) return;
-
         const contentBox = this.dmInsight.contentEl;
-        contentBox.innerHTML = ''; // Clear previous content
+        contentBox.innerHTML = '';
 
         try {
             const insights = JSON.parse(this.lastInsightContent);
@@ -292,15 +288,44 @@ export class GameplayHandler {
                 emptyMsg.className = 'dm-insight-empty';
                 emptyMsg.textContent = this.app.i18n.t('dmInsightEmpty');
                 contentBox.appendChild(emptyMsg);
-            } else {
-                insights.forEach(item => {
+                this.dmInsight.open();
+                return;
+            }
+
+            const groupedByKb = insights.reduce((acc, item) => {
+                const key = item.kb_name || 'Unknown';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(item);
+                return acc;
+            }, {});
+
+            for (const kbName in groupedByKb) {
+                const header = document.createElement('h4');
+                header.className = 'dm-insight-kb-header';
+                header.textContent = `Context from: ${kbName}`;
+                contentBox.appendChild(header);
+
+                groupedByKb[kbName].forEach(item => {
                     const chunkDiv = document.createElement('div');
                     chunkDiv.className = 'dm-insight-chunk';
 
-                    const labelSpan = document.createElement('span');
-                    labelSpan.className = 'dm-insight-label';
-                    labelSpan.textContent = item.label || 'prose';
-                    chunkDiv.appendChild(labelSpan);
+                    const chunkHeader = document.createElement('div');
+                    chunkHeader.className = 'dm-insight-chunk-header';
+                    chunkHeader.textContent = item.section_title || 'Untitled Section';
+                    chunkDiv.appendChild(chunkHeader);
+
+                    const tags = item.tags || [];
+                    if (tags.length > 0) {
+                        const tagsDiv = document.createElement('div');
+                        tagsDiv.className = 'dm-insight-tag-list';
+                        tags.forEach(tag => {
+                            const tagSpan = document.createElement('span');
+                            tagSpan.className = 'dm-insight-label';
+                            tagSpan.textContent = tag;
+                            tagsDiv.appendChild(tagSpan);
+                        });
+                        chunkDiv.appendChild(tagsDiv);
+                    }
 
                     const textPre = document.createElement('pre');
                     textPre.className = 'dm-insight-text';
@@ -313,8 +338,7 @@ export class GameplayHandler {
             this.dmInsight.open();
         } catch (e) {
             console.error("Failed to parse insight JSON:", e);
-            // Fallback for non-JSON or malformed content
-            contentBox.textContent = this.lastInsightContent;
+            contentBox.textContent = this.lastInsightContent; // Fallback
             this.dmInsight.open();
         }
     }
@@ -443,7 +467,8 @@ export class GameplayHandler {
         this.stopAutosave();
         this.gameConfig = null;
         this.sessionId = null;
-        apiCall('/api/session/end', { method: 'POST' }); // Tell backend to clear active ID
+        apiCall('/api/session/end', { method: 'POST' });
+        // Tell backend to clear active ID
     }
 
     async _performAutosave() {

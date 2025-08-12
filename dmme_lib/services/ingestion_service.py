@@ -528,7 +528,7 @@ class IngestionService:
         util_config = self.config_service.get_model_config("classify")
         model_details = get_model_details(util_config["url"], util_config["model"])
         ctx = model_details.get("context_length", 4096)
-        target_chars = int(ctx * 0.8)
+        target_chars = int(ctx * 0.75)
         msg = f"Classifying {len(sections)} sections using '{util_config['model']}'..."
         log.info(msg)
         yield msg
@@ -540,7 +540,7 @@ class IngestionService:
             if section.title:
                 title_text = f"Title: {section.title}\n\n"
                 context_parts.append(title_text)
-                current_chars += len(title_text)
+            current_chars += len(title_text)
 
             for para in section.paragraphs:
                 para_text = para.get_text()
@@ -596,9 +596,8 @@ class IngestionService:
         log.debug("Using semantic labeler prompt key: '%s'", prompt_key)
         processed_chunks = []
         fmt_config = self.config_service.get_model_config("format")
-        fmt_model_details = get_model_details(fmt_config["url"], fmt_config["model"])
-        fmt_ctx = fmt_model_details.get("context_length", 4096)
-        fmt_target_chars = int(fmt_ctx * 0.8)
+        fmt_ctx = fmt_config.get("context_window", 8192)
+        fmt_target_chars = int(fmt_ctx * 0.75)
 
         for i, section in enumerate(content_sections):
             if not section.paragraphs:
@@ -612,26 +611,43 @@ class IngestionService:
             section_text_for_llm = section.get_llm_text()
 
             # The main conditional for the chunking strategy
-            if force_paragraph_chunking:
-                log.debug("Forcing paragraph chunking for section '%s'.", section.title)
+            if len(section_text_for_llm) <= fmt_target_chars:
+                chunks_to_process.append((section, section.paragraphs))
+            elif force_paragraph_chunking:
+                log.warning(
+                    "Section '%s' is large, but paragraph chunking is FORCED by user.",
+                    section.title,
+                )
                 for para in section.paragraphs:
-                    temp_section = Section()
+                    temp_section = Section(title=section.title)
                     temp_section.add_paragraph(para)
                     chunks_to_process.append((temp_section, [para]))
             else:
-                if len(section_text_for_llm) <= fmt_target_chars:
-                    chunks_to_process.append((section, section.paragraphs))
-                else:
-                    log.warning(
-                        "Section '%s' is too large (%d chars). "
-                        "Falling back to para-chunking.",
-                        section.title,
-                        len(section_text_for_llm),
-                    )
-                    for para in section.paragraphs:
-                        temp_section = Section()
-                        temp_section.add_paragraph(para)
-                        chunks_to_process.append((temp_section, [para]))
+                log.warning(
+                    "Section '%s' is too large (%d chars). Applying 'Section Slicing'.",
+                    section.title,
+                    len(section_text_for_llm),
+                )
+                current_slice_paras = []
+                current_slice_size = 0
+                for para in section.paragraphs:
+                    para_text = para.get_llm_text()
+                    para_size = len(para_text)
+                    if current_slice_paras and (
+                        current_slice_size + para_size + 2 > fmt_target_chars
+                    ):
+                        slice_section = Section(title=section.title)
+                        slice_section.paragraphs = current_slice_paras
+                        chunks_to_process.append((slice_section, current_slice_paras))
+                        current_slice_paras = [para]
+                        current_slice_size = para_size
+                    else:
+                        current_slice_paras.append(para)
+                        current_slice_size += para_size + 2
+                if current_slice_paras:
+                    slice_section = Section(title=section.title)
+                    slice_section.paragraphs = current_slice_paras
+                    chunks_to_process.append((slice_section, current_slice_paras))
 
             # Process the generated list of chunks
             for section_chunk, source_paras in chunks_to_process:

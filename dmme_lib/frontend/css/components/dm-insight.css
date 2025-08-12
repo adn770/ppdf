@@ -1,5 +1,4 @@
-/* dmme_lib/frontend/css/components/dm-insight.css */
-
+/* --- dmme_lib/frontend/css/components/dm-insight.css --- */
 .dm-insight-content-box {
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -12,20 +11,39 @@
     color: #ccc;
 }
 
+.dm-insight-kb-header {
+    margin: 24px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 1.1em;
+    color: var(--accent-color);
+}
+
+.dm-insight-kb-header:first-of-type {
+    margin-top: 0;
+}
+
 .dm-insight-chunk {
-    border-bottom: 1px dashed var(--border-color);
-    padding: 12px 0;
-    margin-bottom: 12px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    background-color: #2e2e2e;
 }
 
-.dm-insight-chunk:first-child {
-    padding-top: 0;
+.dm-insight-chunk-header {
+    padding: 6px 10px;
+    background-color: #3a3a3e;
+    border-bottom: 1px solid #333;
+    color: #aaa;
+    font-size: 0.9em;
+    font-style: italic;
 }
 
-.dm-insight-chunk:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+.dm-insight-tag-list {
+    padding: 8px 10px 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .dm-insight-label {
@@ -37,12 +55,11 @@
     font-size: 0.8em;
     font-weight: bold;
     text-transform: uppercase;
-    margin-bottom: 8px;
 }
 
 .dm-insight-text {
     white-space: pre-wrap;
     word-wrap: break-word;
     margin: 0;
-    padding: 0;
+    padding: 10px;
 }
