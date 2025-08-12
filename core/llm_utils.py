@@ -325,9 +325,11 @@ def get_semantic_tags(
     if not response_str:
         return ["type:prose"]
 
-    parsed_json = _extract_json_from_llm_response(response_str)
-    if isinstance(parsed_json, list) and all(isinstance(t, str) for t in parsed_json):
-        return parsed_json if parsed_json else ["type:prose"]
+    # New logic: Parse a comma-separated string instead of JSON
+    tags = [tag.strip() for tag in response_str.split(",") if tag.strip()]
+
+    if tags:
+        return tags
 
     log_llm.warning("Could not parse a valid tag list from LLM response: %s", response_str)
     return ["type:prose"]
