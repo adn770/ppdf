@@ -28,50 +28,33 @@ def get_cli_args():
     parser = argparse.ArgumentParser(
         description="Converts raster dungeon maps to structured JSON and SVG."
     )
-    parser.add_argument(
-        "-i", "--input",
-        required=True,
-        help="Path to the input PNG file."
-    )
-    parser.add_argument(
-        "-o", "--output",
-        required=True,
-        help="The base name for the output .json and .svg files."
-    )
-    parser.add_argument(
-        "--rooms",
-        help="A comma-separated list of room numbers to render (e.g., '38,40,41')."
-    )
-    # Add other arguments...
+    parser.add_argument("-i", "--input", required=True, help="Path to input PNG.")
+    parser.add_argument("-o", "--output", required=True, help="Base name for outputs.")
+    parser.add_argument("--rooms", help="Comma-separated list of room #s to render.")
+    # Add other style arguments if needed
     return parser.parse_args()
 
 
 def main():
     """Main entry point for the dmap CLI."""
     args = get_cli_args()
-
     print("--- DMAP CLI ---")
     try:
         map_data = analysis.analyze_image(args.input)
-        print("\n--- Analysis Results ---")
-        print(f"Found {len(map_data.mapObjects)} potential rooms.")
 
-        if map_data.mapObjects:
-            print("Sample of detected rooms (with labels):")
-            for room in map_data.mapObjects[:5]: # Print first 5
-                if isinstance(room, schema.Room):
-                    label = room.label if room.label else "N/A"
-                    print(
-                        f"  - Room ID: {room.id}, Label: {label}, "
-                        f"Vertices: {len(room.gridVertices)}"
-                    )
+        num_rooms = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Room))
+        num_doors = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Door))
+
+        print("\n--- Analysis Results ---")
+        print(f"Found {num_rooms} potential rooms.")
+        print(f"Found {num_doors} potential doors.")
 
         json_output_path = f"{args.output}.json"
-        print(f"\nSaving analysis with labels to '{json_output_path}'...")
+        print(f"\nSaving analysis with topology to '{json_output_path}'...")
         schema.save_json(map_data, json_output_path)
 
-        rendering_options = { "rooms": args.rooms.split(',') if args.rooms else None }
-        run_rendering(map_data, args.output, rendering_options)
+        opts = { "rooms": args.rooms.split(',') if args.rooms else None }
+        run_rendering(map_data, args.output, opts)
 
     except (FileNotFoundError, IOError) as e:
         print(f"\nERROR: {e}")

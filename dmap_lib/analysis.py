@@ -10,7 +10,6 @@ import numpy as np
 from dmap_lib import schema
 
 # Initialize the OCR reader once when the module is loaded.
-# This may print a one-time warning about using the CPU, which is expected.
 print("Initializing EasyOCR reader... (This may take a moment)")
 OCR_READER = easyocr.Reader(['en'], gpu=False)
 print("EasyOCR reader initialized.")
@@ -50,56 +49,71 @@ def _detect_grid_size(image: np.ndarray) -> int:
 
 
 def analyze_image(image_path: str) -> schema.MapData:
-    """Loads and analyzes a map image to extract structured data, including labels."""
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f"Input image not found at: {image_path}")
-
+    """Loads and analyzes a map image to extract rooms, doors, and their links."""
     img = cv2.imread(image_path)
-    if img is None:
-        raise IOError(f"Failed to load image from: {image_path}")
-
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, processed_img = cv2.threshold(
         gray_img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
     )
     grid_size = _detect_grid_size(processed_img)
     contours, _ = cv2.findContours(
-        processed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        processed_img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
     )
-    map_objects = []
-    min_area = (grid_size * grid_size) * 0.75
 
-    for contour in contours:
-        if cv2.contourArea(contour) < min_area:
-            continue
+    # Separate contours into rooms and potential doors based on area
+    min_room_area = (grid_size * grid_size) * 0.75
+    min_door_area = grid_size * 0.25
+    max_door_area = grid_size * grid_size * 2.0
+    room_contours, door_contours = [], []
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area >= min_room_area:
+            room_contours.append(c)
+        elif min_door_area <= area <= max_door_area:
+            door_contours.append(c)
 
-        # --- Number Recognition Logic ---
+    # First pass: process all rooms
+    rooms_with_contours = []
+    for contour in room_contours:
         x, y, w, h = cv2.boundingRect(contour)
         mask = np.zeros((h, w), dtype=np.uint8)
-        shifted_contour = contour - [x, y]
-        cv2.drawContours(mask, [shifted_contour], -1, 255, cv2.FILLED)
-
-        # Extract the room's content from the original grayscale image
+        cv2.drawContours(mask, [contour - [x, y]], -1, 255, cv2.FILLED)
         room_interior = cv2.bitwise_and(gray_img[y:y+h, x:x+w], mask)
+        ocr = OCR_READER.readtext(room_interior, detail=1, paragraph=False)
+        label = next((text for _, text, _ in ocr if text.isdigit()), None)
 
-        ocr_results = OCR_READER.readtext(room_interior, detail=1, paragraph=False)
-        room_label = next((text for _, text, _ in ocr_results if text.isdigit()), None)
-        # --- End Number Recognition ---
+        poly = cv2.approxPolyDP(contour, 0.015 * cv2.arcLength(contour, True), True)
+        verts = [schema.GridPoint(round(p[0][0]/grid_size), round(p[0][1]/grid_size)) for p in poly]
 
-        perimeter = cv2.arcLength(contour, True)
-        approx_poly = cv2.approxPolyDP(contour, 0.015 * perimeter, True)
-        grid_vertices = [
-            schema.GridPoint(x=round(p[0][0] / grid_size), y=round(p[0][1] / grid_size))
-            for p in approx_poly
-        ]
+        room = schema.Room(id=f"room_{uuid.uuid4().hex[:8]}", label=label,
+                           shape="polygon", gridVertices=verts)
+        rooms_with_contours.append({'obj': room, 'contour': contour})
 
-        map_objects.append(schema.Room(
-            id=f"room_{uuid.uuid4().hex[:8]}",
-            shape="polygon",
-            gridVertices=grid_vertices,
-            label=room_label
-        ))
+    # Second pass: process doors and link to the two nearest rooms
+    doors = []
+    for contour in door_contours:
+        M = cv2.moments(contour)
+        if M["m00"] == 0: continue
+        cx, cy = int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"])
 
+        # Find distance to every room
+        distances = [{
+            'dist': abs(cv2.pointPolygonTest(rc['contour'], (cx, cy), True)),
+            'room_id': rc['obj'].id
+        } for rc in rooms_with_contours]
+        distances.sort(key=lambda item: item['dist'])
+
+        # If the door is close to at least two rooms, it's a valid connection
+        if len(distances) >= 2 and distances[0]['dist'] < (2 * grid_size):
+            _, _, w, h = cv2.boundingRect(contour)
+            doors.append(schema.Door(
+                id=f"door_{uuid.uuid4().hex[:8]}",
+                gridPos=schema.GridPoint(round(cx/grid_size), round(cy/grid_size)),
+                orientation="vertical" if h > w else "horizontal",
+                connects=[distances[0]['room_id'], distances[1]['room_id']]
+            ))
+
+    map_objects = [rc['obj'] for rc in rooms_with_contours] + doors
     meta = schema.Meta(
         title=os.path.splitext(os.path.basename(image_path))[0],
         sourceImage=os.path.basename(image_path),
