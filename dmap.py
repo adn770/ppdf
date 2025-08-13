@@ -2,15 +2,25 @@
 import argparse
 import os
 
-from dmap_lib import analysis, schema
+from dmap_lib import analysis, rendering, schema
 
 
-def run_rendering(map_data, output_name: str, options: dict):
-    """Placeholder for the SVG rendering logic."""
-    if map_data:
-        print(f"Rendering SVG for '{output_name}'... (not yet implemented)")
-    else:
+def run_rendering(map_data: schema.MapData, output_name: str, options: dict):
+    """Generates and saves an SVG from a MapData object."""
+    if not map_data:
         print("Skipping rendering because no map data was generated.")
+        return
+
+    print(f"Rendering SVG for '{output_name}'...")
+    svg_content = rendering.render_svg(map_data, options)
+
+    output_path = f"{output_name}.svg"
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(svg_content)
+        print(f"Successfully saved SVG to '{output_path}'")
+    except IOError as e:
+        print(f"ERROR: Could not write SVG file. {e}")
 
 
 def get_cli_args():
@@ -53,24 +63,18 @@ def main():
 
     print("--- DMAP CLI ---")
     try:
+        # 1. Analysis Step
         map_data = analysis.analyze_image(args.input)
         print("\n--- Analysis Results ---")
-        print(f"Source Image:     {map_data.meta.sourceImage}")
-        print(f"Detected Grid Size: {map_data.meta.gridSizePx}px")
         print(f"Found {len(map_data.mapObjects)} potential rooms.")
 
-        if map_data.mapObjects:
-            print("Sample of detected rooms:")
-            for room in map_data.mapObjects[:3]:
-                if isinstance(room, schema.Room):
-                    print(f"  - Room ID: {room.id}, Vertices: {len(room.gridVertices)}")
-
+        # 2. Save Analysis to JSON
         json_output_path = f"{args.output}.json"
-        print(f"\nSaving analysis with room data to '{json_output_path}'...")
+        print(f"Saving analysis to '{json_output_path}'...")
         schema.save_json(map_data, json_output_path)
-        print("Save complete.")
 
-        rendering_options = {} # To be implemented
+        # 3. Rendering Step
+        rendering_options = {}  # Not used yet, but passed for future compatibility
         run_rendering(map_data, args.output, rendering_options)
 
     except (FileNotFoundError, IOError) as e:
