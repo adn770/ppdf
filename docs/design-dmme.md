@@ -312,26 +312,41 @@ game state, and interacts with the LLM.
 -   **RAG & LLM Logic**: The core RAG service is **strategy-aware**. Before querying,
     it inspects the knowledge base's metadata. If the `indexing_strategy` is `deep`,
     it performs a summary-first search before retrieving the full-text chunk.
-    Otherwise, it searches the full-text chunks directly.
--   **REST API (Enhanced)**:
-    -   **Campaigns**: Full CRUD APIs for managing campaigns.
+    Otherwise, it searches the full-text chunks directly. The service also
+    implements **multi-query expansion**, where it uses an LLM to expand a user's
+    command into multiple, diverse search queries to improve retrieval accuracy.
+    For narrative consistency, it uses **location-based context caching**, building a
+    complete dossier for a location when the party enters it and reusing that
+    dossier for subsequent turns.
+-   **REST API (Enhanced)**: The Flask application exposes a comprehensive set of RESTful
+    endpoints for frontend interaction.
+    -   **Campaigns**: Full CRUD APIs for managing campaigns, including state retrieval for
+        resuming games.
     -   **Parties**: Full CRUD APIs for managing saved parties.
+    -   **Characters**: APIs for creating, reading, updating, and deleting characters
+        within a party.
     -   **Knowledge**: APIs to orchestrate the multi-step ingestion process.
-        -   `POST /api/knowledge/analyze`: Analyzes a document's structure.
-        -   `POST /api/knowledge/ingest-document`: Ingests content, now accepts an
-            optional `deep_indexing: boolean` parameter.
+        -   `POST /api/knowledge/upload-temp-file`: Uploads a file for processing.
+        -   `POST /api/knowledge/analyze`: Analyzes a document's structure without full
+            ingestion.
+        -   `POST /api/knowledge/ingest-document`: Ingests content, accepting parameters
+            for `deep_indexing` and `sections_to_include`.
         -   `GET /api/knowledge/dashboard/<kb_name>`: Aggregated KB stats.
         -   `GET /api/knowledge/entities/<kb_name>`: A list of all unique entities.
         -   `GET /api/knowledge/explore/<kb_name>`: Retrieves all documents and assets. For
             deep-indexed KBs, it will also return a `summaries` array.
         -   `GET /api/knowledge/chunk/<kb_name>/<chunk_id>`: Retrieves a single, full-text
             document by its ID.
-    -   **Gameplay**: `POST /api/game/command` (streams structured JSON with text,
-        images, and maps).
+        -   `GET /api/knowledge/graph/<kb_name>`: Retrieves structured node-link data.
+    -   **Gameplay**:
+        -   `POST /api/game/start`: Initializes a new game session.
+        -   `POST /api/game/command`: Streams structured JSON with text, images, and maps.
+        -   `POST /api/game/generate-character`: Creates a character sheet using an LLM.
+    -   **Session**: Endpoints for autosaving and recovering in-progress game sessions.
     -   **Settings**: `GET` and `POST` APIs for the `ConfigService` to manage the
         `dmme.cfg` file.
-    -   **Ollama**: `GET /api/ollama/models` to list available models, which will be
-        enhanced to return a `type_hint` for each model to aid frontend filtering.
+    -   **Ollama**: `GET /api/ollama/models` to list available models, which returns a
+        `type_hint` for each model to aid frontend filtering.
     -   **Search**: `GET /api/search` with `q` and `scope` parameters to perform
         vector searches across one or all knowledge bases.
 
@@ -362,13 +377,15 @@ both LLM prompts and core backend ingestion pipelines.
 The tool uses a subcommand structure implemented with `argparse`:
 -   **`prompt`**: All functionality related to testing and evaluating system prompts.
 -   **`ingest`**: All functionality related to testing parts of the ingestion pipeline.
+-   **Internationalization**: The `ingest` subcommand accepts a `--lang` argument to test
+    ingestion using the appropriate translated prompts from the `PROMPT_REGISTRY`.
 
 #### 3.3.2. Prompt Evaluation Mode
 This mode operates on **Test Suites**. A test suite is a directory containing a
 `prompt.txt` file, a `config.json` file, and a subdirectory of `scenarios` containing
 individual test cases as `.txt` files. Key features include an
 "LLM-as-a-Judge" evaluation using a dedicated prompt (`PROMPT_LLM_AS_JUDGE`) and a
-`--compare` mode for side-by-side analysis of two different prompt suites.
+comparison mode for side-by-side analysis of two different prompt suites.
 The output for all evaluations is a detailed, self-contained Markdown report.
 
 #### 3.3.3. Ingestion Test Mode
@@ -472,9 +489,13 @@ A two-panel layout for all KB-related tasks.
             "Section Flow" view.
         -   **Entities:** A detail view that displays all text chunks related to a
             single entity selected from the master list in the left panel.
-        -   **Mind Map:** A graphical visualization of the document's structure. For
-            deep-indexed KBs, the graph is generated from the high-level summaries for
-            a cleaner, more conceptual visualization of section relationships.
+        -   **Mind Map:** A graphical visualization of the document's structure using
+            Mermaid.js. For deep-indexed KBs, the graph is generated from the high-level
+            summaries for a cleaner, more conceptual visualization of section
+            relationships.
+        -   **Knowledge Graph**: A static, flowchart-style diagram rendered with
+            Mermaid.js showing chunks as nodes and shared entities as links between
+            them. This provides a clear, at-a-glance overview of content relationships.
         -   **Asset Explorer:** The grid view for visual assets, featuring a
             drag-and-drop area for custom asset uploads.
     -   **Search State:** When a search is performed, this panel displays a list of
@@ -494,7 +515,7 @@ A two-panel layout for all party and character management:
 -   **New Game Wizard:** A modal launched from the Game View to guide the user
     through selecting a Game Mode and the required knowledge bases.
 -   **Ingestion Wizard**: The multi-step modal for creating a new Knowledge Base.
-    The "Add Details" pane will be updated to include a checkbox labeled
+    The "Add Details" pane includes a checkbox labeled
     "Enable Deep Indexing (Slower, Higher Quality)" to allow users to opt-in
     to the advanced summary-generation ingestion pipeline.
 -   **DM's Insight Modal**: Triggered by a toolbar button, this
@@ -530,6 +551,10 @@ featuring a powerful tab-based system for granular LLM control. It is implemente
         Context Window.
     -   **Image Analysis Model Group**: Controls for Model, Temperature, and Context Window.
     -   **Embedding Model Group**: A single Model selection input.
+
+*(Implementation Note: There is a historical discrepancy between the three-tab design
+described and implemented here, and a four-tab design outlined in Phase 19 of the
+Implementation Plan. The three-tab structure is the current, correct implementation.)*
 
 ---
 
@@ -1966,7 +1991,7 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Description:** This milestone implements the user-facing "Progressive Reveal"
         feature, making the Library Hub much faster and easier to skim for deeply
         indexed content.
-    -   **Key Tasks:**
+    -   **Key Tasks**:
         -   In `LibraryHub.js`, modify `_createChunkCardHTML` to check if a KB is
             deeply indexed.
         -   If so, render the summary text and an "Expand" button, storing the full
@@ -2130,6 +2155,39 @@ This implementation plan details the incremental steps to build the `dmme` appli
     -   **Outcome**: The AI Character Creator now uses a highly-focused context,
         resulting in generated characters that more accurately reflect the
         specific creation rules of the selected knowledge base.
+
+### Phase 31 (Revised): Advanced Mermaid.js Knowledge Graphs
+
+-   **Milestone 101: Backend - Enhanced Graph Data Endpoint**
+    -   **Goal**: Create a dedicated API endpoint that serves graph-structured data,
+        including relationship types for styling.
+    -   **Description**: This endpoint processes a KB's metadata to generate nodes and
+        links. Each link will be annotated with the type of entity it represents
+        (e.g., `location`, `creature`) to facilitate frontend styling.
+    -   **Key Tasks**:
+        1.  Implement the `GET /api/knowledge/graph/<kb_name>` endpoint.
+        2.  In `vector_store_service.py`, add logic to build the `nodes` array.
+        3.  Build a map of all entities and their types from the node metadata.
+        4.  When building the `links` array, use this map to add an `entity_type`
+            field to each link object.
+    -   **Outcome**: A functional API endpoint provides nodes, links, and the type of each
+        link, ready for the frontend to consume.
+
+-   **Milestone 102: Frontend - Themed Mermaid Graph with Location View**
+    -   **Goal**: Render a themed, multi-view Mermaid graph for entity relationships.
+    -   **Description**: This milestone implements the full frontend logic for the new
+        Knowledge Graph. It will render a color-coded graph for all KB types and a
+        specialized, location-centric view for adventure modules.
+    -   **Key Tasks**:
+        1.  Add view-switcher controls to the "Knowledge Graph" pane in `_library-hub.html`,
+            making them visible only for `module` type KBs.
+        2.  Rewrite `renderKnowledgeGraphView` in `LibraryHub.js` to be context-aware.
+        3.  Implement a "Full Graph" renderer that generates Mermaid `linkStyle`
+            directives to color-code links based on the `entity_type` from the API.
+        4.  Implement a "Location Map" renderer that uses Mermaid's `subgraph` syntax
+            to group nodes by location.
+    -   **Outcome**: The Knowledge Graph tab displays a context-aware, themed, and
+        highly informative static visualization of the knowledge base's structure.
 
 ---
 
