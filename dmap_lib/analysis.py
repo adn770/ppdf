@@ -1,5 +1,6 @@
 # --- dmap_lib/analysis.py ---
 import os
+import uuid
 from collections import Counter
 
 import cv2
@@ -72,13 +73,13 @@ def _detect_grid_size(image: np.ndarray) -> int:
 
 def analyze_image(image_path: str) -> schema.MapData:
     """
-    Loads a map image, performs basic processing, and detects the grid size.
+    Loads a map image, detects rooms, and creates a structured representation.
 
     Args:
         image_path: The path to the input map image.
 
     Returns:
-        A partially populated MapData object with metadata.
+        A MapData object populated with metadata and detected room polygons.
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Input image not found at: {image_path}")
@@ -87,19 +88,46 @@ def analyze_image(image_path: str) -> schema.MapData:
     if img is None:
         raise IOError(f"Failed to load image from: {image_path}")
 
-    # Convert to grayscale for analysis
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Invert the image so lines are white on a black background.
-    # THRESH_OTSU automatically finds an optimal threshold value.
     _, processed_img = cv2.threshold(
         gray_img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
     )
 
-    # Detect the grid size from the processed image
     grid_size = _detect_grid_size(processed_img)
 
-    # Create the MapData object with the discovered metadata
+    # Find contours for all distinct shapes in the image
+    contours, _ = cv2.findContours(
+        processed_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    map_objects = []
+    min_area = (grid_size * grid_size) * 0.75  # Room must be >= 75% of a grid cell
+
+    for contour in contours:
+        if cv2.contourArea(contour) < min_area:
+            continue  # Skip small, noisy contours
+
+        # Simplify the contour into a polygon
+        perimeter = cv2.arcLength(contour, True)
+        epsilon = 0.015 * perimeter
+        approx_poly = cv2.approxPolyDP(contour, epsilon, True)
+
+        # Convert pixel vertices to the map's grid coordinate system
+        grid_vertices = []
+        for point in approx_poly:
+            px, py = point[0]
+            grid_vertices.append(
+                schema.GridPoint(x=round(px / grid_size), y=round(py / grid_size))
+            )
+
+        # Create a Room object
+        room = schema.Room(
+            id=f"room_{uuid.uuid4().hex[:8]}",
+            shape="polygon",
+            gridVertices=grid_vertices
+        )
+        map_objects.append(room)
+
     meta = schema.Meta(
         title=os.path.splitext(os.path.basename(image_path))[0],
         sourceImage=os.path.basename(image_path),
@@ -109,5 +137,5 @@ def analyze_image(image_path: str) -> schema.MapData:
     return schema.MapData(
         dmapVersion="1.0.0",
         meta=meta,
-        mapObjects=[]  # Room/feature detection will be in a future milestone
+        mapObjects=map_objects
     )

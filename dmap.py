@@ -47,46 +47,26 @@ def get_cli_args():
     return parser.parse_args()
 
 
-def demonstrate_serialization(output_name: str):
-    """Creates a dummy MapData object and tests saving/loading it."""
-    print("\n--- Testing Serialization ---")
-    dummy_map_data = schema.MapData(
-        dmapVersion="1.0.0-test",
-        meta=schema.Meta("Test Map", "test.png", 20),
-        mapObjects=[
-            schema.Room(
-                id="room_1", label="1", shape="polygon",
-                gridVertices=[schema.GridPoint(0, 0), schema.GridPoint(5, 5)]
-            )
-        ]
-    )
-    temp_json_path = f"{output_name}_temp_test.json"
-    schema.save_json(dummy_map_data, temp_json_path)
-    loaded_map_data = schema.load_json(temp_json_path)
-    if dummy_map_data == loaded_map_data:
-        print("SUCCESS: Serialization and deserialization test passed.")
-    else:
-        print("FAILURE: Deserialized data does not match original.")
-    os.remove(temp_json_path)
-
-
 def main():
     """Main entry point for the dmap CLI."""
     args = get_cli_args()
 
     print("--- DMAP CLI ---")
-    demonstrate_serialization(args.output)
-
-    print("\n--- Main Execution Flow ---")
     try:
         map_data = analysis.analyze_image(args.input)
         print("\n--- Analysis Results ---")
         print(f"Source Image:     {map_data.meta.sourceImage}")
         print(f"Detected Grid Size: {map_data.meta.gridSizePx}px")
+        print(f"Found {len(map_data.mapObjects)} potential rooms.")
 
-        # In a later milestone, this map_data object will be saved
+        if map_data.mapObjects:
+            print("Sample of detected rooms:")
+            for room in map_data.mapObjects[:3]:
+                if isinstance(room, schema.Room):
+                    print(f"  - Room ID: {room.id}, Vertices: {len(room.gridVertices)}")
+
         json_output_path = f"{args.output}.json"
-        print(f"Saving analysis to '{json_output_path}'...")
+        print(f"\nSaving analysis with room data to '{json_output_path}'...")
         schema.save_json(map_data, json_output_path)
         print("Save complete.")
 
