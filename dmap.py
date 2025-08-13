@@ -39,12 +39,13 @@ def get_cli_args():
 def main():
     """Main entry point for the dmap CLI."""
     args = get_cli_args()
-    print("--- DMAP CLI ---")
+    print("--- dmap CLI ---")
     try:
         map_data = analysis.analyze_image(args.input)
         num_r = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Room))
         num_d = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Door))
-        print(f"\n--- Analysis Results ---\nFound {num_r} rooms and {num_d} doors.")
+        num_f = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Feature))
+        print(f"\n--- Analysis Results ---\nFound {num_r} rooms, {num_d} doors, and {num_f} features.")
 
         json_path = f"{args.output}.json"
         print(f"Saving analysis to '{json_path}'...")
@@ -57,6 +58,7 @@ def main():
             "hatch_density": args.hatch_density, "no_grid": args.no_grid
         }
         run_rendering(map_data, args.output, render_opts)
+        print("\nProcessing complete.")
 
     except (FileNotFoundError, IOError) as e:
         print(f"\nERROR: {e}")
