@@ -11,7 +11,7 @@ def run_rendering(map_data: schema.MapData, output_name: str, options: dict):
         print("Skipping rendering because no map data was generated.")
         return
 
-    print(f"Rendering SVG for '{output_name}'...")
+    print(f"Rendering stylized SVG for '{output_name}'...")
     svg_content = rendering.render_svg(map_data, options)
 
     output_path = f"{output_name}.svg"
@@ -73,8 +73,16 @@ def main():
         print(f"Saving analysis to '{json_output_path}'...")
         schema.save_json(map_data, json_output_path)
 
-        # 3. Rendering Step
-        rendering_options = {}  # Not used yet, but passed for future compatibility
+        # 3. Rendering Step with style options from CLI
+        rendering_options = {
+            "bg_color": args.bg_color,
+            "wall_color": args.wall_color,
+            "room_color": args.room_color,
+            "line_thickness": args.line_thickness,
+            "hatch_density": args.hatch_density,
+            "no_grid": args.no_grid,
+            "rooms": args.rooms.split(',') if args.rooms else None
+        }
         run_rendering(map_data, args.output, rendering_options)
 
     except (FileNotFoundError, IOError) as e:
