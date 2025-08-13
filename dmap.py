@@ -1,14 +1,8 @@
 # --- dmap.py ---
 import argparse
 import os
-from dmap_lib import schema
 
-
-def run_analysis(image_path: str):
-    """Placeholder for the image analysis logic."""
-    print(f"Analyzing '{image_path}'... (not yet implemented)")
-    # In a future milestone, this will return a schema.MapData object.
-    return None
+from dmap_lib import analysis, schema
 
 
 def run_rendering(map_data, output_name: str, options: dict):
@@ -63,27 +57,17 @@ def demonstrate_serialization(output_name: str):
             schema.Room(
                 id="room_1", label="1", shape="polygon",
                 gridVertices=[schema.GridPoint(0, 0), schema.GridPoint(5, 5)]
-            ),
-            schema.Door(
-                id="door_1", gridPos=schema.GridPoint(5, 3),
-                orientation="vertical", connects=["room_1", "room_2"]
             )
         ]
     )
     temp_json_path = f"{output_name}_temp_test.json"
-    print(f"Saving dummy data to '{temp_json_path}'...")
     schema.save_json(dummy_map_data, temp_json_path)
-
-    print(f"Loading data from '{temp_json_path}'...")
     loaded_map_data = schema.load_json(temp_json_path)
-
     if dummy_map_data == loaded_map_data:
-        print("SUCCESS: Deserialized data matches original data.")
+        print("SUCCESS: Serialization and deserialization test passed.")
     else:
         print("FAILURE: Deserialized data does not match original.")
-
     os.remove(temp_json_path)
-    print(f"Cleaned up temporary file: '{temp_json_path}'")
 
 
 def main():
@@ -91,24 +75,26 @@ def main():
     args = get_cli_args()
 
     print("--- DMAP CLI ---")
-    print("Parsed Arguments:")
-    for key, value in sorted(vars(args).items()):
-        print(f"  - {key:<15}: {value}")
-
     demonstrate_serialization(args.output)
 
     print("\n--- Main Execution Flow ---")
-    map_data = run_analysis(args.input)
-    rendering_options = {
-        "rooms": args.rooms,
-        "bg_color": args.bg_color,
-        "wall_color": args.wall_color,
-        "room_color": args.room_color,
-        "line_thickness": args.line_thickness,
-        "hatch_density": args.hatch_density,
-        "no_grid": args.no_grid
-    }
-    run_rendering(map_data, args.output, rendering_options)
+    try:
+        map_data = analysis.analyze_image(args.input)
+        print("\n--- Analysis Results ---")
+        print(f"Source Image:     {map_data.meta.sourceImage}")
+        print(f"Detected Grid Size: {map_data.meta.gridSizePx}px")
+
+        # In a later milestone, this map_data object will be saved
+        json_output_path = f"{args.output}.json"
+        print(f"Saving analysis to '{json_output_path}'...")
+        schema.save_json(map_data, json_output_path)
+        print("Save complete.")
+
+        rendering_options = {} # To be implemented
+        run_rendering(map_data, args.output, rendering_options)
+
+    except (FileNotFoundError, IOError) as e:
+        print(f"\nERROR: {e}")
 
 
 if __name__ == "__main__":
