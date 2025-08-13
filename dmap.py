@@ -10,10 +10,8 @@ def run_rendering(map_data: schema.MapData, output_name: str, options: dict):
     if not map_data:
         print("Skipping rendering because no map data was generated.")
         return
-
     print(f"\nRendering stylized SVG for '{output_name}'...")
     svg_content = rendering.render_svg(map_data, options)
-
     output_path = f"{output_name}.svg"
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -25,14 +23,17 @@ def run_rendering(map_data: schema.MapData, output_name: str, options: dict):
 
 def get_cli_args():
     """Configures and parses command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Converts raster dungeon maps to structured JSON and SVG."
-    )
-    parser.add_argument("-i", "--input", required=True, help="Path to input PNG.")
-    parser.add_argument("-o", "--output", required=True, help="Base name for outputs.")
-    parser.add_argument("--rooms", help="Comma-separated list of room #s to render.")
-    # Add other style arguments if needed
-    return parser.parse_args()
+    p = argparse.ArgumentParser(description="Converts raster dungeon maps to JSON and SVG.")
+    p.add_argument("-i", "--input", required=True, help="Path to the input PNG file.")
+    p.add_argument("-o", "--output", required=True, help="Base name for output files.")
+    p.add_argument("--rooms", help="Comma-separated list of room numbers to render.")
+    p.add_argument("--bg-color", help="SVG background color (hex).")
+    p.add_argument("--wall-color", help="Color for outlines and hatching (hex).")
+    p.add_argument("--room-color", help="Fill color for rooms (hex).")
+    p.add_argument("--line-thickness", type=float, help="Multiplier for line thickness.")
+    p.add_argument("--hatch-density", type=float, help="Multiplier for border hatching.")
+    p.add_argument("--no-grid", action="store_true", help="Disable rendering the grid.")
+    return p.parse_args()
 
 
 def main():
@@ -41,20 +42,21 @@ def main():
     print("--- DMAP CLI ---")
     try:
         map_data = analysis.analyze_image(args.input)
+        num_r = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Room))
+        num_d = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Door))
+        print(f"\n--- Analysis Results ---\nFound {num_r} rooms and {num_d} doors.")
 
-        num_rooms = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Room))
-        num_doors = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Door))
+        json_path = f"{args.output}.json"
+        print(f"Saving analysis to '{json_path}'...")
+        schema.save_json(map_data, json_path)
 
-        print("\n--- Analysis Results ---")
-        print(f"Found {num_rooms} potential rooms.")
-        print(f"Found {num_doors} potential doors.")
-
-        json_output_path = f"{args.output}.json"
-        print(f"\nSaving analysis with topology to '{json_output_path}'...")
-        schema.save_json(map_data, json_output_path)
-
-        opts = { "rooms": args.rooms.split(',') if args.rooms else None }
-        run_rendering(map_data, args.output, opts)
+        render_opts = {
+            "rooms": args.rooms.split(',') if args.rooms else None,
+            "bg_color": args.bg_color, "wall_color": args.wall_color,
+            "room_color": args.room_color, "line_thickness": args.line_thickness,
+            "hatch_density": args.hatch_density, "no_grid": args.no_grid
+        }
+        run_rendering(map_data, args.output, render_opts)
 
     except (FileNotFoundError, IOError) as e:
         print(f"\nERROR: {e}")
