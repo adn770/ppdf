@@ -63,6 +63,29 @@ class RAGService:
             return f'"{single_line_text[:45]}...{single_line_text[-45:]}"'
         return f'"{single_line_text}"'
 
+    def _log_retrieved_documents(self, context_name: str, metas: list[dict]):
+        """Helper to log the essential metadata of retrieved documents for debugging."""
+        log.debug("--- RAG Context: %s ---", context_name)
+        if not metas:
+            log.debug("  - No documents found.")
+            return
+
+        for meta in metas:
+            try:
+                hierarchy = json.loads(meta.get("hierarchy", "[]"))
+                tags = json.loads(meta.get("tags", "[]"))
+                hierarchy_str = " > ".join(hierarchy)
+                log.debug(
+                    "  - ID: %s | Title: '%s' | Hierarchy: %s | Tags: %s",
+                    meta.get("chunk_id", "N/A"),
+                    meta.get("section_title", "Unknown"),
+                    hierarchy_str,
+                    tags,
+                )
+            except (json.JSONDecodeError, TypeError):
+                log.debug("  - Could not parse metadata for a document: %s", meta)
+        log.debug("--- End Context: %s ---", context_name)
+
     def _get_full_section(
         self, kb_name: str, chunk_meta: dict, where_filter: dict | None = None
     ) -> tuple[list[str], list[dict]]:
@@ -207,6 +230,13 @@ class RAGService:
             found_docs = ["No introductory text was found in the knowledge base."]
             found_metas = [{"tags": '["type:prose"]'}]
 
+        self._log_retrieved_documents("Kickoff Narration", found_metas)
+
+        # --- Initialize Location Cache ---
+        primary_location = self._find_primary_location(found_metas)
+        if primary_location:
+            self._build_location_cache(active_kb, primary_location)
+
         intro_context = "\n\n".join(found_docs)
         insight_data = [
             {
@@ -344,59 +374,84 @@ class RAGService:
 
                 if isinstance(expanded_queries, list):
                     queries.extend(expanded_queries)
-                log.info("Expanded into %d search queries: %s", len(queries), queries)
+                log.debug("Expanded player command into %d search queries: %s", len(queries), queries)
             except (json.JSONDecodeError, TypeError) as e:
                 log.warning("Could not parse query expansion response. Error: %s", e)
 
-            # --- Stage 2: Execute queries and build context (Two-Stage Retrieval) ---
-            # 2a. Get PLAYER-SAFE context for the LLM prompt
+            # --- Stage 2: Execute queries and build context ---
             p_mod_docs, p_mod_metas = execute_queries(
                 self.vector_store, module_kb, queries, filter=player_safe_filter
             )
-            p_rules_docs, _ = execute_queries(
+            p_rules_docs, p_rules_metas = execute_queries(
                 self.vector_store, rules_kb, queries, filter=player_safe_filter, n_results=3
             )
-            if p_mod_docs:
-                defrag_docs, _ = self._get_full_section(
-                    module_kb, p_mod_metas[0], where_filter=player_safe_filter
-                )
-                narrative_context_str = "\n\n---\n\n".join(defrag_docs)
-            else:
-                narrative_context_str = ""
-            if p_rules_docs:
-                narrative_context_str += "\n\n---\n\n" + "\n\n".join(p_rules_docs)
-            narrative_context_str = narrative_context_str.strip() or "No context found."
 
-            # 2b. Get FULL (DM + Player) context for the insight modal
-            i_mod_docs, i_mod_metas = execute_queries(self.vector_store, module_kb, queries)
-            i_rules_docs, i_rules_metas = execute_queries(self.vector_store, rules_kb, queries)
-            if i_mod_docs:
-                defrag_i_docs, defrag_i_metas = self._get_full_section(
-                    module_kb, i_mod_metas[0]
-                )
-                insight_data.extend(
-                    [
-                        {
-                            "text": d,
-                            "tags": json.loads(m.get("tags", "[]")),
-                            "kb_name": module_kb,
-                            "section_title": m.get("section_title", "Unknown"),
-                        }
-                        for d, m in zip(defrag_i_docs, defrag_i_metas)
-                    ]
-                )
-            if i_rules_docs:
-                insight_data.extend(
-                    [
-                        {
-                            "text": d,
-                            "tags": json.loads(m.get("tags", "[]")),
-                            "kb_name": rules_kb,
-                            "section_title": m.get("section_title", "Rules Lookup"),
-                        }
-                        for d, m in zip(i_rules_docs, i_rules_metas)
-                    ]
-                )
+            # --- Location Cache Logic ---
+            primary_location = self._find_primary_location(p_mod_metas)
+            if primary_location and primary_location["name"] != self.current_location:
+                # Location has changed, refresh the cache
+                self._build_location_cache(module_kb, primary_location)
+            elif not primary_location and self.current_location:
+                # Party has left a known location into an unknown area
+                log.info("Party has left '%s'. Clearing location cache.", self.current_location)
+                log.debug("Cache invalidated.")
+                self.current_location = None
+                self.context_cache = {}
+
+            # --- Stage 2b: Assemble Context (Cached or Live) ---
+            if self.current_location and self.context_cache:
+                log.debug("Using cached RAG context for location: '%s'", self.current_location)
+                narrative_context_str = self.context_cache.get("player_prompt", "")
+                insight_data = self.context_cache.get("insight_data", [])
+                if p_rules_docs:
+                    narrative_context_str += "\n\n---\n\n" + "\n\n".join(p_rules_docs)
+            else:
+                log.debug("No valid location cache. Performing live context defragmentation.")
+                # Fallback to standard defragmentation if not in a cached location
+                if p_mod_docs:
+                    self._log_retrieved_documents("Player-Safe Module Context", p_mod_metas)
+                    defrag_docs, _ = self._get_full_section(
+                        module_kb, p_mod_metas[0], where_filter=player_safe_filter
+                    )
+                    narrative_context_str = "\n\n---\n\n".join(defrag_docs)
+                else:
+                    narrative_context_str = ""
+                if p_rules_docs:
+                    self._log_retrieved_documents("Player-Safe Rules Context", p_rules_metas)
+                    narrative_context_str += "\n\n---\n\n" + "\n\n".join(p_rules_docs)
+
+                # Get FULL (DM + Player) context for the insight modal
+                i_mod_docs, i_mod_metas = execute_queries(self.vector_store, module_kb, queries)
+                i_rules_docs, i_rules_metas = execute_queries(self.vector_store, rules_kb, queries)
+                if i_mod_docs:
+                    defrag_i_docs, defrag_i_metas = self._get_full_section(
+                        module_kb, i_mod_metas[0]
+                    )
+                    insight_data.extend(
+                        [
+                            {
+                                "text": d,
+                                "tags": json.loads(m.get("tags", "[]")),
+                                "kb_name": module_kb,
+                                "section_title": m.get("section_title", "Unknown"),
+                            }
+                            for d, m in zip(defrag_i_docs, defrag_i_metas)
+                        ]
+                    )
+                if i_rules_docs:
+                    insight_data.extend(
+                        [
+                            {
+                                "text": d,
+                                "tags": json.loads(m.get("tags", "[]")),
+                                "kb_name": rules_kb,
+                                "section_title": m.get("section_title", "Rules Lookup"),
+                            }
+                            for d, m in zip(i_rules_docs, i_rules_metas)
+                        ]
+                    )
+
+            narrative_context_str = narrative_context_str.strip() or "No context found."
 
         yield {"type": "insight", "content": json.dumps(insight_data, indent=2)}
 
@@ -534,6 +589,44 @@ class RAGService:
         )
         summary = response_data.get("response", "").strip()
         return summary
+
+    def _build_location_cache(self, kb_name: str, location_info: dict):
+        """Builds a complete context dossier for a location and caches it."""
+        location_name = location_info["name"]
+        location_meta = location_info["meta"]
+        log.info("New location detected: '%s'. Building context cache.", location_name)
+        self.current_location = location_name
+        self.context_cache = {}
+
+        try:
+            linked_ids = json.loads(location_meta.get("linked_chunks", "[]"))
+            all_ids = list(set([location_meta["chunk_id"]] + linked_ids))
+            log.debug("Building cache for location '%s' with chunk IDs: %s", location_name, all_ids)
+            docs, metas = self.vector_store.get_by_ids(kb_name, ids=all_ids)
+
+            player_safe_docs = [
+                doc for doc, meta in zip(docs, metas) if not meta.get("is_dm_only", False)
+            ]
+            self.context_cache["player_prompt"] = "\n\n---\n\n".join(player_safe_docs)
+
+            self.context_cache["insight_data"] = [
+                {
+                    "text": d,
+                    "tags": json.loads(m.get("tags", "[]")),
+                    "kb_name": kb_name,
+                    "section_title": m.get("section_title", "Unknown"),
+                }
+                for d, m in zip(docs, metas)
+            ]
+            log.info(
+                "Cache for '%s' built successfully with %d total chunks.",
+                location_name,
+                len(docs),
+            )
+        except (json.JSONDecodeError, TypeError, Exception) as e:
+            log.error("Failed to build location cache for '%s': %s", location_name, e)
+            self.current_location = None
+            self.context_cache = {}
 
 
 def execute_queries(vector_store, kb_name, queries, filter=None, n_results=2):
