@@ -50,7 +50,7 @@ def _generate_hatching(pixel_contour: np.ndarray, density: float) -> list[str]:
 def render_svg(
     map_data: schema.MapData, unified_contours: list | None, style_options: dict
 ) -> str:
-    """Generates a stylized SVG, using unified geometry for hatching."""
+    """Generates a stylized SVG from a region-based MapData object."""
     log.info("Starting SVG rendering process...")
     # Flatten all objects from all regions for processing
     all_objects = [obj for region in map_data.regions for obj in region.mapObjects]
@@ -64,12 +64,16 @@ def render_svg(
         labels_set = set(rooms_to_render_labels)
         rooms = [o for o in all_objects if isinstance(o, schema.Room) and o.label in labels_set]
         room_ids = {r.id for r in rooms}
+        # Get doors connecting the filtered rooms
         doors = [
             o for o in all_objects if isinstance(o, schema.Door)
-            and set(o.connects).issubset(room_ids)
+            and room_ids.intersection(o.connects)
         ]
-        objects = rooms + doors
-        log.debug("Filtered to %d rooms and %d doors.", len(rooms), len(doors))
+        # Get features and layers contained within the filtered rooms
+        child_ids = {cid for r in rooms if r.contents for cid in r.contents}
+        children = [o for o in all_objects if o.id in child_ids]
+        objects = rooms + doors + children
+        log.debug("Filtered to %d total objects to render.", len(objects))
 
     if not objects:
         log.warning("No map objects to render.")
@@ -79,19 +83,20 @@ def render_svg(
         "bg_color": "#EDE0CE", "room_color": "#F7EEDE", "wall_color": "#000000",
         "shadow_color": "#999999", "glow_color": "#C9C1B1",
         "line_thickness": 7.0, "hatch_density": 1.0,
+        "water_color": "#77AADD",
     }
     styles.update({k: v for k, v in style_options.items() if v is not None})
     log.debug("Using styles: %s", styles)
 
-    verts = [v for o in objects if isinstance(o, schema.Room) for v in o.gridVertices]
-    if not verts:
+    room_verts = [v for o in objects if isinstance(o, schema.Room) for v in o.gridVertices]
+    if not room_verts:
         log.warning("No rooms with vertices found to render.")
         return "<svg><text>No rooms to render.</text></svg>"
 
-    min_x = min(v.x for v in verts)
-    max_x = max(v.x for v in verts)
-    min_y = min(v.y for v in verts)
-    max_y = max(v.y for v in verts)
+    min_x = min(v.x for v in room_verts)
+    max_x = max(v.x for v in room_verts)
+    min_y = min(v.y for v in room_verts)
+    max_y = max(v.y for v in room_verts)
     width = (max_x - min_x) * PIXELS_PER_GRID + 2 * PADDING
     height = (max_y - min_y) * PIXELS_PER_GRID + 2 * PADDING
     log.debug("Calculated SVG canvas dimensions: %dx%d", width, height)
@@ -103,7 +108,10 @@ def render_svg(
     tx, ty = PADDING - min_x * PIXELS_PER_GRID, PADDING - min_y * PIXELS_PER_GRID
     svg.append(f'<g transform="translate({tx:.2f} {ty:.2f})">')
 
-    layers = {"hatching": [], "shadows": [], "glows": [], "room_fills": [], "doors": [], "walls": []}
+    layers = {
+        "hatching": [], "shadows": [], "glows": [], "room_fills": [],
+        "env_layers": [], "features": [], "doors": [], "walls": []
+    }
 
     for obj in objects:
         if isinstance(obj, schema.Room):
@@ -116,8 +124,16 @@ def render_svg(
         elif isinstance(obj, schema.Door):
             lt = styles["line_thickness"]
             dw, dh = (lt, PIXELS_PER_GRID*0.5) if obj.orientation=="v" else (PIXELS_PER_GRID*0.5, lt)
-            dx, dy = (obj.gridPos.x * PIXELS_PER_GRID) - dw/2, (obj.gridPos.y * PIXELS_PER_GRID) - dh/2
+            dx = (obj.gridPos.x * PIXELS_PER_GRID) - dw/2
+            dy = (obj.gridPos.y * PIXELS_PER_GRID) - dh/2
             layers["doors"].append(f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />')
+        elif isinstance(obj, schema.EnvironmentalLayer):
+            points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
+            color = styles.get(f"{obj.layerType}_color", "#808080") # Default to gray
+            layers["env_layers"].append(f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />')
+        elif isinstance(obj, schema.Feature):
+            points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
+            layers["features"].append(f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>')
 
     if unified_contours and enable_hatching:
         log.info("Generating hatching for unified geometry (%d contours).", len(unified_contours))
@@ -126,7 +142,9 @@ def render_svg(
         log.debug("Generated %d total hatching lines.", len(layers["hatching"]))
         svg.append(f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
 
-    for name in ["shadows", "glows", "room_fills", "doors", "walls"]:
+    # Render layers in specified order for correct visual appearance
+    render_order = ["shadows", "glows", "room_fills", "env_layers", "features", "doors", "walls"]
+    for name in render_order:
         svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
 
     svg.extend(["</g>", "</svg>"])
