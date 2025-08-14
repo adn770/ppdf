@@ -93,6 +93,13 @@ def main():
         log.info("Saving analysis to '%s'...", json_path)
         schema.save_json(map_data, json_path)
 
+        if args.ascii_debug:
+            log.info("--- ASCII Debug Output (Post-Transformation) ---")
+            renderer = rendering.ASCIIRenderer()
+            renderer.render_from_json(map_data)
+            print(renderer.get_output())
+            log.info("--- End ASCII Debug Output ---")
+
         render_opts = {
             "rooms": args.rooms.split(",") if args.rooms else None,
             "hatching": args.hatching,

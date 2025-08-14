@@ -160,10 +160,95 @@ class ASCIIRenderer:
         self.width = width
         self.height = height
         self.canvas = [[' ' for _ in range(width)] for _ in range(height)]
+        self.min_x, self.min_y = 0, 0
+        self.scale_x, self.scale_y = 1.0, 1.0
+
+    def _map_coords(self, p: schema.GridPoint) -> tuple[int, int]:
+        """Maps a grid point to canvas coordinates."""
+        x = int((p.x - self.min_x) * self.scale_x)
+        y = int((p.y - self.min_y) * self.scale_y)
+        return min(self.width - 1, max(0, x)), min(self.height - 1, max(0, y))
+
+    def _draw_line(self, p1: tuple, p2: tuple, char: str):
+        """Draws a line on the canvas using Bresenham's algorithm."""
+        x1, y1 = p1
+        x2, y2 = p2
+        dx, dy = abs(x2 - x1), -abs(y2 - y1)
+        sx, sy = 1 if x1 < x2 else -1, 1 if y1 < y2 else -1
+        err = dx + dy
+        while True:
+            if 0 <= y1 < self.height and 0 <= x1 < self.width:
+                self.canvas[y1][x1] = char
+            if x1 == x2 and y1 == y2:
+                break
+            e2 = 2 * err
+            if e2 >= dy:
+                err += dy
+                x1 += sx
+            if e2 <= dx:
+                err += dx
+                y1 += sy
+
+    def _fill_polygon(self, vertices: list[tuple], char: str):
+        """Fills a polygon on the canvas using a scan-line algorithm."""
+        if not vertices:
+            return
+        max_y = max(v[1] for v in vertices)
+        for y in range(max_y + 1):
+            intersections = []
+            for i in range(len(vertices)):
+                p1 = vertices[i]
+                p2 = vertices[(i + 1) % len(vertices)]
+                if p1[1] != p2[1] and min(p1[1], p2[1]) <= y < max(p1[1], p2[1]):
+                    x = (y - p1[1]) * (p2[0] - p1[0]) / (p2[1] - p1[1]) + p1[0]
+                    intersections.append(int(x))
+            intersections.sort()
+            for i in range(0, len(intersections), 2):
+                if i + 1 < len(intersections):
+                    for x in range(intersections[i], intersections[i+1] + 1):
+                        if 0 <= y < self.height and 0 <= x < self.width:
+                            self.canvas[y][x] = char
 
     def render_from_json(self, map_data: schema.MapData):
-        """(Placeholder) Renders the map from the final MapData structure."""
-        pass
+        """Renders the map from the final MapData structure."""
+        all_verts = [
+            v for r in map_data.regions for o in r.mapObjects
+            if isinstance(o, schema.Room) for v in o.gridVertices
+        ]
+        if not all_verts: return
+
+        self.min_x, self.max_x = min(v.x for v in all_verts), max(v.x for v in all_verts)
+        self.min_y, self.max_y = min(v.y for v in all_verts), max(v.y for v in all_verts)
+        delta_x = self.max_x - self.min_x
+        delta_y = self.max_y - self.min_y
+        self.scale_x = (self.width - 1) / delta_x if delta_x > 0 else 1
+        self.scale_y = (self.height - 1) / delta_y if delta_y > 0 else 1
+
+        all_objects = [o for r in map_data.regions for o in r.mapObjects]
+        # Render in layers: floors, then env_layers, then walls, then features
+        for obj in all_objects:
+            if isinstance(obj, schema.Room):
+                self._fill_polygon([self._map_coords(v) for v in obj.gridVertices], '.')
+        for obj in all_objects:
+            if isinstance(obj, schema.EnvironmentalLayer):
+                char = '~' if obj.layerType == 'water' else '%'
+                self._fill_polygon([self._map_coords(v) for v in obj.gridVertices], char)
+        for obj in all_objects:
+            if isinstance(obj, schema.Room):
+                verts = [self._map_coords(v) for v in obj.gridVertices]
+                for i in range(len(verts)):
+                    self._draw_line(verts[i], verts[(i + 1) % len(verts)], '#')
+        for obj in all_objects:
+            if isinstance(obj, schema.Door):
+                x, y = self._map_coords(obj.gridPos)
+                self.canvas[y][x] = '+'
+            elif isinstance(obj, schema.Feature):
+                # Place feature character at the center of its vertices
+                if obj.gridVertices:
+                    avg_x = sum(v.x for v in obj.gridVertices) / len(obj.gridVertices)
+                    avg_y = sum(v.y for v in obj.gridVertices) / len(obj.gridVertices)
+                    x, y = self._map_coords(schema.GridPoint(int(avg_x), int(avg_y)))
+                    self.canvas[y][x] = 'O'
 
     def render_from_tiles(self, tile_grid):
         """(Placeholder) Renders the map from an intermediate tile grid."""
