@@ -1,11 +1,13 @@
 import logging
 import os
 import uuid
+import itertools
 from typing import List, Dict, Any, Tuple, Optional
 
 import cv2
 import numpy as np
 import easyocr
+from shapely.geometry import Point, Polygon
 
 from dmap_lib import schema
 
@@ -25,14 +27,12 @@ def _stage1_detect_regions(img: np.ndarray) -> List[Dict[str, Any]]:
     """
     log.info("Executing Stage 1: Region Detection...")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # Invert threshold: find black shapes on a white background
     _, thresh = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
 
-    # Find external contours
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     region_contexts = []
-    min_area = img.shape[0] * img.shape[1] * 0.01  # Ignore tiny noise
+    min_area = img.shape[0] * img.shape[1] * 0.01
     for i, contour in enumerate(contours):
         if cv2.contourArea(contour) > min_area:
             x, y, w, h = cv2.boundingRect(contour)
@@ -56,7 +56,6 @@ def _stage2_parse_text_metadata(
     if not region_contexts:
         return {}, []
 
-    # Heuristic: The largest region is the dungeon, others are text/legends.
     main_dungeon_idx = max(
         range(len(region_contexts)),
         key=lambda i: cv2.contourArea(region_contexts[i]["contour"]),
@@ -73,18 +72,14 @@ def _stage2_parse_text_metadata(
 
         context["type"] = "text"
         log.debug("Region '%s' classified as 'text', running OCR.", context["id"])
-        # OCR on the isolated region image
         ocr_results = OCR_READER.readtext(context["bounds_img"], detail=1, paragraph=False)
         for bbox, text, prob in ocr_results:
-            # Get the height of the text's bounding box to estimate font size
             h = bbox[2][1] - bbox[0][1]
             text_blobs.append({"text": text, "height": h})
 
     if text_blobs:
-        # Heuristic: The text with the largest height is the title.
         title_blob_idx = max(range(len(text_blobs)), key=lambda i: text_blobs[i]["height"])
         metadata["title"] = text_blobs.pop(title_blob_idx)["text"]
-        # Concatenate remaining text into notes.
         metadata["notes"] = " ".join([b["text"] for b in text_blobs])
 
     log_ocr.info("Extracted metadata: Title='%s'", metadata["title"])
@@ -109,7 +104,6 @@ def _stage4_5_detect_rooms_and_corridors(
     """
     log.info("Executing Stage 4/5: Room & Corridor Detection...")
     gray = cv2.cvtColor(region_image, cv2.COLOR_BGR2GRAY)
-    # Use a high threshold to get only the floor plan (assumed to be white/light).
     _, processed = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
 
     log.debug("Filling holes in floor plan to get solid shapes...")
@@ -119,7 +113,6 @@ def _stage4_5_detect_rooms_and_corridors(
     floor_mask = processed.copy()
     if hierarchy is not None:
         for i, contour in enumerate(contours):
-            # A contour with a parent is a hole. Fill small ones.
             if hierarchy[0][i][3] != -1 and cv2.contourArea(contour) < 150:
                 cv2.drawContours(floor_mask, [contour], -1, 255, cv2.FILLED)
 
@@ -134,7 +127,6 @@ def _stage4_5_detect_rooms_and_corridors(
         if cv2.contourArea(contour) < min_room_area:
             continue
 
-        # Simplify the polygon to have fewer vertices
         epsilon = 0.01 * cv2.arcLength(contour, True)
         approx_poly = cv2.approxPolyDP(contour, epsilon, True)
 
@@ -142,8 +134,8 @@ def _stage4_5_detect_rooms_and_corridors(
             schema.GridPoint(round(p[0][0] / grid_size), round(p[0][1] / grid_size))
             for p in approx_poly
         ]
+        pixel_verts = [p[0] for p in approx_poly]
 
-        # Heuristic for room type classification based on aspect ratio
         _, _, w, h = cv2.boundingRect(contour)
         aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
         room_type = "corridor" if aspect_ratio > 3.5 else "chamber"
@@ -153,24 +145,92 @@ def _stage4_5_detect_rooms_and_corridors(
             shape="polygon",
             gridVertices=verts,
             roomType=room_type,
+            properties={"pixel_contour": np.array(pixel_verts)} # Temp storage
         )
         rooms.append(room)
-        log.debug(
-            "Created Room %s (type: %s) with %d vertices.",
-            room.id, room.roomType, len(verts)
-        )
     return rooms
 
 
+def _detect_doors_between_rooms(rooms: List[schema.Room], grid_size: int):
+    """Detects doors by finding small intersections between dilated room shapes."""
+    log_geom.info("Starting geometric door detection for %d rooms...", len(rooms))
+    doors = []
+    # Convert rooms to a temporary structure with shapely polygons for analysis
+    room_geoms = [
+        {
+            "obj": room,
+            "polygon": Polygon(room.properties.pop("pixel_contour"))
+        }
+        for room in rooms if room.properties and "pixel_contour" in room.properties
+    ]
+
+    buffer_dist = grid_size * 0.6
+    max_door_area = (grid_size * grid_size) * 2.5
+
+    for room_a, room_b in itertools.combinations(room_geoms, 2):
+        dilated_a = room_a['polygon'].buffer(buffer_dist)
+        dilated_b = room_b['polygon'].buffer(buffer_dist)
+
+        if not dilated_a.intersects(dilated_b):
+            continue
+        intersection = dilated_a.intersection(dilated_b)
+
+        if 0 < intersection.area < max_door_area:
+            centroid = intersection.centroid
+            minx, miny, maxx, maxy = intersection.bounds
+            orientation = "v" if (maxy - miny) > (maxx - minx) else "h"
+            door = schema.Door(
+                id=f"door_{uuid.uuid4().hex[:8]}",
+                gridPos=schema.GridPoint(round(centroid.x/grid_size), round(centroid.y/grid_size)),
+                orientation=orientation,
+                connects=[room_a['obj'].id, room_b['obj'].id]
+            )
+            doors.append(door)
+    log_geom.info("Found %d doors via geometric analysis.", len(doors))
+    return doors
+
 def _stage6_classify_features(
-    region_image: np.ndarray, rooms: list, grid_size: int
+    region_image: np.ndarray, rooms: List[schema.Room], grid_size: int
 ) -> Tuple[List[schema.Feature], List[schema.EnvironmentalLayer], List[schema.Door]]:
     """
-    (Placeholder) Stage 6: Perform tile-based classification of features.
+    Stage 6: Perform classification of intra-room features, layers, and doors.
     """
     log.info("Executing Stage 6: Feature Classification...")
-    log.debug("(Stub) Returning empty lists of features, layers, and doors.")
-    return [], [], []
+    gray = cv2.cvtColor(region_image, cv2.COLOR_BGR2GRAY)
+    all_features, all_layers = [], []
+
+    # Part 1: Find doors between rooms
+    doors = _detect_doors_between_rooms(rooms, grid_size)
+
+    # Part 2: Find features and layers within each room
+    for room in rooms:
+        if room.properties is None or "pixel_contour" not in room.properties:
+            continue
+
+        # Create a mask for just this room
+        mask = np.zeros(gray.shape, dtype=np.uint8)
+        cv2.drawContours(mask, [room.properties["pixel_contour"]], -1, 255, -1)
+        room_content_img = cv2.bitwise_and(gray, gray, mask=mask)
+
+        # Find dark features (columns, statues, etc.)
+        _, feat_thresh = cv2.threshold(room_content_img, 1, 180, cv2.THRESH_BINARY_INV)
+        feat_contours, _ = cv2.findContours(feat_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if room.contents is None: room.contents = []
+        for fc in feat_contours:
+            if 10 < cv2.contourArea(fc) < (grid_size * grid_size * 2):
+                verts = [schema.GridPoint(round(p[0][0]/grid_size), round(p[0][1]/grid_size)) for p in fc]
+                feature = schema.Feature(
+                    id=f"feature_{uuid.uuid4().hex[:8]}",
+                    featureType="column", # Default classification
+                    shape="polygon",
+                    gridVertices=verts,
+                )
+                all_features.append(feature)
+                room.contents.append(feature.id)
+
+    log.info("Found %d internal features and %d env. layers.", len(all_features), len(all_layers))
+    return all_features, all_layers, doors
 
 
 def _stage7_transform_to_mapdata(
@@ -199,6 +259,12 @@ def _stage7_transform_to_mapdata(
             schema.GridPoint(x=x + w, y=y + h),
             schema.GridPoint(x=x, y=y + h),
         ]
+        # Clean up temporary properties from Room objects
+        for obj in region_data["mapObjects"]:
+            if isinstance(obj, schema.Room) and obj.properties:
+                obj.properties.pop("pixel_contour", None)
+                if not obj.properties: obj.properties = None
+
         region = schema.Region(
             id=region_data["id"],
             label=region_data["label"],
