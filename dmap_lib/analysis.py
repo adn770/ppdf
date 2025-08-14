@@ -9,7 +9,7 @@ import numpy as np
 import easyocr
 from shapely.geometry import Point, Polygon
 
-from dmap_lib import schema
+from dmap_lib import schema, rendering
 
 log = logging.getLogger("dmap.analysis")
 log_ocr = logging.getLogger("dmap.ocr")
@@ -27,8 +27,10 @@ def _stage1_detect_regions(img: np.ndarray) -> List[Dict[str, Any]]:
     """
     log.info("Executing Stage 1: Region Detection...")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Invert threshold: find black shapes on a white background
     _, thresh = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
 
+    # Find external contours
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     region_contexts = []
@@ -134,7 +136,7 @@ def _stage4_5_detect_rooms_and_corridors(
             schema.GridPoint(round(p[0][0] / grid_size), round(p[0][1] / grid_size))
             for p in approx_poly
         ]
-        pixel_verts = [p[0] for p in approx_poly]
+        pixel_verts = approx_poly
 
         _, _, w, h = cv2.boundingRect(contour)
         aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
@@ -145,7 +147,7 @@ def _stage4_5_detect_rooms_and_corridors(
             shape="polygon",
             gridVertices=verts,
             roomType=room_type,
-            properties={"pixel_contour": np.array(pixel_verts)} # Temp storage
+            properties={"pixel_contour": pixel_verts} # Temp storage
         )
         rooms.append(room)
     return rooms
@@ -159,7 +161,7 @@ def _detect_doors_between_rooms(rooms: List[schema.Room], grid_size: int):
     room_geoms = [
         {
             "obj": room,
-            "polygon": Polygon(room.properties.pop("pixel_contour"))
+            "polygon": Polygon(room.properties["pixel_contour"].squeeze())
         }
         for room in rooms if room.properties and "pixel_contour" in room.properties
     ]
@@ -207,12 +209,10 @@ def _stage6_classify_features(
         if room.properties is None or "pixel_contour" not in room.properties:
             continue
 
-        # Create a mask for just this room
         mask = np.zeros(gray.shape, dtype=np.uint8)
         cv2.drawContours(mask, [room.properties["pixel_contour"]], -1, 255, -1)
         room_content_img = cv2.bitwise_and(gray, gray, mask=mask)
 
-        # Find dark features (columns, statues, etc.)
         _, feat_thresh = cv2.threshold(room_content_img, 1, 180, cv2.THRESH_BINARY_INV)
         feat_contours, _ = cv2.findContours(feat_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -278,7 +278,7 @@ def _stage7_transform_to_mapdata(
     return schema.MapData(dmapVersion="2.0.0", meta=meta_obj, regions=regions)
 
 
-def analyze_image(image_path: str) -> Tuple[schema.MapData, Optional[List]]:
+def analyze_image(image_path: str, ascii_debug: bool = False) -> Tuple[schema.MapData, Optional[List]]:
     """
     Loads and analyzes a map image using a multi-stage pipeline to extract
     its structure and features into a MapData object.
@@ -303,13 +303,49 @@ def analyze_image(image_path: str) -> Tuple[schema.MapData, Optional[List]]:
         grid_size = _stage3_discover_grid(region_img)
         rooms = _stage4_5_detect_rooms_and_corridors(region_img, grid_size)
         features, layers, doors = _stage6_classify_features(region_img, rooms, grid_size)
+        all_objects = rooms + features + layers + doors
+
+        if ascii_debug:
+            log.info("--- ASCII Debug Output (Pre-Transformation) ---")
+            tile_grid = {}
+            if rooms:
+                all_verts = [v for r in rooms for v in r.gridVertices]
+                min_x, max_x = min(v.x for v in all_verts), max(v.x for v in all_verts)
+                min_y, max_y = min(v.y for v in all_verts), max(v.y for v in all_verts)
+                for r in rooms:
+                    for x in range(min_x, max_x + 1):
+                        for y in range(min_y, max_y + 1):
+                            if cv2.pointPolygonTest(r.properties['pixel_contour'], ((x*grid_size),(y*grid_size)), False) >= 0:
+                                tile_grid[(x,y)] = '.'
+                for r in rooms: # Walls drawn over floors
+                    verts = r.gridVertices
+                    for i in range(len(verts)):
+                        p1 = verts[i]
+                        p2 = verts[(i + 1) % len(verts)]
+                        dx, dy, steps = p2.x-p1.x, p2.y-p1.y, max(abs(p2.x-p1.x), abs(p2.y-p1.y))
+                        for i in range(steps+1):
+                            x = round(p1.x + i/steps * dx) if steps else p1.x
+                            y = round(p1.y + i/steps * dy) if steps else p1.y
+                            tile_grid[(x,y)] = '#'
+            for obj in all_objects:
+                if isinstance(obj, schema.Door): tile_grid[(obj.gridPos.x, obj.gridPos.y)] = '+'
+                elif isinstance(obj, schema.Feature):
+                     avg_x = round(sum(v.x for v in obj.gridVertices) / len(obj.gridVertices))
+                     avg_y = round(sum(v.y for v in obj.gridVertices) / len(obj.gridVertices))
+                     tile_grid[(avg_x, avg_y)] = 'O'
+
+            renderer = rendering.ASCIIRenderer()
+            renderer.render_from_tiles(tile_grid)
+            print(renderer.get_output())
+            log.info("--- End ASCII Debug Output ---")
+
 
         all_regions_data.append({
             "id": region_context["id"],
             "label": region_label,
             "gridSizePx": grid_size,
             "bounds_rect": region_context["bounds_rect"],
-            "mapObjects": rooms + features + layers + doors,
+            "mapObjects": all_objects,
         })
 
     map_data = _stage7_transform_to_mapdata(image_path, all_regions_data, metadata)

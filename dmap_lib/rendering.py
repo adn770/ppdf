@@ -243,16 +243,28 @@ class ASCIIRenderer:
                 x, y = self._map_coords(obj.gridPos)
                 self.canvas[y][x] = '+'
             elif isinstance(obj, schema.Feature):
-                # Place feature character at the center of its vertices
                 if obj.gridVertices:
                     avg_x = sum(v.x for v in obj.gridVertices) / len(obj.gridVertices)
                     avg_y = sum(v.y for v in obj.gridVertices) / len(obj.gridVertices)
                     x, y = self._map_coords(schema.GridPoint(int(avg_x), int(avg_y)))
                     self.canvas[y][x] = 'O'
 
-    def render_from_tiles(self, tile_grid):
-        """(Placeholder) Renders the map from an intermediate tile grid."""
-        pass
+    def render_from_tiles(self, tile_grid: dict):
+        """Renders the map from an intermediate tile grid."""
+        if not tile_grid:
+            return
+        all_x = [p[0] for p in tile_grid.keys()]
+        all_y = [p[1] for p in tile_grid.keys()]
+        self.min_x, self.max_x = min(all_x), max(all_x)
+        self.min_y, self.max_y = min(all_y), max(all_y)
+        delta_x = self.max_x - self.min_x
+        delta_y = self.max_y - self.min_y
+        self.scale_x = (self.width - 1) / delta_x if delta_x > 0 else 1
+        self.scale_y = (self.height - 1) / delta_y if delta_y > 0 else 1
+
+        for pos, char_code in tile_grid.items():
+            x, y = self._map_coords(schema.GridPoint(x=pos[0], y=pos[1]))
+            self.canvas[y][x] = char_code
 
     def get_output(self) -> str:
         """Returns the final, rendered ASCII map as a single string."""

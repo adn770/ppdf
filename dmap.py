@@ -68,7 +68,9 @@ def main():
     log.debug("Arguments received: %s", vars(args))
 
     try:
-        map_data, unified_geometry = analysis.analyze_image(args.input)
+        map_data, unified_geometry = analysis.analyze_image(
+            args.input, ascii_debug=args.ascii_debug
+        )
 
         num_r = sum(
             1
