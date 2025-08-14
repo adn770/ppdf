@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from typing import List, Dict, Any, Tuple, Optional
 
 import cv2
@@ -10,6 +11,7 @@ from dmap_lib import schema
 
 log = logging.getLogger("dmap.analysis")
 log_ocr = logging.getLogger("dmap.ocr")
+log_geom = logging.getLogger("dmap.geometry")
 
 # Initialize the OCR reader once. This can take a moment on first run.
 log_ocr.info("Initializing EasyOCR reader...")
@@ -103,11 +105,61 @@ def _stage4_5_detect_rooms_and_corridors(
     region_image: np.ndarray, grid_size: int
 ) -> List[schema.Room]:
     """
-    (Placeholder) Stage 4 & 5: Detect all rooms and corridors.
+    Stage 4 & 5: Detect all rooms and corridors from a region's image.
     """
     log.info("Executing Stage 4/5: Room & Corridor Detection...")
-    log.debug("(Stub) Returning empty list of rooms.")
-    return []
+    gray = cv2.cvtColor(region_image, cv2.COLOR_BGR2GRAY)
+    # Use a high threshold to get only the floor plan (assumed to be white/light).
+    _, processed = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+
+    log.debug("Filling holes in floor plan to get solid shapes...")
+    contours, hierarchy = cv2.findContours(
+        processed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+    )
+    floor_mask = processed.copy()
+    if hierarchy is not None:
+        for i, contour in enumerate(contours):
+            # A contour with a parent is a hole. Fill small ones.
+            if hierarchy[0][i][3] != -1 and cv2.contourArea(contour) < 150:
+                cv2.drawContours(floor_mask, [contour], -1, 255, cv2.FILLED)
+
+    final_contours, _ = cv2.findContours(
+        floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+    log.info("Found %d distinct floor plan shapes.", len(final_contours))
+
+    rooms = []
+    min_room_area = (grid_size * grid_size)
+    for contour in final_contours:
+        if cv2.contourArea(contour) < min_room_area:
+            continue
+
+        # Simplify the polygon to have fewer vertices
+        epsilon = 0.01 * cv2.arcLength(contour, True)
+        approx_poly = cv2.approxPolyDP(contour, epsilon, True)
+
+        verts = [
+            schema.GridPoint(round(p[0][0] / grid_size), round(p[0][1] / grid_size))
+            for p in approx_poly
+        ]
+
+        # Heuristic for room type classification based on aspect ratio
+        _, _, w, h = cv2.boundingRect(contour)
+        aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
+        room_type = "corridor" if aspect_ratio > 3.5 else "chamber"
+
+        room = schema.Room(
+            id=f"room_{uuid.uuid4().hex[:8]}",
+            shape="polygon",
+            gridVertices=verts,
+            roomType=room_type,
+        )
+        rooms.append(room)
+        log.debug(
+            "Created Room %s (type: %s) with %d vertices.",
+            room.id, room.roomType, len(verts)
+        )
+    return rooms
 
 
 def _stage6_classify_features(
@@ -129,14 +181,13 @@ def _stage7_transform_to_mapdata(
     """
     log.info("Executing Stage 7: Final Transformation...")
 
-    # Use parsed title, or fall back to filename
     title = metadata.get("title") or os.path.splitext(os.path.basename(image_path))[0]
     meta_obj = schema.Meta(
         title=title,
         sourceImage=os.path.basename(image_path),
         notes=metadata.get("notes"),
         legend=metadata.get("legend"),
-        gridSizePx=0,  # Deprecated in Meta, now per-region
+        gridSizePx=0,
     )
 
     regions = []
@@ -171,17 +222,14 @@ def analyze_image(image_path: str) -> Tuple[schema.MapData, Optional[List]]:
     if img is None:
         raise FileNotFoundError(f"Could not read image at {image_path}")
 
-    # --- Pipeline Execution ---
     all_regions_data = []
     region_contexts = _stage1_detect_regions(img)
     metadata, region_contexts = _stage2_parse_text_metadata(region_contexts)
 
-    # Filter for dungeon regions to process for map features
     dungeon_regions = [rc for rc in region_contexts if rc.get("type") == "dungeon"]
 
     for i, region_context in enumerate(dungeon_regions):
         region_img = region_context["bounds_img"]
-        # For now, label dungeon regions sequentially.
         region_label = f"Dungeon Area {i+1}"
         if len(dungeon_regions) == 1:
             region_label = "Main Dungeon"
