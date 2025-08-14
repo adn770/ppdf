@@ -1,4 +1,3 @@
-
 # Project: dmap (Dungeon Map Processor)
 
 ---
@@ -96,16 +95,19 @@ This workflow governs the creation of new features and has two distinct modes.
 procedurally generated SVG format.
 
 The project is architected as a core library (`dmap_lib`) and a command-line
-interface (`dmap.py`) that uses it. This modular design allows the core logic to
-be integrated into other applications, such as the AI Dungeon Master Engine
-(`dmme`), while providing a powerful standalone tool for map conversion.
+interface (`dmap.py`) that uses it.
 
-The pipeline uses **OpenCV** for robust image analysis to identify rooms, doors,
-and other features, including complex polygonal shapes. It leverages the
-**EasyOCR** library for accurate recognition of room numbers, which are stored as
-labels in the intermediate JSON. The rendering engine can then use this JSON to
-recreate the full map as an SVG or generate partial maps showing only a
-user-specified list of rooms and their direct connections.
+The analysis engine employs a multi-stage pipeline to interpret the source image.
+It first identifies distinct **Regions** on the map, allowing it to process complex
+layouts with multiple floors or sections on a single canvas. Within each region, it
+establishes a grid-based coordinate system and uses a series of greedy algorithms
+to perform a tile-by-tile analysis. This high-fidelity approach identifies not
+only rooms and corridors but also a rich set of specific features (columns, stairs,
+altars) and environmental layers (water, rubble). Textual elements like titles or
+legends are parsed and stored as metadata.
+
+The final output is a semantically rich JSON file that can be used to generate
+stylized SVG maps, including partial maps showing only user-specified rooms.
 
 ---
 
@@ -118,6 +120,7 @@ This structure promotes code reuse and clean separation of concerns.
 ├── **dmap_lib/**: The installable library package.
 │   ├── `__init__.py`
 │   ├── `analysis.py`: Image analysis, feature detection, and number recognition.
+│   ├── `log_utils.py`: Utilities for configuring the logging system.
 │   ├── `schema.py`: Data structures (dataclasses) and JSON serialization.
 │   └── `rendering.py`: Procedural SVG generation logic.
 │
@@ -137,21 +140,26 @@ API for analysis and rendering.
 ### 3.1. `analysis` Module
 -   **Purpose**: To handle all image processing and map feature recognition.
 -   **Key Function**: `analyze_image(image_path: str) -> MapData`
-    -   Performs image preprocessing (grayscale, thresholding, noise reduction).
-    -   Detects the grid to establish a coordinate system.
-    -   Uses OpenCV to find contours and `cv2.approxPolyDP` to simplify them into
-        polygonal shapes for rooms and caverns.
-    -   For each identified room, it isolates the area and uses **EasyOCR** to
-        recognize a numerical label. It will also analyze room fill patterns to
-        detect environmental layers like water.
-    -   Classifies smaller, interior contours as specific features (stairs,
-        columns, etc.) based on shape analysis and heuristics.
-    -   Returns a structured `MapData` object representing the full map.
+    -   Implements a multi-stage analysis pipeline.
+    -   **Stage 1: Region Detection**: Identifies distinct map areas (e.g.,
+        different floors) on the source image.
+    -   **Stage 2: Text Analysis**: Parses textual blocks to populate metadata fields
+        like the map's title and notes.
+    -   **Stage 3: Grid Discovery**: Establishes a grid-based coordinate system for
+        each region.
+    -   **Stage 4 & 5: Room and Corridor Detection**: Uses greedy algorithms to
+        identify all navigable floor space, classifying it as a "chamber" or "corridor".
+    -   **Stage 6: Tile Classification**: Performs a cell-by-cell analysis to
+        identify specific `Feature` objects (e.g., columns, altars, stairs) and
+        `EnvironmentalLayer` objects (e.g., water, rubble).
+    -   **Stage 7: Transformation**: Converts the detailed internal model into the
+        final `MapData` object, which is returned.
 
 ### 3.2. `schema` Module
 -   **Purpose**: To define the canonical data structures and handle serialization.
 -   **Key Components**:
-    -   Python `dataclasses` for `MapData`, `MapObject`, `Room`, `Door`, etc.
+    -   Python `dataclasses` for the entire data model: `MapData`, `Meta`, `Region`,
+        `Room`, `Door`, `Feature`, `EnvironmentalLayer`.
     -   `save_json(map_data: MapData, output_path: str)`: Serializes a `MapData`
         object to a `.json` file.
     -   `load_json(input_path: str) -> MapData`: Deserializes a `.json` file into a
@@ -163,16 +171,13 @@ API for analysis and rendering.
     room_labels_to_render: list[str] = None) -> str`
     -   Accepts a `MapData` object, style parameters, and an optional list of room
         labels to render.
-    -   If a list of labels is provided, it filters the `mapObjects` to include only
-        the specified rooms and any doors connecting them.
-    -   Procedurally draws the filtered set of map objects, including environmental
-        layers (like water) and stylized features according to the style
-        specification.
+    -   Iterates through the `regions` in the `MapData` object to draw each map area.
+    -   Procedurally draws all `mapObjects`, including `EnvironmentalLayer`s and
+        stylized `Feature`s according to the style specification.
     -   Returns the complete SVG content as a string.
 
 #### 3.3.1. Render Style Specification
-This section defines the target visual style for the SVG output, based on an
-analysis of the `stronghold.svg` example.
+This section defines the target visual style for the SVG output.
 
 -   **Color Palette**:
     -   **Background**: `#EDE0CE` (A light parchment color).
@@ -182,103 +187,77 @@ analysis of the `stronghold.svg` example.
     -   **Glow/Underlayer**: `#C9C1B1` (A light gray-brown for a soft border effect).
 
 -   **Layering and Effects**: The final look is achieved through three distinct layers
-    rendered from bottom to top:
-    1.  **Shadow Layer**: A copy of the room polygons is rendered first, offset
-        slightly down and to the right (e.g., by `3px`). It is filled and stroked
-        with the shadow color (`#999999`) to create a drop shadow.
-    2.  **Glow/Underlayer**: A copy of the room polygons is rendered with a very
-        thick, semi-transparent stroke (`#C9C1B1`, `stroke-opacity="0.4"`) to
-        create a soft, thick border underneath the main walls.
-    3.  **Main Layer**: The primary room polygons are rendered with their fill color
-        (`#F7EEDE`) and a thick, black outline (`#000000`, `stroke-width: 7`).
+    rendered from bottom to top: Shadow, Glow/Underlayer, and Main.
 
 -   **Border Hatching**:
-    -   The "earth" texture around the rooms is not a simple pattern. It is a series
-        of procedurally generated, slightly randomized, short black lines (`stroke:
-        #000000`, `stroke-width: 1.2`).
-    -   The hatching should be drawn around the exterior perimeter of all rendered
-        room and corridor polygons, extending outwards. The density can be
-        controlled by the `--hatch-density` CLI flag.
-
--   **Internal Details**:
-    -   **Grid**: The internal grid should be rendered as a pattern of small dots,
-        not lines.
-    -   **Features**: Simple features like columns or doors should be rendered with a
-        thinner black line (`stroke-width: 1.5` to `3.5`) to distinguish them from
-        the main walls.
+    -   An **optional** feature, disabled by default, controlled by the `--hatching`
+        CLI flag.
+    -   When enabled, a series of procedurally generated, slightly randomized, short
+        black lines are drawn around the exterior perimeter of all rendered polygons.
 
 ### 3.4. Supported Feature Types
 This section details the features to be identified and rendered.
 
--   **Columns/Pillars**: Identified as small, simple geometric shapes (circles,
-    squares). Rendered as filled shapes with a black outline.
--   **Statues**: Identified as more complex, often symmetrical shapes. Rendered as
-    stylized outlines. Can have a `facing` direction.
--   **Stairs**: Identified by a series of parallel lines within a rectangular boundary.
-    Rendered as a rectangle with evenly spaced lines indicating steps.
--   **Thrones**: Identified as a prominent, often ornate, chair-like shape. Rendered
-    as a stylized, high-backed chair.
--   **Curtains/Drapes**: Identified by wavy, parallel lines, often near an opening.
-    Rendered with flowing, slightly randomized curves.
--   **Fountains/Pools**: Identified by circular or geometric shapes with internal
-    patterns suggesting water. These will be handled by the `water` layer.
--   **Water Layer**: Identified by a distinct fill pattern (e.g., wavy lines) inside
-    a room's polygon. Rendered as a semi-transparent blue fill (`#77AADD`,
-    `fill-opacity="0.5"`) with procedural wave lines on top. This layer is drawn
-    above the room fill but below other features like columns or statues.
+-   **Room Types**: `chamber`, `corridor`, `hallway`.
+-   **Feature Types**: `column`, `pillar`, `statue`, `stairs`, `throne`,
+    `curtain`, `drapes`, `altar`, `sarcophagus`, `chest`, `furniture`, `rubble`.
+-   **Environmental Layers**: `water`, `chasm`, `difficult_terrain`.
 
 ---
 
 ## 4. Data Format (JSON Schema)
 
-The intermediate JSON format is designed to be extensible and resolution-independent
-by using grid-based coordinates. It support specific feature types and environmental
-layers.
+The intermediate JSON format is designed to be extensible, resolution-independent,
+and support multiple map regions.
 
--   **Version**: 1.0.0
--   **Example**:
+-   **Version**: 2.0.0
+-   **Example** (Illustrating a map with two floors):
     ```json
     {
-      "dmapVersion": "1.0.0",
+      "dmapVersion": "2.0.0",
       "meta": {
-        "title": "Tomb of the Serpent Kings",
-        "sourceImage": "tomb2.png",
-        "gridSizePx": 20
+        "title": "The Wizard's Spire",
+        "sourceImage": "wizard_spire.png",
+        "legend": "Each square is 5ft.",
+        "notes": "A two-story tower overlooking the sea."
       },
-      "mapObjects": [
+      "regions": [
         {
-          "id": "room_uuid_1",
-          "type": "room",
-          "label": "38",
-          "shape": "polygon",
-          "gridVertices": [
-            {"x": 10, "y": 10},
-            {"x": 20, "y": 10},
-            {"x": 20, "y": 15},
-            {"x": 10, "y": 15}
-          ],
-
-          "properties": {
-            "layer": "water"
-          },
-          "contents": ["feature_01"]
+          "id": "region_floor_1",
+          "label": "Ground Floor",
+          "gridSizePx": 20,
+          "bounds": [{"x": 10, "y": 10}, ...],
+          "mapObjects": [
+            {
+              "id": "room_uuid_1",
+              "type": "room",
+              "roomType": "chamber",
+              "label": "1",
+              "gridVertices": [...],
+              "contents": ["feature_altar_1"]
+            },
+            {
+              "id": "door_uuid_1",
+              "type": "door",
+              "gridPos": {"x": 20, "y": 12},
+              "connects": ["room_uuid_1", "room_uuid_2"]
+            },
+            {
+              "id": "feature_altar_1",
+              "type": "feature",
+              "featureType": "altar",
+              "gridVertices": [...]
+            }
+          ]
         },
         {
-          "id": "door_uuid_1",
-          "type": "door",
-          "gridPos": {"x": 20, "y": 12},
-          "orientation": "vertical",
-          "connects": ["room_uuid_1", "room_uuid_2"]
-        },
-        {
-          "id": "feature_01",
-          "type": "feature",
-          "featureType": "statue",
-          "shape": "polygon",
-          "gridVertices": [ ... ],
-          "properties": {
-            "facing": "north"
-          }
+          "id": "region_floor_2",
+          "label": "Upper Floor",
+          "gridSizePx": 20,
+          "bounds": [...],
+          "mapObjects": [
+            // ... rooms, doors, and features for the upper floor
+          ]
         }
       ]
     }
@@ -295,13 +274,15 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   `--input` / `-i`: **(Required)** Path to the input PNG file.
     -   `--output` / `-o`: **(Required)** The base name for the output `.json` and
         `.svg` files.
-    -   `--rooms`: A comma-separated list of room numbers to render (e.g.,
-        `--rooms 38,40,41`). If omitted, the entire map is rendered.
+    -   `--rooms`: A comma-separated list of room numbers to render. If omitted,
+        the entire map is rendered.
+    -   `--hatching`: A boolean flag to enable procedural exterior border hatching.
+        Disabled by default.
+    -   `--hatch-density`: A float multiplier for border hatching density.
     -   `--bg-color`: SVG background color (hex).
-    -   `--wall-color`: Color for room outlines and hatching (hex).
+    -   `--wall-color`: Color for room outlines and details (hex).
     -   `--room-color`: Fill color for rooms (hex).
     -   `--line-thickness`: A float multiplier for line thickness.
-    -   `--hatch-density`: A float multiplier for border hatching density.
     -   `--no-grid`: A boolean flag to disable rendering the grid inside rooms.
 
 ---
@@ -543,3 +524,70 @@ milestones.
         3.  For each number found, associate it with the closest room polygon.
         4.  Update the corresponding `Room` object with the correct `label`.
     * **Outcome**: The tool will successfully read numbers from the wall areas and correctly label the rooms in the final JSON output.
+
+### Phase 9: Semantic Redesign and Pipeline Refactoring
+
+* **Milestone 19: Semantic Schema Update**
+    * **Goal**: To update the core data structures to support regional maps and richer feature representation.
+    * **Description**: This is the foundational step for the new architecture. It refactors the dataclasses in `dmap_lib/schema.py` to match the approved "Revision 3" of the semantic schema design.
+    * **Key Tasks**:
+        1.  In `schema.py`, modify `MapData` to contain a `regions: List[Region]` instead of `mapObjects`.
+        2.  Create the new `Region` dataclass with a `label` and `mapObjects` list.
+        3.  Expand the `Meta` dataclass to include optional `legend` and `notes` fields.
+        4.  Create the new `EnvironmentalLayer` dataclass.
+        5.  Modify the `Room` dataclass to include a `roomType: str` field (e.g., "chamber", "corridor").
+    * **Outcome**: The `dmap_lib/schema.py` module fully reflects the new, more expressive data model, ready to be used by the redesigned analysis and rendering engines.
+
+* **Milestone 20: Optional Hatching Implementation**
+    * **Goal**: To make the exterior SVG border hatching an optional, disabled-by-default feature.
+    * **Description**: This milestone implements the approved design for optional hatching, providing more control over the final visual style of the SVG output.
+    * **Key Tasks**:
+        1.  In `dmap.py`, add a `--hatching` boolean flag to the CLI arguments, disabled by default.
+        2.  Pass the state of this flag into the `render_svg` function via the `style_options`.
+        3.  In `rendering.py`, make the generation and inclusion of the hatching SVG group conditional on this flag being true.
+    * **Outcome**: The `dmap` tool no longer produces hatching unless explicitly requested via the `--hatching` flag.
+
+* **Milestone 21: Analysis Pipeline Scaffolding**
+    * **Goal**: To replace the existing analysis logic with the structure of the new multi-stage pipeline.
+    * **Description**: This milestone completely rewrites `dmap_lib/analysis.py`, creating the skeleton of the new analysis engine. It will contain placeholder functions for each stage but will not yet have the full implementation logic.
+    * **Key Tasks**:
+        1.  Define a series of placeholder functions for each of the 8 pipeline stages (e.g., `_stage1_detect_regions`, `_stage6_classify_tiles`).
+        2.  Rewrite the main `analyze_image` function to call these stage functions in the correct order.
+        3.  Ensure the function returns a valid, empty `MapData` object based on the new schema.
+    * **Outcome**: A new `analysis.py` file with a clean, well-defined structure that is ready for the detailed implementation of each analysis stage.
+
+* **Milestone 22: Implement Region and Metadata Analysis**
+    * **Goal**: To implement the initial stages of the pipeline that identify map regions and parse textual metadata.
+    * **Description**: This milestone breathes life into the pipeline scaffolding, enabling `dmap` to understand complex layouts with multiple map areas and text blocks.
+    * **Key Tasks**:
+        1.  Implement the logic for Stage 1 (`_stage1_detect_regions`) to find all distinct map areas on the source image.
+        2.  Implement the logic for Stage 4 (`_stage4_analyze_text`) to perform OCR on non-dungeon regions.
+        3.  Populate the `MapData` object with a `Region` for each dungeon area and populate the `Meta` object with any text found.
+    * **Outcome**: The `analyze_image` function can now correctly parse a source image like `lost_basilica_title.jpg` and produce a `MapData` object containing correctly labeled `Region`s and populated `meta` fields.
+
+* **Milestone 23: Implement Room and Corridor Detection**
+    * **Goal**: To implement the core logic for identifying and classifying all navigable floor space within a region.
+    * **Description**: This milestone focuses on identifying the primary shapes of the dungeon, distinguishing between rooms and the passages that connect them.
+    * **Key Tasks**:
+        1.  Implement Stage 5 (`_stage5_identify_rooms`) using a greedy algorithm to find room boundaries.
+        2.  Implement Stage 7 (`_stage7_discover_corridors`) to find the connecting passages.
+        3.  For each discovered space, create a `Room` object and set its `roomType` to either "chamber" or "corridor".
+    * **Outcome**: The pipeline now populates each `Region`'s `mapObjects` list with `Room` objects representing the complete floor plan.
+
+* **Milestone 24: Implement Detailed Feature Classification**
+    * **Goal**: To populate the map with fine-grained features and environmental layers.
+    * **Description**: This milestone implements the tile-based classification stage, which is the heart of the new pipeline's high-fidelity analysis.
+    * **Key Tasks**:
+        1.  Implement Stage 6 (`_stage6_classify_tiles`) to iterate through each grid cell of a room and identify its contents.
+        2.  For each identified item, create the appropriate `Feature` or `EnvironmentalLayer` object.
+        3.  Populate the `contents` list of the parent `Room` object with the IDs of the newly created features.
+    * **Outcome**: The generated `MapData` object is now fully detailed, containing all specific features like columns, altars, rubble, and water layers.
+
+* **Milestone 25: Update Rendering Engine for New Schema**
+    * **Goal**: To make the SVG rendering engine compatible with the new region-based and feature-rich data schema.
+    * **Description**: This final milestone updates the renderer to understand the new `MapData` structure, enabling it to draw complex, multi-part maps with all the newly detected details.
+    * **Key Tasks**:
+        1.  Modify `render_svg` to iterate through the `MapData.regions` list, potentially rendering each as a separate group.
+        2.  Add specific drawing logic to render `EnvironmentalLayer` objects correctly (e.g., a semi-transparent fill with a pattern).
+        3.  Expand the rendering logic to draw all the new, standardized `Feature` types.
+    * **Outcome**: The `dmap.py` tool is once again fully functional, capable of analyzing a complex map and rendering a complete, detailed, and stylistically correct SVG based on the new, semantically rich schema.
