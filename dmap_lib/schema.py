@@ -1,38 +1,37 @@
 # --- dmap_lib/schema.py ---
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
 class GridPoint:
     """Represents a single point in the grid-based coordinate system."""
-
     x: int
     y: int
+
+
+# The 'properties' field can have varied content. A flexible dictionary is best.
+Properties = Dict[str, Any]
 
 
 @dataclass
 class Meta:
     """Represents the metadata for a map file."""
-
     title: str
     sourceImage: str
     gridSizePx: int
-
-
-# The 'properties' field across different objects can have varied content.
-# Using a flexible dictionary is the most straightforward approach.
-Properties = Dict[str, Any]
+    legend: Optional[str] = None
+    notes: Optional[str] = None
 
 
 @dataclass
 class Room:
     """Represents a room or a corridor."""
-
     id: str
     shape: str
     gridVertices: List[GridPoint]
+    roomType: str  # e.g., "chamber", "corridor"
     label: Optional[str] = None
     properties: Optional[Properties] = None
     contents: Optional[List[str]] = None
@@ -42,7 +41,6 @@ class Room:
 @dataclass
 class Door:
     """Represents a door connecting two map objects."""
-
     id: str
     gridPos: GridPoint
     orientation: str
@@ -53,7 +51,6 @@ class Door:
 @dataclass
 class Feature:
     """Represents a distinct feature within a room (e.g., statue, column)."""
-
     id: str
     featureType: str
     shape: str
@@ -62,17 +59,66 @@ class Feature:
     type: str = "feature"
 
 
-# A Union type for any object that can appear in the mapObjects list.
-MapObject = Union[Room, Door, Feature]
+@dataclass
+class EnvironmentalLayer:
+    """Represents an area with a specific environmental effect."""
+    id: str
+    layerType: str  # e.g., "water", "rubble", "chasm"
+    gridVertices: List[GridPoint]
+    type: str = "layer"
+
+
+# A Union type for any object that can appear in a region's mapObjects list.
+MapObject = Union[Room, Door, Feature, EnvironmentalLayer]
+
+
+@dataclass
+class Region:
+    """Represents a distinct, self-contained area of a map (e.g., a floor)."""
+    id: str
+    label: str  # e.g., "Tower, Floor 1"
+    gridSizePx: int
+    bounds: List[GridPoint]
+    mapObjects: List[MapObject]
 
 
 @dataclass
 class MapData:
     """The root object representing a complete, structured map."""
-
     dmapVersion: str
     meta: Meta
-    mapObjects: List[MapObject]
+    regions: List[Region]
+
+
+def _deserialize_map_objects(objects_data: List[Dict]) -> List[MapObject]:
+    """Helper to deserialize a list of generic map object dictionaries."""
+    map_objects = []
+    for obj_data in objects_data:
+        obj_type = obj_data.get("type")
+        # Pop type to avoid TypeError during dataclass construction
+        if "type" in obj_data:
+            obj_data.pop("type")
+
+        if obj_type == "room":
+            if obj_data.get("gridVertices"):
+                obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
+            map_objects.append(Room(type=obj_type, **obj_data))
+        elif obj_type == "door":
+            if obj_data.get("gridPos"):
+                obj_data["gridPos"] = GridPoint(**obj_data["gridPos"])
+            map_objects.append(Door(type=obj_type, **obj_data))
+        elif obj_type == "feature":
+            if obj_data.get("gridVertices"):
+                obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
+            map_objects.append(Feature(type=obj_type, **obj_data))
+        elif obj_type == "layer":
+            if obj_data.get("gridVertices"):
+                obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
+            map_objects.append(EnvironmentalLayer(type=obj_type, **obj_data))
+        else:
+            # Note: In a real application, consider more robust error handling.
+            print(f"Warning: Unknown object type '{obj_type}' encountered. Skipping.")
+    return map_objects
 
 
 def save_json(map_data: MapData, output_path: str) -> None:
@@ -100,24 +146,13 @@ def load_json(input_path: str) -> MapData:
     with open(input_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Reconstruct the nested dataclasses
     meta = Meta(**data["meta"])
-    map_objects = []
-    for obj_data in data["mapObjects"]:
-        obj_type = obj_data.pop("type", None)
-        if obj_type == "room":
-            if obj_data.get("gridVertices"):
-                obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
-            map_objects.append(Room(type=obj_type, **obj_data))
-        elif obj_type == "door":
-            if obj_data.get("gridPos"):
-                obj_data["gridPos"] = GridPoint(**obj_data["gridPos"])
-            map_objects.append(Door(type=obj_type, **obj_data))
-        elif obj_type == "feature":
-            if obj_data.get("gridVertices"):
-                obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
-            map_objects.append(Feature(type=obj_type, **obj_data))
-        else:
-            raise TypeError(f"Unknown object type in mapObjects: {obj_type}")
+    regions = []
+    for region_data in data.get("regions", []):
+        map_objects = _deserialize_map_objects(region_data.get("mapObjects", []))
+        region_data["mapObjects"] = map_objects
+        if region_data.get("bounds"):
+            region_data["bounds"] = [GridPoint(**v) for v in region_data["bounds"]]
+        regions.append(Region(**region_data))
 
-    return MapData(dmapVersion=data["dmapVersion"], meta=meta, mapObjects=map_objects)
+    return MapData(dmapVersion=data["dmapVersion"], meta=meta, regions=regions)
