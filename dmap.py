@@ -8,9 +8,7 @@ from dmap_lib import analysis, rendering, schema
 def run_rendering(map_data: schema.MapData, unified_geo: list | None, output_name: str, options: dict):
     """Generates and saves an SVG from a MapData object and unified geometry."""
     print(f"\nRendering stylized SVG for '{output_name}'...")
-    # The render_svg function will need to be updated in a future milestone
-    # to use the unified_geo. For now, we pass None.
-    svg_content = rendering.render_svg(map_data, options)
+    svg_content = rendering.render_svg(map_data, unified_geo, options)
 
     output_path = f"{output_name}.svg"
     try:
@@ -35,7 +33,6 @@ def main():
     args = get_cli_args()
     print("--- DMAP CLI ---")
     try:
-        # The analysis function now returns two values
         map_data, unified_geometry = analysis.analyze_image(args.input)
 
         num_r = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Room))
@@ -48,7 +45,6 @@ def main():
         schema.save_json(map_data, json_path)
 
         render_opts = { "rooms": args.rooms.split(',') if args.rooms else None }
-        # Pass the new unified_geometry to the rendering function
         run_rendering(map_data, unified_geometry, args.output, render_opts)
         print("\nProcessing complete.")
 
