@@ -1,4 +1,3 @@
-# --- dmap_lib/analysis.py ---
 import itertools
 import os
 import uuid
@@ -7,7 +6,7 @@ import logging
 import cv2
 import easyocr
 import numpy as np
-from shapely.geometry import Polygon
+from shapely.geometry import Point, Polygon
 from shapely.ops import unary_union
 
 from dmap_lib import schema
@@ -40,7 +39,6 @@ def _detect_doors(rooms_data: list, grid_size: int) -> list[schema.Door]:
     """Detects doors by finding small intersections between dilated room shapes."""
     log_geom.info("Starting geometric door detection...")
     doors = []
-    # Increase buffer distance significantly to bridge thick walls
     buffer_dist = grid_size * 0.6
     max_door_area = (grid_size * grid_size) * 2.5
 
@@ -50,16 +48,13 @@ def _detect_doors(rooms_data: list, grid_size: int) -> list[schema.Door]:
         dilated_a = room_a['polygon'].buffer(buffer_dist)
         dilated_b = room_b['polygon'].buffer(buffer_dist)
 
-        if not dilated_a.intersects(dilated_b):
-            continue
-
+        if not dilated_a.intersects(dilated_b): continue
         intersection = dilated_a.intersection(dilated_b)
 
         if 0 < intersection.area < max_door_area:
             centroid = intersection.centroid
             minx, miny, maxx, maxy = intersection.bounds
-            orientation = "vertical" if (maxy - miny) > (maxx - minx) else "horizontal"
-
+            orientation = "v" if (maxy - miny) > (maxx - minx) else "h"
             door = schema.Door(
                 id=f"door_{uuid.uuid4().hex[:8]}",
                 gridPos=schema.GridPoint(round(centroid.x/grid_size), round(centroid.y/grid_size)),
@@ -70,6 +65,48 @@ def _detect_doors(rooms_data: list, grid_size: int) -> list[schema.Door]:
             doors.append(door)
     log_geom.info("Found %d doors via geometric analysis.", len(doors))
     return doors
+
+
+def _perform_ocr_on_walls(gray_img: np.ndarray, rooms_data: list, unified_poly):
+    """Generates a wall mask, performs OCR, and labels the nearest rooms."""
+    if not rooms_data or unified_poly.is_empty:
+        log_ocr.warning("Cannot perform OCR: no rooms or unified geometry available.")
+        return
+
+    log_ocr.info("Generating wall mask for OCR...")
+    wall_mask = np.zeros_like(gray_img)
+    # Thicken the unified polygon to create wall areas
+    wall_poly_dilated = unified_poly.buffer(10, cap_style=2, join_style=2)
+    cv2.drawContours(wall_mask, _shapely_to_contours(wall_poly_dilated), -1, 255, -1)
+    # Subtract the original room shapes to leave only walls
+    cv2.drawContours(wall_mask, [rd['contour'] for rd in rooms_data], -1, 0, -1)
+
+    log_ocr.info("Running OCR on wall mask...")
+    ocr_results = OCR_READER.readtext(wall_mask)
+    if not ocr_results:
+        log_ocr.warning("OCR found no text in the wall mask.")
+        return
+
+    labeled_count = 0
+    for bbox, text, prob in ocr_results:
+        if not text.strip().isdigit(): continue # Ignore non-numeric results
+
+        # Find the center of the detected text
+        (tl, _, br, _) = bbox
+        text_center = Point((tl[0] + br[0]) / 2, (tl[1] + br[1]) / 2)
+
+        # Find the closest room to this text
+        closest_room, min_dist = None, float('inf')
+        for room_data in rooms_data:
+            dist = room_data['polygon'].distance(text_center)
+            if dist < min_dist:
+                min_dist, closest_room = dist, room_data['obj']
+
+        if closest_room:
+            log_ocr.debug("Labeled room %s as '%s' (p=%.2f)", closest_room.id, text, prob)
+            closest_room.label = text
+            labeled_count += 1
+    log_ocr.info("Applied %d numeric labels to rooms from OCR results.", labeled_count)
 
 
 def analyze_image(image_path: str) -> tuple[schema.MapData, list | None]:
@@ -91,9 +128,8 @@ def analyze_image(image_path: str) -> tuple[schema.MapData, list | None]:
     if hierarchy is not None:
         holes_filled = 0
         for i, contour in enumerate(contours):
-            parent_index = hierarchy[0][i][3]
-            if parent_index != -1 and cv2.contourArea(contour) < 100:
-                cv2.drawContours(floor_mask, [contour], -1, (255), cv2.FILLED)
+            if hierarchy[0][i][3] != -1 and cv2.contourArea(contour) < 100:
+                cv2.drawContours(floor_mask, [contour], -1, 255, cv2.FILLED)
                 holes_filled += 1
         log.debug("Filled %d small holes (e.g., grid dots).", holes_filled)
 
@@ -112,31 +148,27 @@ def analyze_image(image_path: str) -> tuple[schema.MapData, list | None]:
         poly_coords = contour.squeeze()
         if len(poly_coords) < 3: continue
         shapely_poly = Polygon(poly_coords).buffer(0)
-
-        # Increase epsilon for more aggressive polygon simplification
         epsilon = 0.02 * cv2.arcLength(contour, True)
         approx_poly = cv2.approxPolyDP(contour, epsilon, True)
-
         verts = [schema.GridPoint(round(p[0][0]/grid_size), round(p[0][1]/grid_size)) for p in approx_poly]
-        room = schema.Room(id=f"room_{uuid.uuid4().hex[:8]}", shape="polygon", gridVertices=verts, label=None)
-
+        room = schema.Room(id=f"room_{uuid.uuid4().hex[:8]}", shape="polygon", gridVertices=verts)
         map_objects.append(room)
-        rooms_data.append({'obj': room, 'polygon': shapely_poly})
+        rooms_data.append({'obj': room, 'polygon': shapely_poly, 'contour': contour})
     log.info("Identified %d contours as rooms.", len(rooms_data))
 
-    detected_doors = _detect_doors(rooms_data, grid_size)
-    map_objects.extend(detected_doors)
-
     log_geom.info("Performing geometric union on %d room polygons...", len(rooms_data))
-    unified_contours = None
+    unified_geometry, unified_contours = None, None
     all_polygons = [rd['polygon'] for rd in rooms_data]
     if all_polygons:
         try:
             unified_geometry = unary_union(all_polygons)
             log_geom.debug("Unary union successful. Result type: %s", unified_geometry.geom_type)
             unified_contours = _shapely_to_contours(unified_geometry)
-        except Exception as e:
-            log.warning("Shapely union failed: %s", e)
+        except Exception as e: log.warning("Shapely union failed: %s", e)
+
+    _perform_ocr_on_walls(gray, rooms_data, unified_geometry)
+    detected_doors = _detect_doors(rooms_data, grid_size)
+    map_objects.extend(detected_doors)
 
     meta = schema.Meta(title=os.path.splitext(os.path.basename(image_path))[0], sourceImage=os.path.basename(image_path), gridSizePx=grid_size)
     map_data = schema.MapData(dmapVersion="1.0.0", meta=meta, mapObjects=map_objects)

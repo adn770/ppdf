@@ -1,4 +1,3 @@
-# --- dmap_lib/rendering.py ---
 import math
 import random
 import logging
@@ -21,16 +20,14 @@ def _generate_hatching(pixel_contour: np.ndarray, density: float) -> list[str]:
     """Generates procedural hatching lines around a single pixel-based contour."""
     hatch_lines = []
     contour_points = pixel_contour.squeeze()
-    if len(contour_points) < 2:
-        return []
+    if len(contour_points) < 2: return []
 
     edges = np.append(contour_points, [contour_points[0]], axis=0)
     for i in range(len(edges) - 1):
         p1, p2 = edges[i], edges[i + 1]
         dx, dy = p2[0] - p1[0], p2[1] - p1[1]
         edge_len = math.hypot(dx, dy)
-        if edge_len < 1:
-            continue
+        if edge_len < 1: continue
 
         norm_x, norm_y = -dy / edge_len, dx / edge_len
         num_hatches = int(edge_len / 15 * density)
@@ -56,18 +53,28 @@ def render_svg(
     """Generates a stylized SVG, using unified geometry for hatching."""
     log.info("Starting SVG rendering process...")
     objects = map_data.mapObjects
+    rooms_to_render_labels = style_options.pop("rooms", None)
+
+    if rooms_to_render_labels:
+        log.info("Filtering map to render only rooms: %s", rooms_to_render_labels)
+        labels_set = set(rooms_to_render_labels)
+        rooms = [o for o in objects if isinstance(o, schema.Room) and o.label in labels_set]
+        room_ids = {r.id for r in rooms}
+        doors = [
+            o for o in objects if isinstance(o, schema.Door)
+            and set(o.connects).issubset(room_ids)
+        ]
+        objects = rooms + doors
+        log.debug("Filtered to %d rooms and %d doors.", len(rooms), len(doors))
+
     if not objects:
         log.warning("No map objects to render.")
         return "<svg><text>No objects to render.</text></svg>"
 
     styles = {
-        "bg_color": "#EDE0CE",
-        "room_color": "#F7EEDE",
-        "wall_color": "#000000",
-        "shadow_color": "#999999",
-        "glow_color": "#C9C1B1",
-        "line_thickness": 7.0,
-        "hatch_density": 1.0,
+        "bg_color": "#EDE0CE", "room_color": "#F7EEDE", "wall_color": "#000000",
+        "shadow_color": "#999999", "glow_color": "#C9C1B1",
+        "line_thickness": 7.0, "hatch_density": 1.0,
     }
     styles.update({k: v for k, v in style_options.items() if v is not None})
     log.debug("Using styles: %s", styles)
@@ -90,55 +97,29 @@ def render_svg(
     tx, ty = PADDING - min_x * PIXELS_PER_GRID, PADDING - min_y * PIXELS_PER_GRID
     svg.append(f'<g transform="translate({tx:.2f} {ty:.2f})">')
 
-    layers = {
-        "hatching": [],
-        "shadows": [],
-        "glows": [],
-        "room_fills": [],
-        "doors": [],
-        "walls": [],
-    }
+    layers = {"hatching": [], "shadows": [], "glows": [], "room_fills": [], "doors": [], "walls": []}
 
     for obj in objects:
         if isinstance(obj, schema.Room):
             points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
             lt = styles["line_thickness"]
-            layers["shadows"].append(
-                f'<polygon points="{points}" transform="translate(3,3)" fill="{styles["shadow_color"]}" stroke="{styles["shadow_color"]}" stroke-width="{lt}"/>'
-            )
-            layers["glows"].append(
-                f'<polygon points="{points}" fill="none" stroke="{styles["glow_color"]}" stroke-width="{lt*2.5}" stroke-opacity="0.4"/>'
-            )
-            layers["room_fills"].append(
-                f'<polygon points="{points}" fill="{styles["room_color"]}"/>'
-            )
-            layers["walls"].append(
-                f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="{lt}"/>'
-            )
+            layers["shadows"].append(f'<polygon points="{points}" transform="translate(3,3)" fill="{styles["shadow_color"]}" stroke="{styles["shadow_color"]}" stroke-width="{lt}"/>')
+            layers["glows"].append(f'<polygon points="{points}" fill="none" stroke="{styles["glow_color"]}" stroke-width="{lt*2.5}" stroke-opacity="0.4"/>')
+            layers["room_fills"].append(f'<polygon points="{points}" fill="{styles["room_color"]}"/>')
+            layers["walls"].append(f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="{lt}"/>')
         elif isinstance(obj, schema.Door):
-            dw, dh = (
-                (lt, PIXELS_PER_GRID * 0.5)
-                if obj.orientation == "v"
-                else (PIXELS_PER_GRID * 0.5, lt)
-            )
-            dx, dy = (obj.gridPos.x * PIXELS_PER_GRID) - dw / 2, (
-                obj.gridPos.y * PIXELS_PER_GRID
-            ) - dh / 2
-            layers["doors"].append(
-                f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />'
-            )
+            lt = styles["line_thickness"]
+            dw, dh = (lt, PIXELS_PER_GRID*0.5) if obj.orientation=="v" else (PIXELS_PER_GRID*0.5, lt)
+            dx, dy = (obj.gridPos.x * PIXELS_PER_GRID) - dw/2, (obj.gridPos.y * PIXELS_PER_GRID) - dh/2
+            layers["doors"].append(f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />')
 
     if unified_contours:
-        log.info(
-            "Generating hatching for unified geometry (%d contours).", len(unified_contours)
-        )
+        log.info("Generating hatching for unified geometry (%d contours).", len(unified_contours))
         for contour in unified_contours:
             layers["hatching"].extend(_generate_hatching(contour, styles["hatch_density"]))
     log.debug("Generated %d total hatching lines.", len(layers["hatching"]))
 
-    svg.append(
-        f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>'
-    )
+    svg.append(f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
     for name in ["shadows", "glows", "room_fills", "doors", "walls"]:
         svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
 
