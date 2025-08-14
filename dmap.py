@@ -38,6 +38,11 @@ def get_cli_args():
     g_log.add_argument("--color-logs", action="store_true", help="Enable colored logging.")
     g_log.add_argument("--log-file", metavar="FILE", help="Redirect log output to a file.")
     g_log.add_argument(
+        "--ascii-debug",
+        action="store_true",
+        help="Render an ASCII map of the final structure for debugging.",
+    )
+    g_log.add_argument(
         "-d",
         "--debug",
         nargs="?",
@@ -63,8 +68,6 @@ def main():
     log.debug("Arguments received: %s", vars(args))
 
     try:
-        # Note: analysis.py is not yet updated for the new schema.
-        # The tool will be in a broken state until Milestone 21.
         map_data, unified_geometry = analysis.analyze_image(args.input)
 
         num_r = sum(

@@ -150,3 +150,25 @@ def render_svg(
     svg.extend(["</g>", "</svg>"])
     log.info("SVG rendering complete.")
     return "\n".join(svg)
+
+
+class ASCIIRenderer:
+    """Renders an ASCII art diagram of a map for debugging."""
+
+    def __init__(self, width=80, height=40):
+        """Initializes the renderer with a blank canvas of a given size."""
+        self.width = width
+        self.height = height
+        self.canvas = [[' ' for _ in range(width)] for _ in range(height)]
+
+    def render_from_json(self, map_data: schema.MapData):
+        """(Placeholder) Renders the map from the final MapData structure."""
+        pass
+
+    def render_from_tiles(self, tile_grid):
+        """(Placeholder) Renders the map from an intermediate tile grid."""
+        pass
+
+    def get_output(self) -> str:
+        """Returns the final, rendered ASCII map as a single string."""
+        return "\n".join("".join(row) for row in self.canvas)
