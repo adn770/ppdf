@@ -52,16 +52,20 @@ def render_svg(
 ) -> str:
     """Generates a stylized SVG, using unified geometry for hatching."""
     log.info("Starting SVG rendering process...")
-    objects = map_data.mapObjects
+    # Flatten all objects from all regions for processing
+    all_objects = [obj for region in map_data.regions for obj in region.mapObjects]
+    objects = all_objects
+
     rooms_to_render_labels = style_options.pop("rooms", None)
+    enable_hatching = style_options.pop("hatching", False)
 
     if rooms_to_render_labels:
         log.info("Filtering map to render only rooms: %s", rooms_to_render_labels)
         labels_set = set(rooms_to_render_labels)
-        rooms = [o for o in objects if isinstance(o, schema.Room) and o.label in labels_set]
+        rooms = [o for o in all_objects if isinstance(o, schema.Room) and o.label in labels_set]
         room_ids = {r.id for r in rooms}
         doors = [
-            o for o in objects if isinstance(o, schema.Door)
+            o for o in all_objects if isinstance(o, schema.Door)
             and set(o.connects).issubset(room_ids)
         ]
         objects = rooms + doors
@@ -84,8 +88,10 @@ def render_svg(
         log.warning("No rooms with vertices found to render.")
         return "<svg><text>No rooms to render.</text></svg>"
 
-    min_x, max_x = min(v.x for v in verts), max(v.x for v in verts)
-    min_y, max_y = min(v.y for v in verts), max(v.y for v in verts)
+    min_x = min(v.x for v in verts)
+    max_x = max(v.x for v in verts)
+    min_y = min(v.y for v in verts)
+    max_y = max(v.y for v in verts)
     width = (max_x - min_x) * PIXELS_PER_GRID + 2 * PADDING
     height = (max_y - min_y) * PIXELS_PER_GRID + 2 * PADDING
     log.debug("Calculated SVG canvas dimensions: %dx%d", width, height)
@@ -113,13 +119,13 @@ def render_svg(
             dx, dy = (obj.gridPos.x * PIXELS_PER_GRID) - dw/2, (obj.gridPos.y * PIXELS_PER_GRID) - dh/2
             layers["doors"].append(f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />')
 
-    if unified_contours:
+    if unified_contours and enable_hatching:
         log.info("Generating hatching for unified geometry (%d contours).", len(unified_contours))
         for contour in unified_contours:
             layers["hatching"].extend(_generate_hatching(contour, styles["hatch_density"]))
-    log.debug("Generated %d total hatching lines.", len(layers["hatching"]))
+        log.debug("Generated %d total hatching lines.", len(layers["hatching"]))
+        svg.append(f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
 
-    svg.append(f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
     for name in ["shadows", "glows", "room_fills", "doors", "walls"]:
         svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
 

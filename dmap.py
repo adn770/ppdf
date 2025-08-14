@@ -1,4 +1,3 @@
-# --- dmap.py ---
 import argparse
 import os
 import logging
@@ -30,6 +29,9 @@ def get_cli_args():
     p.add_argument("-i", "--input", required=True, help="Path to the input PNG file.")
     p.add_argument("-o", "--output", required=True, help="Base name for output files.")
     p.add_argument("--rooms", help="Comma-separated list of room numbers to render.")
+    p.add_argument(
+        "--hatching", action="store_true", help="Enables the procedural exterior border hatching."
+    )
     # Logging arguments
     g_log = p.add_argument_group("Logging & Output")
     g_log.add_argument("-v", "--verbose", action="store_true", help="Enable INFO logging.")
@@ -61,10 +63,22 @@ def main():
     log.debug("Arguments received: %s", vars(args))
 
     try:
+        # Note: analysis.py is not yet updated for the new schema.
+        # The tool will be in a broken state until Milestone 21.
         map_data, unified_geometry = analysis.analyze_image(args.input)
 
-        num_r = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Room))
-        num_d = sum(1 for o in map_data.mapObjects if isinstance(o, schema.Door))
+        num_r = sum(
+            1
+            for r in map_data.regions
+            for o in r.mapObjects
+            if isinstance(o, schema.Room)
+        )
+        num_d = sum(
+            1
+            for r in map_data.regions
+            for o in r.mapObjects
+            if isinstance(o, schema.Door)
+        )
         log.info("--- Analysis Results ---")
         log.info("Found %d rooms and %d doors.", num_r, num_d)
         if unified_geometry:
@@ -76,7 +90,10 @@ def main():
         log.info("Saving analysis to '%s'...", json_path)
         schema.save_json(map_data, json_path)
 
-        render_opts = {"rooms": args.rooms.split(",") if args.rooms else None}
+        render_opts = {
+            "rooms": args.rooms.split(",") if args.rooms else None,
+            "hatching": args.hatching,
+        }
         run_rendering(map_data, unified_geometry, args.output, render_opts)
         log.info("--- Processing complete. ---")
 
