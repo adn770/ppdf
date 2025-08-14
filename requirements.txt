@@ -13,3 +13,8 @@ pdfminer.six
 piper-tts>=1.3.0
 pyaudio
 Pillow
+# --- DMap Core Dependencies ---
+opencv-python
+numpy<2.0
+easyocr
+shapely
