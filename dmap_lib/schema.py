@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 @dataclass
 class GridPoint:
     """Represents a single point in the grid-based coordinate system."""
+
     x: int
     y: int
 
@@ -17,6 +18,7 @@ Properties = Dict[str, Any]
 @dataclass
 class Meta:
     """Represents the metadata for a map file."""
+
     title: str
     sourceImage: str
     legend: Optional[str] = None
@@ -26,6 +28,7 @@ class Meta:
 @dataclass
 class Room:
     """Represents a room or a corridor."""
+
     id: str
     shape: str
     gridVertices: List[GridPoint]
@@ -39,6 +42,7 @@ class Room:
 @dataclass
 class Door:
     """Represents a door connecting two map objects."""
+
     id: str
     gridPos: GridPoint
     orientation: str
@@ -49,6 +53,7 @@ class Door:
 @dataclass
 class Feature:
     """Represents a distinct feature within a room (e.g., statue, column)."""
+
     id: str
     featureType: str
     shape: str
@@ -60,6 +65,7 @@ class Feature:
 @dataclass
 class EnvironmentalLayer:
     """Represents an area with a specific environmental effect."""
+
     id: str
     layerType: str  # e.g., "water", "rubble", "chasm"
     gridVertices: List[GridPoint]
@@ -73,6 +79,7 @@ MapObject = Union[Room, Door, Feature, EnvironmentalLayer]
 @dataclass
 class Region:
     """Represents a distinct, self-contained area of a map (e.g., a floor)."""
+
     id: str
     label: str  # e.g., "Tower, Floor 1"
     gridSizePx: int
@@ -83,6 +90,7 @@ class Region:
 @dataclass
 class MapData:
     """The root object representing a complete, structured map."""
+
     dmapVersion: str
     meta: Meta
     regions: List[Region]

@@ -30,7 +30,9 @@ def get_cli_args():
     p.add_argument("-o", "--output", required=True, help="Base name for output files.")
     p.add_argument("--rooms", help="Comma-separated list of room numbers to render.")
     p.add_argument(
-        "--hatching", action="store_true", help="Enables the procedural exterior border hatching."
+        "--hatching",
+        action="store_true",
+        help="Enables the procedural exterior border hatching.",
     )
     # Logging arguments
     g_log = p.add_argument_group("Logging & Output")
@@ -73,16 +75,10 @@ def main():
         )
 
         num_r = sum(
-            1
-            for r in map_data.regions
-            for o in r.mapObjects
-            if isinstance(o, schema.Room)
+            1 for r in map_data.regions for o in r.mapObjects if isinstance(o, schema.Room)
         )
         num_d = sum(
-            1
-            for r in map_data.regions
-            for o in r.mapObjects
-            if isinstance(o, schema.Door)
+            1 for r in map_data.regions for o in r.mapObjects if isinstance(o, schema.Door)
         )
         log.info("--- Analysis Results ---")
         log.info("Found %d rooms and %d doors.", num_r, num_d)
@@ -99,7 +95,7 @@ def main():
             log.info("--- ASCII Debug Output (Post-Transformation) ---")
             renderer = rendering.ASCIIRenderer()
             renderer.render_from_json(map_data)
-            log.info("\n%s", renderer.get_output(), extra={'raw': True})
+            log.info("\n%s", renderer.get_output(), extra={"raw": True})
             log.info("--- End ASCII Debug Output ---")
 
         render_opts = {

@@ -1,7 +1,9 @@
 import logging
 
 # Define the valid logging topics for the dmap project.
-PROJECT_TOPICS = {"dmap": {"main", "analysis", "grid", "ocr", "geometry", "render"}}
+PROJECT_TOPICS = {
+    "dmap": {"main", "analysis", "grid", "ocr", "geometry", "render", "transform"}
+}
 
 
 class RichLogFormatter(logging.Formatter):
@@ -21,14 +23,17 @@ class RichLogFormatter(logging.Formatter):
             self.RESET = "\033[0m"
         else:
             self.COLORS = {
-                logging.DEBUG: "", logging.INFO: "", logging.WARNING: "",
-                logging.ERROR: "", logging.CRITICAL: "",
+                logging.DEBUG: "",
+                logging.INFO: "",
+                logging.WARNING: "",
+                logging.ERROR: "",
+                logging.CRITICAL: "",
             }
             self.BOLD = ""
             self.RESET = ""
 
     def format(self, record):
-        if record.__dict__.get('raw'):
+        if record.__dict__.get("raw"):
             # For raw output like ASCII maps, return the message as is.
             return super().format(record)
 
