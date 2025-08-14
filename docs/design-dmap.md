@@ -591,3 +591,30 @@ milestones.
         2.  Add specific drawing logic to render `EnvironmentalLayer` objects correctly (e.g., a semi-transparent fill with a pattern).
         3.  Expand the rendering logic to draw all the new, standardized `Feature` types.
     * **Outcome**: The `dmap.py` tool is once again fully functional, capable of analyzing a complex map and rendering a complete, detailed, and stylistically correct SVG based on the new, semantically rich schema.
+
+### Phase 10: Debugging and Visualization
+
+* **Milestone 26: Implement ASCII Renderer Class and CLI Flag**
+    * **Goal**: Create the foundational `ASCIIRenderer` class and the CLI flag to control it.
+    * **Description**: This milestone establishes the core components for the new debugging feature. It creates the renderer class with placeholder methods and adds the necessary command-line argument to `dmap.py`.
+    * **Key Tasks**:
+        1.  In `dmap_lib/rendering.py`, create the new `ASCIIRenderer` class with an `__init__` method and empty stubs for `render_from_json`, `render_from_tiles`, and `get_output`.
+        2.  In `dmap.py`, add the `--ascii-debug` boolean flag to the `argparse` configuration.
+    * **Outcome**: The project structure is updated with the new class and CLI flag, ready for the rendering logic to be implemented.
+
+* **Milestone 27: Implement Post-Transformation (JSON) ASCII Rendering**
+    * **Goal**: Enable ASCII rendering of the final `MapData` JSON structure.
+    * **Description**: This milestone implements the logic to visualize the final output of the analysis pipeline. It reads the structured `MapData` object and draws an ASCII representation of its rooms, doors, and features.
+    * **Key Tasks**:
+        1.  In `dmap_lib/rendering.py`, implement the `render_from_json` method. This includes logic for drawing polygon walls (`#`), floors (`.`), doors (`+`), features (`O`), and environmental layers (`~`).
+        2.  In `dmap.py`, add logic to check for the `--ascii-debug` flag after analysis. If present, instantiate the renderer, call `render_from_json`, and print the result.
+    * **Outcome**: The `dmap` tool can now produce a complete ASCII map of the final JSON data when the `--ascii-debug` flag is used.
+
+* **Milestone 28: Implement Pre-Transformation (Tile-Based) ASCII Rendering**
+    * **Goal**: Enable ASCII rendering of the intermediate tile-based model for deep debugging.
+    * **Description**: This milestone provides a direct view into the results of the tile classification stage, allowing for precise debugging of the core analysis algorithms before they are transformed into the final entity structure.
+    * **Key Tasks**:
+        1.  In `dmap_lib/analysis.py`, modify the pipeline after Stage 6 to generate an intermediate `tile_grid` mapping coordinates to tile types.
+        2.  In `dmap_lib/rendering.py`, implement the `render_from_tiles` method to draw the map based on this `tile_grid`.
+        3.  In `dmap_lib/analysis.py`, modify `analyze_image` to accept a debug flag. If true, it will call the `render_from_tiles` method and print the result before proceeding to Stage 7.
+    * **Outcome**: Developers can use the `--ascii-debug` flag to see a direct, character-based visualization of the tile classification results, greatly aiding in the debugging of the analysis pipeline.
