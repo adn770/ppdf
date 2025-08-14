@@ -649,12 +649,46 @@ milestones.
         4.  Update the `north_wall`, `east_wall`, `south_wall`, and `west_wall` attributes of the `_TileData` objects in the `tile_grid`.
     * **Outcome**: The intermediate `tile_grid` is now fully populated, containing both the feature type of each tile and the wall types on all its edges.
 
-* **Milestone 32: Implement Wall-Tracing Transformation**
-    * **Goal**: Rewrite the transformation stage to generate room polygons by tracing the new tile-edge walls.
-    * **Description**: This milestone replaces the old logic in Stage 7 with a new algorithm that generates the final `MapData` by interpreting the detailed `tile_grid`. This decouples the final output from the initial pixel-based contours.
+### Phase 12: Wall-Tracing Transformation and Entity Generation
+
+* **Milestone 32: Implement Room Area Discovery and Feature Extraction**
+    * **Goal**: To identify all contiguous room areas and extract simple, self-contained features from the `tile_grid`.
+    * **Description**: This first step focuses on finding *what* and *where* the rooms and features are, without yet calculating their precise polygonal shape. It lays the groundwork for the more complex tracing and linking steps.
     * **Key Tasks**:
-        1.  In `_stage7_transform_to_mapdata`, remove the old logic.
-        2.  Implement a "wall tracing" algorithm that finds a starting `floor` tile and follows its connected wall attributes to map the outer perimeter of a room.
-        3.  Convert the traced path of wall edges into a list of `gridVertices` for a `Room` object.
-        4.  Repeat this process until all `floor` tiles have been assigned to a room, correctly handling complex room shapes.
-    * **Outcome**: The analysis pipeline is fully functional again, now using the more robust tile-edge model to generate the final `MapData` object with high-fidelity room polygons.
+        1.  In `_stage7_transform_to_mapdata`, implement a Flood Fill (or BFS) algorithm to find all unique, contiguous groups of `floor` tiles. Each group represents a single room area.
+        2.  For each room area, create a placeholder `Room` object. Store the set of tile coordinates belonging to that room in a temporary property.
+        3.  Create a `coord_to_room_id` map to easily find which room a given tile belongs to.
+        4.  Implement the logic to iterate through the `tile_grid`, find all tiles with `feature_type = 'column'`, create `schema.Feature` objects for them, and use the `coord_to_room_id` map to link them to the correct parent room's `contents` list.
+    * **Outcome**: The `_stage7` function can now produce `Feature` objects and a list of placeholder `Room` objects, each associated with a set of its constituent tiles. The "Found 0 rooms" message will be resolved, though the room shapes will be inaccurate.
+
+* **Milestone 33: Implement Perimeter Wall Tracing**
+    * **Goal**: To implement the core wall-following algorithm that generates a precise polygon for a single room area.
+    * **Description**: This milestone develops the most complex part of the transformation: the algorithm that traces the perimeter of a room by following the `wall` attributes in the `tile_grid`.
+    * **Key Tasks**:
+        1.  Create a new helper function, e.g., `_trace_room_perimeter`, that takes a set of a room's tiles and the `tile_grid` as input.
+        2.  Inside this function, find a consistent starting point (e.g., the top-leftmost tile).
+        3.  Implement a "right-hand rule" wall-following algorithm. It will start at a corner of the starting tile and trace along connected wall segments, adding a vertex to a path every time the direction changes.
+        4.  The algorithm must continue until it returns to the starting vertex.
+        5.  Return the completed list of `gridVertices`.
+    * **Outcome**: A robust, reusable function that can accurately trace the perimeter of any given room area from the `tile_grid`.
+
+* **Milestone 34: Integrate Wall Tracing and Finalize Room Generation**
+    * **Goal**: To integrate the new wall-tracing function and replace the placeholder room polygons with high-fidelity ones.
+    * **Description**: This milestone connects the previous two milestones, using the tracing algorithm to generate the final, accurate `gridVertices` for each room discovered in the area discovery step.
+    * **Key Tasks**:
+        1.  In `_stage7_transform_to_mapdata`, for each placeholder `Room` object, call the new `_trace_room_perimeter` function.
+        2.  Replace the placeholder bounding box vertices with the accurate vertices returned by the tracing function.
+        3.  Remove the temporary tile coordinate data from the `Room` objects.
+    * **Outcome**: The `dmap` tool now generates `MapData` with `Room` objects that have precise, accurate polygons based on the detailed `tile_grid` analysis. The SVG and ASCII renderings will show correct room shapes.
+
+* **Milestone 35: Implement Door Extraction and Linking**
+    * **Goal**: To extract door information from the `tile_grid` and link adjacent rooms correctly.
+    * **Description**: This final milestone completes the transformation process by identifying all doors and establishing the topological connections between the newly traced rooms.
+    * **Key Tasks**:
+        1.  Create a new helper function `_extract_doors_from_grid`.
+        2.  This function will iterate through the `tile_grid`, looking for wall attributes set to `'door'`.
+        3.  When a door is found between two tiles, it will use the `coord_to_room_id` map to find the IDs of the two rooms it connects.
+        4.  It will create `schema.Door` objects with the correct `gridPos`, `orientation`, and the `connects` list populated with the two room IDs.
+        5.  Integrate this function into `_stage7_transform_to_mapdata` and add the generated doors to the final list of map objects.
+    * **Outcome**: The `MapData` object is now fully complete, with accurate rooms, features, and doors that are all correctly linked, resolving the "Found 0 doors" message.
+
