@@ -672,23 +672,34 @@ milestones.
         5.  Return the completed list of `gridVertices`.
     * **Outcome**: A robust, reusable function that can accurately trace the perimeter of any given room area from the `tile_grid`.
 
-* **Milestone 34: Integrate Wall Tracing and Finalize Room Generation**
-    * **Goal**: To integrate the new wall-tracing function and replace the placeholder room polygons with high-fidelity ones.
-    * **Description**: This milestone connects the previous two milestones, using the tracing algorithm to generate the final, accurate `gridVertices` for each room discovered in the area discovery step.
+* **Milestone 34: Integrate Tracing for a Single Room**
+    * **Goal**: To integrate the wall-tracing function for the *first discovered room only* and add extensive debugging output.
+    * **Description**: This milestone focuses on verifying the `_trace_room_perimeter` function's output on a single, controlled case. It replaces the bounding box for just the first room and adds logging to inspect the generated path, making the complex tracing algorithm easier to debug.
     * **Key Tasks**:
-        1.  In `_stage7_transform_to_mapdata`, for each placeholder `Room` object, call the new `_trace_room_perimeter` function.
-        2.  Replace the placeholder bounding box vertices with the accurate vertices returned by the tracing function.
-        3.  Remove the temporary tile coordinate data from the `Room` objects.
-    * **Outcome**: The `dmap` tool now generates `MapData` with `Room` objects that have precise, accurate polygons based on the detailed `tile_grid` analysis. The SVG and ASCII renderings will show correct room shapes.
+        1.  In `_stage7_transform_to_mapdata`, modify the loop over `room_areas`. For the *first* area only, call the `_trace_room_perimeter` function.
+        2.  Add a `DEBUG` log line to print the returned `gridVertices` path from the tracer.
+        3.  Create a `Room` object for this first room using the traced vertices.
+        4.  For all *other* room areas, continue to use the old placeholder bounding box logic.
+    * **Outcome**: The tool will generate a map where one room has its precise shape, and the rest are simple boxes. The log will contain the detailed vertex path for the traced room, allowing for easy debugging of the algorithm.
 
-* **Milestone 35: Implement Door Extraction and Linking**
-    * **Goal**: To extract door information from the `tile_grid` and link adjacent rooms correctly.
-    * **Description**: This final milestone completes the transformation process by identifying all doors and establishing the topological connections between the newly traced rooms.
+* **Milestone 35: Apply Wall Tracing to All Rooms**
+    * **Goal**: To apply the now-verified wall-tracing algorithm to all discovered room areas.
+    * **Description**: This milestone expands the integration from the previous step to all rooms, replacing all remaining placeholder shapes with high-fidelity polygons.
     * **Key Tasks**:
-        1.  Create a new helper function `_extract_doors_from_grid`.
-        2.  This function will iterate through the `tile_grid`, looking for wall attributes set to `'door'`.
-        3.  When a door is found between two tiles, it will use the `coord_to_room_id` map to find the IDs of the two rooms it connects.
-        4.  It will create `schema.Door` objects with the correct `gridPos`, `orientation`, and the `connects` list populated with the two room IDs.
-        5.  Integrate this function into `_stage7_transform_to_mapdata` and add the generated doors to the final list of map objects.
-    * **Outcome**: The `MapData` object is now fully complete, with accurate rooms, features, and doors that are all correctly linked, resolving the "Found 0 doors" message.
+        1.  In `_stage7_transform_to_mapdata`, remove the "first room only" condition from the loop.
+        2.  Call `_trace_room_perimeter` for *every* room area found.
+        3.  Create all `Room` objects using their accurately traced vertices.
+        4.  Remove all temporary properties from the final `Room` objects.
+    * **Outcome**: The `dmap` tool generates `MapData` with `Room` objects that have precise polygons for *all* rooms. The SVG and ASCII renderings will show correct shapes for the entire map.
+
+* **Milestone 36: Implement Door Extraction and Linking**
+    * **Goal**: To extract door information from the `tile_grid` and link adjacent rooms correctly.
+    * **Description**: This final milestone completes the transformation by identifying all doors and establishing the topological connections between the newly traced rooms.
+    * **Key Tasks**:
+        1.  Create and implement the `_extract_doors_from_grid` helper function.
+        2.  This function will find `'door'` attributes in the `tile_grid` and use the `coord_to_room_id` map to find the rooms they connect.
+        3.  Create `schema.Door` objects with the correct `gridPos`, `orientation`, and `connects` data.
+        4.  Integrate this function into `_stage7_transform_to_mapdata`.
+    * **Outcome**: The `MapData` is now fully complete, with accurate rooms, features, and doors that are all correctly linked.
+
 
