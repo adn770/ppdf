@@ -2,7 +2,9 @@ import logging
 import os
 import uuid
 import itertools
+import math
 from typing import List, Dict, Any, Tuple, Optional
+from dataclasses import dataclass
 
 import cv2
 import numpy as np
@@ -14,6 +16,16 @@ from dmap_lib import schema, rendering
 log = logging.getLogger("dmap.analysis")
 log_ocr = logging.getLogger("dmap.ocr")
 log_geom = logging.getLogger("dmap.geometry")
+
+# The internal, pre-transformation data model for a single grid cell.
+@dataclass
+class _TileData:
+    feature_type: str  # e.g., 'floor', 'column', 'pit', 'empty'
+    north_wall: Optional[str] = None # e.g., 'stone', 'door', 'window'
+    east_wall: Optional[str] = None
+    south_wall: Optional[str] = None
+    west_wall: Optional[str] = None
+
 
 # Initialize the OCR reader once. This can take a moment on first run.
 log_ocr.info("Initializing EasyOCR reader...")
@@ -98,184 +110,122 @@ def _stage3_discover_grid(region_image: np.ndarray) -> int:
     return default_grid_size
 
 
-def _stage4_5_detect_rooms_and_corridors(
+def _get_room_contours(
     region_image: np.ndarray, grid_size: int
-) -> List[schema.Room]:
-    """
-    Stage 4 & 5: Detect all rooms and corridors from a region's image.
-    """
-    log.info("Executing Stage 4/5: Room & Corridor Detection...")
+) -> List[np.ndarray]:
+    """Helper to get clean room contours for internal analysis."""
     gray = cv2.cvtColor(region_image, cv2.COLOR_BGR2GRAY)
     _, processed = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
-
-    log.debug("Filling holes in floor plan to get solid shapes...")
-    contours, hierarchy = cv2.findContours(
-        processed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
-    )
+    contours, hierarchy = cv2.findContours(processed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     floor_mask = processed.copy()
     if hierarchy is not None:
         for i, contour in enumerate(contours):
             if hierarchy[0][i][3] != -1 and cv2.contourArea(contour) < 150:
                 cv2.drawContours(floor_mask, [contour], -1, 255, cv2.FILLED)
-
-    final_contours, _ = cv2.findContours(
-        floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-    log.info("Found %d distinct floor plan shapes.", len(final_contours))
-
-    rooms = []
-    min_room_area = (grid_size * grid_size)
-    for contour in final_contours:
-        if cv2.contourArea(contour) < min_room_area:
-            continue
-
-        epsilon = 0.01 * cv2.arcLength(contour, True)
-        approx_poly = cv2.approxPolyDP(contour, epsilon, True)
-
-        verts = [
-            schema.GridPoint(round(p[0][0] / grid_size), round(p[0][1] / grid_size))
-            for p in approx_poly
-        ]
-        pixel_verts = approx_poly
-
-        _, _, w, h = cv2.boundingRect(contour)
-        aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
-        room_type = "corridor" if aspect_ratio > 3.5 else "chamber"
-
-        room = schema.Room(
-            id=f"room_{uuid.uuid4().hex[:8]}",
-            shape="polygon",
-            gridVertices=verts,
-            roomType=room_type,
-            properties={"pixel_contour": pixel_verts} # Temp storage
-        )
-        rooms.append(room)
-    return rooms
+    final_contours, _ = cv2.findContours(floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return [c for c in final_contours if cv2.contourArea(c) > (grid_size*grid_size)]
 
 
-def _detect_doors_between_rooms(rooms: List[schema.Room], grid_size: int):
-    """Detects doors by finding small intersections between dilated room shapes."""
-    log_geom.info("Starting geometric door detection for %d rooms...", len(rooms))
-    doors = []
-    # Convert rooms to a temporary structure with shapely polygons for analysis
-    room_geoms = [
-        {
-            "obj": room,
-            "polygon": Polygon(room.properties["pixel_contour"].squeeze())
-        }
-        for room in rooms if room.properties and "pixel_contour" in room.properties
-    ]
+def _punch_doors_in_tile_grid(
+    tile_grid: Dict[Tuple[int, int], _TileData], room_contours: List[np.ndarray], grid_size: int
+):
+    """Detects doors geometrically and updates the wall attributes in the tile_grid."""
+    log_geom.info("Detecting doors to punch into tile grid...")
+    room_polygons = [Polygon(c.squeeze()) for c in room_contours]
+    buffer_dist, max_door_area = grid_size * 0.6, (grid_size * grid_size) * 2.5
 
-    buffer_dist = grid_size * 0.6
-    max_door_area = (grid_size * grid_size) * 2.5
-
-    for room_a, room_b in itertools.combinations(room_geoms, 2):
-        dilated_a = room_a['polygon'].buffer(buffer_dist)
-        dilated_b = room_b['polygon'].buffer(buffer_dist)
-
-        if not dilated_a.intersects(dilated_b):
-            continue
-        intersection = dilated_a.intersection(dilated_b)
-
+    for poly_a, poly_b in itertools.combinations(room_polygons, 2):
+        intersection = poly_a.buffer(buffer_dist).intersection(poly_b.buffer(buffer_dist))
         if 0 < intersection.area < max_door_area:
-            centroid = intersection.centroid
-            minx, miny, maxx, maxy = intersection.bounds
-            orientation = "v" if (maxy - miny) > (maxx - minx) else "h"
-            door = schema.Door(
-                id=f"door_{uuid.uuid4().hex[:8]}",
-                gridPos=schema.GridPoint(round(centroid.x/grid_size), round(centroid.y/grid_size)),
-                orientation=orientation,
-                connects=[room_a['obj'].id, room_b['obj'].id]
-            )
-            doors.append(door)
-    log_geom.info("Found %d doors via geometric analysis.", len(doors))
-    return doors
+            min_gx, min_gy = math.floor(intersection.bounds[0]/grid_size), math.floor(intersection.bounds[1]/grid_size)
+            max_gx, max_gy = math.ceil(intersection.bounds[2]/grid_size), math.ceil(intersection.bounds[3]/grid_size)
+
+            for y in range(min_gy, max_gy + 1):
+                for x in range(min_gx, max_gx + 1):
+                    # Check north/south walls
+                    if tile_grid.get((x,y-1)) and tile_grid.get((x,y)):
+                        if tile_grid[(x,y-1)].feature_type == 'empty' and tile_grid[(x,y)].feature_type != 'empty':
+                            tile_grid[(x,y)].north_wall = 'door'
+                            tile_grid[(x,y-1)].south_wall = 'door'
+                    # Check west/east walls
+                    if tile_grid.get((x-1,y)) and tile_grid.get((x,y)):
+                        if tile_grid[(x-1,y)].feature_type == 'empty' and tile_grid[(x,y)].feature_type != 'empty':
+                            tile_grid[(x,y)].west_wall = 'door'
+                            tile_grid[(x-1,y)].east_wall = 'door'
 
 def _stage6_classify_features(
-    region_image: np.ndarray, rooms: List[schema.Room], grid_size: int
-) -> Tuple[List[schema.Feature], List[schema.EnvironmentalLayer], List[schema.Door]]:
+    region_image: np.ndarray, room_contours: List[np.ndarray], grid_size: int
+) -> Dict[Tuple[int, int], _TileData]:
     """
-    Stage 6: Perform classification of intra-room features, layers, and doors.
+    Stage 6: Perform tile-based classification of features and walls.
     """
-    log.info("Executing Stage 6: Feature Classification...")
+    log.info("Executing Stage 6: Feature & Wall Classification...")
     gray = cv2.cvtColor(region_image, cv2.COLOR_BGR2GRAY)
-    all_features, all_layers = [], []
+    tile_grid = {}
+    if not room_contours: return {}
 
-    # Part 1: Find doors between rooms
-    doors = _detect_doors_between_rooms(rooms, grid_size)
+    all_points = np.vstack(room_contours)
+    min_gx, max_gx = math.floor(np.min(all_points[:,:,0])/grid_size), math.ceil(np.max(all_points[:,:,0])/grid_size)
+    min_gy, max_gy = math.floor(np.min(all_points[:,:,1])/grid_size), math.ceil(np.max(all_points[:,:,1])/grid_size)
 
-    # Part 2: Find features and layers within each room
-    for room in rooms:
-        if room.properties is None or "pixel_contour" not in room.properties:
-            continue
+    # Pass 1: Classify the primary feature type of each tile
+    for y in range(min_gy - 1, max_gy + 2):
+        for x in range(min_gx - 1, max_gx + 2):
+            px_center, py_center = x * grid_size + grid_size//2, y * grid_size + grid_size//2
+            is_inside = any(cv2.pointPolygonTest(c, (px_center, py_center), False) >= 0 for c in room_contours)
+            if not is_inside:
+                tile_grid[(x, y)] = _TileData(feature_type='empty')
+                continue
 
-        mask = np.zeros(gray.shape, dtype=np.uint8)
-        cv2.drawContours(mask, [room.properties["pixel_contour"]], -1, 255, -1)
-        room_content_img = cv2.bitwise_and(gray, gray, mask=mask)
+            tile_img = gray[py_center-grid_size//4:py_center+grid_size//4, px_center-grid_size//4:px_center+grid_size//4]
+            feature_type = 'floor' if np.mean(tile_img) > 150 else 'column'
+            tile_grid[(x, y)] = _TileData(feature_type=feature_type)
 
-        _, feat_thresh = cv2.threshold(room_content_img, 1, 180, cv2.THRESH_BINARY_INV)
-        feat_contours, _ = cv2.findContours(feat_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Pass 2: Detect walls based on transitions between floor and empty tiles
+    for (x,y), tile in tile_grid.items():
+        if tile.feature_type == 'empty': continue
+        north_tile = tile_grid.get((x, y - 1))
+        if north_tile and north_tile.feature_type == 'empty':
+            tile.north_wall = 'stone'
+            north_tile.south_wall = 'stone'
+        east_tile = tile_grid.get((x + 1, y))
+        if east_tile and east_tile.feature_type == 'empty':
+            tile.east_wall = 'stone'
+            east_tile.west_wall = 'stone'
+        south_tile = tile_grid.get((x, y + 1))
+        if south_tile and south_tile.feature_type == 'empty':
+            tile.south_wall = 'stone'
+            south_tile.north_wall = 'stone'
+        west_tile = tile_grid.get((x - 1, y))
+        if west_tile and west_tile.feature_type == 'empty':
+            tile.west_wall = 'stone'
+            west_tile.east_wall = 'stone'
 
-        if room.contents is None: room.contents = []
-        for fc in feat_contours:
-            if 10 < cv2.contourArea(fc) < (grid_size * grid_size * 2):
-                verts = [schema.GridPoint(round(p[0][0]/grid_size), round(p[0][1]/grid_size)) for p in fc]
-                feature = schema.Feature(
-                    id=f"feature_{uuid.uuid4().hex[:8]}",
-                    featureType="column", # Default classification
-                    shape="polygon",
-                    gridVertices=verts,
-                )
-                all_features.append(feature)
-                room.contents.append(feature.id)
+    # Pass 3: Punch doors into the walls using geometric analysis
+    _punch_doors_in_tile_grid(tile_grid, room_contours, grid_size)
 
-    log.info("Found %d internal features and %d env. layers.", len(all_features), len(all_layers))
-    return all_features, all_layers, doors
+    # Pass 4: Normalize the grid coordinates to be 1-based
+    shifted_grid = {}
+    for (gx, gy), tile_data in tile_grid.items():
+        new_key = (gx - min_gx + 1, gy - min_gy + 1)
+        shifted_grid[new_key] = tile_data
+
+    return shifted_grid
 
 
 def _stage7_transform_to_mapdata(
-    image_path: str, all_regions_data: List[Dict], metadata: Dict[str, Any]
-) -> schema.MapData:
-    """
-    Stage 7: Transform intermediate data into the final MapData object.
-    """
-    log.info("Executing Stage 7: Final Transformation...")
+    tile_grid: Dict[Tuple[int, int], _TileData], grid_size: int
+) -> List[Any]:
+    """Stage 7: Transforms the detailed tile_grid into final MapObject entities."""
+    log.info("Executing Stage 7: Wall-Tracing Transformation...")
+    if not tile_grid: return []
 
-    title = metadata.get("title") or os.path.splitext(os.path.basename(image_path))[0]
-    meta_obj = schema.Meta(
-        title=title,
-        sourceImage=os.path.basename(image_path),
-        notes=metadata.get("notes"),
-        legend=metadata.get("legend"),
-        gridSizePx=0,
-    )
+    # ... placeholder for wall-tracing logic ...
+    # For now, we return an empty list as the full algorithm is complex.
+    # A complete implementation would trace walls to form Room polygons.
+    log.warning("Wall-tracing transformation is not yet fully implemented.")
 
-    regions = []
-    for region_data in all_regions_data:
-        x, y, w, h = region_data["bounds_rect"]
-        bounds = [
-            schema.GridPoint(x=x, y=y),
-            schema.GridPoint(x=x + w, y=y),
-            schema.GridPoint(x=x + w, y=y + h),
-            schema.GridPoint(x=x, y=y + h),
-        ]
-        # Clean up temporary properties from Room objects
-        for obj in region_data["mapObjects"]:
-            if isinstance(obj, schema.Room) and obj.properties:
-                obj.properties.pop("pixel_contour", None)
-                if not obj.properties: obj.properties = None
-
-        region = schema.Region(
-            id=region_data["id"],
-            label=region_data["label"],
-            gridSizePx=region_data["gridSizePx"],
-            bounds=bounds,
-            mapObjects=region_data["mapObjects"],
-        )
-        regions.append(region)
-
-    log.debug("Packaged %d regions into final MapData object.", len(regions))
-    return schema.MapData(dmapVersion="2.0.0", meta=meta_obj, regions=regions)
+    return []
 
 
 def analyze_image(image_path: str, ascii_debug: bool = False) -> Tuple[schema.MapData, Optional[List]]:
@@ -285,8 +235,7 @@ def analyze_image(image_path: str, ascii_debug: bool = False) -> Tuple[schema.Ma
     """
     log.info("Starting analysis of image: '%s'", image_path)
     img = cv2.imread(image_path)
-    if img is None:
-        raise FileNotFoundError(f"Could not read image at {image_path}")
+    if img is None: raise FileNotFoundError(f"Could not read image at {image_path}")
 
     all_regions_data = []
     region_contexts = _stage1_detect_regions(img)
@@ -296,49 +245,24 @@ def analyze_image(image_path: str, ascii_debug: bool = False) -> Tuple[schema.Ma
 
     for i, region_context in enumerate(dungeon_regions):
         region_img = region_context["bounds_img"]
-        region_label = f"Dungeon Area {i+1}"
-        if len(dungeon_regions) == 1:
-            region_label = "Main Dungeon"
+        region_label = f"Dungeon Area {i+1}" if len(dungeon_regions) > 1 else "Main Dungeon"
 
         grid_size = _stage3_discover_grid(region_img)
-        rooms = _stage4_5_detect_rooms_and_corridors(region_img, grid_size)
-        features, layers, doors = _stage6_classify_features(region_img, rooms, grid_size)
-        all_objects = rooms + features + layers + doors
+        room_contours = _get_room_contours(region_img, grid_size)
+        tile_grid = _stage6_classify_features(region_img, room_contours, grid_size)
 
-        if ascii_debug:
+        all_objects = _stage7_transform_to_mapdata(tile_grid, grid_size)
+
+        if ascii_debug and tile_grid:
             log.info("--- ASCII Debug Output (Pre-Transformation) ---")
-            tile_grid = {}
-            if rooms:
-                all_verts = [v for r in rooms for v in r.gridVertices]
-                min_x, max_x = min(v.x for v in all_verts), max(v.x for v in all_verts)
-                min_y, max_y = min(v.y for v in all_verts), max(v.y for v in all_verts)
-                for r in rooms:
-                    for x in range(min_x, max_x + 1):
-                        for y in range(min_y, max_y + 1):
-                            if cv2.pointPolygonTest(r.properties['pixel_contour'], ((x*grid_size),(y*grid_size)), False) >= 0:
-                                tile_grid[(x,y)] = '.'
-                for r in rooms: # Walls drawn over floors
-                    verts = r.gridVertices
-                    for i in range(len(verts)):
-                        p1 = verts[i]
-                        p2 = verts[(i + 1) % len(verts)]
-                        dx, dy, steps = p2.x-p1.x, p2.y-p1.y, max(abs(p2.x-p1.x), abs(p2.y-p1.y))
-                        for i in range(steps+1):
-                            x = round(p1.x + i/steps * dx) if steps else p1.x
-                            y = round(p1.y + i/steps * dy) if steps else p1.y
-                            tile_grid[(x,y)] = '#'
-            for obj in all_objects:
-                if isinstance(obj, schema.Door): tile_grid[(obj.gridPos.x, obj.gridPos.y)] = '+'
-                elif isinstance(obj, schema.Feature):
-                     avg_x = round(sum(v.x for v in obj.gridVertices) / len(obj.gridVertices))
-                     avg_y = round(sum(v.y for v in obj.gridVertices) / len(obj.gridVertices))
-                     tile_grid[(avg_x, avg_y)] = 'O'
-
+            if (1, 1) in tile_grid:
+                log_geom.debug("Data for tile (1,1): %s", tile_grid.get((1,1)))
+            else:
+                log_geom.debug("Tile (1,1) not found in tile_grid.")
             renderer = rendering.ASCIIRenderer()
             renderer.render_from_tiles(tile_grid)
-            print(renderer.get_output())
+            log.info("\n%s", renderer.get_output(), extra={'raw': True})
             log.info("--- End ASCII Debug Output ---")
-
 
         all_regions_data.append({
             "id": region_context["id"],
@@ -348,6 +272,24 @@ def analyze_image(image_path: str, ascii_debug: bool = False) -> Tuple[schema.Ma
             "mapObjects": all_objects,
         })
 
-    map_data = _stage7_transform_to_mapdata(image_path, all_regions_data, metadata)
+    # Final assembly of the MapData object
+    title = metadata.get("title") or os.path.splitext(os.path.basename(image_path))[0]
+    meta_obj = schema.Meta(
+        title=title,
+        sourceImage=os.path.basename(image_path),
+        notes=metadata.get("notes"),
+        legend=metadata.get("legend"),
+    )
+    regions = [
+        schema.Region(
+            id=rd["id"],
+            label=rd["label"],
+            gridSizePx=rd["gridSizePx"],
+            bounds=[],
+            mapObjects=rd["mapObjects"],
+        )
+        for rd in all_regions_data
+    ]
+    map_data = schema.MapData(dmapVersion="2.0.0", meta=meta_obj, regions=regions)
 
     return map_data, None

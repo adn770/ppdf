@@ -1,4 +1,3 @@
-# --- dmap_lib/schema.py ---
 import json
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -20,7 +19,6 @@ class Meta:
     """Represents the metadata for a map file."""
     title: str
     sourceImage: str
-    gridSizePx: int
     legend: Optional[str] = None
     notes: Optional[str] = None
 

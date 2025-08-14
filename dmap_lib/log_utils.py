@@ -1,4 +1,3 @@
-# --- dmap_lib/log_utils.py ---
 import logging
 
 # Define the valid logging topics for the dmap project.
@@ -21,20 +20,18 @@ class RichLogFormatter(logging.Formatter):
             self.BOLD = "\033[1m"
             self.RESET = "\033[0m"
         else:
-            # --- FIX ---
-            # Correctly initialize the dictionary without a self-reference.
             self.COLORS = {
-                logging.DEBUG: "",
-                logging.INFO: "",
-                logging.WARNING: "",
-                logging.ERROR: "",
-                logging.CRITICAL: "",
+                logging.DEBUG: "", logging.INFO: "", logging.WARNING: "",
+                logging.ERROR: "", logging.CRITICAL: "",
             }
-            # --- END FIX ---
             self.BOLD = ""
             self.RESET = ""
 
     def format(self, record):
+        if record.__dict__.get('raw'):
+            # For raw output like ASCII maps, return the message as is.
+            return super().format(record)
+
         color = self.COLORS.get(record.levelno, self.RESET)
         level_name = record.levelname[:5]
         topic = record.name.split(".")[-1][:8]
@@ -61,7 +58,7 @@ def setup_logging(level, color_logs, debug_topics, log_file):
             file_handler = logging.FileHandler(log_file, mode="w")
             file_handler.setFormatter(RichLogFormatter(use_color=False))
             root_logger.addHandler(file_handler)
-            root_logger.info("Logging to file: %s", log_file)
+            logging.getLogger("dmap.main").info("Logging to file: %s", log_file)
         except IOError as e:
             root_logger.error("Could not open log file %s: %s", log_file, e)
 

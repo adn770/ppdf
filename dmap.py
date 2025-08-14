@@ -99,7 +99,7 @@ def main():
             log.info("--- ASCII Debug Output (Post-Transformation) ---")
             renderer = rendering.ASCIIRenderer()
             renderer.render_from_json(map_data)
-            print(renderer.get_output())
+            log.info("\n%s", renderer.get_output(), extra={'raw': True})
             log.info("--- End ASCII Debug Output ---")
 
         render_opts = {

@@ -153,118 +153,113 @@ def render_svg(
 
 
 class ASCIIRenderer:
-    """Renders an ASCII art diagram of a map for debugging."""
+    """Renders a high-fidelity ASCII art diagram of a map for debugging."""
 
-    def __init__(self, width=80, height=40):
-        """Initializes the renderer with a blank canvas of a given size."""
-        self.width = width
-        self.height = height
-        self.canvas = [[' ' for _ in range(width)] for _ in range(height)]
-        self.min_x, self.min_y = 0, 0
-        self.scale_x, self.scale_y = 1.0, 1.0
-
-    def _map_coords(self, p: schema.GridPoint) -> tuple[int, int]:
-        """Maps a grid point to canvas coordinates."""
-        x = int((p.x - self.min_x) * self.scale_x)
-        y = int((p.y - self.min_y) * self.scale_y)
-        return min(self.width - 1, max(0, x)), min(self.height - 1, max(0, y))
-
-    def _draw_line(self, p1: tuple, p2: tuple, char: str):
-        """Draws a line on the canvas using Bresenham's algorithm."""
-        x1, y1 = p1
-        x2, y2 = p2
-        dx, dy = abs(x2 - x1), -abs(y2 - y1)
-        sx, sy = 1 if x1 < x2 else -1, 1 if y1 < y2 else -1
-        err = dx + dy
-        while True:
-            if 0 <= y1 < self.height and 0 <= x1 < self.width:
-                self.canvas[y1][x1] = char
-            if x1 == x2 and y1 == y2:
-                break
-            e2 = 2 * err
-            if e2 >= dy:
-                err += dy
-                x1 += sx
-            if e2 <= dx:
-                err += dx
-                y1 += sy
-
-    def _fill_polygon(self, vertices: list[tuple], char: str):
-        """Fills a polygon on the canvas using a scan-line algorithm."""
-        if not vertices:
-            return
-        max_y = max(v[1] for v in vertices)
-        for y in range(max_y + 1):
-            intersections = []
-            for i in range(len(vertices)):
-                p1 = vertices[i]
-                p2 = vertices[(i + 1) % len(vertices)]
-                if p1[1] != p2[1] and min(p1[1], p2[1]) <= y < max(p1[1], p2[1]):
-                    x = (y - p1[1]) * (p2[0] - p1[0]) / (p2[1] - p1[1]) + p1[0]
-                    intersections.append(int(x))
-            intersections.sort()
-            for i in range(0, len(intersections), 2):
-                if i + 1 < len(intersections):
-                    for x in range(intersections[i], intersections[i+1] + 1):
-                        if 0 <= y < self.height and 0 <= x < self.width:
-                            self.canvas[y][x] = char
+    def __init__(self):
+        """Initializes the renderer."""
+        self.canvas = []
+        self.width = 0
+        self.height = 0
 
     def render_from_json(self, map_data: schema.MapData):
         """Renders the map from the final MapData structure."""
-        all_verts = [
-            v for r in map_data.regions for o in r.mapObjects
-            if isinstance(o, schema.Room) for v in o.gridVertices
-        ]
+        from dmap_lib.analysis import _TileData # Avoid circular import at top level
+
+        all_objects = [obj for r in map_data.regions for obj in r.mapObjects]
+        if not all_objects: return
+
+        all_verts = [v for o in all_objects if hasattr(o, 'gridVertices') for v in o.gridVertices]
         if not all_verts: return
 
-        self.min_x, self.max_x = min(v.x for v in all_verts), max(v.x for v in all_verts)
-        self.min_y, self.max_y = min(v.y for v in all_verts), max(v.y for v in all_verts)
-        delta_x = self.max_x - self.min_x
-        delta_y = self.max_y - self.min_y
-        self.scale_x = (self.width - 1) / delta_x if delta_x > 0 else 1
-        self.scale_y = (self.height - 1) / delta_y if delta_y > 0 else 1
+        min_x, max_x = min(v.x for v in all_verts), max(v.x for v in all_verts)
+        min_y, max_y = min(v.y for v in all_verts), max(v.y for v in all_verts)
 
-        all_objects = [o for r in map_data.regions for o in r.mapObjects]
-        # Render in layers: floors, then env_layers, then walls, then features
+        tile_grid = {}
+        for y in range(min_y -1, max_y + 2):
+            for x in range(min_x -1, max_x + 2):
+                tile_grid[(x,y)] = _TileData(feature_type='empty')
+
         for obj in all_objects:
             if isinstance(obj, schema.Room):
-                self._fill_polygon([self._map_coords(v) for v in obj.gridVertices], '.')
-        for obj in all_objects:
-            if isinstance(obj, schema.EnvironmentalLayer):
-                char = '~' if obj.layerType == 'water' else '%'
-                self._fill_polygon([self._map_coords(v) for v in obj.gridVertices], char)
-        for obj in all_objects:
-            if isinstance(obj, schema.Room):
-                verts = [self._map_coords(v) for v in obj.gridVertices]
-                for i in range(len(verts)):
-                    self._draw_line(verts[i], verts[(i + 1) % len(verts)], '#')
+                r_min_x = min(v.x for v in obj.gridVertices)
+                r_max_x = max(v.x for v in obj.gridVertices)
+                r_min_y = min(v.y for v in obj.gridVertices)
+                r_max_y = max(v.y for v in obj.gridVertices)
+                for y in range(r_min_y, r_max_y + 1):
+                    for x in range(r_min_x, r_max_x + 1):
+                        if (x, y) in tile_grid:
+                            tile_grid[(x,y)].feature_type = 'floor'
+
+        for (x,y), tile in tile_grid.items():
+            if tile.feature_type == 'empty': continue
+            if tile_grid.get((x, y - 1)).feature_type == 'empty': tile.north_wall = 'stone'
+            if tile_grid.get((x + 1, y)).feature_type == 'empty': tile.east_wall = 'stone'
+            if tile_grid.get((x, y + 1)).feature_type == 'empty': tile.south_wall = 'stone'
+            if tile_grid.get((x - 1, y)).feature_type == 'empty': tile.west_wall = 'stone'
+
         for obj in all_objects:
             if isinstance(obj, schema.Door):
-                x, y = self._map_coords(obj.gridPos)
-                self.canvas[y][x] = '+'
-            elif isinstance(obj, schema.Feature):
-                if obj.gridVertices:
-                    avg_x = sum(v.x for v in obj.gridVertices) / len(obj.gridVertices)
-                    avg_y = sum(v.y for v in obj.gridVertices) / len(obj.gridVertices)
-                    x, y = self._map_coords(schema.GridPoint(int(avg_x), int(avg_y)))
-                    self.canvas[y][x] = 'O'
+                x, y = obj.gridPos.x, obj.gridPos.y
+                if tile_grid.get((x,y)): tile_grid[(x,y)].feature_type = 'door'
+
+        self.render_from_tiles(tile_grid)
+
 
     def render_from_tiles(self, tile_grid: dict):
-        """Renders the map from an intermediate tile grid."""
-        if not tile_grid:
-            return
-        all_x = [p[0] for p in tile_grid.keys()]
-        all_y = [p[1] for p in tile_grid.keys()]
-        self.min_x, self.max_x = min(all_x), max(all_x)
-        self.min_y, self.max_y = min(all_y), max(all_y)
-        delta_x = self.max_x - self.min_x
-        delta_y = self.max_y - self.min_y
-        self.scale_x = (self.width - 1) / delta_x if delta_x > 0 else 1
-        self.scale_y = (self.height - 1) / delta_y if delta_y > 0 else 1
+        """Renders the map from an intermediate tile grid using box-drawing characters."""
+        if not tile_grid: return
 
-        for pos, char_code in tile_grid.items():
-            x, y = self._map_coords(schema.GridPoint(x=pos[0], y=pos[1]))
-            self.canvas[y][x] = char_code
+        # Grid is now 1-based, so min_x and min_y are 1.
+        max_x = max(p[0] for p in tile_grid.keys())
+        max_y = max(p[1] for p in tile_grid.keys())
+
+        padding = 1
+        self.width = max_x * 2 + 1 + (2 * padding)
+        self.height = max_y * 2 + 1 + (2 * padding)
+        self.canvas = [[' ' for _ in range(self.width)] for _ in range(self.height)]
+
+        char_map = {'floor': '.', 'column': 'O', 'empty': ' ', 'door': '+'}
+
+        # Pass 1: Draw features
+        for (gx, gy), tile in tile_grid.items():
+            cx = (gx - 1) * 2 + 1 + padding
+            cy = (gy - 1) * 2 + 1 + padding
+            if 0 <= cy < self.height and 0 <= cx < self.width:
+                self.canvas[cy][cx] = char_map.get(tile.feature_type, '?')
+
+        # Pass 2: Draw walls and doors
+        for (gx, gy), tile in tile_grid.items():
+            cx_base = (gx - 1) * 2 + padding
+            cy_base = (gy - 1) * 2 + padding
+            if tile.north_wall: self.canvas[cy_base][cx_base+1] = '+' if tile.north_wall == 'door' else '─'
+            if tile.west_wall: self.canvas[cy_base+1][cx_base] = '+' if tile.west_wall == 'door' else '│'
+            if tile.south_wall: self.canvas[cy_base+2][cx_base+1] = '+' if tile.south_wall == 'door' else '─'
+            if tile.east_wall: self.canvas[cy_base+1][cx_base+2] = '+' if tile.east_wall == 'door' else '│'
+
+        # Pass 3: Draw intersections
+        junctions = {
+            (0,1,1,0): '┌', (0,0,1,1): '┐', (1,1,0,0): '└', (1,0,0,1): '┘',
+            (1,1,1,0): '├', (1,0,1,1): '┤', (0,1,1,1): '┬', (1,1,0,1): '┴',
+            (1,1,1,1): '┼', (0,1,0,1): '─', (1,0,1,0): '│',
+        }
+        for gy in range(1, max_y + 2):
+            for gx in range(1, max_x + 2):
+                cx = (gx - 1) * 2 + padding
+                cy = (gy - 1) * 2 + padding
+                if not (0 <= cy < self.height and 0 <= cx < self.width): continue
+
+                n = self.canvas[cy-1][cx] in '│+' if cy > 0 else False
+                s = self.canvas[cy+1][cx] in '│+' if cy < self.height -1 else False
+                w = self.canvas[cy][cx-1] in '─+' if cx > 0 else False
+                e = self.canvas[cy][cx+1] in '─+' if cx < self.width - 1 else False
+
+                key = (n, e, s, w)
+                if key in junctions: self.canvas[cy][cx] = junctions[key]
+                elif sum(key) == 1: # End caps
+                    if n: self.canvas[cy][cx] = '╵'
+                    elif s: self.canvas[cy][cx] = '╷'
+                    elif w: self.canvas[cy][cx] = '╴'
+                    elif e: self.canvas[cy][cx] = '╶'
 
     def get_output(self) -> str:
         """Returns the final, rendered ASCII map as a single string."""
