@@ -618,3 +618,43 @@ milestones.
         2.  In `dmap_lib/rendering.py`, implement the `render_from_tiles` method to draw the map based on this `tile_grid`.
         3.  In `dmap_lib/analysis.py`, modify `analyze_image` to accept a debug flag. If true, it will call the `render_from_tiles` method and print the result before proceeding to Stage 7.
     * **Outcome**: Developers can use the `--ascii-debug` flag to see a direct, character-based visualization of the tile classification results, greatly aiding in the debugging of the analysis pipeline.
+
+### Phase 11: Advanced Analysis Engine Refactoring
+
+* **Milestone 29: Define Internal Tile Dataclass**
+    * **Goal**: Establish the new core data structure for the tile-based analysis.
+    * **Description**: This milestone creates the new internal `Tile` dataclass within the analysis module. This structure is central to the new tile-edge wall representation and must be defined before the logic that populates it.
+    * **Key Tasks**:
+        1.  In `dmap_lib/analysis.py`, define a new internal dataclass (e.g., `_TileData`) with fields for `feature_type` and `north_wall`, `east_wall`, `south_wall`, `west_wall`.
+        2.  Update the `_stage6_classify_features` function signature to reflect that it will now produce a grid of these new objects.
+    * **Outcome**: A new internal data model for a tile is defined, and the pipeline structure is updated to reflect its future use.
+
+* **Milestone 30: Implement Tile Feature Classification**
+    * **Goal**: Rewrite the feature classification stage to identify the primary content of each grid tile.
+    * **Description**: This milestone implements the first half of the new Stage 6 logic. It focuses on analyzing the area *within* each grid cell to determine what it contains, populating the `feature_type` of each `_TileData` object in the intermediate grid.
+    * **Key Tasks**:
+        1.  In `_stage6_classify_features`, create a loop that iterates over every `(x, y)` coordinate of a region's grid.
+        2.  For each coordinate, analyze the corresponding pixel area in the source image.
+        3.  Implement heuristics to classify the area as `floor`, `column`, `pit`, etc., and create a `_TileData` object with the correct `feature_type`.
+        4.  Store these objects in the `tile_grid`. The wall attributes will remain `None`.
+    * **Outcome**: Stage 6 can now produce a complete `tile_grid` where every tile has its primary feature correctly identified.
+
+* **Milestone 31: Implement Tile-Edge Wall Detection**
+    * **Goal**: Enhance the classification stage to detect walls on the boundaries between tiles.
+    * **Description**: This milestone implements the second half of the Stage 6 logic. It analyzes the pixel lines *between* grid cells to identify and classify walls, doors, and other edge-based features.
+    * **Key Tasks**:
+        1.  In `_stage6_classify_features`, add logic to analyze the boundaries of each tile.
+        2.  For each tile at `(x, y)`, analyze the pixels between it and its neighbors (e.g., `(x, y-1)` for the north wall).
+        3.  Implement heuristics to classify these boundaries as `stone`, `door`, `window`, or `None` (open space).
+        4.  Update the `north_wall`, `east_wall`, `south_wall`, and `west_wall` attributes of the `_TileData` objects in the `tile_grid`.
+    * **Outcome**: The intermediate `tile_grid` is now fully populated, containing both the feature type of each tile and the wall types on all its edges.
+
+* **Milestone 32: Implement Wall-Tracing Transformation**
+    * **Goal**: Rewrite the transformation stage to generate room polygons by tracing the new tile-edge walls.
+    * **Description**: This milestone replaces the old logic in Stage 7 with a new algorithm that generates the final `MapData` by interpreting the detailed `tile_grid`. This decouples the final output from the initial pixel-based contours.
+    * **Key Tasks**:
+        1.  In `_stage7_transform_to_mapdata`, remove the old logic.
+        2.  Implement a "wall tracing" algorithm that finds a starting `floor` tile and follows its connected wall attributes to map the outer perimeter of a room.
+        3.  Convert the traced path of wall edges into a list of `gridVertices` for a `Room` object.
+        4.  Repeat this process until all `floor` tiles have been assigned to a room, correctly handling complex room shapes.
+    * **Outcome**: The analysis pipeline is fully functional again, now using the more robust tile-edge model to generate the final `MapData` object with high-fidelity room polygons.
