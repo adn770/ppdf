@@ -1,3 +1,4 @@
+# --- dmap_lib/rendering.py ---
 import math
 import random
 import logging
@@ -54,7 +55,6 @@ def render_svg(
 ) -> str:
     """Generates a stylized SVG from a region-based MapData object."""
     log.info("Starting SVG rendering process...")
-    # Flatten all objects from all regions for processing
     all_objects = [obj for region in map_data.regions for obj in region.mapObjects]
     objects = all_objects
 
@@ -68,13 +68,11 @@ def render_svg(
             o for o in all_objects if isinstance(o, schema.Room) and o.label in labels_set
         ]
         room_ids = {r.id for r in rooms}
-        # Get doors connecting the filtered rooms
         doors = [
             o
             for o in all_objects
             if isinstance(o, schema.Door) and room_ids.intersection(o.connects)
         ]
-        # Get features and layers contained within the filtered rooms
         child_ids = {cid for r in rooms if r.contents for cid in r.contents}
         children = [o for o in all_objects if o.id in child_ids]
         objects = rooms + doors + children
@@ -122,11 +120,11 @@ def render_svg(
         "shadows": [],
         "glows": [],
         "room_fills": [],
-        "env_layers": [],
-        "features": [],
+        "contents": [],  # Unified layer for z-ordered objects
         "doors": [],
         "walls": [],
     }
+    z_ordered_objects = []
 
     for obj in objects:
         if isinstance(obj, schema.Room):
@@ -156,15 +154,22 @@ def render_svg(
             layers["doors"].append(
                 f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />'
             )
-        elif isinstance(obj, schema.EnvironmentalLayer):
-            points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
-            color = styles.get(f"{obj.layerType}_color", "#808080")  # Default to gray
-            layers["env_layers"].append(
+        elif isinstance(obj, (schema.EnvironmentalLayer, schema.Feature)):
+            z_ordered_objects.append(obj)
+
+    # Sort and render the z-ordered objects
+    z_ordered_objects.sort(
+        key=lambda o: o.properties.get("z-order", 0) if o.properties else 0
+    )
+    for obj in z_ordered_objects:
+        points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
+        if isinstance(obj, schema.EnvironmentalLayer):
+            color = styles.get(f"{obj.layerType}_color", "#808080")
+            layers["contents"].append(
                 f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />'
             )
         elif isinstance(obj, schema.Feature):
-            points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
-            layers["features"].append(
+            layers["contents"].append(
                 f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>'
             )
 
@@ -179,16 +184,7 @@ def render_svg(
             f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>'
         )
 
-    # Render layers in specified order for correct visual appearance
-    render_order = [
-        "shadows",
-        "glows",
-        "room_fills",
-        "env_layers",
-        "features",
-        "doors",
-        "walls",
-    ]
+    render_order = ["shadows", "glows", "room_fills", "contents", "doors", "walls"]
     for name in render_order:
         svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
 
@@ -208,7 +204,7 @@ class ASCIIRenderer:
 
     def render_from_json(self, map_data: schema.MapData):
         """Renders the map from the final MapData structure."""
-        from dmap_lib.analysis import _TileData  # Avoid circular import at top level
+        from dmap_lib.analysis import _TileData
 
         all_objects = [obj for r in map_data.regions for obj in r.mapObjects]
         if not all_objects:
@@ -264,7 +260,6 @@ class ASCIIRenderer:
         if not tile_grid:
             return
 
-        # Grid is now 1-based, so min_x and min_y are 1.
         max_x = max(p[0] for p in tile_grid.keys())
         max_y = max(p[1] for p in tile_grid.keys())
 
@@ -275,14 +270,12 @@ class ASCIIRenderer:
 
         char_map = {"floor": ".", "column": "O", "empty": " ", "door": "+"}
 
-        # Pass 1: Draw features
         for (gx, gy), tile in tile_grid.items():
             cx = (gx - 1) * 2 + 1 + padding
             cy = (gy - 1) * 2 + 1 + padding
             if 0 <= cy < self.height and 0 <= cx < self.width:
                 self.canvas[cy][cx] = char_map.get(tile.feature_type, "?")
 
-        # Pass 2: Draw walls and doors
         for (gx, gy), tile in tile_grid.items():
             cx_base = (gx - 1) * 2 + padding
             cy_base = (gy - 1) * 2 + padding
@@ -299,7 +292,6 @@ class ASCIIRenderer:
                     "+" if tile.east_wall == "door" else "│"
                 )
 
-        # Pass 3: Draw intersections
         junctions = {
             (0, 1, 1, 0): "┌",
             (0, 0, 1, 1): "┐",
@@ -328,7 +320,7 @@ class ASCIIRenderer:
                 key = (n, e, s, w)
                 if key in junctions:
                     self.canvas[cy][cx] = junctions[key]
-                elif sum(key) == 1:  # End caps
+                elif sum(key) == 1:
                     if n:
                         self.canvas[cy][cx] = "╵"
                     elif s:

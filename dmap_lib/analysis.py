@@ -52,33 +52,25 @@ def _stage0_analyze_colors(
     img: np.ndarray, num_colors: int = 8
 ) -> Tuple[Dict[str, Any], KMeans]:
     """
-    Stage 0: Quantize image colors and assign semantic roles. Returns the color
-    profile and the fitted KMeans model for later use.
+    Stage 0: Quantize image colors and assign semantic roles using a multi-pass
+    contextual analysis pipeline.
     """
-    log.info("Executing Stage 0: Palette & Semantic Analysis...")
+    log.info("Executing Stage 0: Multi-Pass Contextual Color Analysis...")
     pixels = img.reshape(-1, 3)
     kmeans = KMeans(n_clusters=num_colors, random_state=42, n_init=10).fit(pixels)
     palette_bgr = kmeans.cluster_centers_.astype("uint8")
-
-    palette_bgr = sorted(palette_bgr, key=lambda c: sum(c))
     palette_rgb = [tuple(c[::-1]) for c in palette_bgr]
 
     color_profile = {"palette": palette_rgb, "roles": {}}
     roles = color_profile["roles"]
     unassigned_colors = list(palette_rgb)
 
-    roles[unassigned_colors.pop(0)] = "stroke"
-
+    # --- Pass 1: Anchor Color Identification ---
     bg_color_bgr = img[0, 0]
-    bg_palette_color = min(
-        unassigned_colors,
-        key=lambda c: np.linalg.norm(np.array(c) - np.array(bg_color_bgr)[::-1]),
-    )
+    bg_rgb_color = tuple(bg_color_bgr[::-1])
+    bg_palette_color = min(unassigned_colors, key=lambda c: np.linalg.norm(np.array(c) - bg_rgb_color))
     roles[bg_palette_color] = "background"
     unassigned_colors.remove(bg_palette_color)
-
-    if unassigned_colors:
-        roles[unassigned_colors.pop(0)] = "shadow"
 
     h, w, _ = img.shape
     center_img = img[h // 4 : h * 3 // 4, w // 4 : w * 3 // 4, :]
@@ -94,25 +86,88 @@ def _stage0_analyze_colors(
     if floor_color:
         roles[floor_color] = "floor"
         unassigned_colors.remove(floor_color)
-    elif unassigned_colors:
-        log.warning("Could not determine floor color from center; using fallback.")
-        floor_color = unassigned_colors.pop(-1)
-        roles[floor_color] = "floor"
 
-    if unassigned_colors:
-        saturations = [
-            colorsys.rgb_to_hsv(c[0] / 255, c[1] / 255, c[2] / 255)[1]
-            for c in unassigned_colors
-        ]
-        if max(saturations) > 0.2:
-            water_color = unassigned_colors[np.argmax(saturations)]
-            roles[water_color] = "water_pattern"
-            unassigned_colors.remove(water_color)
+    # --- Pass 2: Stroke Identification via Edge Sampling ---
+    stroke_rgb = None
+    if floor_color:
+        floor_bgr = np.array(floor_color[::-1], dtype="uint8")
+        floor_mask = cv2.inRange(img, floor_bgr, floor_bgr)
+        contours, _ = cv2.findContours(floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        edge_pixels = []
+        for contour in contours:
+            for point in contour:
+                edge_pixels.append(img[point[0][1], point[0][0]])
 
-    log.debug("--- Color Profile ---")
+        if edge_pixels:
+            edge_labels = kmeans.predict(edge_pixels)
+            valid_labels = [l for l in edge_labels if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1]) in unassigned_colors]
+            if valid_labels:
+                stroke_label = Counter(valid_labels).most_common(1)[0][0]
+                stroke_rgb = tuple(kmeans.cluster_centers_[stroke_label].astype("uint8")[::-1])
+                roles[stroke_rgb] = "stroke"
+                unassigned_colors.remove(stroke_rgb)
+
+    # Fallback if edge sampling fails
+    if not stroke_rgb and unassigned_colors:
+        stroke_rgb = min(unassigned_colors, key=sum)
+        roles[stroke_rgb] = "stroke"
+        unassigned_colors.remove(stroke_rgb)
+
+    # --- Pass 3: Border Color Identification (Glow & Shadow) ---
+    all_labels = kmeans.labels_.reshape((h, w))
+    stroke_label = kmeans.predict([np.array(stroke_rgb[::-1])])[0]
+
+    stroke_mask = (all_labels == stroke_label).astype(np.uint8)
+    dilated_mask = cv2.dilate(stroke_mask, np.ones((3, 3), np.uint8), iterations=2)
+    search_mask = dilated_mask - stroke_mask
+
+    adjacent_labels = all_labels[search_mask == 1]
+    valid_adjacent_labels = [l for l in adjacent_labels if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1]) in unassigned_colors]
+
+    if len(valid_adjacent_labels) > 1:
+        # Find the two most common adjacent colors
+        top_two_labels = [item[0] for item in Counter(valid_adjacent_labels).most_common(2)]
+        color1 = tuple(kmeans.cluster_centers_[top_two_labels[0]].astype("uint8")[::-1])
+        color2 = tuple(kmeans.cluster_centers_[top_two_labels[1]].astype("uint8")[::-1])
+
+        # The lighter one is glow, the darker is shadow
+        if sum(color1) > sum(color2):
+            glow_rgb, shadow_rgb = color1, color2
+        else:
+            glow_rgb, shadow_rgb = color2, color1
+
+        roles[glow_rgb] = "glow"
+        unassigned_colors.remove(glow_rgb)
+        roles[shadow_rgb] = "shadow"
+        unassigned_colors.remove(shadow_rgb)
+
+    # --- Pass 4: Interior Pattern Identification (Water) ---
+    if unassigned_colors and floor_color:
+        floor_label = kmeans.predict([np.array(floor_color[::-1])])[0]
+        floor_pixels_mask = all_labels == floor_label
+
+        # Dilate and then erode the floor mask to get a mask of the interior
+        kernel = np.ones((5,5), np.uint8)
+        interior_mask = cv2.erode(floor_pixels_mask.astype(np.uint8), kernel, iterations=2)
+        interior_labels = all_labels[interior_mask == 1]
+
+        valid_interior_labels = [l for l in interior_labels if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1]) in unassigned_colors]
+        if valid_interior_labels:
+            water_label = Counter(valid_interior_labels).most_common(1)[0][0]
+            water_rgb = tuple(kmeans.cluster_centers_[water_label].astype("uint8")[::-1])
+            roles[water_rgb] = "water_pattern"
+            unassigned_colors.remove(water_rgb)
+
+    # --- Pass 5: Final Alias Classification ---
+    primary_roles = list(roles.items())
+    if primary_roles:
+        for alias_color in unassigned_colors:
+            closest_primary = min(primary_roles, key=lambda item: np.linalg.norm(np.array(alias_color) - np.array(item[0])))
+            roles[alias_color] = f"alias_{closest_primary[1]}"
+
+    log.debug("--- Advanced Color Profile ---")
     for color, role in roles.items():
         log.debug("RGB: %-15s -> Role: %s", str(color), role)
-    log.debug("Unassigned Palette Colors: %s", unassigned_colors)
 
     return color_profile, kmeans
 
@@ -359,11 +414,72 @@ def _punch_doors_in_tile_grid(
                             tile_grid[(x - 1, y)].east_wall = "door"
 
 
+def _calculate_boundary_scores(
+    p1: Tuple[int, int],
+    p2: Tuple[int, int],
+    exterior_offset: Tuple[int, int],
+    original_img: np.ndarray,
+    filtered_img: np.ndarray,
+    stroke_bgr: np.ndarray,
+    shadow_label: int,
+    glow_label: int,
+    kmeans: KMeans,
+) -> Dict[str, float]:
+    """
+    Calculates scores for stroke, shadow, and glow for a boundary.
+    """
+    scores = {"stroke": 0.0, "shadow": 0.0, "glow": 0.0}
+    num_samples = 10
+    h, w, _ = original_img.shape
+
+    # 1. Stroke Thickness Score
+    line_points = np.linspace(p1, p2, num_samples).astype(int)
+    # Clamp coordinates to be within image bounds
+    line_points[:, 0] = np.clip(line_points[:, 0], 0, w - 1)
+    line_points[:, 1] = np.clip(line_points[:, 1], 0, h - 1)
+    stroke_pixels = sum(
+        1
+        for p in line_points
+        if np.array_equal(filtered_img[p[1], p[0]], stroke_bgr)
+    )
+    scores["stroke"] = stroke_pixels / num_samples
+
+    # 2. Shadow and Glow Scores
+    patch_size = 4
+
+    # Exterior patch for shadow
+    ex_center = (int((p1[0] + p2[0]) / 2 + exterior_offset[0]), int((p1[1] + p2[1]) / 2 + exterior_offset[1]))
+    ex_x1, ex_y1 = max(0, ex_center[0] - patch_size), max(0, ex_center[1] - patch_size)
+    ex_x2, ex_y2 = min(w, ex_center[0] + patch_size), min(h, ex_center[1] + patch_size)
+
+    if ex_x1 < ex_x2 and ex_y1 < ex_y2 and shadow_label != -1:
+        patch = original_img[ex_y1:ex_y2, ex_x1:ex_x2]
+        labels = kmeans.predict(patch.reshape(-1, 3))
+        scores["shadow"] = np.count_nonzero(labels == shadow_label) / len(labels)
+
+    # Interior patch for glow
+    in_center = (int((p1[0] + p2[0]) / 2 - exterior_offset[0]), int((p1[1] + p2[1]) / 2 - exterior_offset[1]))
+    in_x1, in_y1 = max(0, in_center[0] - patch_size), max(0, in_center[1] - patch_size)
+    in_x2, in_y2 = min(w, in_center[0] + patch_size), min(h, in_center[1] + patch_size)
+
+    if in_x1 < in_x2 and in_y1 < in_y2 and glow_label != -1:
+        patch = original_img[in_y1:in_y2, in_x1:in_x2]
+        labels = kmeans.predict(patch.reshape(-1, 3))
+        scores["glow"] = np.count_nonzero(labels == glow_label) / len(labels)
+
+    return scores
+
+
 def _stage6_classify_features(
-    filtered_img: np.ndarray, room_contours: List[np.ndarray], grid_size: int
+    original_region_img: np.ndarray,
+    filtered_img: np.ndarray,
+    room_contours: List[np.ndarray],
+    grid_size: int,
+    color_profile: Dict[str, Any],
+    kmeans: KMeans,
 ) -> Dict[Tuple[int, int], _TileData]:
     """
-    Stage 6: Perform tile-based classification for CORE STRUCTURE ONLY.
+    Stage 6: Perform score-based wall detection and core structure classification.
     """
     log.info("Executing Stage 6: Core Structure Classification...")
     tile_grid = {}
@@ -377,34 +493,66 @@ def _stage6_classify_features(
     min_gy, max_gy = math.floor(np.min(all_points[:, :, 1]) / grid_size), math.ceil(
         np.max(all_points[:, :, 1]) / grid_size
     )
-
     for y in range(min_gy - 1, max_gy + 2):
         for x in range(min_gx - 1, max_gx + 2):
-            px_center, py_center = (
-                x * grid_size + grid_size // 2,
-                y * grid_size + grid_size // 2,
-            )
+            px_center = (x * grid_size + grid_size // 2, y * grid_size + grid_size // 2)
             is_inside = any(
-                cv2.pointPolygonTest(c, (px_center, py_center), False) >= 0
-                for c in room_contours
+                cv2.pointPolygonTest(c, px_center, False) >= 0 for c in room_contours
             )
             feature_type = "floor" if is_inside else "empty"
             tile_grid[(x, y)] = _TileData(feature_type=feature_type)
 
+    roles_inv = {v: k for k, v in color_profile["roles"].items()}
+    stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
+    stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
+
+    shadow_rgb = roles_inv.get("shadow")
+    shadow_label = -1
+    if shadow_rgb:
+        shadow_bgr = np.array(shadow_rgb[::-1], dtype="uint8")
+        shadow_label = kmeans.predict([shadow_bgr])[0]
+
+    glow_rgb = roles_inv.get("glow")
+    glow_label = -1
+    if glow_rgb:
+        glow_bgr = np.array(glow_rgb[::-1], dtype="uint8")
+        glow_label = kmeans.predict([glow_bgr])[0]
+
+    WALL_CONFIDENCE_THRESHOLD = 2.5
+    offset = grid_size // 4
+
     for (x, y), tile in tile_grid.items():
         if tile.feature_type == "empty":
             continue
+        p_nw = (x * grid_size, y * grid_size)
+        p_ne = ((x + 1) * grid_size, y * grid_size)
+        p_sw = (x * grid_size, (y + 1) * grid_size)
+        p_se = ((x + 1) * grid_size, (y + 1) * grid_size)
+
+        args = {
+            "original_img": original_region_img, "filtered_img": filtered_img,
+            "stroke_bgr": stroke_bgr, "shadow_label": shadow_label,
+            "glow_label": glow_label, "kmeans": kmeans
+        }
+
         if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
-            tile.north_wall = "stone"
+            scores = _calculate_boundary_scores(p_nw, p_ne, (0, -offset), **args)
+            if (scores["stroke"] * 3.0 + scores["shadow"] * 1.5 + scores["glow"] * 1.0) > WALL_CONFIDENCE_THRESHOLD:
+                tile.north_wall = "stone"
         if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
-            tile.east_wall = "stone"
+            scores = _calculate_boundary_scores(p_ne, p_se, (offset, 0), **args)
+            if (scores["stroke"] * 3.0 + scores["shadow"] * 1.5 + scores["glow"] * 1.0) > WALL_CONFIDENCE_THRESHOLD:
+                tile.east_wall = "stone"
         if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
-            tile.south_wall = "stone"
+            scores = _calculate_boundary_scores(p_sw, p_se, (0, offset), **args)
+            if (scores["stroke"] * 3.0 + scores["shadow"] * 1.5 + scores["glow"] * 1.0) > WALL_CONFIDENCE_THRESHOLD:
+                tile.south_wall = "stone"
         if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
-            tile.west_wall = "stone"
+            scores = _calculate_boundary_scores(p_nw, p_sw, (-offset, 0), **args)
+            if (scores["stroke"] * 3.0 + scores["shadow"] * 1.5 + scores["glow"] * 1.0) > WALL_CONFIDENCE_THRESHOLD:
+                tile.west_wall = "stone"
 
     _punch_doors_in_tile_grid(tile_grid, room_contours, grid_size)
-
     shifted_grid = {}
     content_min_gx = min(
         (k[0] for k, v in tile_grid.items() if v.feature_type != "empty"), default=0
@@ -549,12 +697,21 @@ def _stage7_transform_to_mapdata(
     if not tile_grid:
         return []
 
-    coord_to_room_id, rooms = {}, []
+    coord_to_room_id, rooms, room_polygons = {}, [], {}
     room_areas = _find_room_areas(tile_grid)
     log_xfm.debug("Step 1: Found %d distinct room areas.", len(room_areas))
 
     for i, area_tiles in enumerate(room_areas):
         verts = _trace_room_perimeter(area_tiles, tile_grid)
+
+        if len(verts) < 4:
+            log_geom.debug("Discarding room %d: degenerate shape (verts < 4).", i)
+            continue
+        poly = Polygon([(v.x, v.y) for v in verts])
+        if poly.area < 1.0:
+            log_geom.debug("Discarding room %d: area < 1.0 grid tile.", i)
+            continue
+
         room = schema.Room(
             id=f"room_{uuid.uuid4().hex[:8]}",
             shape="polygon",
@@ -563,18 +720,15 @@ def _stage7_transform_to_mapdata(
             contents=[],
         )
         rooms.append(room)
+        room_polygons[room.id] = poly
         for pos in area_tiles:
             coord_to_room_id[pos] = room.id
-    log_xfm.debug("Step 2: Created %d Room objects from traced areas.", len(rooms))
+    log_xfm.debug("Step 2: Created %d valid Room objects from traced areas.", len(rooms))
 
     doors = _extract_doors_from_grid(tile_grid, coord_to_room_id)
     log_xfm.debug("Step 3: Extracted %d Door objects.", len(doors))
 
-    # --- Step 4: Process and link enhancement layers ---
     features, layers = [], []
-    room_polygons = {
-        r.id: Polygon([(v.x, v.y) for v in r.gridVertices]) for r in rooms
-    }
     room_map = {r.id: r for r in rooms}
 
     for item in context.enhancement_layers.get("features", []):
@@ -587,11 +741,11 @@ def _stage7_transform_to_mapdata(
             properties=item["properties"],
         )
         features.append(feature)
-        # Link feature to its parent room
         center = Polygon([(v.x, v.y) for v in verts]).centroid
         for room_id, poly in room_polygons.items():
             if poly.contains(center):
-                room_map[room_id].contents.append(feature.id)
+                if room_map[room_id].contents is not None:
+                    room_map[room_id].contents.append(feature.id)
                 break
 
     for item in context.enhancement_layers.get("layers", []):
@@ -606,7 +760,8 @@ def _stage7_transform_to_mapdata(
         center = Polygon([(v.x, v.y) for v in verts]).centroid
         for room_id, poly in room_polygons.items():
             if poly.contains(center):
-                room_map[room_id].contents.append(layer.id)
+                if room_map[room_id].contents is not None:
+                    room_map[room_id].contents.append(layer.id)
                 break
     log_xfm.debug(
         "Step 4: Created %d features and %d layers from enhancements.",
@@ -651,7 +806,9 @@ def analyze_image(
         context.enhancement_layers = _stage5_detect_enhancement_features(
             region_img, room_contours, grid_size, color_profile, kmeans_model
         )
-        context.tile_grid = _stage6_classify_features(filtered_img, room_contours, grid_size)
+        context.tile_grid = _stage6_classify_features(
+            region_img, filtered_img, room_contours, grid_size, color_profile, kmeans_model
+        )
 
         if ascii_debug and context.tile_grid:
             log.info("--- ASCII Debug Output (Pre-Transformation) ---")
