@@ -4,8 +4,9 @@ import os
 import uuid
 import itertools
 import math
+import colorsys
 from typing import List, Dict, Any, Tuple, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import Counter
 
 import cv2
@@ -26,11 +27,19 @@ log_xfm = logging.getLogger("dmap.transform")
 # The internal, pre-transformation data model for a single grid cell.
 @dataclass
 class _TileData:
-    feature_type: str  # e.g., 'floor', 'column', 'pit', 'empty'
+    feature_type: str  # e.g., 'floor', 'empty'
     north_wall: Optional[str] = None  # e.g., 'stone', 'door', 'window'
     east_wall: Optional[str] = None
     south_wall: Optional[str] = None
     west_wall: Optional[str] = None
+
+
+@dataclass
+class _RegionAnalysisContext:
+    """Internal data carrier for a single region's analysis pipeline."""
+
+    tile_grid: Dict[Tuple[int, int], _TileData] = field(default_factory=dict)
+    enhancement_layers: Dict[str, Any] = field(default_factory=dict)
 
 
 # Initialize the OCR reader once. This can take a moment on first run.
@@ -51,19 +60,15 @@ def _stage0_analyze_colors(
     kmeans = KMeans(n_clusters=num_colors, random_state=42, n_init=10).fit(pixels)
     palette_bgr = kmeans.cluster_centers_.astype("uint8")
 
-    # Sort palette from darkest to lightest for easier processing
     palette_bgr = sorted(palette_bgr, key=lambda c: sum(c))
     palette_rgb = [tuple(c[::-1]) for c in palette_bgr]
 
-    # Heuristics for semantic classification
     color_profile = {"palette": palette_rgb, "roles": {}}
     roles = color_profile["roles"]
     unassigned_colors = list(palette_rgb)
 
-    # 1. Stroke color is the darkest
     roles[unassigned_colors.pop(0)] = "stroke"
 
-    # 2. Background is assumed to be the color of the top-left corner pixel
     bg_color_bgr = img[0, 0]
     bg_palette_color = min(
         unassigned_colors,
@@ -72,33 +77,37 @@ def _stage0_analyze_colors(
     roles[bg_palette_color] = "background"
     unassigned_colors.remove(bg_palette_color)
 
-    # 3. Shadow is the darkest remaining color
     if unassigned_colors:
         roles[unassigned_colors.pop(0)] = "shadow"
 
-    # 4. Floor is the most common color in the central 50% of the image that
-    # is not already assigned.
     h, w, _ = img.shape
     center_img = img[h // 4 : h * 3 // 4, w // 4 : w * 3 // 4, :]
     center_pixels = center_img.reshape(-1, 3)
     center_labels = kmeans.predict(center_pixels)
     center_counts = Counter(center_labels)
-
     floor_color = None
     for label, _ in center_counts.most_common():
         potential_color = tuple(kmeans.cluster_centers_[label].astype("uint8")[::-1])
         if potential_color in unassigned_colors:
             floor_color = potential_color
             break
-
     if floor_color:
         roles[floor_color] = "floor"
         unassigned_colors.remove(floor_color)
-    else:
-        if unassigned_colors:
-            log.warning("Could not determine floor color from center; using fallback.")
-            floor_color = unassigned_colors.pop(-1)
-            roles[floor_color] = "floor"
+    elif unassigned_colors:
+        log.warning("Could not determine floor color from center; using fallback.")
+        floor_color = unassigned_colors.pop(-1)
+        roles[floor_color] = "floor"
+
+    if unassigned_colors:
+        saturations = [
+            colorsys.rgb_to_hsv(c[0] / 255, c[1] / 255, c[2] / 255)[1]
+            for c in unassigned_colors
+        ]
+        if max(saturations) > 0.2:
+            water_color = unassigned_colors[np.argmax(saturations)]
+            roles[water_color] = "water_pattern"
+            unassigned_colors.remove(water_color)
 
     log.debug("--- Color Profile ---")
     for color, role in roles.items():
@@ -214,6 +223,86 @@ def _stage4_discover_grid(region_image: np.ndarray) -> int:
     return default_grid_size
 
 
+def _stage5_detect_enhancement_features(
+    original_region_img: np.ndarray,
+    room_contours: List[np.ndarray],
+    grid_size: int,
+    color_profile: Dict[str, Any],
+    kmeans: KMeans,
+) -> Dict[str, Any]:
+    """
+    Stage 5: Detects non-grid-aligned features from the original image.
+    """
+    log.info("Executing Stage 5: High-Resolution Feature & Layer Detection...")
+    enhancements: Dict[str, List] = {"features": [], "layers": []}
+    if not room_contours:
+        return enhancements
+
+    roles_inv = {v: k for k, v in color_profile["roles"].items()}
+    labels = kmeans.predict(original_region_img.reshape(-1, 3))
+
+    # --- 1. Detect Column Features from 'stroke' color ---
+    stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
+    stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
+    stroke_center = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - stroke_bgr))
+    stroke_label = kmeans.predict([stroke_center])[0]
+    stroke_mask = (labels == stroke_label).reshape(original_region_img.shape[:2])
+    stroke_mask_u8 = stroke_mask.astype("uint8") * 255
+    contours, _ = cv2.findContours(
+        stroke_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+    )
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if not (20 < area < (grid_size * grid_size * 2)):
+            continue
+        M = cv2.moments(contour)
+        if M["m00"] == 0:
+            continue
+        cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
+        if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0 for rc in room_contours):
+            high_res_verts = [
+                (v[0][0] / grid_size * 8.0, v[0][1] / grid_size * 8.0) for v in contour
+            ]
+            enhancements["features"].append(
+                {
+                    "featureType": "column",
+                    "high_res_vertices": high_res_verts,
+                    "properties": {"z-order": 1},
+                }
+            )
+
+    # --- 2. Detect Water Layers from 'water_pattern' color ---
+    if "water_pattern" in roles_inv:
+        water_rgb = roles_inv["water_pattern"]
+        water_bgr = np.array(water_rgb[::-1], dtype="uint8")
+        water_center = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - water_bgr))
+        water_label = kmeans.predict([water_center])[0]
+        water_mask = (labels == water_label).reshape(original_region_img.shape[:2])
+        water_mask_u8 = water_mask.astype("uint8") * 255
+        contours, _ = cv2.findContours(
+            water_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+        for contour in contours:
+            if cv2.contourArea(contour) > grid_size * grid_size:
+                high_res_verts = [
+                    (v[0][0] / grid_size * 8.0, v[0][1] / grid_size * 8.0) for v in contour
+                ]
+                enhancements["layers"].append(
+                    {
+                        "layerType": "water",
+                        "high_res_vertices": high_res_verts,
+                        "properties": {"z-order": 0},
+                    }
+                )
+
+    log.info(
+        "Detected %d features and %d environmental layers.",
+        len(enhancements["features"]),
+        len(enhancements["layers"]),
+    )
+    return enhancements
+
+
 def _get_floor_plan_contours(
     filtered_img: np.ndarray, grid_size: int, color_profile: Dict[str, Any]
 ) -> List[np.ndarray]:
@@ -225,15 +314,10 @@ def _get_floor_plan_contours(
     floor_rgb = roles_inv.get("floor", (255, 255, 255))
     floor_bgr = np.array(floor_rgb[::-1], dtype="uint8")
 
-    # Create a binary mask where the floor color is present
     floor_mask = cv2.inRange(filtered_img, floor_bgr, floor_bgr)
-
-    # Find the external contours of the floor areas
     contours, _ = cv2.findContours(
         floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
-
-    # Filter out very small contours that are likely noise
     return [c for c in contours if cv2.contourArea(c) > (grid_size * grid_size)]
 
 
@@ -276,22 +360,15 @@ def _punch_doors_in_tile_grid(
 
 
 def _stage6_classify_features(
-    filtered_img: np.ndarray,
-    room_contours: List[np.ndarray],
-    grid_size: int,
-    color_profile: Dict[str, Any],
+    filtered_img: np.ndarray, room_contours: List[np.ndarray], grid_size: int
 ) -> Dict[Tuple[int, int], _TileData]:
     """
-    Stage 6: Perform tile-based classification using the filtered image.
+    Stage 6: Perform tile-based classification for CORE STRUCTURE ONLY.
     """
-    log.info("Executing Stage 6: Feature & Wall Classification...")
+    log.info("Executing Stage 6: Core Structure Classification...")
     tile_grid = {}
     if not room_contours:
         return {}
-
-    roles_inv = {v: k for k, v in color_profile["roles"].items()}
-    stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
-    stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
 
     all_points = np.vstack(room_contours)
     min_gx, max_gx = math.floor(np.min(all_points[:, :, 0]) / grid_size), math.ceil(
@@ -311,14 +388,7 @@ def _stage6_classify_features(
                 cv2.pointPolygonTest(c, (px_center, py_center), False) >= 0
                 for c in room_contours
             )
-            if not is_inside:
-                tile_grid[(x, y)] = _TileData(feature_type="empty")
-                continue
-
-            # Sample the central pixel of the tile from the filtered image
-            tile_color = filtered_img[py_center, px_center]
-            is_stroke = np.array_equal(tile_color, stroke_bgr)
-            feature_type = "column" if is_stroke else "floor"
+            feature_type = "floor" if is_inside else "empty"
             tile_grid[(x, y)] = _TileData(feature_type=feature_type)
 
     for (x, y), tile in tile_grid.items():
@@ -372,34 +442,6 @@ def _find_room_areas(tile_grid):
                         q.append((nx, ny))
             all_areas.append(current_area)
     return all_areas
-
-
-def _extract_features(tile_grid, rooms, coord_to_room_id):
-    """Extracts features (e.g., columns) from the tile grid and links them to rooms."""
-    features = []
-    room_map = {r.id: r for r in rooms}
-    for (gx, gy), tile in tile_grid.items():
-        if tile.feature_type == "column":
-            feature = schema.Feature(
-                id=f"feature_{uuid.uuid4().hex[:8]}",
-                featureType="column",
-                shape="polygon",
-                gridVertices=[
-                    schema.GridPoint(x=gx, y=gy),
-                    schema.GridPoint(x=gx + 1, y=gy),
-                    schema.GridPoint(x=gx + 1, y=gy + 1),
-                    schema.GridPoint(x=gx, y=gy + 1),
-                ],
-            )
-            features.append(feature)
-            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                room_id = coord_to_room_id.get((gx + dx, gy + dy))
-                if room_id and room_id in room_map:
-                    if room_map[room_id].contents is None:
-                        room_map[room_id].contents = []
-                    if feature.id not in room_map[room_id].contents:
-                        room_map[room_id].contents.append(feature.id)
-    return features
 
 
 def _extract_doors_from_grid(tile_grid, coord_to_room_id):
@@ -499,53 +541,82 @@ def _trace_room_perimeter(room_tiles, tile_grid):
 
 
 def _stage7_transform_to_mapdata(
-    tile_grid: Dict[Tuple[int, int], _TileData], grid_size: int
+    context: _RegionAnalysisContext, grid_size: int
 ) -> List[Any]:
-    """Stage 7: Transforms the detailed tile_grid into final MapObject entities."""
-    log.info("Executing Stage 7: Transforming tile grid to map data...")
+    """Stage 7: Transforms the context object into final MapObject entities."""
+    log.info("Executing Stage 7: Transforming grid and layers to map data...")
+    tile_grid = context.tile_grid
     if not tile_grid:
         return []
 
-    if log_xfm.isEnabledFor(logging.DEBUG):
-        dump_lines = ["--- Pre-Transformation Tile Grid Dump (Content Only) ---"]
-        sorted_keys = sorted(tile_grid.keys(), key=lambda k: (k[1], k[0]))
-        for key in sorted_keys:
-            tile = tile_grid[key]
-            if tile.feature_type != "empty":
-                dump_lines.append(f"({key[0]: >2},{key[1]: >2}): {tile}")
-        log_xfm.debug("\n".join(dump_lines))
-
     coord_to_room_id, rooms = {}, []
-
     room_areas = _find_room_areas(tile_grid)
     log_xfm.debug("Step 1: Found %d distinct room areas.", len(room_areas))
 
     for i, area_tiles in enumerate(room_areas):
-        log_geom.debug("Tracing perimeter for room area %d...", i + 1)
         verts = _trace_room_perimeter(area_tiles, tile_grid)
-        log_geom.debug("Found %d vertices for room area %d.", len(verts), i + 1)
-
         room = schema.Room(
             id=f"room_{uuid.uuid4().hex[:8]}",
             shape="polygon",
             gridVertices=verts,
             roomType="chamber",
+            contents=[],
         )
         rooms.append(room)
         for pos in area_tiles:
             coord_to_room_id[pos] = room.id
     log_xfm.debug("Step 2: Created %d Room objects from traced areas.", len(rooms))
 
-    features = _extract_features(tile_grid, rooms, coord_to_room_id)
-    log_xfm.debug("Step 3: Extracted %d Feature objects.", len(features))
-
     doors = _extract_doors_from_grid(tile_grid, coord_to_room_id)
-    log_xfm.debug("Step 4: Extracted %d Door objects.", len(doors))
+    log_xfm.debug("Step 3: Extracted %d Door objects.", len(doors))
 
-    log.info(
-        "Found %d rooms, %d features, and %d doors.", len(rooms), len(features), len(doors)
+    # --- Step 4: Process and link enhancement layers ---
+    features, layers = [], []
+    room_polygons = {
+        r.id: Polygon([(v.x, v.y) for v in r.gridVertices]) for r in rooms
+    }
+    room_map = {r.id: r for r in rooms}
+
+    for item in context.enhancement_layers.get("features", []):
+        verts = [schema.GridPoint(x=int(v[0] / 8), y=int(v[1] / 8)) for v in item["high_res_vertices"]]
+        feature = schema.Feature(
+            id=f"feature_{uuid.uuid4().hex[:8]}",
+            featureType=item["featureType"],
+            shape="polygon",
+            gridVertices=verts,
+            properties=item["properties"],
+        )
+        features.append(feature)
+        # Link feature to its parent room
+        center = Polygon([(v.x, v.y) for v in verts]).centroid
+        for room_id, poly in room_polygons.items():
+            if poly.contains(center):
+                room_map[room_id].contents.append(feature.id)
+                break
+
+    for item in context.enhancement_layers.get("layers", []):
+        verts = [schema.GridPoint(x=int(v[0] / 8), y=int(v[1] / 8)) for v in item["high_res_vertices"]]
+        layer = schema.EnvironmentalLayer(
+            id=f"layer_{uuid.uuid4().hex[:8]}",
+            layerType=item["layerType"],
+            gridVertices=verts,
+            properties=item["properties"],
+        )
+        layers.append(layer)
+        center = Polygon([(v.x, v.y) for v in verts]).centroid
+        for room_id, poly in room_polygons.items():
+            if poly.contains(center):
+                room_map[room_id].contents.append(layer.id)
+                break
+    log_xfm.debug(
+        "Step 4: Created %d features and %d layers from enhancements.",
+        len(features),
+        len(layers),
     )
-    return rooms + features + doors
+
+    all_objects = rooms + doors + features + layers
+    log.info("Transformation complete. Found %d total map objects.", len(all_objects))
+    return all_objects
 
 
 def analyze_image(
@@ -569,25 +640,27 @@ def analyze_image(
     dungeon_regions = [rc for rc in region_contexts if rc.get("type") == "dungeon"]
 
     for i, region_context in enumerate(dungeon_regions):
+        context = _RegionAnalysisContext()
         region_img = region_context["bounds_img"]
         region_label = f"Dungeon Area {i+1}" if len(dungeon_regions) > 1 else "Main Dungeon"
 
         filtered_img = _stage3_create_filtered_image(region_img, color_profile, kmeans_model)
         grid_size = _stage4_discover_grid(filtered_img)
-
         room_contours = _get_floor_plan_contours(filtered_img, grid_size, color_profile)
-        tile_grid = _stage6_classify_features(
-            filtered_img, room_contours, grid_size, color_profile
-        )
 
-        if ascii_debug and tile_grid:
+        context.enhancement_layers = _stage5_detect_enhancement_features(
+            region_img, room_contours, grid_size, color_profile, kmeans_model
+        )
+        context.tile_grid = _stage6_classify_features(filtered_img, room_contours, grid_size)
+
+        if ascii_debug and context.tile_grid:
             log.info("--- ASCII Debug Output (Pre-Transformation) ---")
             renderer = rendering.ASCIIRenderer()
-            renderer.render_from_tiles(tile_grid)
+            renderer.render_from_tiles(context.tile_grid)
             log.info("\n%s", renderer.get_output(), extra={"raw": True})
             log.info("--- End ASCII Debug Output ---")
 
-        all_objects = _stage7_transform_to_mapdata(tile_grid, grid_size)
+        all_objects = _stage7_transform_to_mapdata(context, grid_size)
 
         all_regions_data.append(
             {
