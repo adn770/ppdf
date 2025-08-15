@@ -97,18 +97,19 @@ procedurally generated SVG format.
 The project is architected as a core library (`dmap_lib`) and a command-line
 interface (`dmap.py`) that uses it.
 
-The analysis engine employs a sophisticated, multi-stage pipeline that begins with
-**semantic color analysis**. It first identifies the functional role of each color
-in the source image (e.g., `floor`, `wall`, `shadow`). This allows for intelligent
-pre-processing, such as creating a clean, high-contrast version of the map for
-robust structural analysis.
+The analysis engine employs a sophisticated, **region-first** multi-stage pipeline.
+It first isolates the primary dungeon area from the surrounding canvas and any text
+blocks. Only then does it perform a **multi-pass semantic color analysis** on the
+isolated region to identify the functional role of each color (e.g., `floor`,
+`wall`, `shadow`, `glow`). This allows for intelligent pre-processing and robust,
+score-based wall detection that combines stroke thickness, shadow, and glow cues.
 
 The pipeline cleanly separates the detection of the core, grid-aligned structure
-(floors, walls, doors) from the detection of non-grid-aligned **enhancement
-layers** (water, columns, furniture). These enhancement features are captured using a
-high-precision (1/8th grid unit) coordinate system and assigned a `z-order` to
-ensure correct rendering. This layered, semantic approach allows `dmap` to produce
-a deeply structured and accurate representation of complex dungeon maps.
+from the detection of non-grid-aligned **enhancement layers**. These enhancement
+features are captured using a high-precision (1/8th grid unit) coordinate system
+and assigned a `z-order` to ensure correct rendering. This layered, semantic
+approach allows `dmap` to produce a deeply structured and accurate representation of
+complex dungeon maps.
 
 ---
 
@@ -143,8 +144,7 @@ API for analysis and rendering.
 -   **Key Function**: `analyze_image(image_path: str) -> MapData`
     -   Implements the full multi-stage analysis pipeline detailed in Section 4.
     -   Accepts an image path and returns the final, structured `MapData` object.
-    -   Orchestrates the flow of data (e.g., `original_image`, `filtered_image`,
-        `color_profile`, `tile_grid`, `enhancement_layers`) between stages.
+    -   Orchestrates the flow of data between stages for each identified region.
 
 ### 3.2. `schema` Module
 -   **Purpose**: To define the canonical data structures and handle serialization.
@@ -189,46 +189,45 @@ This section defines the target visual style for the SVG output.
 
 ## 4. The Analysis Pipeline
 
-The `dmap` analysis engine is a pipeline of sequential stages. Each stage performs a
-specific task, consuming data from previous stages and producing new data for the
-next. This design allows for a clear separation of concerns and robust processing.
+The `dmap` analysis engine is a **region-first** pipeline. It isolates the main
+dungeon area(s) before performing a detailed, multi-pass color analysis. This
+ensures that the analysis is focused only on relevant map data, leading to much
+higher accuracy.
 
-### Stage 0: Palette & Semantic Analysis
--   **Input**: Source Image
--   **Output**: `color_profile` (map of colors to semantic roles)
--   **Process**:
-    1.  **Color Quantization**: The image's colors are reduced to a small,
-        representative palette (e.g., 5-8 colors) using a clustering algorithm.
-    2.  **Semantic Heuristics**: The pipeline applies rules to assign meaning to
-        each color.
-        -   The most common color is labeled `background`.
-        -   The most common color within the main dungeon area is `floor`.
-        -   The darkest color is `stroke`.
-        -   A dark color adjacent to `stroke` lines is `shadow`.
-        -   Specific, less common colors may be identified as patterns, e.g.,
-            `water_pattern`.
--   **Example**: For a map with a parchment background, black lines, and gray
-    shadows, the `color_profile` would be `{'#EDE0CE': 'background', '#000000':
-    'stroke', '#999999': 'shadow', ...}`.
-
-### Stage 1 & 2: Region Detection and Metadata Parsing
+### Stage 1: Region Detection and Metadata Parsing
 -   **Input**: Source Image
 -   **Output**: A list of `Region` contexts, `Metadata` object.
--   **Process**: The pipeline identifies distinct content areas on the canvas. Areas
-    with a high density of lines are classified as 'dungeon', while others are
-    treated as 'text'. OCR is run on text regions to extract the map's title and
-    notes.
+-   **Process**: The pipeline first identifies all distinct content areas on the
+    canvas. Areas with a high density of lines are classified as 'dungeon', while
+    others are treated as 'text'. OCR is run on text regions to extract the map's
+    title and notes. The rest of the pipeline then runs on each 'dungeon' region.
+
+### Stage 2: Multi-Pass Semantic Color Analysis (Per-Region)
+-   **Input**: An isolated Dungeon Region Image
+-   **Output**: `color_profile` (map of colors to semantic roles)
+-   **Process**: This stage performs a sophisticated, multi-pass analysis on the
+    region's color palette to assign semantic meaning.
+    1.  **Anchor Identification**: The `floor` color is identified as the most
+        common color in the center of the region. The `background` color concept is
+        no longer used, as the canvas has already been removed.
+    2.  **Stroke Identification**: The system creates a mask of the `floor` to find
+        its perimeter. By sampling the colors along this perimeter, it identifies the
+        most common non-floor color as the `stroke`.
+    3.  **Border Identification**: The system searches the area immediately adjacent
+        to all `stroke` pixels. The two most common colors found here are identified;
+        the lighter is classified as `glow` and the darker as `shadow`.
+    4.  **Interior Pattern Identification**: The system analyzes colors that appear
+        in large patches *inside* the `floor` areas. The darkest, most common color
+        found here is classified as `water_pattern`.
+    5.  **Alias Classification**: Any remaining unassigned colors are classified as
+        aliases of their nearest primary color (e.g., `alias_stroke`).
 
 ### Stage 3: Structural Analysis Filtering
--   **Input**: Source Image, `color_profile`
+-   **Input**: Dungeon Region Image, `color_profile`
 -   **Output**: `filtered_image`
--   **Process**: A new, temporary image is created in memory to facilitate the
-    detection of the map's core structure.
-    1.  Pixels matching the `stroke` color are preserved.
-    2.  All other pixels (`background`, `shadow`, `water_pattern`, etc.) are
-        replaced with the `floor` color.
--   **Outcome**: This produces a clean, two-color image containing only walls and
-    floor, which is ideal for robust geometric analysis.
+-   **Process**: A new, temporary image is created in memory containing only pixels
+    matching the `stroke` and `floor` colors. This produces a clean, two-color
+    image ideal for robust geometric analysis.
 
 ### Stage 4: Grid Discovery
 -   **Input**: `filtered_image`
@@ -237,42 +236,33 @@ next. This design allows for a clear separation of concerns and robust processin
     in pixels, which is fundamental for all subsequent grid-based calculations.
 
 ### Stage 5: High-Resolution Feature & Layer Detection
--   **Input**: *Original* Source Image, `color_profile`
+-   **Input**: *Original* Dungeon Region Image, `color_profile`
 -   **Output**: `enhancement_layers` (a dictionary of high-res feature lists)
--   **Process**: This stage operates on the original image to find features that do
-    not align with the main grid.
-    -   **Columns**: Detects filled shapes (like circles or squares) made of the
-        `stroke` color inside room boundaries.
-    -   **Water**: Detects areas filled with the `water_pattern` color.
--   **Data Structure**: All found features are converted into high-resolution
-    polygons using a **1/8th grid unit** coordinate system and stored with a
-    `z-order` attribute in the `enhancement_layers` dictionary.
+-   **Process**: This stage operates on the original region image to find features
+    that do not align with the main grid, such as columns and water pools. All
+    found features are converted into high-resolution polygons using a **1/8th grid
+    unit** coordinate system and stored with a `z-order` attribute.
 
 ### Stage 6: Core Structure Classification
--   **Input**: `filtered_image`, `color_profile`, `gridSizePx`
+-   **Input**: `filtered_image`, `original_region_image`, `color_profile`, `gridSizePx`
 -   **Output**: `tile_grid` (a grid of `_TileData` objects)
 -   **Process**: This is the heart of the structural analysis.
     1.  A grid is overlaid on the `filtered_image`.
-    2.  **Advanced Wall Detection**: The pipeline analyzes the boundaries between grid
-        cells. A boundary is classified as a `wall` if it corresponds to a line in
-        the `filtered_image` that has a minimum thickness and is adjacent to the
-        `shadow` color in the original image.
+    2.  **Score-Based Wall Detection**: The pipeline analyzes the boundaries between
+        `floor` and `empty` grid cells. A boundary is classified as a `wall` if its
+        confidence score—a weighted sum of stroke thickness, adjacent shadow presence,
+        and adjacent glow presence—exceeds a threshold.
     3.  Doorways are detected.
     4.  The `tile_grid` is populated with the core structure: `wall`, `door`, and
-        `floor` information. All other features have already been handled in Stage 5.
+        `floor` information.
 
 ### Stage 7: Transformation & Entity Generation
 -   **Input**: `tile_grid`, `enhancement_layers`
 -   **Output**: The final `MapData` object.
 -   **Process**: This final stage transforms the intermediate data into the final
-    schema-compliant objects.
-    1.  A wall-following algorithm traces the perimeters of `floor` areas in the
-        `tile_grid` to create high-fidelity `Room` polygons.
-    2.  `Door` objects are created and linked to the rooms they connect.
-    3.  All high-resolution features from the `enhancement_layers` are scaled back to
-        the standard grid system and converted into `Feature` or
-        `EnvironmentalLayer` objects. Their `z-order` is stored in the `properties`
-        field.
+    schema-compliant objects by tracing wall perimeters to create `Room` polygons,
+    linking `Door` objects, and integrating the high-resolution features from the
+    `enhancement_layers`.
 
 ---
 
@@ -890,3 +880,68 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         3.  Render the objects in ascending order of their `z-order`.
     * **Outcome**: The final SVG correctly layers all map elements, for example,
         drawing a column on top of a water layer, as intended by the design.
+
+### Phase 16: Granular Region-First Pipeline Refactoring
+
+* **Milestone 45: Encapsulate the Core Pipeline**
+    * **Goal**: To perform a pure refactoring by renaming the main analysis function.
+    * **Description**: This is a preparatory, zero-risk step. We will rename `analyze_image` to better reflect its future role as a pipeline that runs on a single, pre-defined image area. All calls to this function will be updated.
+    * **Key Tasks**:
+        1.  Rename the `analyze_image` function in `analysis.py` to `_run_analysis_on_region`.
+        2.  Update the call site in `dmap.py` to use the new function name.
+    * **Outcome**: The code is functionally identical, but the main analysis logic is now clearly named and encapsulated.
+
+* **Milestone 46: Introduce the Orchestrator Scaffolding**
+    * **Goal**: To create the new top-level `analyze_image` function as a simple pass-through.
+    * **Description**: This milestone introduces the new orchestrator function that will eventually manage the region loop. For now, it will simply load the image and immediately delegate to the encapsulated pipeline function from the previous milestone.
+    * **Key Tasks**:
+        1.  Create a new `analyze_image` function in `analysis.py`.
+        2.  This function will accept the `image_path` and load the `img`.
+        3.  It will immediately call `_run_analysis_on_region`, passing the `img` to it.
+        4.  Update the call site in `dmap.py` to point to this new `analyze_image` function.
+    * **Outcome**: The new orchestrator is wired in place. The program's behavior remains unchanged, but the structural scaffolding is now present.
+
+* **Milestone 47: Implement and Verify Region Detection**
+    * **Goal**: To activate region-detection logic and log its output without altering the pipeline flow.
+    * **Description**: In this step, we will execute the region-finding stages. However, instead of acting on the results, we will simply log them. This allows us to verify that region detection is working correctly before we start feeding regions into the pipeline.
+    * **Key Tasks**:
+        1.  In the `analyze_image` orchestrator, call `_stage1_detect_regions`.
+        2.  Add a `log.debug` statement to report the number of regions found.
+        3.  The orchestrator will still pass the original, full `img` to `_run_analysis_on_region`.
+    * **Outcome**: The console log will now show that regions are being detected. The core analysis pipeline is still unaffected and runs only once on the full image.
+
+* **Milestone 48: Process a Single Cropped Region**
+    * **Goal**: To make the pipeline process a single, automatically cropped dungeon region for the first time.
+    * **Description**: This is the first functional change to the pipeline's input. The orchestrator will now select the largest detected dungeon region, crop the source image to its bounds, and pass only that cropped image to the pipeline runner.
+    * **Key Tasks**:
+        1.  In `analyze_image`, get the list of dungeon regions from the detection stage.
+        2.  Identify the largest region based on its contour.
+        3.  Create a new, cropped `region_img` from the source `img` using the region's bounding box.
+        4.  Pass this `region_img` to the `_run_analysis_on_region` function.
+    * **Outcome**: The tool now analyzes only the main dungeon area, ignoring all text and secondary regions. This verifies that the pipeline can run successfully on a cropped image.
+
+* **Milestone 49: Activate the Multi-Region Processing Loop**
+    * **Goal**: To wrap the single-region logic in a loop to process all detected dungeon areas.
+    * **Description**: This milestone expands the logic from the previous step to handle all dungeon regions. It will loop through each detected region, run the pipeline, and aggregate the results into a single `MapData` object.
+    * **Key Tasks**:
+        1.  In `analyze_image`, create a loop to iterate over all detected dungeon regions.
+        2.  Move the cropping and pipeline-calling logic inside this loop.
+        3.  Implement logic to collect the results from each pipeline run and append them to the final `MapData` object's list of `regions`.
+    * **Outcome**: The tool now correctly analyzes maps with multiple, separate dungeon areas. The analysis is still inefficient but is now structurally complete.
+
+* **Milestone 50: Relocate the Color Analysis Call**
+    * **Goal**: To move the color analysis function call from the global scope into the per-region pipeline.
+    * **Description**: This is a critical step to make the analysis context-aware. We will move the function call that performs the color analysis so that it executes inside the loop for each region.
+    * **Key Tasks**:
+        1.  Cut the `_stage0_analyze_colors` call from the `analyze_image` orchestrator.
+        2.  Paste the call at the beginning of the `_run_analysis_on_region` function.
+    * **Outcome**: Color analysis is now performed for each region. It is more accurate but is now called `_stage0` inside a per-region context, which is semantically incorrect and will be fixed next.
+
+* **Milestone 51: Finalize the Per-Region Color Analysis**
+    * **Goal**: To semantically finalize the color analysis stage, making it truly per-region.
+    * **Description**: This final milestone cleans up the color analysis stage. We will rename the function to match its new role in the pipeline and remove the now-obsolete `background` detection heuristic, which is a source of errors when run on cropped images.
+    * **Key Tasks**:
+        1.  Rename `_stage0_analyze_colors` to `_stage2_analyze_region_colors`.
+        2.  Update its call site inside `_run_analysis_on_region`.
+        3.  Modify the function's internal logic to remove the code that identifies a `background` color role.
+    * **Outcome**: The refactoring is complete. The pipeline is now a true region-first system, and the color analysis is more robust, accurate, and correctly implemented.
