@@ -47,6 +47,7 @@ class Door:
     gridPos: GridPoint
     orientation: str
     connects: List[str]
+    properties: Optional[Properties] = None
     type: str = "door"
 
 
@@ -69,6 +70,7 @@ class EnvironmentalLayer:
     id: str
     layerType: str  # e.g., "water", "rubble", "chasm"
     gridVertices: List[GridPoint]
+    properties: Optional[Properties] = None
     type: str = "layer"
 
 

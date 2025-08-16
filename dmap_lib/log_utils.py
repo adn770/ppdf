@@ -2,7 +2,16 @@ import logging
 
 # Define the valid logging topics for the dmap project.
 PROJECT_TOPICS = {
-    "dmap": {"main", "analysis", "grid", "ocr", "geometry", "render", "transform"}
+    "dmap": {
+        "main",
+        "analysis",
+        "grid",
+        "ocr",
+        "geometry",
+        "render",
+        "transform",
+        "wallscore",
+    }
 }
 
 

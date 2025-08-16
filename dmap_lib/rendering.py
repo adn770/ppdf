@@ -1,4 +1,3 @@
-# --- dmap_lib/rendering.py ---
 import math
 import random
 import logging
@@ -198,9 +197,12 @@ class ASCIIRenderer:
 
     def __init__(self):
         """Initializes the renderer."""
-        self.canvas = []
+        self.canvas: List[List[str]] = []
         self.width = 0
         self.height = 0
+        self.min_x, self.max_x = 0, 0
+        self.min_y, self.max_y = 0, 0
+        self.padding = 1
 
     def render_from_json(self, map_data: schema.MapData):
         """Renders the map from the final MapData structure."""
@@ -256,80 +258,107 @@ class ASCIIRenderer:
         self.render_from_tiles(tile_grid)
 
     def render_from_tiles(self, tile_grid: dict):
-        """Renders the map from an intermediate tile grid using box-drawing characters."""
+        """Renders the map from an intermediate tile grid using a 4-pass process."""
         if not tile_grid:
             return
 
-        max_x = max(p[0] for p in tile_grid.keys())
-        max_y = max(p[1] for p in tile_grid.keys())
+        all_x = [p[0] for p in tile_grid.keys()]
+        all_y = [p[1] for p in tile_grid.keys()]
+        self.min_x, self.max_x = min(all_x), max(all_x)
+        self.min_y, self.max_y = min(all_y), max(all_y)
 
-        padding = 1
-        self.width = max_x * 2 + 1 + (2 * padding)
-        self.height = max_y * 2 + 1 + (2 * padding)
+        self.padding = 1
+        self.width = (self.max_x - self.min_x + 1) * 2 + 1 + (2 * self.padding)
+        self.height = (self.max_y - self.min_y + 1) * 2 + 1 + (2 * self.padding)
         self.canvas = [[" " for _ in range(self.width)] for _ in range(self.height)]
 
-        char_map = {"floor": ".", "column": "O", "empty": " ", "door": "+"}
-
+        # Pass 1: Draw tile contents
+        char_map = {"floor": ".", "column": "O", "empty": " "}
         for (gx, gy), tile in tile_grid.items():
-            cx = (gx - 1) * 2 + 1 + padding
-            cy = (gy - 1) * 2 + 1 + padding
+            cx = (gx - self.min_x) * 2 + 1 + self.padding
+            cy = (gy - self.min_y) * 2 + 1 + self.padding
             if 0 <= cy < self.height and 0 <= cx < self.width:
                 self.canvas[cy][cx] = char_map.get(tile.feature_type, "?")
 
+        # Pass 2: Draw all boundaries as solid walls
         for (gx, gy), tile in tile_grid.items():
-            cx_base = (gx - 1) * 2 + padding
-            cy_base = (gy - 1) * 2 + padding
-            if tile.north_wall:
-                self.canvas[cy_base][cx_base + 1] = "+" if tile.north_wall == "door" else "─"
-            if tile.west_wall:
-                self.canvas[cy_base + 1][cx_base] = "+" if tile.west_wall == "door" else "│"
-            if tile.south_wall:
-                self.canvas[cy_base + 2][cx_base + 1] = (
-                    "+" if tile.south_wall == "door" else "─"
-                )
-            if tile.east_wall:
-                self.canvas[cy_base + 1][cx_base + 2] = (
-                    "+" if tile.east_wall == "door" else "│"
-                )
+            cx_base = (gx - self.min_x) * 2 + self.padding
+            cy_base = (gy - self.min_y) * 2 + self.padding
+            if tile.north_wall: self.canvas[cy_base][cx_base + 1] = "─"
+            if tile.west_wall: self.canvas[cy_base + 1][cx_base] = "│"
+            if tile.south_wall: self.canvas[cy_base + 2][cx_base + 1] = "─"
+            if tile.east_wall: self.canvas[cy_base + 1][cx_base + 2] = "│"
 
+        # Pass 3: Draw junctions
         junctions = {
-            (0, 1, 1, 0): "┌",
-            (0, 0, 1, 1): "┐",
-            (1, 1, 0, 0): "└",
-            (1, 0, 0, 1): "┘",
-            (1, 1, 1, 0): "├",
-            (1, 0, 1, 1): "┤",
-            (0, 1, 1, 1): "┬",
-            (1, 1, 0, 1): "┴",
-            (1, 1, 1, 1): "┼",
-            (0, 1, 0, 1): "─",
-            (1, 0, 1, 0): "│",
+            (0, 1, 1, 0): "┌", (0, 0, 1, 1): "┐", (1, 1, 0, 0): "└", (1, 0, 0, 1): "┘",
+            (1, 1, 1, 0): "├", (1, 0, 1, 1): "┤", (0, 1, 1, 1): "┬", (1, 1, 0, 1): "┴",
+            (1, 1, 1, 1): "┼", (0, 1, 0, 1): "─", (1, 0, 1, 0): "│",
         }
-        for gy in range(1, max_y + 2):
-            for gx in range(1, max_x + 2):
-                cx = (gx - 1) * 2 + padding
-                cy = (gy - 1) * 2 + padding
-                if not (0 <= cy < self.height and 0 <= cx < self.width):
-                    continue
-
-                n = self.canvas[cy - 1][cx] in "│+" if cy > 0 else False
-                s = self.canvas[cy + 1][cx] in "│+" if cy < self.height - 1 else False
-                w = self.canvas[cy][cx - 1] in "─+" if cx > 0 else False
-                e = self.canvas[cy][cx + 1] in "─+" if cx < self.width - 1 else False
-
+        for gy in range(self.min_y, self.max_y + 2):
+            for gx in range(self.min_x, self.max_x + 2):
+                cx = (gx - self.min_x) * 2 + self.padding
+                cy = (gy - self.min_y) * 2 + self.padding
+                if not (0 <= cy < self.height and 0 <= cx < self.width): continue
+                n = self.canvas[cy - 1][cx] == "│" if cy > 0 else False
+                s = self.canvas[cy + 1][cx] == "│" if cy < self.height - 1 else False
+                w = self.canvas[cy][cx - 1] == "─" if cx > 0 else False
+                e = self.canvas[cy][cx + 1] == "─" if cx < self.width - 1 else False
                 key = (n, e, s, w)
-                if key in junctions:
-                    self.canvas[cy][cx] = junctions[key]
+                if key in junctions: self.canvas[cy][cx] = junctions[key]
                 elif sum(key) == 1:
-                    if n:
-                        self.canvas[cy][cx] = "╵"
-                    elif s:
-                        self.canvas[cy][cx] = "╷"
-                    elif w:
-                        self.canvas[cy][cx] = "╴"
-                    elif e:
-                        self.canvas[cy][cx] = "╶"
+                    if n: self.canvas[cy][cx] = "╵"
+                    elif s: self.canvas[cy][cx] = "╷"
+                    elif w: self.canvas[cy][cx] = "╴"
+                    elif e: self.canvas[cy][cx] = "╶"
+
+        # Pass 4: Draw doors on top of walls
+        door_chars = {
+            "door": ("━", "┃"), "secret_door": ("S", "S"), "iron_bar_door": ("═", "║"),
+        }
+        for (gx, gy), tile in tile_grid.items():
+            cx_base = (gx - self.min_x) * 2 + self.padding
+            cy_base = (gy - self.min_y) * 2 + self.padding
+            if tile.north_wall in door_chars:
+                self.canvas[cy_base][cx_base + 1] = door_chars[tile.north_wall][0]
+            if tile.west_wall in door_chars:
+                self.canvas[cy_base + 1][cx_base] = door_chars[tile.west_wall][1]
+            if tile.south_wall in door_chars:
+                self.canvas[cy_base + 2][cx_base + 1] = door_chars[tile.south_wall][0]
+            if tile.east_wall in door_chars:
+                self.canvas[cy_base + 1][cx_base + 2] = door_chars[tile.east_wall][1]
 
     def get_output(self) -> str:
-        """Returns the final, rendered ASCII map as a single string."""
-        return "\n".join("".join(row) for row in self.canvas)
+        """Returns the final, rendered ASCII map with coordinate rulers."""
+        if not self.canvas:
+            return ""
+
+        RULER_WIDTH = 4
+        output_lines = []
+        h_ruler = [" "] * self.width
+        d_ruler = [" "] * self.width
+        u_ruler = [" "] * self.width
+
+        for gx in range(self.min_x, self.max_x + 1):
+            cx = (gx - self.min_x) * 2 + 1 + self.padding
+            if 0 <= cx < self.width:
+                s_gx = str(abs(gx))
+                if gx < 0 and cx > 0: u_ruler[cx - 1] = "-"
+                if len(s_gx) >= 3: h_ruler[cx] = s_gx[-3]
+                if len(s_gx) >= 2: d_ruler[cx] = s_gx[-2]
+                u_ruler[cx] = s_gx[-1]
+
+        ruler_prefix = " " * RULER_WIDTH
+        output_lines.append(ruler_prefix + "".join(h_ruler))
+        output_lines.append(ruler_prefix + "".join(d_ruler))
+        output_lines.append(ruler_prefix + "".join(u_ruler))
+
+        for cy, row in enumerate(self.canvas):
+            v_ruler = " " * RULER_WIDTH
+            is_center_row = (cy - self.padding - 1) % 2 == 0
+            if is_center_row:
+                gy = self.min_y + (cy - self.padding - 1) // 2
+                v_ruler = f"{gy:>3}|"
+            output_lines.append(v_ruler + "".join(row))
+
+        return "\n".join(output_lines)

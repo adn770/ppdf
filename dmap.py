@@ -37,6 +37,11 @@ def get_cli_args():
     # Logging arguments
     g_log = p.add_argument_group("Logging & Output")
     g_log.add_argument("-v", "--verbose", action="store_true", help="Enable INFO logging.")
+    g_log.add_argument(
+        "--save-intermediate",
+        metavar="DIR",
+        help="Save intermediate analysis images to a directory.",
+    )
     g_log.add_argument("--color-logs", action="store_true", help="Enable colored logging.")
     g_log.add_argument("--log-file", metavar="FILE", help="Redirect log output to a file.")
     g_log.add_argument(
@@ -69,9 +74,19 @@ def main():
     log.info("--- DMAP CLI Initialized ---")
     log.debug("Arguments received: %s", vars(args))
 
+    if args.save_intermediate:
+        try:
+            os.makedirs(args.save_intermediate, exist_ok=True)
+            log.info("Will save intermediate images to: %s", args.save_intermediate)
+        except OSError as e:
+            log.error("Could not create intermediate image directory: %s", e)
+            args.save_intermediate = None
+
     try:
         map_data, unified_geometry = analysis.analyze_image(
-            args.input, ascii_debug=args.ascii_debug
+            args.input,
+            ascii_debug=args.ascii_debug,
+            save_intermediate_path=args.save_intermediate,
         )
 
         num_r = sum(
