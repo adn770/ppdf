@@ -1,9 +1,11 @@
+# --- dmap_lib/rendering.py ---
 import math
 import random
 import logging
 
 import numpy as np
 from dmap_lib import schema
+from dmap_lib.analysis.context import _TileData
 
 log = logging.getLogger("dmap.render")
 
@@ -206,8 +208,6 @@ class ASCIIRenderer:
 
     def render_from_json(self, map_data: schema.MapData):
         """Renders the map from the final MapData structure."""
-        from dmap_lib.analysis import _TileData
-
         all_objects = [obj for r in map_data.regions for obj in r.mapObjects]
         if not all_objects:
             return
@@ -228,14 +228,13 @@ class ASCIIRenderer:
 
         for obj in all_objects:
             if isinstance(obj, schema.Room):
-                r_min_x = min(v.x for v in obj.gridVertices)
-                r_max_x = max(v.x for v in obj.gridVertices)
-                r_min_y = min(v.y for v in obj.gridVertices)
-                r_max_y = max(v.y for v in obj.gridVertices)
+                poly = Polygon([(v.x, v.y) for v in obj.gridVertices])
+                r_min_x, r_min_y, r_max_x, r_max_y = [int(b) for b in poly.bounds]
                 for y in range(r_min_y, r_max_y + 1):
                     for x in range(r_min_x, r_max_x + 1):
-                        if (x, y) in tile_grid:
-                            tile_grid[(x, y)].feature_type = "floor"
+                        if poly.contains(Point(x + 0.5, y + 0.5)):
+                            if (x, y) in tile_grid:
+                                tile_grid[(x, y)].feature_type = "floor"
 
         for (x, y), tile in tile_grid.items():
             if tile.feature_type == "empty":
@@ -252,8 +251,12 @@ class ASCIIRenderer:
         for obj in all_objects:
             if isinstance(obj, schema.Door):
                 x, y = obj.gridPos.x, obj.gridPos.y
-                if tile_grid.get((x, y)):
-                    tile_grid[(x, y)].feature_type = "door"
+                if obj.orientation == "h":
+                    if tile_grid.get((x, y - 1)): tile_grid[(x, y-1)].south_wall = "door"
+                    if tile_grid.get((x, y)): tile_grid[(x, y)].north_wall = "door"
+                else: # 'v'
+                    if tile_grid.get((x - 1, y)): tile_grid[(x-1, y)].east_wall = "door"
+                    if tile_grid.get((x, y)): tile_grid[(x, y)].west_wall = "door"
 
         self.render_from_tiles(tile_grid)
 

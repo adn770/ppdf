@@ -1,8 +1,10 @@
+# --- dmap.py ---
 import argparse
 import os
 import logging
 
-from dmap_lib import analysis, rendering, schema
+from dmap_lib import rendering, schema
+from dmap_lib.analysis import analyze_image
 from dmap_lib.log_utils import setup_logging
 
 
@@ -83,7 +85,7 @@ def main():
             args.save_intermediate = None
 
     try:
-        map_data, unified_geometry = analysis.analyze_image(
+        map_data, unified_geometry = analyze_image(
             args.input,
             ascii_debug=args.ascii_debug,
             save_intermediate_path=args.save_intermediate,

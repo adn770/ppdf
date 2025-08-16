@@ -1,0 +1,74 @@
+# --- dmap_lib/analysis/features.py ---
+import logging
+from typing import List, Dict, Any
+
+import cv2
+import numpy as np
+from sklearn.cluster import KMeans
+
+log = logging.getLogger("dmap.analysis")
+
+
+class FeatureExtractor:
+    """Handles detection of non-grid-aligned features."""
+
+    def extract(
+        self,
+        original_region_img: np.ndarray,
+        room_contours: List[np.ndarray],
+        grid_size: int,
+        color_profile: Dict[str, Any],
+        kmeans: KMeans,
+    ) -> Dict[str, Any]:
+        """Extracts high-resolution features like columns and water."""
+        log.debug("Extracting high-resolution features and layers...")
+        enhancements: Dict[str, List] = {"features": [], "layers": []}
+        roles_inv = {v: k for k, v in color_profile["roles"].items()}
+        labels = kmeans.predict(original_region_img.reshape(-1, 3))
+
+        # --- 1. Detect Water Layers ---
+        if "water" in roles_inv:
+            w_rgb = roles_inv["water"]
+            w_bgr = np.array(w_rgb[::-1], dtype="uint8")
+            w_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - w_bgr))
+            w_lab = kmeans.predict([w_cen])[0]
+            w_mask = (labels == w_lab).reshape(original_region_img.shape[:2])
+            w_mask_u8 = w_mask.astype("uint8") * 255
+            cnts, _ = cv2.findContours(w_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            for c in cnts:
+                if cv2.contourArea(c) > grid_size * grid_size:
+                    verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
+                    enhancements["layers"].append({"layerType": "water",
+                                                   "high_res_vertices": verts,
+                                                   "properties": {"z-order": 0}})
+
+        # --- 2. Detect Column Features ---
+        if room_contours:
+            s_rgb = roles_inv.get("stroke", (0,0,0))
+            s_bgr = np.array(s_rgb[::-1], dtype="uint8")
+            s_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - s_bgr))
+            s_lab = kmeans.predict([s_cen])[0]
+            s_mask = (labels == s_lab).reshape(original_region_img.shape[:2])
+            s_mask_u8 = s_mask.astype("uint8") * 255
+            cnts, _ = cv2.findContours(s_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            for c in cnts:
+                area = cv2.contourArea(c)
+                if not (20 < area < (grid_size * grid_size * 2)):
+                    continue
+                M = cv2.moments(c)
+                if M["m00"] == 0:
+                    continue
+                cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
+                if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0
+                       for rc in room_contours):
+                    verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
+                    enhancements["features"].append({"featureType": "column",
+                                                     "high_res_vertices": verts,
+                                                     "properties": {"z-order": 1}})
+
+        log.info(
+            "Detected %d features and %d layers.",
+            len(enhancements["features"]),
+            len(enhancements["layers"]),
+        )
+        return enhancements
