@@ -1,4 +1,3 @@
-# --- dmap_lib/rendering.py ---
 import math
 import random
 import logging
@@ -241,24 +240,36 @@ class ASCIIRenderer:
         for (x, y), tile in tile_grid.items():
             if tile.feature_type == "empty":
                 continue
-            if tile_grid.get((x, y - 1)).feature_type == "empty":
+            if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
                 tile.north_wall = "stone"
-            if tile_grid.get((x + 1, y)).feature_type == "empty":
+            if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
                 tile.east_wall = "stone"
-            if tile_grid.get((x, y + 1)).feature_type == "empty":
+            if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
                 tile.south_wall = "stone"
-            if tile_grid.get((x - 1, y)).feature_type == "empty":
+            if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
                 tile.west_wall = "stone"
 
         for obj in all_objects:
             if isinstance(obj, schema.Door):
                 x, y = obj.gridPos.x, obj.gridPos.y
+                door_type = "door"
+                if obj.properties:
+                    if obj.properties.get("secret"): door_type = "secret_door"
+                    elif obj.properties.get("type") == "iron_bar":
+                        door_type = "iron_bar_door"
+                    elif obj.properties.get("type") == "double":
+                        door_type = "double_door"
+
                 if obj.orientation == "h":
-                    if tile_grid.get((x, y - 1)): tile_grid[(x, y-1)].south_wall = "door"
-                    if tile_grid.get((x, y)): tile_grid[(x, y)].north_wall = "door"
+                    if tile_grid.get((x, y - 1)):
+                        tile_grid[(x, y - 1)].south_wall = door_type
+                    if tile_grid.get((x, y)):
+                        tile_grid[(x, y)].north_wall = door_type
                 else:  # 'v'
-                    if tile_grid.get((x - 1, y)): tile_grid[(x-1, y)].east_wall = "door"
-                    if tile_grid.get((x, y)): tile_grid[(x, y)].west_wall = "door"
+                    if tile_grid.get((x - 1, y)):
+                        tile_grid[(x - 1, y)].east_wall = door_type
+                    if tile_grid.get((x, y)):
+                        tile_grid[(x, y)].west_wall = door_type
 
         self.render_from_tiles(tile_grid)
 
@@ -318,10 +329,12 @@ class ASCIIRenderer:
                     elif w:self.canvas[cy][cx]="╴"
                     elif e:self.canvas[cy][cx]="╶"
 
-        # Pass 4: Draw doors on top of walls
+        # Pass 4: Draw doors on top of walls with unique symbols
         door_chars = {
-            "door": ("─━─", "┃"), "secret_door": ("-S-", "S"),
-            "iron_bar_door": ("═╦═", "║"),
+            "door":          ("─+─", "+"),
+            "secret_door":   ("─S─", "S"),
+            "iron_bar_door": ("─#─", "#"),
+            "double_door":   ("╌ ╌", "¦"),
         }
         for (gx, gy), tile in tile_grid.items():
             cx_base = (gx - self.min_x) * 4 + self.padding

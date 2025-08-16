@@ -1,4 +1,3 @@
-# --- dmap_lib/analysis/transformer.py ---
 import logging
 import uuid
 from typing import List, Any
@@ -123,41 +122,47 @@ class MapTransformer:
         """Finds all doors on tile edges and links the adjacent rooms."""
         doors = []
         processed_edges = set()
-        door_types = ("door", "secret_door", "iron_bar_door")
+        door_types = ("door", "secret_door", "iron_bar_door", "double_door")
 
         for (gx, gy), tile in tile_grid.items():
             # South Wall Check
-            if tile.south_wall in door_types:
+            wall_type = tile.south_wall
+            if wall_type in door_types:
                 edge = tuple(sorted(((gx, gy), (gx, gy + 1))))
                 if edge not in processed_edges:
                     r1 = coord_to_room_id.get((gx, gy))
                     r2 = coord_to_room_id.get((gx, gy + 1))
                     if r1 and r2 and r1 != r2:
-                        props = None
-                        if tile.south_wall == "secret_door": props = {"secret": True}
-                        elif tile.south_wall == "iron_bar_door":
-                            props = {"type": "iron_bar"}
+                        props = {}
+                        if wall_type == "secret_door": props["secret"] = True
+                        elif wall_type == "iron_bar_door": props["type"] = "iron_bar"
+                        elif wall_type == "double_door": props["type"] = "double"
+
                         pos = schema.GridPoint(x=gx, y=gy + 1)
                         doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}",
                                                  gridPos=pos, orientation="h",
-                                                 connects=[r1, r2], properties=props))
+                                                 connects=[r1, r2],
+                                                 properties=props if props else None))
                         processed_edges.add(edge)
 
             # East Wall Check
-            if tile.east_wall in door_types:
+            wall_type = tile.east_wall
+            if wall_type in door_types:
                 edge = tuple(sorted(((gx, gy), (gx + 1, gy))))
                 if edge not in processed_edges:
                     r1 = coord_to_room_id.get((gx, gy))
                     r2 = coord_to_room_id.get((gx + 1, gy))
                     if r1 and r2 and r1 != r2:
-                        props = None
-                        if tile.east_wall == "secret_door": props = {"secret": True}
-                        elif tile.east_wall == "iron_bar_door":
-                            props = {"type": "iron_bar"}
+                        props = {}
+                        if wall_type == "secret_door": props["secret"] = True
+                        elif wall_type == "iron_bar_door": props["type"] = "iron_bar"
+                        elif wall_type == "double_door": props["type"] = "double"
+
                         pos = schema.GridPoint(x=gx + 1, y=gy)
                         doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}",
                                                  gridPos=pos, orientation="v",
-                                                 connects=[r1, r2], properties=props))
+                                                 connects=[r1, r2],
+                                                 properties=props if props else None))
                         processed_edges.add(edge)
         return doors
 
@@ -175,26 +180,24 @@ class MapTransformer:
             tile_SW = tile_grid.get((current_vertex[0] - 1, current_vertex[1]))
             tile_SE = tile_grid.get(current_vertex)
 
-            # --- BUG FIX: Changed checks from `tile.wall` to `tile.wall is not None`
-            # to ensure doors are treated as valid boundaries for tracing.
             if direction == (1, 0):  # Moving East
-                if tile_NE and tile_NE.west_wall is not None: direction = (0, 1)
-                elif tile_SE and tile_SE.north_wall is not None:
+                if tile_NE and tile_NE.west_wall == "stone": direction = (0, 1)
+                elif tile_SE and tile_SE.north_wall == "stone":
                     current_vertex = (current_vertex[0] + 1, current_vertex[1])
                 else: direction = (0, -1)
             elif direction == (0, 1):  # Moving South
-                if tile_SE and tile_SE.north_wall is not None: direction = (-1, 0)
-                elif tile_SW and tile_SW.east_wall is not None:
+                if tile_SE and tile_SE.north_wall == "stone": direction = (-1, 0)
+                elif tile_SW and tile_SW.east_wall == "stone":
                     current_vertex = (current_vertex[0], current_vertex[1] + 1)
                 else: direction = (1, 0)
             elif direction == (-1, 0):  # Moving West
-                if tile_SW and tile_SW.east_wall is not None: direction = (0, -1)
-                elif tile_NW and tile_NW.south_wall is not None:
+                if tile_SW and tile_SW.east_wall == "stone": direction = (0, -1)
+                elif tile_NW and tile_NW.south_wall == "stone":
                     current_vertex = (current_vertex[0] - 1, current_vertex[1])
                 else: direction = (0, 1)
             elif direction == (0, -1):  # Moving North
-                if tile_NW and tile_NW.south_wall is not None: direction = (1, 0)
-                elif tile_NE and tile_NE.west_wall is not None:
+                if tile_NW and tile_NW.south_wall == "stone": direction = (1, 0)
+                elif tile_NE and tile_NE.west_wall == "stone":
                     current_vertex = (current_vertex[0], current_vertex[1] - 1)
                 else: direction = (-1, 0)
 

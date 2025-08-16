@@ -82,6 +82,24 @@ class MapAnalyzer:
             structural_img, color_profile, context.room_bounds
         )
 
+        # --- Refactored Debug Image Handling ---
+        debug_canvas = None
+        if save_intermediate_path:
+            # Create the base canvas for debugging structure analysis
+            h, w, _ = structural_img.shape
+            overlay = structural_img.copy()
+            cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
+            debug_canvas = cv2.addWeighted(overlay, 0.4, structural_img, 0.6, 0)
+            # Draw grid lines
+            grid_color = (255, 255, 0)
+            for x_coord in range(0, w, grid_info.size):
+                px = x_coord + grid_info.offset_x
+                cv2.line(debug_canvas, (px, 0), (px, h), grid_color, 1)
+            for y_coord in range(0, h, grid_info.size):
+                py = y_coord + grid_info.offset_y
+                cv2.line(debug_canvas, (0, py), (w, py), grid_color, 1)
+
+
         log.info("Executing Stage 6: High-Resolution Feature & Layer Detection...")
         corrected_floor = floor_only_img.copy()
         temp_layers = self.feature_extractor.extract(
@@ -118,7 +136,6 @@ class MapAnalyzer:
                 save_intermediate_path, "pass2_features"
             )
 
-        # --- NEW PASS: Pre-emptive Tile Classification ---
         feature_cleaned_img = corrected_floor.copy()
         for feature in context.enhancement_layers.get("features", []):
              px_verts = (
@@ -141,9 +158,17 @@ class MapAnalyzer:
             grid_info,
             color_profile,
             tile_classifications,
-            save_intermediate_path=save_intermediate_path,
-            region_id=region_context["id"],
+            debug_canvas=debug_canvas # Pass the canvas to the analyzer
         )
+
+        # Save the completed debug canvas if it was created
+        if debug_canvas is not None and save_intermediate_path:
+            filename = os.path.join(
+                save_intermediate_path, f"{region_context['id']}_wall_detection.png"
+            )
+            cv2.imwrite(filename, debug_canvas)
+            log.info("Saved wall detection debug image to %s", filename)
+
 
         if ascii_debug and context.tile_grid:
             log.info("--- ASCII Debug Output (Pre-Transformation) ---")

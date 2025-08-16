@@ -18,16 +18,25 @@ log_grid = logging.getLogger("dmap.grid")
 class StructureAnalyzer:
     """Identifies the core grid-based structure of the map."""
 
-    def _is_stair_tile_fft(self, tile_image: np.ndarray) -> bool:
+    def _is_stair_tile_fft(
+        self, tile_image: np.ndarray, coords: Optional[Tuple[int, int]] = None
+    ) -> bool:
         """
         Detects stairs in a tile by looking for the signature of parallel lines
         in the 2D Fourier Transform of the image.
         """
-        if tile_image.size < 16 * 16:
+        if tile_image.size == 0:
+            return False
+
+        h, w = tile_image.shape[:2]
+        inset = int(w * 0.05)
+        cropped_tile = tile_image[inset : h - inset, inset : w - inset]
+
+        if cropped_tile.size < 24 * 24:
             return False
 
         # 1. Normalize the tile image
-        normalized_tile = cv2.resize(tile_image, (16, 16))
+        normalized_tile = cv2.resize(cropped_tile, (24, 24))
         if len(normalized_tile.shape) > 2:
             normalized_tile = cv2.cvtColor(normalized_tile, cv2.COLOR_BGR2GRAY)
 
@@ -38,19 +47,135 @@ class StructureAnalyzer:
 
         # 3. Zero out the center DC component and low frequencies to find high peaks
         cy, cx = magnitude_spectrum.shape[0] // 2, magnitude_spectrum.shape[1] // 2
-        magnitude_spectrum[cy - 1 : cy + 2, cx - 1 : cx + 2] = 0
+        magnitude_spectrum[cy - 2 : cy + 3, cx - 2 : cx + 3] = 0
 
-        # 4. Check if the brightest remaining point (a high-frequency signal) is
-        # strong enough to indicate a repeating pattern like stairs.
+        # 4. Find all significant peaks in the spectrum
+        peaks_y, _ = find_peaks(np.sum(magnitude_spectrum, axis=1), prominence=1.5)
+        peaks_x, _ = find_peaks(np.sum(magnitude_spectrum, axis=0), prominence=1.5)
+
+        # 5. A true stair pattern requires both multiple peaks AND a strong signal.
         max_val = np.max(magnitude_spectrum)
         mean_val = np.mean(magnitude_spectrum)
-        # A strong peak will be significantly brighter than the average
-        is_stairs = max_val > (mean_val * 3.5) and max_val > 5.0
+        is_stairs = (len(peaks_y) >= 3 or len(peaks_x) >= 3) and \
+                    max_val > (mean_val * 3.0)
 
         if is_stairs:
-            log.debug("Stair tile detected via FFT (Peak: %.2f, Mean: %.2f)",
-                      max_val, mean_val)
+            coord_str = f"at {coords} " if coords else ""
+            log.debug("Stair tile detected via FFT %s(Peaks Y: %d, Peaks X: %d)",
+                      coord_str, len(peaks_y), len(peaks_x))
         return is_stairs
+
+    def _classify_door_type(self, tile_slice: np.ndarray) -> Optional[str]:
+        """
+        Analyzes a normalized 24x24 tile to classify the type of door it contains.
+        """
+        if tile_slice.size == 0:
+            return None
+
+        # Convert incoming BGR slice to grayscale before processing
+        gray_slice = cv2.cvtColor(tile_slice, cv2.COLOR_BGR2GRAY)
+
+        # Create a normalized binary mask for signature analysis
+        sample = cv2.resize(gray_slice, (24, 24))
+        _, binary_mask = cv2.threshold(sample, 128, 255, cv2.THRESH_BINARY)
+
+        for i in range(2): # Run once, then again on a 90-degree rotated version
+            if i == 1:
+                binary_mask = cv2.rotate(binary_mask, cv2.ROTATE_90_CLOCKWISE)
+
+            h_proj = np.sum(binary_mask, axis=0) // 255 # Horizontal Projection
+            peaks, _ = find_peaks(h_proj, prominence=2, distance=2)
+
+            # Signature: Three distinct peaks for iron bars
+            if len(peaks) == 3:
+                return "iron_bar_door"
+
+            if len(peaks) == 2:
+                # Signature: Two peaks with a gap in the middle for double door
+                center_mass = np.sum(h_proj[11:13])
+                if center_mass < 3:
+                    return "double_door"
+                # Signature: Two peaks for a standard door frame
+                else:
+                    return "door"
+
+            # Signature: Single, weak peak for a secret door
+            if len(peaks) == 1:
+                total_mass = np.sum(h_proj)
+                if total_mass < 70: # Scaled up for 24x24 grid
+                    return "secret_door"
+
+        return None
+
+    def _detect_passageway_doors(
+        self,
+        tile_grid: Dict[Tuple[int, int], _TileData],
+        structural_img: np.ndarray,
+        grid_info: _GridInfo,
+        stroke_bgr: np.ndarray,
+        debug_canvas: Optional[np.ndarray] = None,
+    ):
+        """
+        Scans for passageways and places perpendicular doors where door patterns
+        are found within tiles.
+        """
+        log.info("Executing new pass: Passageway Door Classification...")
+        processed_tiles = set()
+        inset = int(grid_info.size * 0.05)
+        door_search_color = (0, 255, 0) # Green for door search areas
+
+        for (x, y), tile in tile_grid.items():
+            if (x, y) in processed_tiles or tile.feature_type != "floor":
+                continue
+
+            is_passageway = False
+            # Check for vertical (W-E walls) or horizontal (N-S walls) passageways
+            if (tile.west_wall == "stone" and tile.east_wall == "stone") or \
+               (tile.north_wall == "stone" and tile.south_wall == "stone"):
+                is_passageway = True
+
+            if is_passageway and debug_canvas is not None:
+                px_x1 = x * grid_info.size + grid_info.offset_x + inset
+                py_y1 = y * grid_info.size + grid_info.offset_y + inset
+                px_x2 = px_x1 + grid_info.size - (2 * inset)
+                py_y2 = py_y1 + grid_info.size - (2 * inset)
+                cv2.rectangle(
+                    debug_canvas, (px_x1, py_y1), (px_x2, py_y2), door_search_color, 1
+                )
+                cv2.putText(
+                    debug_canvas, f"({x},{y})", (px_x1, py_y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, door_search_color, 1
+                )
+
+            px_x = x * grid_info.size + grid_info.offset_x + inset
+            px_y = y * grid_info.size + grid_info.offset_y + inset
+            w = grid_info.size - (2 * inset)
+            h = grid_info.size - (2 * inset)
+            tile_slice = structural_img[px_y : px_y + h, px_x : px_x + w]
+
+            door_type = self._classify_door_type(tile_slice)
+            if not door_type:
+                continue
+
+            if tile.west_wall == "stone" and tile.east_wall == "stone":
+                neighbor_south = tile_grid.get((x, y + 1))
+                if neighbor_south and neighbor_south.feature_type == "floor":
+                    log.debug("%s created in vertical passageway at (%d, %d)",
+                              door_type, x, y)
+                    tile.south_wall = door_type
+                    neighbor_south.north_wall = door_type
+                    processed_tiles.add((x, y))
+                    processed_tiles.add((x, y + 1))
+
+            elif tile.north_wall == "stone" and tile.south_wall == "stone":
+                neighbor_east = tile_grid.get((x + 1, y))
+                if neighbor_east and neighbor_east.feature_type == "floor":
+                    log.debug("%s created in horizontal passageway at (%d, %d)",
+                              door_type, x, y)
+                    tile.east_wall = door_type
+                    neighbor_east.west_wall = door_type
+                    processed_tiles.add((x, y))
+                    processed_tiles.add((x + 1, y))
 
     def classify_tile_content(
         self, feature_cleaned_img: np.ndarray, grid_info: _GridInfo
@@ -78,7 +203,6 @@ class StructureAnalyzer:
                 total_pixels = cell_slice.size
                 white_ratio = white_pixels / total_pixels if total_pixels > 0 else 0
 
-                # If a tile is less than 20% floor, it's considered empty space.
                 if white_ratio < 0.20:
                     classifications[(gx, gy)] = "empty"
                 else:
@@ -151,8 +275,7 @@ class StructureAnalyzer:
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         tile_classifications: Dict[Tuple[int, int], str],
-        save_intermediate_path: Optional[str] = None,
-        region_id: str = "",
+        debug_canvas: Optional[np.ndarray] = None,
     ) -> Dict[Tuple[int, int], _TileData]:
         """Perform score-based wall detection and core structure classification."""
         log.info("Executing Stage 7: Core Structure Classification...")
@@ -166,21 +289,19 @@ class StructureAnalyzer:
         min_gy = min(c[1] for c in all_coords)
         max_gy = max(c[1] for c in all_coords)
 
-        # Initialize the grid based on the simplified pre-classification pass
         for y in range(min_gy, max_gy + 1):
             for x in range(min_gx, max_gx + 1):
                 feature_type = tile_classifications.get((x, y), "empty")
                 tile_grid[(x, y)] = _TileData(feature_type=feature_type)
 
-        # Second pass: Re-classify floor tiles to find stairs using robust FFT
         for (gx, gy), tile in tile_grid.items():
             if tile.feature_type == "floor":
                 px_x = gx * grid_info.size
                 px_y = gy * grid_info.size
-                cell_slice = feature_cleaned_img[
+                cell_slice = structural_img[
                     px_y : px_y + grid_info.size, px_x : px_x + grid_info.size
                 ]
-                if self._is_stair_tile_fft(cell_slice):
+                if self._is_stair_tile_fft(cell_slice, coords=(gx, gy)):
                     tile.feature_type = "stairs"
 
         grid_size, offset_x, offset_y = (
@@ -194,18 +315,18 @@ class StructureAnalyzer:
         )
         WALL_CONFIDENCE_THRESHOLD = 0.3
 
-        # Define dynamic search area thickness and inset
         search_thickness = max(4, grid_info.size // 4)
         half_thickness = search_thickness // 2
         inset = int(grid_info.size * 0.05)
+        wall_search_color = (0, 255, 255) # Yellow
 
 
         for (x, y), tile in tile_grid.items():
             if tile.feature_type == "empty":
                 continue
-            p_nw = (x * grid_size + offset_x, y * grid_size + offset_y)
-            p_ne = ((x + 1) * grid_size + offset_x, y * grid_size + offset_y)
-            p_sw = (x * grid_size + offset_x, (y + 1) * grid_size + offset_y)
+            p_nw = (x * grid_info.size + offset_x, y * grid_info.size + offset_y)
+            p_ne = ((x + 1) * grid_info.size + offset_x, y * grid_info.size + offset_y)
+            p_sw = (x * grid_info.size + offset_x, (y + 1) * grid_info.size + offset_y)
             p_se = ((x + 1) * grid_size + offset_x, (y + 1) * grid_size + offset_y)
 
             if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
@@ -215,6 +336,9 @@ class StructureAnalyzer:
                                   (x_end, y_center - half_thickness),
                                   (x_end, y_center + half_thickness),
                                   (x_start, y_center + half_thickness)])
+                if debug_canvas is not None:
+                    cv2.polylines(debug_canvas, [r_pts.astype(np.int32)], True,
+                                  wall_search_color, 1)
                 tile.north_wall = self._process_boundary(
                     p_nw, p_ne, r_pts, (0, -half_thickness), False, structural_img,
                     stroke_bgr, WALL_CONFIDENCE_THRESHOLD
@@ -226,6 +350,9 @@ class StructureAnalyzer:
                                   (x_center + half_thickness, y_start),
                                   (x_center + half_thickness, y_end),
                                   (x_center - half_thickness, y_end)])
+                if debug_canvas is not None:
+                    cv2.polylines(debug_canvas, [r_pts.astype(np.int32)], True,
+                                  wall_search_color, 1)
                 tile.east_wall = self._process_boundary(
                     p_ne, p_se, r_pts, (half_thickness, 0), True, structural_img,
                     stroke_bgr, WALL_CONFIDENCE_THRESHOLD
@@ -237,6 +364,9 @@ class StructureAnalyzer:
                                   (x_end, y_center - half_thickness),
                                   (x_end, y_center + half_thickness),
                                   (x_start, y_center + half_thickness)])
+                if debug_canvas is not None:
+                    cv2.polylines(debug_canvas, [r_pts.astype(np.int32)], True,
+                                  wall_search_color, 1)
                 tile.south_wall = self._process_boundary(
                     p_sw, p_se, r_pts, (0, half_thickness), False, structural_img,
                     stroke_bgr, WALL_CONFIDENCE_THRESHOLD
@@ -248,22 +378,18 @@ class StructureAnalyzer:
                                   (x_center + half_thickness, y_start),
                                   (x_center + half_thickness, y_end),
                                   (x_center - half_thickness, y_end)])
+                if debug_canvas is not None:
+                    cv2.polylines(debug_canvas, [r_pts.astype(np.int32)], True,
+                                  wall_search_color, 1)
                 tile.west_wall = self._process_boundary(
                     p_nw, p_sw, r_pts, (-half_thickness, 0), True, structural_img,
                     stroke_bgr, WALL_CONFIDENCE_THRESHOLD
                 )
 
-        # The debug image must be saved *before* the grid is shifted, using the
-        # original `tile_grid` coordinates to ensure correct alignment.
-        if save_intermediate_path:
-            filename = os.path.join(
-                save_intermediate_path, f"{region_id}_wall_detection.png"
-            )
-            self._save_wall_detection_debug_image(
-                structural_img, grid_info, tile_grid, filename
-            )
+        self._detect_passageway_doors(
+            tile_grid, structural_img, grid_info, stroke_bgr, debug_canvas
+        )
 
-        # Create a shifted grid for the transformer, so its coordinates start at (0,0)
         shifted_grid = {}
         c_min_gx = min(
             (k[0] for k, v in tile_grid.items() if v.feature_type != "empty"),
@@ -292,7 +418,6 @@ class StructureAnalyzer:
         """Helper to process a single tile boundary."""
         bx, by, bw, bh = cv2.boundingRect(rect_points.astype(np.int32))
 
-        # Ensure slice coordinates are within image bounds
         h, w = structural_img.shape[:2]
         bx, by = max(0, bx), max(0, by)
         bw, bh = min(w - bx, bw), min(h - by, bh)
@@ -374,86 +499,3 @@ class StructureAnalyzer:
                     exterior_score = stroke_count / pixels_ext.shape[0]
 
         return max(centered_score, exterior_score)
-
-    def _save_wall_detection_debug_image(
-        self,
-        base_img: np.ndarray,
-        grid_info: _GridInfo,
-        tile_grid: Dict[Tuple[int, int], _TileData],
-        output_path: str,
-    ):
-        """Saves a debug image visualizing the grid and wall sample areas."""
-        if len(base_img.shape) == 2:
-            debug_img = cv2.cvtColor(base_img, cv2.COLOR_GRAY2BGR)
-        else:
-            debug_img = base_img.copy()
-        h, w, _ = debug_img.shape
-
-        overlay = debug_img.copy()
-        cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
-        debug_img = cv2.addWeighted(overlay, 0.4, debug_img, 0.6, 0)
-
-        grid_color = (255, 255, 0)
-        for x_coord in range(0, w, grid_info.size):
-            px = x_coord + grid_info.offset_x
-            cv2.line(debug_img, (px, 0), (px, h), grid_color, 1)
-        for y_coord in range(0, h, grid_info.size):
-            py = y_coord + grid_info.offset_y
-            cv2.line(debug_img, (0, py), (w, py), grid_color, 1)
-
-        search_area_color = (0, 255, 255) # Bright Yellow for sample areas
-        search_thickness = max(4, grid_info.size // 4)
-        half_thickness = search_thickness // 2
-        inset = int(grid_info.size * 0.05)
-
-        for (x, y), tile in tile_grid.items():
-            if tile.feature_type == "empty":
-                continue
-
-            p_nw = (x * grid_info.size + grid_info.offset_x,
-                    y * grid_info.size + grid_info.offset_y)
-            p_ne = ((x + 1) * grid_info.size + grid_info.offset_x,
-                    y * grid_info.size + grid_info.offset_y)
-            p_sw = (x * grid_info.size + grid_info.offset_x,
-                    (y + 1) * grid_info.size + grid_info.offset_y)
-            p_se = ((x + 1) * grid_info.size + grid_info.offset_x,
-                    (y + 1) * grid_info.size + grid_info.offset_y)
-
-            if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
-                x_start, x_end = p_nw[0] + inset, p_ne[0] - inset
-                y_center = p_nw[1]
-                r_pts = np.array([(x_start, y_center - half_thickness),
-                                  (x_end, y_center - half_thickness),
-                                  (x_end, y_center + half_thickness),
-                                  (x_start, y_center + half_thickness)], dtype=np.int32)
-                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
-
-            if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
-                y_start, y_end = p_ne[1] + inset, p_se[1] - inset
-                x_center = p_ne[0]
-                r_pts = np.array([(x_center - half_thickness, y_start),
-                                  (x_center + half_thickness, y_start),
-                                  (x_center + half_thickness, y_end),
-                                  (x_center - half_thickness, y_end)], dtype=np.int32)
-                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
-
-            if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
-                x_start, x_end = p_sw[0] + inset, p_se[0] - inset
-                y_center = p_sw[1]
-                r_pts = np.array([(x_start, y_center - half_thickness),
-                                  (x_end, y_center - half_thickness),
-                                  (x_end, y_center + half_thickness),
-                                  (x_start, y_center + half_thickness)], dtype=np.int32)
-                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
-
-            if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
-                y_start, y_end = p_nw[1] + inset, p_sw[1] - inset
-                x_center = p_nw[0]
-                r_pts = np.array([(x_center - half_thickness, y_start),
-                                  (x_center + half_thickness, y_start),
-                                  (x_center + half_thickness, y_end),
-                                  (x_center - half_thickness, y_end)], dtype=np.int32)
-                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
-
-        cv2.imwrite(output_path, debug_img)
-        log.info("Saved wall detection debug image to %s", output_path)
