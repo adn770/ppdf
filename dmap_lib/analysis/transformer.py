@@ -1,8 +1,9 @@
 import logging
 import uuid
-from typing import List, Any
+from typing import List, Any, Dict, Tuple
 
-from shapely.geometry import Polygon
+from shapely.geometry import box, Polygon, MultiPolygon
+from shapely.ops import unary_union
 
 from dmap_lib import schema
 from .context import _RegionAnalysisContext, _TileData
@@ -15,6 +16,37 @@ log_xfm = logging.getLogger("dmap.transform")
 class MapTransformer:
     """Converts the intermediate tile_grid into the final schema.MapData object."""
 
+    def _classify_floor_tiles(
+        self, tile_grid: Dict[Tuple[int, int], _TileData]
+    ) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
+        """Classifies each floor tile as part of a chamber or a passageway."""
+        chamber_tiles, passageway_tiles = [], []
+
+        for (gx, gy), tile in tile_grid.items():
+            if tile.feature_type != "floor":
+                continue
+
+            # Check neighbors to determine tile type
+            n = tile_grid.get((gx, gy - 1))
+            s = tile_grid.get((gx, gy + 1))
+            w = tile_grid.get((gx - 1, gy))
+            e = tile_grid.get((gx + 1, gy))
+
+            has_n = n and n.feature_type == "floor"
+            has_s = s and s.feature_type == "floor"
+            has_w = w and w.feature_type == "floor"
+            has_e = e and e.feature_type == "floor"
+
+            is_vertical_passage = has_n and has_s and not has_w and not has_e
+            is_horizontal_passage = has_w and has_e and not has_n and not has_s
+
+            if is_vertical_passage or is_horizontal_passage:
+                passageway_tiles.append((gx, gy))
+            else:
+                chamber_tiles.append((gx, gy))
+
+        return chamber_tiles, passageway_tiles
+
     def transform(
         self, context: _RegionAnalysisContext, grid_size: int
     ) -> List[Any]:
@@ -24,37 +56,60 @@ class MapTransformer:
         if not tile_grid:
             return []
 
-        coord_to_room_id, rooms, room_polygons = {}, [], {}
-        room_areas = self._find_room_areas(tile_grid)
-        log_xfm.debug("Step 1: Found %d distinct room areas.", len(room_areas))
+        chamber_tiles, passageway_tiles = self._classify_floor_tiles(tile_grid)
+        log_xfm.debug("Classified floor tiles: %d chamber, %d passageway.",
+                      len(chamber_tiles), len(passageway_tiles))
 
-        for i, area_tiles in enumerate(room_areas):
-            verts = self._trace_room_perimeter(area_tiles, tile_grid)
+        rooms = []
 
-            if len(verts) < 4:
-                log_geom.debug("Discarding room %d: degenerate shape (verts < 4).", i)
-                continue
-            poly = Polygon([(v.x, v.y) for v in verts])
-            if poly.area < 0.5:
-                log_geom.debug("Discarding room %d: area < 0.5 grid tiles.", i)
-                continue
-
+        # Create 1x1 rooms for each passageway tile
+        for gx, gy in passageway_tiles:
+            verts = [schema.GridPoint(x=gx, y=gy), schema.GridPoint(x=gx + 1, y=gy),
+                     schema.GridPoint(x=gx + 1, y=gy + 1), schema.GridPoint(x=gx, y=gy + 1)]
             room_id = f"room_{uuid.uuid4().hex[:8]}"
-            room = schema.Room(id=room_id, shape="polygon", gridVertices=verts,
-                               roomType="chamber", contents=[])
-            rooms.append(room)
-            room_polygons[room.id] = poly
-            for pos in area_tiles:
-                coord_to_room_id[pos] = room.id
-        log_xfm.debug(
-            "Step 2: Created %d valid Room objects from traced areas.", len(rooms)
-        )
+            rooms.append(schema.Room(id=room_id, shape="polygon", gridVertices=verts,
+                                      roomType="corridor", contents=[]))
+
+        # Merge all chamber tiles into larger room polygons
+        if chamber_tiles:
+            chamber_polygons = [box(gx, gy, gx + 1, gy + 1) for gx, gy in chamber_tiles]
+            merged_geometry = unary_union(chamber_polygons)
+
+            geometries = []
+            if isinstance(merged_geometry, MultiPolygon):
+                geometries.extend(merged_geometry.geoms)
+            elif isinstance(merged_geometry, Polygon):
+                geometries.append(merged_geometry)
+
+            for geom in geometries:
+                if geom.area < 0.5:
+                    continue
+                verts = [schema.GridPoint(x=int(x), y=int(y))
+                         for x, y in geom.exterior.coords]
+                room_id = f"room_{uuid.uuid4().hex[:8]}"
+                rooms.append(schema.Room(id=room_id, shape="polygon", gridVertices=verts,
+                                          roomType="chamber", contents=[]))
+
+        log_xfm.debug("Created %d valid Room objects.", len(rooms))
+
+        # Rebuild coord_to_room_id map for door/feature linking
+        coord_to_room_id = {}
+        for room in rooms:
+            poly = Polygon([(v.x, v.y) for v in room.gridVertices])
+            min_x, min_y, max_x, max_y = [int(b) for b in poly.bounds]
+            for gy in range(min_y, max_y):
+                for gx in range(min_x, max_x):
+                    if poly.contains(box(gx, gy, gx+1, gy+1).centroid):
+                         coord_to_room_id[(gx, gy)] = room.id
+
 
         doors = self._extract_doors_from_grid(tile_grid, coord_to_room_id)
-        log_xfm.debug("Step 3: Extracted %d Door objects.", len(doors))
+        log_xfm.debug("Extracted %d Door objects.", len(doors))
 
         features, layers = [], []
         room_map = {r.id: r for r in rooms}
+        room_polygons = {r.id: Polygon([(v.x, v.y) for v in r.gridVertices]) for r in rooms}
+
 
         for item in context.enhancement_layers.get("features", []):
             verts = [schema.GridPoint(x=int(v[0]/8), y=int(v[1]/8))
@@ -85,7 +140,7 @@ class MapTransformer:
                         room_map[room_id].contents.append(layer.id)
                     break
         log_xfm.debug(
-            "Step 4: Created %d features and %d layers from enhancements.",
+            "Created %d features and %d layers from enhancements.",
             len(features), len(layers)
         )
 
@@ -97,27 +152,6 @@ class MapTransformer:
         )
         return all_objects
 
-    def _find_room_areas(self, tile_grid):
-        """Finds all contiguous areas of floor tiles using BFS."""
-        visited, all_areas = set(), []
-        for (gx, gy), tile in tile_grid.items():
-            if tile.feature_type == "floor" and (gx, gy) not in visited:
-                current_area, q, head = set(), [(gx, gy)], 0
-                visited.add((gx, gy))
-                while head < len(q):
-                    cx, cy = q[head]
-                    head += 1
-                    current_area.add((cx, cy))
-                    for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                        nx, ny = cx + dx, cy + dy
-                        neighbor = tile_grid.get((nx, ny))
-                        if (neighbor and neighbor.feature_type == "floor"
-                                and (nx, ny) not in visited):
-                            visited.add((nx, ny))
-                            q.append((nx, ny))
-                all_areas.append(current_area)
-        return all_areas
-
     def _extract_doors_from_grid(self, tile_grid, coord_to_room_id):
         """Finds all doors on tile edges and links the adjacent rooms."""
         doors = []
@@ -125,6 +159,9 @@ class MapTransformer:
         door_types = ("door", "secret_door", "iron_bar_door", "double_door")
 
         for (gx, gy), tile in tile_grid.items():
+            if tile.feature_type != "floor":
+                continue
+
             # South Wall Check
             wall_type = tile.south_wall
             if wall_type in door_types:
@@ -165,44 +202,3 @@ class MapTransformer:
                                                  properties=props if props else None))
                         processed_edges.add(edge)
         return doors
-
-    def _trace_room_perimeter(self, room_tiles, tile_grid):
-        """Traces the perimeter of a room area using a wall-following algorithm."""
-        if not room_tiles:
-            return []
-        start_pos = min(room_tiles, key=lambda p: (p[1], p[0]))
-        direction, current_vertex = (1, 0), (start_pos[0], start_pos[1])
-        path = [schema.GridPoint(x=current_vertex[0], y=current_vertex[1])]
-
-        for _ in range(len(tile_grid) * 4):
-            tile_NW = tile_grid.get((current_vertex[0] - 1, current_vertex[1] - 1))
-            tile_NE = tile_grid.get((current_vertex[0], current_vertex[1] - 1))
-            tile_SW = tile_grid.get((current_vertex[0] - 1, current_vertex[1]))
-            tile_SE = tile_grid.get(current_vertex)
-
-            if direction == (1, 0):  # Moving East
-                if tile_NE and tile_NE.west_wall == "stone": direction = (0, 1)
-                elif tile_SE and tile_SE.north_wall == "stone":
-                    current_vertex = (current_vertex[0] + 1, current_vertex[1])
-                else: direction = (0, -1)
-            elif direction == (0, 1):  # Moving South
-                if tile_SE and tile_SE.north_wall == "stone": direction = (-1, 0)
-                elif tile_SW and tile_SW.east_wall == "stone":
-                    current_vertex = (current_vertex[0], current_vertex[1] + 1)
-                else: direction = (1, 0)
-            elif direction == (-1, 0):  # Moving West
-                if tile_SW and tile_SW.east_wall == "stone": direction = (0, -1)
-                elif tile_NW and tile_NW.south_wall == "stone":
-                    current_vertex = (current_vertex[0] - 1, current_vertex[1])
-                else: direction = (0, 1)
-            elif direction == (0, -1):  # Moving North
-                if tile_NW and tile_NW.south_wall == "stone": direction = (1, 0)
-                elif tile_NE and tile_NE.west_wall == "stone":
-                    current_vertex = (current_vertex[0], current_vertex[1] - 1)
-                else: direction = (-1, 0)
-
-            if path[-1].x != current_vertex[0] or path[-1].y != current_vertex[1]:
-                path.append(schema.GridPoint(x=current_vertex[0], y=current_vertex[1]))
-            if (current_vertex[0], current_vertex[1]) == (start_pos[0], start_pos[1]):
-                break
-        return path

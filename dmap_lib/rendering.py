@@ -1,6 +1,7 @@
 import math
 import random
 import logging
+from typing import List
 
 import numpy as np
 from shapely.geometry import Point, Polygon
@@ -10,7 +11,7 @@ from dmap_lib.analysis.context import _TileData
 
 log = logging.getLogger("dmap.render")
 
-PIXELS_PER_GRID = 10
+PIXELS_PER_GRID = 70
 PADDING = PIXELS_PER_GRID * 2
 
 
@@ -151,8 +152,15 @@ def render_svg(
                 if obj.orientation == "v"
                 else (PIXELS_PER_GRID * 0.5, lt)
             )
-            dx = (obj.gridPos.x * PIXELS_PER_GRID) - dw / 2
-            dy = (obj.gridPos.y * PIXELS_PER_GRID) - dh / 2
+            if obj.orientation == "v":
+                # Vertical door, center it vertically in the passageway tile.
+                dx = (obj.gridPos.x * PIXELS_PER_GRID) - dw / 2
+                dy = ((obj.gridPos.y + 0.5) * PIXELS_PER_GRID) - dh / 2
+            else:  # 'h'
+                # Horizontal door, center it horizontally in the passageway tile.
+                dx = ((obj.gridPos.x + 0.5) * PIXELS_PER_GRID) - dw / 2
+                dy = (obj.gridPos.y * PIXELS_PER_GRID) - dh / 2
+
             layers["doors"].append(
                 f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />'
             )
