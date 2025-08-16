@@ -37,7 +37,7 @@ class ColorAnalyzer:
         Analyzes image colors and returns a color profile.
         This is the refactored version of _stage2_analyze_region_colors.
         """
-        log.info("Executing Stage 2: Multi-Pass Contextual Color Analysis...")
+        log.info("Executing Stage 3: Multi-Pass Color Analysis...")
         pixels = img.reshape(-1, 3)
         kmeans = KMeans(n_clusters=num_colors, random_state=42, n_init=10).fit(pixels)
         palette_bgr = kmeans.cluster_centers_.astype("uint8")
@@ -173,7 +173,7 @@ class StructureAnalyzer:
         room_bounds: List[Tuple[int, int, int, int]],
     ) -> "_GridInfo":
         """Discovers grid size via peak-finding and offset via room bounds."""
-        log_grid.info("Executing Stage 4: Grid Discovery...")
+        log_grid.info("Executing Stage 5: Grid Discovery...")
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
         stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
         stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
@@ -230,7 +230,7 @@ class StructureAnalyzer:
         region_id: str = "",
     ) -> Dict[Tuple[int, int], "_TileData"]:
         """Perform score-based wall detection and core structure classification."""
-        log.info("Executing Stage 6: Core Structure Classification...")
+        log.info("Executing Stage 7: Core Structure Classification...")
         tile_grid: Dict[Tuple[int, int], "_TileData"] = {}
         if not room_contours: return {}
 
@@ -444,7 +444,7 @@ class FeatureExtractor:
         kmeans: KMeans,
     ) -> Dict[str, Any]:
         """Extracts high-resolution features like columns and water."""
-        log.info("Executing Stage 5: High-Resolution Feature & Layer Detection...")
+        log.debug("Extracting high-resolution features and layers...")
         enhancements: Dict[str, List] = {"features": [], "layers": []}
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
         labels = kmeans.predict(original_region_img.reshape(-1, 3))
@@ -493,7 +493,7 @@ class MapTransformer:
         self, context: "_RegionAnalysisContext", grid_size: int
     ) -> List[Any]:
         """Transforms the context object into final MapObject entities."""
-        log.info("Executing Stage 7: Transforming grid and layers to map data...")
+        log.info("Executing Stage 8: Transformation to MapData...")
         tile_grid = context.tile_grid
         if not tile_grid:
             return []
@@ -553,7 +553,14 @@ class MapTransformer:
         )
 
         all_objects: List[Any] = rooms + doors + features + layers
-        log.info("Transformation complete. Found %d total map objects.", len(all_objects))
+        num_r = len(rooms)
+        num_d = len(doors)
+        num_f = len(features)
+        num_l = len(layers)
+        log.info(
+            "Transformation complete. Created: %d Rooms, %d Doors, %d Features, %d Layers.",
+            num_r, num_d, num_f, num_l
+        )
         return all_objects
 
     def _find_room_areas(self, tile_grid):
@@ -673,16 +680,22 @@ class MapAnalyzer:
 
         context = _RegionAnalysisContext()
 
+        log.info("Executing Stage 4: Structural Image Preparation...")
         structural_img = self._create_structural_image(img, color_profile, kmeans_model)
         floor_only_img = self._create_floor_only_image(img, color_profile, kmeans_model)
+        stroke_only_img = self._create_stroke_only_image(img, color_profile, kmeans_model)
 
-        context.room_bounds = self._find_room_bounds(self._create_stroke_only_image(img, color_profile, kmeans_model))
+        context.room_bounds = self._find_room_bounds(stroke_only_img)
         grid_info = self.structure_analyzer.discover_grid(structural_img, color_profile, context.room_bounds)
 
+        log.info("Executing Stage 6: High-Resolution Feature & Layer Detection...")
         corrected_floor = floor_only_img.copy()
         temp_layers = self.feature_extractor.extract(img, [], grid_info.size, color_profile, kmeans_model)
         if temp_layers.get("layers"):
-            log.info("Correcting floor plan with %d env layers.", len(temp_layers["layers"]))
+            log.info(
+                "Refining floor plan using %d detected environmental layer(s).",
+                len(temp_layers["layers"])
+            )
             for layer in temp_layers["layers"]:
                 px_verts = (np.array(layer["high_res_vertices"]) * grid_info.size / 8.0).astype(np.int32)
                 cv2.fillPoly(corrected_floor, [px_verts], 255)
@@ -719,7 +732,7 @@ class MapAnalyzer:
         self, img: np.ndarray, color_profile: Dict[str, Any], kmeans: KMeans
     ) -> np.ndarray:
         """Creates a stroke-only image (black on white) for contour detection."""
-        log.info("Executing Stage 3: Creating Stroke-Only Image...")
+        log.debug("Creating stroke-only image for boundary analysis.")
         stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
         rgb_to_label = {tuple(c.astype("uint8")[::-1]): i for i,c in enumerate(kmeans.cluster_centers_)}
         stroke_labels = {rgb_to_label[rgb] for rgb, role in color_profile["roles"].items() if role in stroke_roles}
@@ -735,7 +748,7 @@ class MapAnalyzer:
         self, img: np.ndarray, color_profile: Dict[str, Any], kmeans: KMeans
     ) -> np.ndarray:
         """Creates a clean two-color image (stroke on floor) for analysis."""
-        log.info("Executing Stage 3b: Creating Structural Analysis Image...")
+        log.debug("Creating two-color structural image (stroke on floor).")
         stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
         rgb_to_label = {tuple(c.astype("uint8")[::-1]): i for i,c in enumerate(kmeans.cluster_centers_)}
         stroke_labels = {rgb_to_label[rgb] for rgb, role in color_profile["roles"].items() if role in stroke_roles}
@@ -752,14 +765,13 @@ class MapAnalyzer:
         filtered_image = np.full_like(img, floor_bgr)
         filtered_image[stroke_mask] = stroke_bgr
 
-        log.debug("Created structural image with all 'stroke' and 'floor' colors.")
         return filtered_image
 
     def _create_floor_only_image(
         self, img: np.ndarray, color_profile: Dict[str, Any], kmeans: KMeans
     ) -> np.ndarray:
         """Creates a binary mask of all floor pixels for accurate contouring."""
-        log.info("Executing Stage 3c: Creating Floor-Only Image...")
+        log.debug("Creating binary floor-only image mask.")
         floor_roles = {r for r in color_profile["roles"].values() if "floor" in r or "water" in r}
         rgb_to_label = {tuple(c.astype("uint8")[::-1]): i for i,c in enumerate(kmeans.cluster_centers_)}
         floor_labels = {rgb_to_label[rgb] for rgb, role in color_profile["roles"].items() if role in floor_roles}
@@ -776,7 +788,7 @@ class MapAnalyzer:
         stroke_only_image: np.ndarray,
     ) -> List[Tuple[int, int, int, int]]:
         """Finds bounding boxes of all major shapes in the stroke-only image."""
-        log.info("Executing Stage 3a: Finding Room Boundary Boxes from Strokes...")
+        log.debug("Finding room boundary boxes from strokes.")
         gray = cv2.cvtColor(stroke_only_image, cv2.COLOR_BGR2GRAY)
         _, binary_mask = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
 
@@ -786,7 +798,7 @@ class MapAnalyzer:
         for contour in contours:
             if cv2.contourArea(contour) > min_area:
                 bounds.append(cv2.boundingRect(contour))
-        log.info("Found %d potential room boundary boxes.", len(bounds))
+        log.debug("Found %d potential room boundary boxes.", len(bounds))
         return bounds
 
     def _get_floor_plan_contours(
@@ -888,7 +900,12 @@ def analyze_image(
             metadata["title"] = text_blobs.pop(title_idx)["text"]
             metadata["notes"] = " ".join([b["text"] for b in text_blobs])
 
-        log_ocr.info("Extracted metadata: Title='%s'", metadata["title"])
+        title_str = f"'{metadata['title']}'" if metadata['title'] else "(Not found)"
+        notes_str = f"'{metadata['notes']}'" if metadata['notes'] else "(None)"
+        log_ocr.info(
+            "OCR metadata extraction complete. Title: %s. Notes: %s",
+            title_str, notes_str
+        )
         return metadata, region_contexts
 
     log.info("Starting analysis of image: '%s'", image_path)
