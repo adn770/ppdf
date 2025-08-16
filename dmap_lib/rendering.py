@@ -4,6 +4,8 @@ import random
 import logging
 
 import numpy as np
+from shapely.geometry import Point, Polygon
+
 from dmap_lib import schema
 from dmap_lib.analysis.context import _TileData
 
@@ -254,14 +256,14 @@ class ASCIIRenderer:
                 if obj.orientation == "h":
                     if tile_grid.get((x, y - 1)): tile_grid[(x, y-1)].south_wall = "door"
                     if tile_grid.get((x, y)): tile_grid[(x, y)].north_wall = "door"
-                else: # 'v'
+                else:  # 'v'
                     if tile_grid.get((x - 1, y)): tile_grid[(x-1, y)].east_wall = "door"
                     if tile_grid.get((x, y)): tile_grid[(x, y)].west_wall = "door"
 
         self.render_from_tiles(tile_grid)
 
     def render_from_tiles(self, tile_grid: dict):
-        """Renders the map from an intermediate tile grid using a 4-pass process."""
+        """Renders map from intermediate tile grid with improved aspect ratio."""
         if not tile_grid:
             return
 
@@ -270,66 +272,72 @@ class ASCIIRenderer:
         self.min_x, self.max_x = min(all_x), max(all_x)
         self.min_y, self.max_y = min(all_y), max(all_y)
 
-        self.padding = 1
-        self.width = (self.max_x - self.min_x + 1) * 2 + 1 + (2 * self.padding)
-        self.height = (self.max_y - self.min_y + 1) * 2 + 1 + (2 * self.padding)
+        # Each cell is now 4 chars wide (e.g., "│ . ") and 2 chars tall.
+        self.width = (self.max_x - self.min_x + 1) * 4 + 1 + (self.padding * 2)
+        self.height = (self.max_y - self.min_y + 1) * 2 + 1 + (self.padding * 2)
         self.canvas = [[" " for _ in range(self.width)] for _ in range(self.height)]
 
-        # Pass 1: Draw tile contents
-        char_map = {"floor": ".", "column": "O", "empty": " "}
+        # Pass 1: Draw tile contents (wider now)
+        content_map = {"floor": " . ", "column": "(O)", "empty": "   ", "stairs": " # "}
         for (gx, gy), tile in tile_grid.items():
-            cx = (gx - self.min_x) * 2 + 1 + self.padding
+            cx = (gx - self.min_x) * 4 + 2 + self.padding
             cy = (gy - self.min_y) * 2 + 1 + self.padding
-            if 0 <= cy < self.height and 0 <= cx < self.width:
-                self.canvas[cy][cx] = char_map.get(tile.feature_type, "?")
+            if 0 <= cy < self.height and 0 <= cx < self.width - 1:
+                content = content_map.get(tile.feature_type, " ? ")
+                self.canvas[cy][cx - 1 : cx + 2] = list(content)
 
         # Pass 2: Draw all boundaries as solid walls
         for (gx, gy), tile in tile_grid.items():
-            cx_base = (gx - self.min_x) * 2 + self.padding
+            cx_base = (gx - self.min_x) * 4 + self.padding
             cy_base = (gy - self.min_y) * 2 + self.padding
-            if tile.north_wall: self.canvas[cy_base][cx_base + 1] = "─"
+            if tile.north_wall: self.canvas[cy_base][cx_base+1:cx_base+4] = list("───")
             if tile.west_wall: self.canvas[cy_base + 1][cx_base] = "│"
-            if tile.south_wall: self.canvas[cy_base + 2][cx_base + 1] = "─"
-            if tile.east_wall: self.canvas[cy_base + 1][cx_base + 2] = "│"
+            if tile.south_wall: self.canvas[cy_base+2][cx_base+1:cx_base+4] = list("───")
+            if tile.east_wall: self.canvas[cy_base + 1][cx_base + 4] = "│"
 
         # Pass 3: Draw junctions
         junctions = {
-            (0, 1, 1, 0): "┌", (0, 0, 1, 1): "┐", (1, 1, 0, 0): "└", (1, 0, 0, 1): "┘",
-            (1, 1, 1, 0): "├", (1, 0, 1, 1): "┤", (0, 1, 1, 1): "┬", (1, 1, 0, 1): "┴",
-            (1, 1, 1, 1): "┼", (0, 1, 0, 1): "─", (1, 0, 1, 0): "│",
+            (0,1,1,0):"┌",(0,0,1,1):"┐",(1,1,0,0):"└",(1,0,0,1):"┘",(1,1,1,0):"├",
+            (1,0,1,1):"┤",(0,1,1,1):"┬",(1,1,0,1):"┴",(1,1,1,1):"┼",(0,1,0,1):"─",
+            (1,0,1,0):"│",
         }
         for gy in range(self.min_y, self.max_y + 2):
             for gx in range(self.min_x, self.max_x + 2):
-                cx = (gx - self.min_x) * 2 + self.padding
+                cx = (gx - self.min_x) * 4 + self.padding
                 cy = (gy - self.min_y) * 2 + self.padding
                 if not (0 <= cy < self.height and 0 <= cx < self.width): continue
-                n = self.canvas[cy - 1][cx] == "│" if cy > 0 else False
-                s = self.canvas[cy + 1][cx] == "│" if cy < self.height - 1 else False
-                w = self.canvas[cy][cx - 1] == "─" if cx > 0 else False
-                e = self.canvas[cy][cx + 1] == "─" if cx < self.width - 1 else False
+                n = self.canvas[cy-1][cx] == "│" if cy>0 else False
+                s = self.canvas[cy+1][cx] == "│" if cy<self.height-1 else False
+                w = self.canvas[cy][cx-2] == "─" if cx>1 else False
+                e = self.canvas[cy][cx+2] == "─" if cx<self.width-2 else False
                 key = (n, e, s, w)
                 if key in junctions: self.canvas[cy][cx] = junctions[key]
                 elif sum(key) == 1:
-                    if n: self.canvas[cy][cx] = "╵"
-                    elif s: self.canvas[cy][cx] = "╷"
-                    elif w: self.canvas[cy][cx] = "╴"
-                    elif e: self.canvas[cy][cx] = "╶"
+                    if n:self.canvas[cy][cx]="╵"
+                    elif s:self.canvas[cy][cx]="╷"
+                    elif w:self.canvas[cy][cx]="╴"
+                    elif e:self.canvas[cy][cx]="╶"
 
         # Pass 4: Draw doors on top of walls
         door_chars = {
-            "door": ("━", "┃"), "secret_door": ("S", "S"), "iron_bar_door": ("═", "║"),
+            "door": ("─━─", "┃"), "secret_door": ("-S-", "S"),
+            "iron_bar_door": ("═╦═", "║"),
         }
         for (gx, gy), tile in tile_grid.items():
-            cx_base = (gx - self.min_x) * 2 + self.padding
+            cx_base = (gx - self.min_x) * 4 + self.padding
             cy_base = (gy - self.min_y) * 2 + self.padding
             if tile.north_wall in door_chars:
-                self.canvas[cy_base][cx_base + 1] = door_chars[tile.north_wall][0]
+                h_char, _ = door_chars[tile.north_wall]
+                self.canvas[cy_base][cx_base+1:cx_base+4] = list(h_char)
             if tile.west_wall in door_chars:
-                self.canvas[cy_base + 1][cx_base] = door_chars[tile.west_wall][1]
+                _, v_char = door_chars[tile.west_wall]
+                self.canvas[cy_base+1][cx_base] = v_char
             if tile.south_wall in door_chars:
-                self.canvas[cy_base + 2][cx_base + 1] = door_chars[tile.south_wall][0]
+                h_char, _ = door_chars[tile.south_wall]
+                self.canvas[cy_base+2][cx_base+1:cx_base+4] = list(h_char)
             if tile.east_wall in door_chars:
-                self.canvas[cy_base + 1][cx_base + 2] = door_chars[tile.east_wall][1]
+                _, v_char = door_chars[tile.east_wall]
+                self.canvas[cy_base+1][cx_base+4] = v_char
 
     def get_output(self) -> str:
         """Returns the final, rendered ASCII map with coordinate rulers."""
@@ -343,7 +351,7 @@ class ASCIIRenderer:
         u_ruler = [" "] * self.width
 
         for gx in range(self.min_x, self.max_x + 1):
-            cx = (gx - self.min_x) * 2 + 1 + self.padding
+            cx = (gx - self.min_x) * 4 + 2 + self.padding
             if 0 <= cx < self.width:
                 s_gx = str(abs(gx))
                 if gx < 0 and cx > 0: u_ruler[cx - 1] = "-"
