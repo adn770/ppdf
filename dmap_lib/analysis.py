@@ -56,9 +56,9 @@ class ColorAnalyzer:
         center_counts = Counter(center_labels)
         floor_color = None
         for label, _ in center_counts.most_common():
-            potential_color = tuple(kmeans.cluster_centers_[label].astype("uint8")[::-1])
-            if potential_color in unassigned_colors:
-                floor_color = potential_color
+            p_color = tuple(kmeans.cluster_centers_[label].astype("uint8")[::-1])
+            if p_color in unassigned_colors:
+                floor_color = p_color
                 break
         if floor_color:
             roles[floor_color] = "floor"
@@ -69,7 +69,9 @@ class ColorAnalyzer:
         if floor_color:
             floor_bgr = np.array(floor_color[::-1], dtype="uint8")
             floor_mask = cv2.inRange(img, floor_bgr, floor_bgr)
-            contours, _ = cv2.findContours(floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(
+                floor_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
             edge_pixels = []
             for contour in contours:
                 for point in contour:
@@ -77,10 +79,17 @@ class ColorAnalyzer:
 
             if edge_pixels:
                 edge_labels = kmeans.predict(edge_pixels)
-                valid_labels = [l for l in edge_labels if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1]) in unassigned_colors]
+                valid_labels = [
+                    l
+                    for l in edge_labels
+                    if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1])
+                    in unassigned_colors
+                ]
                 if valid_labels:
                     stroke_label = Counter(valid_labels).most_common(1)[0][0]
-                    stroke_rgb = tuple(kmeans.cluster_centers_[stroke_label].astype("uint8")[::-1])
+                    stroke_rgb = tuple(
+                        kmeans.cluster_centers_[stroke_label].astype("uint8")[::-1]
+                    )
                     roles[stroke_rgb] = "stroke"
                     unassigned_colors.remove(stroke_rgb)
 
@@ -93,18 +102,25 @@ class ColorAnalyzer:
         # --- Pass 3: Border Color Identification (Glow & Shadow) ---
         stroke_label = kmeans.predict([np.array(stroke_rgb[::-1])])[0]
         stroke_mask = (all_labels == stroke_label).astype(np.uint8)
-        dilated_mask = cv2.dilate(stroke_mask, np.ones((3, 3), np.uint8), iterations=2)
+        dilated_mask = cv2.dilate(
+            stroke_mask, np.ones((3, 3), np.uint8), iterations=2
+        )
         search_mask = dilated_mask - stroke_mask
         adjacent_labels = all_labels[search_mask == 1]
-        valid_adjacent_labels = [l for l in adjacent_labels if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1]) in unassigned_colors]
-        if len(valid_adjacent_labels) > 1:
-            top_two_labels = [item[0] for item in Counter(valid_adjacent_labels).most_common(2)]
-            color1 = tuple(kmeans.cluster_centers_[top_two_labels[0]].astype("uint8")[::-1])
-            color2 = tuple(kmeans.cluster_centers_[top_two_labels[1]].astype("uint8")[::-1])
-            if sum(color1) > sum(color2):
-                glow_rgb, shadow_rgb = color1, color2
+        valid_adj = [
+            l
+            for l in adjacent_labels
+            if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1])
+            in unassigned_colors
+        ]
+        if len(valid_adj) > 1:
+            top_two = [item[0] for item in Counter(valid_adj).most_common(2)]
+            c1 = tuple(kmeans.cluster_centers_[top_two[0]].astype("uint8")[::-1])
+            c2 = tuple(kmeans.cluster_centers_[top_two[1]].astype("uint8")[::-1])
+            if sum(c1) > sum(c2):
+                glow_rgb, shadow_rgb = c1, c2
             else:
-                glow_rgb, shadow_rgb = color2, color1
+                glow_rgb, shadow_rgb = c2, c1
             roles[glow_rgb] = "glow"
             unassigned_colors.remove(glow_rgb)
             roles[shadow_rgb] = "shadow"
@@ -112,19 +128,20 @@ class ColorAnalyzer:
 
         # --- Pass 4: Environmental Layer Identification (Water) ---
         if unassigned_colors:
-            candidate_areas = []
+            candidates = []
             rgb_to_label = {tuple(c[::-1]): i for i, c in enumerate(palette_bgr)}
             for color in unassigned_colors:
                 label = rgb_to_label[color]
                 mask = (all_labels == label).astype(np.uint8) * 255
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours, _ = cv2.findContours(
+                    mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                )
                 total_area = sum(cv2.contourArea(c) for c in contours)
-                candidate_areas.append((total_area, color))
-            if candidate_areas:
-                # Assume the largest unassigned patch is water
-                best_candidate = max(candidate_areas, key=lambda item: item[0])
-                if best_candidate[0] > 500: # Threshold for minimum area
-                    water_color = best_candidate[1]
+                candidates.append((total_area, color))
+            if candidates:
+                best = max(candidates, key=lambda item: item[0])
+                if best[0] > 500:  # Threshold for minimum area
+                    water_color = best[1]
                     roles[water_color] = "water"
                     unassigned_colors.remove(water_color)
                     log.debug("Identified water color: %s", str(water_color))
@@ -133,8 +150,11 @@ class ColorAnalyzer:
         primary_roles = list(roles.items())
         if primary_roles:
             for alias_color in unassigned_colors:
-                closest_primary = min(primary_roles, key=lambda item: np.linalg.norm(np.array(alias_color) - np.array(item[0])))
-                roles[alias_color] = f"alias_{closest_primary[1]}"
+                closest = min(
+                    primary_roles,
+                    key=lambda i: np.linalg.norm(np.array(alias_color) - np.array(i[0])),
+                )
+                roles[alias_color] = f"alias_{closest[1]}"
 
         log.debug("--- Advanced Color Profile ---")
         for color, role in roles.items():
@@ -162,22 +182,18 @@ class StructureAnalyzer:
         proj_x = np.sum(binary_mask, axis=0).astype(float)
         proj_y = np.sum(binary_mask, axis=1).astype(float)
 
-        # --- Step 1: Calculate Grid Size using peak finding (retained logic) ---
         sizes = []
         for axis, proj in [("x", proj_x), ("y", proj_y)]:
             prominence = np.max(proj) * 0.25
             min_dist = min(len(proj) * 0.1, 50)
             peaks, _ = find_peaks(proj, prominence=prominence, distance=min_dist)
 
-            if len(peaks) < 3:
-                continue
+            if len(peaks) < 3: continue
             distances = np.diff(peaks)
             mode_result = Counter(distances).most_common(1)
-            if not mode_result:
-                continue
+            if not mode_result: continue
             grid_size = mode_result[0][0]
-            if not (10 < grid_size < 200):
-                continue
+            if not (10 < grid_size < 200): continue
             sizes.append(grid_size)
 
         if not sizes:
@@ -187,9 +203,8 @@ class StructureAnalyzer:
         final_size = int(np.mean(sizes))
         log_grid.debug("Detected grid size: %dpx", final_size)
 
-        # --- Step 2: Calculate Grid Offset using room bounds (new logic) ---
         if not room_bounds:
-            log_grid.warning("No room bounds found; cannot calculate offset. Defaulting to (0,0).")
+            log_grid.warning("No room bounds; cannot calculate offset. Using (0,0).")
             return _GridInfo(size=final_size, offset_x=0, offset_y=0)
 
         min_x = min(b[0] for b in room_bounds)
@@ -216,97 +231,72 @@ class StructureAnalyzer:
     ) -> Dict[Tuple[int, int], "_TileData"]:
         """Perform score-based wall detection and core structure classification."""
         log.info("Executing Stage 6: Core Structure Classification...")
-        tile_grid = {}
-        if not room_contours:
-            return {}
+        tile_grid: Dict[Tuple[int, int], "_TileData"] = {}
+        if not room_contours: return {}
 
-        grid_size = grid_info.size
-        offset_x, offset_y = grid_info.offset_x, grid_info.offset_y
+        grid_size, offset_x, offset_y = grid_info.size, grid_info.offset_x, grid_info.offset_y
+        all_pts = np.vstack(room_contours)
+        min_gx, max_gx = math.floor(np.min(all_pts[:, :, 0]) / grid_size), math.ceil(np.max(all_pts[:, :, 0]) / grid_size)
+        min_gy, max_gy = math.floor(np.min(all_pts[:, :, 1]) / grid_size), math.ceil(np.max(all_pts[:, :, 1]) / grid_size)
 
-        all_points = np.vstack(room_contours)
-        min_gx, max_gx = math.floor(np.min(all_points[:, :, 0]) / grid_size), math.ceil(
-            np.max(all_points[:, :, 0]) / grid_size
-        )
-        min_gy, max_gy = math.floor(np.min(all_points[:, :, 1]) / grid_size), math.ceil(
-            np.max(all_points[:, :, 1]) / grid_size
-        )
         for y in range(min_gy - 1, max_gy + 2):
             for x in range(min_gx - 1, max_gx + 2):
-                px_center = (x * grid_size + offset_x + grid_size // 2, y * grid_size + offset_y + grid_size // 2)
-                is_inside = any(
-                    cv2.pointPolygonTest(c, px_center, False) >= 0 for c in room_contours
-                )
-                feature_type = "floor" if is_inside else "empty"
-                tile_grid[(x, y)] = _TileData(feature_type=feature_type)
+                px_c = (x * grid_size + offset_x + grid_size // 2, y * grid_size + offset_y + grid_size // 2)
+                is_in = any(cv2.pointPolygonTest(c, px_c, False) >= 0 for c in room_contours)
+                tile_grid[(x, y)] = _TileData(feature_type="floor" if is_in else "empty")
 
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
-        stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
-        stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
+        stroke_bgr = np.array(roles_inv.get("stroke", (0, 0, 0))[::-1], dtype="uint8")
         WALL_CONFIDENCE_THRESHOLD = 0.3
         offset = grid_size // 4
 
         for (x, y), tile in tile_grid.items():
-            if tile.feature_type == "empty":
-                continue
+            if tile.feature_type == "empty": continue
             p_nw = (x * grid_size + offset_x, y * grid_size + offset_y)
             p_ne = ((x + 1) * grid_size + offset_x, y * grid_size + offset_y)
             p_sw = (x * grid_size + offset_x, (y + 1) * grid_size + offset_y)
             p_se = ((x + 1) * grid_size + offset_x, (y + 1) * grid_size + offset_y)
 
-            # Check NORTH boundary
             if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
-                rect_points = np.array([p_nw, p_ne, (p_ne[0], p_ne[1] + 4), (p_nw[0], p_nw[1] + 4)], dtype=np.int32)
-                bx, by, bw, bh = cv2.boundingRect(rect_points)
-                boundary_slice = structural_img[by:by+bh, bx:bx+bw] if bh > 0 and bw > 0 else np.array([])
-                stroke_score = self._calculate_boundary_scores(p_nw, p_ne, (0, -offset), structural_img, stroke_bgr)
-                wall_type = self._classify_boundary(boundary_slice, stroke_bgr, False, stroke_score, WALL_CONFIDENCE_THRESHOLD)
-                if wall_type: tile.north_wall = wall_type
-
-            # Check EAST boundary
+                r_pts = np.array([p_nw, p_ne, (p_ne[0], p_ne[1] + 4), (p_nw[0], p_nw[1] + 4)])
+                tile.north_wall = self._process_boundary(p_nw, p_ne, r_pts, (0, -offset), False, structural_img, stroke_bgr, WALL_CONFIDENCE_THRESHOLD)
             if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
-                rect_points = np.array([(p_ne[0] - 4, p_ne[1]), p_ne, p_se, (p_se[0] - 4, p_se[1])], dtype=np.int32)
-                bx, by, bw, bh = cv2.boundingRect(rect_points)
-                boundary_slice = structural_img[by:by+bh, bx:bx+bw] if bh > 0 and bw > 0 else np.array([])
-                stroke_score = self._calculate_boundary_scores(p_ne, p_se, (offset, 0), structural_img, stroke_bgr)
-                wall_type = self._classify_boundary(boundary_slice, stroke_bgr, True, stroke_score, WALL_CONFIDENCE_THRESHOLD)
-                if wall_type: tile.east_wall = wall_type
-
-            # Check SOUTH boundary
+                r_pts = np.array([(p_ne[0] - 4, p_ne[1]), p_ne, p_se, (p_se[0] - 4, p_se[1])])
+                tile.east_wall = self._process_boundary(p_ne, p_se, r_pts, (offset, 0), True, structural_img, stroke_bgr, WALL_CONFIDENCE_THRESHOLD)
             if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
-                rect_points = np.array([(p_sw[0], p_sw[1] - 4), (p_se[0], p_se[1] - 4), p_se, p_sw], dtype=np.int32)
-                bx, by, bw, bh = cv2.boundingRect(rect_points)
-                boundary_slice = structural_img[by:by+bh, bx:bx+bw] if bh > 0 and bw > 0 else np.array([])
-                stroke_score = self._calculate_boundary_scores(p_sw, p_se, (0, offset), structural_img, stroke_bgr)
-                wall_type = self._classify_boundary(boundary_slice, stroke_bgr, False, stroke_score, WALL_CONFIDENCE_THRESHOLD)
-                if wall_type: tile.south_wall = wall_type
-
-            # Check WEST boundary
+                r_pts = np.array([(p_sw[0], p_sw[1] - 4), (p_se[0], p_se[1] - 4), p_se, p_sw])
+                tile.south_wall = self._process_boundary(p_sw, p_se, r_pts, (0, offset), False, structural_img, stroke_bgr, WALL_CONFIDENCE_THRESHOLD)
             if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
-                rect_points = np.array([p_nw, (p_nw[0] + 4, p_nw[1]), (p_sw[0] + 4, p_sw[1]), p_sw], dtype=np.int32)
-                bx, by, bw, bh = cv2.boundingRect(rect_points)
-                boundary_slice = structural_img[by:by+bh, bx:bx+bw] if bh > 0 and bw > 0 else np.array([])
-                stroke_score = self._calculate_boundary_scores(p_nw, p_sw, (-offset, 0), structural_img, stroke_bgr)
-                wall_type = self._classify_boundary(boundary_slice, stroke_bgr, True, stroke_score, WALL_CONFIDENCE_THRESHOLD)
-                if wall_type: tile.west_wall = wall_type
+                r_pts = np.array([p_nw, (p_nw[0] + 4, p_nw[1]), (p_sw[0] + 4, p_sw[1]), p_sw])
+                tile.west_wall = self._process_boundary(p_nw, p_sw, r_pts, (-offset, 0), True, structural_img, stroke_bgr, WALL_CONFIDENCE_THRESHOLD)
 
         shifted_grid = {}
-        content_min_gx = min(
-            (k[0] for k, v in tile_grid.items() if v.feature_type != "empty"), default=0
-        )
-        content_min_gy = min(
-            (k[1] for k, v in tile_grid.items() if v.feature_type != "empty"), default=0
-        )
+        c_min_gx = min((k[0] for k, v in tile_grid.items() if v.feature_type != "empty"), default=0)
+        c_min_gy = min((k[1] for k, v in tile_grid.items() if v.feature_type != "empty"), default=0)
         for (gx, gy), tile_data in tile_grid.items():
-            new_key = (gx - content_min_gx, gy - content_min_gy)
-            shifted_grid[new_key] = tile_data
+            shifted_grid[(gx - c_min_gx, gy - c_min_gy)] = tile_data
 
         if save_intermediate_path:
             filename = os.path.join(save_intermediate_path, f"{region_id}_wall_detection.png")
-            _save_wall_detection_debug_image(
-                original_region_img, grid_info, shifted_grid, output_path=filename
-            )
-
+            _save_wall_detection_debug_image(original_region_img, grid_info, shifted_grid, filename)
         return shifted_grid
+
+    def _process_boundary(
+        self,
+        p1: Tuple[int, int],
+        p2: Tuple[int, int],
+        rect_points: np.ndarray,
+        exterior_offset: Tuple[int, int],
+        is_vertical: bool,
+        structural_img: np.ndarray,
+        stroke_bgr: np.ndarray,
+        threshold: float,
+    ) -> Optional[str]:
+        """Helper to process a single tile boundary."""
+        bx, by, bw, bh = cv2.boundingRect(rect_points.astype(np.int32))
+        boundary_slice = structural_img[by : by + bh, bx : bx + bw] if bh > 0 and bw > 0 else np.array([])
+        stroke_score = self._calculate_boundary_scores(p1, p2, exterior_offset, structural_img, stroke_bgr)
+        return self._classify_boundary(boundary_slice, stroke_bgr, is_vertical, stroke_score, threshold)
 
     def _classify_boundary(
         self,
@@ -316,44 +306,27 @@ class StructureAnalyzer:
         stroke_score: float,
         threshold: float,
     ) -> Optional[str]:
-        """
-        Analyzes a boundary's pixel projection to classify it as a wall or a door type.
-        """
-        if boundary_slice.size == 0:
-            return None
+        """Analyzes a boundary's pixel projection to classify it."""
+        if boundary_slice.size == 0: return None
 
-        # --- 1. Check for door patterns using pixel projections ---
         binary_mask = np.all(boundary_slice == stroke_bgr, axis=2).astype(np.uint8)
-        projection_axis = 1 if is_vertical else 0
-        projection = np.sum(binary_mask, axis=projection_axis)
-        segment_len = len(projection)
+        projection = np.sum(binary_mask, axis=1 if is_vertical else 0)
+        seg_len = len(projection)
 
-        # Heuristic for iron bar doors (3 distinct peaks)
         peaks, _ = find_peaks(projection, prominence=1)
-        if len(peaks) == 3:
-            return "iron_bar_door"
-
-        # Heuristic for secret doors (2 peaks, far apart, deep trough)
+        if len(peaks) == 3: return "iron_bar_door"
         if len(peaks) == 2:
             peak_dist = abs(peaks[0] - peaks[1])
             trough_idx = np.argmin(projection[peaks[0] : peaks[1]]) + peaks[0]
-            # Peaks are far apart and the middle is empty
-            if peak_dist > segment_len * 0.75 and projection[trough_idx] <= 1:
+            if peak_dist > seg_len * 0.75 and projection[trough_idx] <= 1:
                 return "secret_door"
+        if seg_len >= 10:
+            third = seg_len // 3
+            l_frame, r_frame = np.sum(projection[:third]), np.sum(projection[seg_len - third:])
+            opening = np.sum(projection[third : seg_len - third])
+            if l_frame > 5 and r_frame > 5 and opening < 2: return "door"
 
-        # Heuristic for normal doors (U-shape: strong frames, empty middle)
-        if segment_len >= 10:
-            third = segment_len // 3
-            left_frame = np.sum(projection[0:third])
-            right_frame = np.sum(projection[segment_len - third : segment_len])
-            opening = np.sum(projection[third : segment_len - third])
-            if left_frame > 5 and right_frame > 5 and opening < 2:
-                return "door"
-
-        # --- 2. Fallback to solid wall check ---
-        if stroke_score > threshold:
-            return "stone"
-
+        if stroke_score > threshold: return "stone"
         return None
 
     def _calculate_boundary_scores(
@@ -364,56 +337,39 @@ class StructureAnalyzer:
         structural_img: np.ndarray,
         stroke_bgr: np.ndarray,
     ) -> float:
-        """
-        Calculates the stroke score for a boundary using dual area-based sampling.
-        """
-        thickness = 4  # Use a 4px thick line for sampling
+        """Calculates the stroke score for a boundary using dual area-based sampling."""
+        thickness = 4
         p1_arr, p2_arr = np.array(p1), np.array(p2)
-        vec = p2_arr - p1_arr
-        length = np.linalg.norm(vec)
+        vec, length = p2_arr - p1_arr, np.linalg.norm(p2_arr - p1_arr)
 
-        # Calculate centered score
         centered_score = 0.0
         if length > 0:
             vec_norm = vec / length
             normal = np.array([-vec_norm[1], vec_norm[0]]) * (thickness / 2)
-            rect_points = np.array(
-                [p1_arr + normal, p2_arr + normal, p2_arr - normal, p1_arr - normal],
-                dtype=np.int32,
-            )
+            rect_pts = np.array([p1_arr + normal, p2_arr + normal, p2_arr - normal, p1_arr - normal], dtype=np.int32)
             mask = np.zeros(structural_img.shape[:2], dtype=np.uint8)
-            cv2.fillPoly(mask, [rect_points], 255)
-            pixels_in_area = structural_img[mask == 255]
-            if pixels_in_area.size > 0:
-                stroke_pixel_count = np.sum(
-                    np.all(pixels_in_area == stroke_bgr, axis=1)
-                )
-                centered_score = stroke_pixel_count / (pixels_in_area.shape[0])
+            cv2.fillPoly(mask, [rect_pts], 255)
+            pixels = structural_img[mask == 255]
+            if pixels.size > 0:
+                stroke_count = np.sum(np.all(pixels == stroke_bgr, axis=1))
+                centered_score = stroke_count / pixels.shape[0]
 
-        # Calculate exterior score
         exterior_score = 0.0
         if length > 0:
-            # Shift the center of the rectangle by a few pixels to the exterior
-            shift_vec = np.array(exterior_offset)
-            shift_norm = np.linalg.norm(shift_vec)
+            shift = np.array(exterior_offset)
+            shift_norm = np.linalg.norm(shift)
             if shift_norm > 0:
-                shift_vec = (shift_vec / shift_norm) * (thickness / 2)
-                p1_ext, p2_ext = p1_arr + shift_vec, p2_arr + shift_vec
-                vec_ext = p2_ext - p1_ext
-                vec_norm_ext = vec_ext / np.linalg.norm(vec_ext)
-                normal_ext = np.array([-vec_norm_ext[1], vec_norm_ext[0]]) * (thickness / 2)
-                rect_points_ext = np.array(
-                    [p1_ext + normal_ext, p2_ext + normal_ext, p2_ext - normal_ext, p1_ext - normal_ext],
-                    dtype=np.int32,
-                )
+                shift = (shift / shift_norm) * (thickness / 2)
+                p1_ext, p2_ext = p1_arr + shift, p2_arr + shift
+                vec_norm = (p2_ext - p1_ext) / np.linalg.norm(p2_ext - p1_ext)
+                normal = np.array([-vec_norm[1], vec_norm[0]]) * (thickness / 2)
+                rect_pts_ext = np.array([p1_ext + normal, p2_ext + normal, p2_ext - normal, p1_ext - normal], dtype=np.int32)
                 mask_ext = np.zeros(structural_img.shape[:2], dtype=np.uint8)
-                cv2.fillPoly(mask_ext, [rect_points_ext], 255)
-                pixels_in_area_ext = structural_img[mask_ext == 255]
-                if pixels_in_area_ext.size > 0:
-                    stroke_pixel_count_ext = np.sum(
-                        np.all(pixels_in_area_ext == stroke_bgr, axis=1)
-                    )
-                    exterior_score = stroke_pixel_count_ext / (pixels_in_area_ext.shape[0])
+                cv2.fillPoly(mask_ext, [rect_pts_ext], 255)
+                pixels_ext = structural_img[mask_ext == 255]
+                if pixels_ext.size > 0:
+                    stroke_count = np.sum(np.all(pixels_ext == stroke_bgr, axis=1))
+                    exterior_score = stroke_count / pixels_ext.shape[0]
 
         return max(centered_score, exterior_score)
 
@@ -429,9 +385,7 @@ class FeatureExtractor:
         color_profile: Dict[str, Any],
         kmeans: KMeans,
     ) -> Dict[str, Any]:
-        """
-        Extracts high-resolution features like columns and water.
-        """
+        """Extracts high-resolution features like columns and water."""
         log.info("Executing Stage 5: High-Resolution Feature & Layer Detection...")
         enhancements: Dict[str, List] = {"features": [], "layers": []}
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
@@ -439,40 +393,38 @@ class FeatureExtractor:
 
         # --- 1. Detect Water Layers ---
         if "water" in roles_inv:
-            water_rgb = roles_inv["water"]
-            water_bgr = np.array(water_rgb[::-1], dtype="uint8")
-            water_center = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - water_bgr))
-            water_label = kmeans.predict([water_center])[0]
-            water_mask = (labels == water_label).reshape(original_region_img.shape[:2])
-            water_mask_u8 = water_mask.astype("uint8") * 255
-            contours, _ = cv2.findContours(water_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-            for contour in contours:
-                if cv2.contourArea(contour) > grid_size * grid_size:
-                    high_res_verts = [ (v[0][0] / grid_size * 8.0, v[0][1] / grid_size * 8.0) for v in contour ]
-                    enhancements["layers"].append( { "layerType": "water", "high_res_vertices": high_res_verts, "properties": {"z-order": 0}, } )
+            w_rgb = roles_inv["water"]
+            w_bgr = np.array(w_rgb[::-1], dtype="uint8")
+            w_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - w_bgr))
+            w_lab = kmeans.predict([w_cen])[0]
+            w_mask = (labels == w_lab).reshape(original_region_img.shape[:2])
+            w_mask_u8 = w_mask.astype("uint8") * 255
+            cnts, _ = cv2.findContours(w_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            for c in cnts:
+                if cv2.contourArea(c) > grid_size * grid_size:
+                    verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
+                    enhancements["layers"].append({"layerType": "water", "high_res_vertices": verts, "properties": {"z-order": 0}})
 
         # --- 2. Detect Column Features ---
         if room_contours:
-            stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
-            stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
-            stroke_center = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - stroke_bgr))
-            stroke_label = kmeans.predict([stroke_center])[0]
-            stroke_mask = (labels == stroke_label).reshape(original_region_img.shape[:2])
-            stroke_mask_u8 = stroke_mask.astype("uint8") * 255
-            contours, _ = cv2.findContours( stroke_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE )
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if not (20 < area < (grid_size * grid_size * 2)):
-                    continue
-                M = cv2.moments(contour)
-                if M["m00"] == 0:
-                    continue
+            s_rgb = roles_inv.get("stroke", (0,0,0))
+            s_bgr = np.array(s_rgb[::-1], dtype="uint8")
+            s_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - s_bgr))
+            s_lab = kmeans.predict([s_cen])[0]
+            s_mask = (labels == s_lab).reshape(original_region_img.shape[:2])
+            s_mask_u8 = s_mask.astype("uint8") * 255
+            cnts, _ = cv2.findContours(s_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            for c in cnts:
+                area = cv2.contourArea(c)
+                if not (20 < area < (grid_size * grid_size * 2)): continue
+                M = cv2.moments(c)
+                if M["m00"] == 0: continue
                 cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
                 if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0 for rc in room_contours):
-                    high_res_verts = [ (v[0][0] / grid_size * 8.0, v[0][1] / grid_size * 8.0) for v in contour ]
-                    enhancements["features"].append( { "featureType": "column", "high_res_vertices": high_res_verts, "properties": {"z-order": 1}, } )
+                    verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
+                    enhancements["features"].append({"featureType": "column", "high_res_vertices": verts, "properties": {"z-order": 1}})
 
-        log.info( "Detected %d features and %d environmental layers.", len(enhancements["features"]), len(enhancements["layers"]) )
+        log.info("Detected %d features and %d layers.", len(enhancements["features"]), len(enhancements["layers"]))
         return enhancements
 
 
@@ -503,13 +455,7 @@ class MapTransformer:
                 log_geom.debug("Discarding room %d: area < 1.0 grid tile.", i)
                 continue
 
-            room = schema.Room(
-                id=f"room_{uuid.uuid4().hex[:8]}",
-                shape="polygon",
-                gridVertices=verts,
-                roomType="chamber",
-                contents=[],
-            )
+            room = schema.Room(id=f"room_{uuid.uuid4().hex[:8]}", shape="polygon", gridVertices=verts, roomType="chamber", contents=[])
             rooms.append(room)
             room_polygons[room.id] = poly
             for pos in area_tiles:
@@ -523,14 +469,8 @@ class MapTransformer:
         room_map = {r.id: r for r in rooms}
 
         for item in context.enhancement_layers.get("features", []):
-            verts = [schema.GridPoint(x=int(v[0] / 8), y=int(v[1] / 8)) for v in item["high_res_vertices"]]
-            feature = schema.Feature(
-                id=f"feature_{uuid.uuid4().hex[:8]}",
-                featureType=item["featureType"],
-                shape="polygon",
-                gridVertices=verts,
-                properties=item["properties"],
-            )
+            verts = [schema.GridPoint(x=int(v[0]/8), y=int(v[1]/8)) for v in item["high_res_vertices"]]
+            feature = schema.Feature(id=f"feature_{uuid.uuid4().hex[:8]}", featureType=item["featureType"], shape="polygon", gridVertices=verts, properties=item["properties"])
             features.append(feature)
             center = Polygon([(v.x, v.y) for v in verts]).centroid
             for room_id, poly in room_polygons.items():
@@ -540,13 +480,8 @@ class MapTransformer:
                     break
 
         for item in context.enhancement_layers.get("layers", []):
-            verts = [schema.GridPoint(x=int(v[0] / 8), y=int(v[1] / 8)) for v in item["high_res_vertices"]]
-            layer = schema.EnvironmentalLayer(
-                id=f"layer_{uuid.uuid4().hex[:8]}",
-                layerType=item["layerType"],
-                gridVertices=verts,
-                properties=item["properties"],
-            )
+            verts = [schema.GridPoint(x=int(v[0]/8), y=int(v[1]/8)) for v in item["high_res_vertices"]]
+            layer = schema.EnvironmentalLayer(id=f"layer_{uuid.uuid4().hex[:8]}", layerType=item["layerType"], gridVertices=verts, properties=item["properties"])
             layers.append(layer)
             center = Polygon([(v.x, v.y) for v in verts]).centroid
             for room_id, poly in room_polygons.items():
@@ -556,11 +491,10 @@ class MapTransformer:
                     break
         log_xfm.debug(
             "Step 4: Created %d features and %d layers from enhancements.",
-            len(features),
-            len(layers),
+            len(features), len(layers)
         )
 
-        all_objects = rooms + doors + features + layers
+        all_objects: List[Any] = rooms + doors + features + layers
         log.info("Transformation complete. Found %d total map objects.", len(all_objects))
         return all_objects
 
@@ -572,17 +506,12 @@ class MapTransformer:
                 current_area, q, head = set(), [(gx, gy)], 0
                 visited.add((gx, gy))
                 while head < len(q):
-                    cx, cy = q[head]
-                    head += 1
+                    cx, cy = q[head]; head += 1
                     current_area.add((cx, cy))
                     for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
                         nx, ny = cx + dx, cy + dy
                         neighbor = tile_grid.get((nx, ny))
-                        if (
-                            neighbor
-                            and neighbor.feature_type == "floor"
-                            and (nx, ny) not in visited
-                        ):
+                        if (neighbor and neighbor.feature_type == "floor" and (nx, ny) not in visited):
                             visited.add((nx, ny))
                             q.append((nx, ny))
                 all_areas.append(current_area)
@@ -599,55 +528,36 @@ class MapTransformer:
             if tile.south_wall in door_types:
                 edge = tuple(sorted(((gx, gy), (gx, gy + 1))))
                 if edge not in processed_edges:
-                    room1_id = coord_to_room_id.get((gx, gy))
-                    room2_id = coord_to_room_id.get((gx, gy + 1))
-                    if room1_id and room2_id and room1_id != room2_id:
+                    r1 = coord_to_room_id.get((gx, gy))
+                    r2 = coord_to_room_id.get((gx, gy + 1))
+                    if r1 and r2 and r1 != r2:
                         props = None
                         if tile.south_wall == "secret_door": props = {"secret": True}
                         elif tile.south_wall == "iron_bar_door": props = {"type": "iron_bar"}
                         pos = schema.GridPoint(x=gx, y=gy + 1)
-                        doors.append(
-                            schema.Door(
-                                id=f"door_{uuid.uuid4().hex[:8]}",
-                                gridPos=pos,
-                                orientation="h",
-                                connects=[room1_id, room2_id],
-                                properties=props,
-                            )
-                        )
+                        doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}", gridPos=pos, orientation="h", connects=[r1, r2], properties=props))
                         processed_edges.add(edge)
 
             # East Wall Check
             if tile.east_wall in door_types:
                 edge = tuple(sorted(((gx, gy), (gx + 1, gy))))
                 if edge not in processed_edges:
-                    room1_id = coord_to_room_id.get((gx, gy))
-                    room2_id = coord_to_room_id.get((gx + 1, gy))
-                    if room1_id and room2_id and room1_id != room2_id:
+                    r1 = coord_to_room_id.get((gx, gy))
+                    r2 = coord_to_room_id.get((gx + 1, gy))
+                    if r1 and r2 and r1 != r2:
                         props = None
                         if tile.east_wall == "secret_door": props = {"secret": True}
                         elif tile.east_wall == "iron_bar_door": props = {"type": "iron_bar"}
                         pos = schema.GridPoint(x=gx + 1, y=gy)
-                        doors.append(
-                            schema.Door(
-                                id=f"door_{uuid.uuid4().hex[:8]}",
-                                gridPos=pos,
-                                orientation="v",
-                                connects=[room1_id, room2_id],
-                                properties=props,
-                            )
-                        )
+                        doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}", gridPos=pos, orientation="v", connects=[r1, r2], properties=props))
                         processed_edges.add(edge)
         return doors
 
     def _trace_room_perimeter(self, room_tiles, tile_grid):
         """Traces the perimeter of a room area using a wall-following algorithm."""
-        if not room_tiles:
-            return []
+        if not room_tiles: return []
         start_pos = min(room_tiles, key=lambda p: (p[1], p[0]))
-
-        direction = (1, 0)
-        current_vertex = (start_pos[0], start_pos[1])
+        direction, current_vertex = (1, 0), (start_pos[0], start_pos[1])
         path = [schema.GridPoint(x=current_vertex[0], y=current_vertex[1])]
 
         for _ in range(len(tile_grid) * 4):
@@ -656,41 +566,27 @@ class MapTransformer:
             tile_SW = tile_grid.get((current_vertex[0] - 1, current_vertex[1]))
             tile_SE = tile_grid.get(current_vertex)
 
-            if direction == (1, 0):
-                if tile_NE and tile_NE.west_wall:
-                    direction = (0, 1)
-                elif tile_SE and tile_SE.north_wall:
-                    current_vertex = (current_vertex[0] + 1, current_vertex[1])
-                else:
-                    direction = (0, -1)
-            elif direction == (0, 1):
-                if tile_SE and tile_SE.north_wall:
-                    direction = (-1, 0)
-                elif tile_SW and tile_SW.east_wall:
-                    current_vertex = (current_vertex[0], current_vertex[1] + 1)
-                else:
-                    direction = (1, 0)
-            elif direction == (-1, 0):
-                if tile_SW and tile_SW.east_wall:
-                    direction = (0, -1)
-                elif tile_NW and tile_NW.south_wall:
-                    current_vertex = (current_vertex[0] - 1, current_vertex[1])
-                else:
-                    direction = (0, 1)
-            elif direction == (0, -1):
-                if tile_NW and tile_NW.south_wall:
-                    direction = (1, 0)
-                elif tile_NE and tile_NE.west_wall:
-                    current_vertex = (current_vertex[0], current_vertex[1] - 1)
-                else:
-                    direction = (-1, 0)
+            if direction == (1, 0): # Moving East
+                if tile_NE and tile_NE.west_wall: direction = (0, 1) # Turn South
+                elif tile_SE and tile_SE.north_wall: current_vertex = (current_vertex[0] + 1, current_vertex[1]) # Continue East
+                else: direction = (0, -1) # Turn North
+            elif direction == (0, 1): # Moving South
+                if tile_SE and tile_SE.north_wall: direction = (-1, 0) # Turn West
+                elif tile_SW and tile_SW.east_wall: current_vertex = (current_vertex[0], current_vertex[1] + 1) # Continue South
+                else: direction = (1, 0) # Turn East
+            elif direction == (-1, 0): # Moving West
+                if tile_SW and tile_SW.east_wall: direction = (0, -1) # Turn North
+                elif tile_NW and tile_NW.south_wall: current_vertex = (current_vertex[0] - 1, current_vertex[1]) # Continue West
+                else: direction = (0, 1) # Turn South
+            elif direction == (0, -1): # Moving North
+                if tile_NW and tile_NW.south_wall: direction = (1, 0) # Turn East
+                elif tile_NE and tile_NE.west_wall: current_vertex = (current_vertex[0], current_vertex[1] - 1) # Continue North
+                else: direction = (-1, 0) # Turn West
 
             if path[-1].x != current_vertex[0] or path[-1].y != current_vertex[1]:
                 path.append(schema.GridPoint(x=current_vertex[0], y=current_vertex[1]))
-
             if (current_vertex[0], current_vertex[1]) == (start_pos[0], start_pos[1]):
                 break
-
         return path
 
 
@@ -722,7 +618,6 @@ class _TileData:
 @dataclass
 class _GridInfo:
     """Internal data object for grid parameters."""
-
     size: int
     offset_x: int
     offset_y: int
@@ -731,7 +626,6 @@ class _GridInfo:
 @dataclass
 class _RegionAnalysisContext:
     """Internal data carrier for a single region's analysis pipeline."""
-
     tile_grid: Dict[Tuple[int, int], _TileData] = field(default_factory=dict)
     enhancement_layers: Dict[str, Any] = field(default_factory=dict)
     room_bounds: List[Tuple[int, int, int, int]] = field(default_factory=list)
@@ -744,13 +638,10 @@ log_ocr.info("EasyOCR reader initialized.")
 
 
 def _stage1_detect_regions(img: np.ndarray) -> List[Dict[str, Any]]:
-    """
-    Stage 1: Detect distinct, separate content regions in the map image.
-    """
+    """Stage 1: Detect distinct, separate content regions in the map image."""
     log.info("Executing Stage 1: Region Detection...")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
-
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     region_contexts = []
@@ -758,14 +649,7 @@ def _stage1_detect_regions(img: np.ndarray) -> List[Dict[str, Any]]:
     for i, contour in enumerate(contours):
         if cv2.contourArea(contour) > min_area:
             x, y, w, h = cv2.boundingRect(contour)
-            region_contexts.append(
-                {
-                    "id": f"region_{i}",
-                    "contour": contour,
-                    "bounds_rect": (x, y, w, h),
-                    "bounds_img": img[y : y + h, x : x + w],
-                }
-            )
+            region_contexts.append({"id": f"region_{i}", "contour": contour, "bounds_rect": (x,y,w,h), "bounds_img": img[y:y+h, x:x+w]})
     log.info("Found %d potential content regions.", len(region_contexts))
     return region_contexts
 
@@ -773,23 +657,16 @@ def _stage1_detect_regions(img: np.ndarray) -> List[Dict[str, Any]]:
 def _stage2_parse_text_metadata(
     region_contexts: List[Dict[str, Any]],
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
-    """
-    Stage 2: Classify regions and parse text from non-dungeon areas for metadata.
-    """
+    """Stage 2: Classify regions and parse text for metadata."""
     log.info("Executing Stage 2: Text & Metadata Parsing...")
-    if not region_contexts:
-        return {}, []
+    if not region_contexts: return {}, []
 
-    # Find the largest region by area to consider it the main dungeon
     try:
-        main_dungeon_idx = max(
-            range(len(region_contexts)),
-            key=lambda i: cv2.contourArea(region_contexts[i]["contour"]),
-        )
+        main_dungeon_idx = max(range(len(region_contexts)), key=lambda i: cv2.contourArea(region_contexts[i]["contour"]))
     except ValueError:
         return {}, []
 
-    metadata = {"title": None, "notes": "", "legend": ""}
+    metadata: Dict[str, Any] = {"title": None, "notes": "", "legend": ""}
     text_blobs = []
 
     for i, context in enumerate(region_contexts):
@@ -800,14 +677,14 @@ def _stage2_parse_text_metadata(
 
         context["type"] = "text"
         log.debug("Region '%s' classified as 'text', running OCR.", context["id"])
-        ocr_results = OCR_READER.readtext(context["bounds_img"], detail=1, paragraph=False)
-        for bbox, text, prob in ocr_results:
+        ocr_res = OCR_READER.readtext(context["bounds_img"], detail=1, paragraph=False)
+        for bbox, text, prob in ocr_res:
             h = bbox[2][1] - bbox[0][1]
             text_blobs.append({"text": text, "height": h})
 
     if text_blobs:
-        title_blob_idx = max(range(len(text_blobs)), key=lambda i: text_blobs[i]["height"])
-        metadata["title"] = text_blobs.pop(title_blob_idx)["text"]
+        title_idx = max(range(len(text_blobs)), key=lambda i: text_blobs[i]["height"])
+        metadata["title"] = text_blobs.pop(title_idx)["text"]
         metadata["notes"] = " ".join([b["text"] for b in text_blobs])
 
     log_ocr.info("Extracted metadata: Title='%s'", metadata["title"])
@@ -817,27 +694,15 @@ def _stage2_parse_text_metadata(
 def _stage3_create_stroke_only_image(
     img: np.ndarray, color_profile: Dict[str, Any], kmeans: KMeans
 ) -> np.ndarray:
-    """
-    Stage 3: Creates a stroke-only image (black on white) for contour detection.
-    """
+    """Stage 3: Creates a stroke-only image (black on white) for contour detection."""
     log.info("Executing Stage 3: Creating Stroke-Only Image...")
-    # Get all labels for colors that are 'stroke' or 'alias_stroke'
-    stroke_roles = {role for role in color_profile["roles"].values() if role.endswith("stroke")}
-    rgb_to_label = {
-        tuple(c.astype("uint8")[::-1]): i
-        for i, c in enumerate(kmeans.cluster_centers_)
-    }
-    stroke_labels = {
-        rgb_to_label[rgb]
-        for rgb, role in color_profile["roles"].items()
-        if role in stroke_roles
-    }
+    stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
+    rgb_to_label = {tuple(c.astype("uint8")[::-1]): i for i,c in enumerate(kmeans.cluster_centers_)}
+    stroke_labels = {rgb_to_label[rgb] for rgb, role in color_profile["roles"].items() if role in stroke_roles}
 
-    # Create a mask where pixel labels match any stroke label
     all_labels = kmeans.labels_.reshape(img.shape[:2])
     stroke_mask = np.isin(all_labels, list(stroke_labels))
 
-    # Create a white canvas and draw only the stroke pixels in black
     canvas = np.full_like(img, 255, dtype=np.uint8)
     canvas[stroke_mask] = (0, 0, 0)
     return canvas
@@ -846,24 +711,12 @@ def _stage3_create_stroke_only_image(
 def _stage3b_create_structural_image(
     img: np.ndarray, color_profile: Dict[str, Any], kmeans: KMeans
 ) -> np.ndarray:
-    """
-    Stage 3b: Creates a clean two-color image (stroke on floor) for analysis.
-    """
+    """Stage 3b: Creates a clean two-color image (stroke on floor) for analysis."""
     log.info("Executing Stage 3b: Creating Structural Analysis Image...")
+    stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
+    rgb_to_label = {tuple(c.astype("uint8")[::-1]): i for i,c in enumerate(kmeans.cluster_centers_)}
+    stroke_labels = {rgb_to_label[rgb] for rgb, role in color_profile["roles"].items() if role in stroke_roles}
 
-    # Get all stroke labels (primary and alias)
-    stroke_roles = {role for role in color_profile["roles"].values() if role.endswith("stroke")}
-    rgb_to_label = {
-        tuple(c.astype("uint8")[::-1]): i
-        for i, c in enumerate(kmeans.cluster_centers_)
-    }
-    stroke_labels = {
-        rgb_to_label[rgb]
-        for rgb, role in color_profile["roles"].items()
-        if role in stroke_roles
-    }
-
-    # Get floor color
     roles_inv = {v: k for k, v in color_profile["roles"].items()}
     floor_rgb = roles_inv.get("floor", (255, 255, 255))
     stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
@@ -883,20 +736,11 @@ def _stage3b_create_structural_image(
 def _stage3c_create_floor_only_image(
     img: np.ndarray, color_profile: Dict[str, Any], kmeans: KMeans
 ) -> np.ndarray:
-    """
-    Stage 3c: Creates a binary mask of all floor pixels for accurate contouring.
-    """
+    """Stage 3c: Creates a binary mask of all floor pixels for accurate contouring."""
     log.info("Executing Stage 3c: Creating Floor-Only Image...")
-    floor_roles = {role for role in color_profile["roles"].values() if "floor" in role or "water" in role}
-    rgb_to_label = {
-        tuple(c.astype("uint8")[::-1]): i
-        for i, c in enumerate(kmeans.cluster_centers_)
-    }
-    floor_labels = {
-        rgb_to_label[rgb]
-        for rgb, role in color_profile["roles"].items()
-        if role in floor_roles
-    }
+    floor_roles = {r for r in color_profile["roles"].values() if "floor" in r or "water" in r}
+    rgb_to_label = {tuple(c.astype("uint8")[::-1]): i for i,c in enumerate(kmeans.cluster_centers_)}
+    floor_labels = {rgb_to_label[rgb] for rgb, role in color_profile["roles"].items() if role in floor_roles}
 
     all_labels = kmeans.labels_.reshape(img.shape[:2])
     floor_mask = np.isin(all_labels, list(floor_labels))
@@ -909,24 +753,17 @@ def _stage3c_create_floor_only_image(
 def _stage3a_find_room_bounds(
     stroke_only_image: np.ndarray,
 ) -> List[Tuple[int, int, int, int]]:
-    """
-    Stage 3a: Finds bounding boxes of all major shapes in the stroke-only image.
-    """
+    """Stage 3a: Finds bounding boxes of all major shapes in the stroke-only image."""
     log.info("Executing Stage 3a: Finding Room Boundary Boxes from Strokes...")
     gray = cv2.cvtColor(stroke_only_image, cv2.COLOR_BGR2GRAY)
     _, binary_mask = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
 
-    contours, _ = cv2.findContours(
-        binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     bounds = []
-    # Filter out contours that are too small to be rooms (e.g., noise)
     min_area = 1000
     for contour in contours:
         if cv2.contourArea(contour) > min_area:
             bounds.append(cv2.boundingRect(contour))
-
     log.info("Found %d potential room boundary boxes.", len(bounds))
     return bounds
 
@@ -934,13 +771,9 @@ def _stage3a_find_room_bounds(
 def _get_floor_plan_contours(
     floor_only_image: np.ndarray, grid_size: int
 ) -> List[np.ndarray]:
-    """
-    Helper to get clean room contours from the floor-only binary image.
-    """
+    """Helper to get clean room contours from the floor-only binary image."""
     log.debug("Extracting floor plan contours from floor-only image.")
-    contours, _ = cv2.findContours(
-        floor_only_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
+    contours, _ = cv2.findContours(floor_only_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return [c for c in contours if cv2.contourArea(c) > (grid_size * grid_size)]
 
 
@@ -955,13 +788,11 @@ def _save_wall_detection_debug_image(
     debug_img = original_region_img.copy()
     thickness = 4
 
-    # Add a dark overlay to make debug lines stand out
     overlay = debug_img.copy()
     cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
     debug_img = cv2.addWeighted(overlay, 0.4, debug_img, 0.6, 0)
 
-    # Draw grid lines
-    grid_color = (255, 255, 0)  # Cyan
+    grid_color = (255, 255, 0)
     for x in range(0, w, grid_info.size):
         px = x + grid_info.offset_x
         cv2.line(debug_img, (px, 0), (px, h), grid_color, 1)
@@ -969,51 +800,36 @@ def _save_wall_detection_debug_image(
         py = y + grid_info.offset_y
         cv2.line(debug_img, (0, py), (w, py), grid_color, 1)
 
-    stroke_centered_color = (0, 255, 255)  # Yellow
-    stroke_exterior_color = (0, 165, 255)  # Orange
+    stroke_centered_color, stroke_exterior_color = (0, 255, 255), (0, 165, 255)
     offset = grid_info.size // 4
 
     for (x, y), tile in tile_grid.items():
-        if tile.feature_type == "empty":
-            continue
-
-        p_nw = (x * grid_info.size + grid_info.offset_x, y * grid_info.size + grid_info.offset_y)
-        p_ne = ((x + 1) * grid_info.size + grid_info.offset_x, y * grid_info.size + grid_info.offset_y)
-        p_sw = (x * grid_info.size + grid_info.offset_x, (y + 1) * grid_info.size + grid_info.offset_y)
-        p_se = ((x + 1) * grid_info.size + grid_info.offset_x, (y + 1) * grid_info.size + grid_info.offset_y)
+        if tile.feature_type == "empty": continue
+        p_nw = (x*grid_info.size+grid_info.offset_x, y*grid_info.size+grid_info.offset_y)
+        p_ne = ((x+1)*grid_info.size+grid_info.offset_x, y*grid_info.size+grid_info.offset_y)
+        p_sw = (x*grid_info.size+grid_info.offset_x, (y+1)*grid_info.size+grid_info.offset_y)
+        p_se = ((x+1)*grid_info.size+grid_info.offset_x, (y+1)*grid_info.size+grid_info.offset_y)
 
         boundaries = []
-        if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
-            boundaries.append({"p1": p_nw, "p2": p_ne, "off": (0, -offset)})
-        if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
-            boundaries.append({"p1": p_ne, "p2": p_se, "off": (offset, 0)})
-        if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
-            boundaries.append({"p1": p_sw, "p2": p_se, "off": (0, offset)})
-        if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
-            boundaries.append({"p1": p_nw, "p2": p_sw, "off": (-offset, 0)})
+        if tile_grid.get((x, y-1), _TileData("empty")).feature_type == "empty": boundaries.append({"p1":p_nw, "p2":p_ne, "off":(0,-offset)})
+        if tile_grid.get((x+1, y), _TileData("empty")).feature_type == "empty": boundaries.append({"p1":p_ne, "p2":p_se, "off":(offset,0)})
+        if tile_grid.get((x, y+1), _TileData("empty")).feature_type == "empty": boundaries.append({"p1":p_sw, "p2":p_se, "off":(0,offset)})
+        if tile_grid.get((x-1, y), _TileData("empty")).feature_type == "empty": boundaries.append({"p1":p_nw, "p2":p_sw, "off":(-offset,0)})
 
         for b in boundaries:
-            p1, p2, ex_off = b["p1"], b["p2"], b["off"]
-
-            # Draw the stroke search area outlines
-            p1_arr, p2_arr = np.array(p1), np.array(p2)
-            s_vec = p2_arr - p1_arr
-            s_length = np.linalg.norm(s_vec)
-            if s_length > 0:
-                s_vec_norm = s_vec / s_length
-                s_normal = np.array([-s_vec_norm[1], s_vec_norm[0]]) * (thickness / 2)
-                # Centered rectangle
-                s_rect_points = np.array( [p1_arr + s_normal, p2_arr + s_normal, p2_arr - s_normal, p1_arr - s_normal], dtype=np.int32)
-                cv2.polylines(debug_img, [s_rect_points], True, stroke_centered_color, 1)
-
-                # Exterior rectangle
-                shift_vec = np.array(ex_off)
-                shift_norm = np.linalg.norm(shift_vec)
-                if shift_norm > 0:
-                    shift_vec = (shift_vec / shift_norm) * (thickness / 2)
-                    p1_ext, p2_ext = p1_arr + shift_vec, p2_arr + shift_vec
-                    s_rect_points_ext = np.array( [p1_ext + s_normal, p2_ext + s_normal, p2_ext - s_normal, p1_ext - s_normal], dtype=np.int32)
-                    cv2.polylines(debug_img, [s_rect_points_ext], True, stroke_exterior_color, 1)
+            p1_arr, p2_arr = np.array(b["p1"]), np.array(b["p2"])
+            s_vec, s_len = p2_arr - p1_arr, np.linalg.norm(p2_arr - p1_arr)
+            if s_len > 0:
+                s_vn = s_vec / s_len
+                s_n = np.array([-s_vn[1], s_vn[0]]) * (thickness / 2)
+                s_pts = np.array([p1_arr+s_n, p2_arr+s_n, p2_arr-s_n, p1_arr-s_n], dtype=np.int32)
+                cv2.polylines(debug_img, [s_pts], True, stroke_centered_color, 1)
+                shift = np.array(b["off"])
+                if np.linalg.norm(shift) > 0:
+                    shift = (shift/np.linalg.norm(shift)) * (thickness/2)
+                    p1_e, p2_e = p1_arr + shift, p2_arr + shift
+                    s_pts_e = np.array([p1_e+s_n, p2_e+s_n, p2_e-s_n, p1_e-s_n], dtype=np.int32)
+                    cv2.polylines(debug_img, [s_pts_e], True, stroke_exterior_color, 1)
 
     cv2.imwrite(output_path, debug_img)
     log.info("Saved wall detection debug image to %s", output_path)
@@ -1041,41 +857,27 @@ def _run_analysis_on_region(
     structural_img = _stage3b_create_structural_image(img, color_profile, kmeans_model)
     floor_only_img = _stage3c_create_floor_only_image(img, color_profile, kmeans_model)
 
-    context.room_bounds = _stage3a_find_room_bounds(
-        _stage3_create_stroke_only_image(img, color_profile, kmeans_model)
-    )
-    grid_info = analyzer.structure_analyzer.discover_grid(
-        structural_img, color_profile, context.room_bounds
-    )
+    context.room_bounds = _stage3a_find_room_bounds(_stage3_create_stroke_only_image(img, color_profile, kmeans_model))
+    grid_info = analyzer.structure_analyzer.discover_grid(structural_img, color_profile, context.room_bounds)
 
-    corrected_floor_image = floor_only_img.copy()
-    temp_layers = analyzer.feature_extractor.extract(
-        img, [], grid_info.size, color_profile, kmeans_model
-    )
+    corrected_floor = floor_only_img.copy()
+    temp_layers = analyzer.feature_extractor.extract(img, [], grid_info.size, color_profile, kmeans_model)
     if temp_layers.get("layers"):
-        log.info("Correcting floor plan with %d environmental layers.", len(temp_layers["layers"]))
+        log.info("Correcting floor plan with %d env layers.", len(temp_layers["layers"]))
         for layer in temp_layers["layers"]:
-            pixel_verts = (np.array(layer["high_res_vertices"]) * grid_info.size / 8.0).astype(np.int32)
-            cv2.fillPoly(corrected_floor_image, [pixel_verts], 255)
+            px_verts = (np.array(layer["high_res_vertices"]) * grid_info.size / 8.0).astype(np.int32)
+            cv2.fillPoly(corrected_floor, [px_verts], 255)
 
     if save_intermediate_path:
-        cv2.imwrite(os.path.join(save_intermediate_path, f"{region_context['id']}_corrected_floor.png"), corrected_floor_image)
+        cv2.imwrite(os.path.join(save_intermediate_path, f"{region_context['id']}_corrected_floor.png"), corrected_floor)
 
-    room_contours = _get_floor_plan_contours(corrected_floor_image, grid_info.size)
+    room_contours = _get_floor_plan_contours(corrected_floor, grid_info.size)
 
-    context.enhancement_layers = analyzer.feature_extractor.extract(
-        img, room_contours, grid_info.size, color_profile, kmeans_model
-    )
+    context.enhancement_layers = analyzer.feature_extractor.extract(img, room_contours, grid_info.size, color_profile, kmeans_model)
 
     context.tile_grid = analyzer.structure_analyzer.classify_features(
-        img,
-        structural_img,
-        room_contours,
-        grid_info,
-        color_profile,
-        kmeans_model,
-        save_intermediate_path=save_intermediate_path,
-        region_id=region_context["id"],
+        img, structural_img, room_contours, grid_info, color_profile, kmeans_model,
+        save_intermediate_path=save_intermediate_path, region_id=region_context["id"]
     )
 
     if ascii_debug and context.tile_grid:
@@ -1119,29 +921,18 @@ def analyze_image(
         meta = schema.Meta(title=source_filename, sourceImage=source_filename)
         return schema.MapData(dmapVersion="2.0.0", meta=meta, regions=[]), None
 
-    log.info(
-        "Orchestrator found %d dungeon regions. Processing all.", len(dungeon_regions)
-    )
+    log.info("Orchestrator found %d dungeon regions. Processing all.", len(dungeon_regions))
     final_regions = []
     for i, region_context in enumerate(dungeon_regions):
         region_img = region_context["bounds_img"]
-        # Give the region a simple label for now.
         region_context["label"] = f"Dungeon Area {i+1}"
         processed_region = _run_analysis_on_region(
-            region_img,
-            region_context,
-            ascii_debug=ascii_debug,
-            save_intermediate_path=save_intermediate_path,
+            region_img, region_context, ascii_debug=ascii_debug, save_intermediate_path=save_intermediate_path
         )
         final_regions.append(processed_region)
 
     title = metadata.get("title") or os.path.splitext(source_filename)[0]
-    meta_obj = schema.Meta(
-        title=title,
-        sourceImage=source_filename,
-        notes=metadata.get("notes"),
-        legend=metadata.get("legend"),
-    )
+    meta_obj = schema.Meta(title=title, sourceImage=source_filename, notes=metadata.get("notes"), legend=metadata.get("legend"))
     map_data = schema.MapData(dmapVersion="2.0.0", meta=meta_obj, regions=final_regions)
 
     return map_data, None
