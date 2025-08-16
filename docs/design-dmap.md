@@ -945,3 +945,96 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         2.  Update its call site inside `_run_analysis_on_region`.
         3.  Modify the function's internal logic to remove the code that identifies a `background` color role.
     * **Outcome**: The refactoring is complete. The pipeline is now a true region-first system, and the color analysis is more robust, accurate, and correctly implemented.
+
+### Phase 17: Structural Scaffolding
+
+-   **Milestone 52: Create Class Skeletons**
+    -   **Goal**: To introduce the new class structure into `dmap_lib/analysis.py`
+        without implementing any new logic.
+    -   **Description**: This initial step creates the empty class definitions for
+        each major component of the analysis pipeline. This provides the
+        structural foundation for all subsequent refactoring work.
+    -   **Key Tasks**:
+        1.  Create the empty `ColorAnalyzer`, `StructureAnalyzer`, `FeatureExtractor`,
+            and `MapTransformer` classes.
+        2.  Create the main `MapAnalyzer` orchestrator class with placeholder methods.
+        3.  The existing free-standing functions will remain untouched.
+    -   **Outcome**: The `analysis.py` file will contain the new, empty class
+        definitions alongside the existing functions, ready for the logic to be moved.
+
+-   **Milestone 53: Lift and Shift Functions into Methods**
+    -   **Goal**: To move the existing analysis functions into the new classes as
+        methods with minimal changes.
+    -   **Description**: This is a pure "lift and shift" operation. Each global
+        function will be moved into the most appropriate class and converted to a
+        method. This step isolates the logic within its future home without yet
+        refactoring its internal workings.
+    -   **Key Tasks**:
+        1.  Move color analysis logic into the `ColorAnalyzer` class.
+        2.  Move grid discovery and feature classification logic into the
+            `StructureAnalyzer` class.
+        3.  Move enhancement detection logic into the `FeatureExtractor` class.
+        4.  Move transformation logic into the `MapTransformer` class.
+        5.  Update the main `_run_analysis_on_region` function to instantiate these
+            new classes and call their methods, replacing the direct function calls.
+    -   **Outcome**: The code is now structured within classes, but the internal logic
+        and the overall data flow remain unchanged. The application should function
+        exactly as before.
+
+### Phase 18: Implementation Refactoring
+
+-   **Milestone 54: Refactor `ColorAnalyzer`**
+    -   **Goal**: To refactor the internal implementation of the `ColorAnalyzer`
+        class for clarity and encapsulation.
+    -   **Description**: This milestone focuses on cleaning up the first stage of the
+        pipeline. The methods within `ColorAnalyzer` will be reviewed to ensure they
+        are self-contained.
+    -   **Key Tasks**:
+        1.  Refactor the `analyze` method of `ColorAnalyzer` to be a pure function
+            that accepts an image and returns a `color_profile`.
+        2.  Ensure no global state is being used within the class.
+    -   **Outcome**: A fully encapsulated `ColorAnalyzer` class that is easier to test
+        and understand.
+
+-   **Milestone 55: Refactor `StructureAnalyzer`**
+    -   **Goal**: To refactor the internal implementation of the `StructureAnalyzer`.
+    -   **Description**: We will break down the large classification method into
+        smaller, more manageable helper methods within the `StructureAnalyzer`
+        class, improving its readability.
+    -   **Key Tasks**:
+        1.  Create private helper methods for tasks like boundary classification and
+            wall scoring.
+        2.  Ensure the main `analyze` method of the class clearly shows the sequence
+            of operations.
+    -   **Outcome**: A refactored `StructureAnalyzer` class where the complex logic is
+        broken down into smaller, well-named methods.
+
+-   **Milestone 56: Refactor `FeatureExtractor` and `MapTransformer`**
+    -   **Goal**: To refactor the internal implementations of the final two stages.
+    -   **Description**: This milestone cleans up the remaining classes, ensuring they
+        follow the same principles of encapsulation and clarity as the others.
+    -   **Key Tasks**:
+        1.  Refactor the `FeatureExtractor` class to ensure its `extract` method is
+            a pure function.
+        2.  Refactor the `MapTransformer` class, cleaning up the wall-tracing and
+            door-linking logic into clearer helper methods.
+    -   **Outcome**: The entire analysis pipeline is now composed of fully refactored,
+        single-responsibility classes.
+
+### Phase 19: Final Integration and Cleanup
+
+-   **Milestone 57: Finalize Orchestrator and Remove Old Functions**
+    -   **Goal**: To clean up `analysis.py` by finalizing the orchestrator and removing
+        all the old, now-redundant, free-standing functions.
+    -   **Description**: This final step completes the refactoring. The `MapAnalyzer`
+        class will be finalized, and all the old procedural code will be deleted,
+        leaving only the new, clean object-oriented structure.
+    -   **Key Tasks**:
+        1.  Review the `MapAnalyzer` class and its main `analyze_region` method to
+            ensure the data flow between components is correct and efficient.
+        2.  Delete all the old `_stageX...` and helper functions from the module.
+        3.  Update the top-level `analyze_image` function to be a clean, simple
+            entry point that uses the `MapAnalyzer`.
+    -   **Outcome**: The `dmap_lib/analysis.py` file now contains only the new,
+        refactored class-based implementation. The codebase is significantly
+        cleaner, more organized, and easier to maintain.
