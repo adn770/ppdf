@@ -51,9 +51,14 @@ class FeatureExtractor:
             s_mask = (labels == s_lab).reshape(original_region_img.shape[:2])
             s_mask_u8 = s_mask.astype("uint8") * 255
             cnts, _ = cv2.findContours(s_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+            # --- BUG FIX: Use a dynamic threshold to filter out small grid dots ---
+            min_area = (grid_size * grid_size) * 0.05  # Feature must be 5% of a grid cell
+            max_area = (grid_size * grid_size) * 2.0   # Feature can't be > 2 grid cells
+
             for c in cnts:
                 area = cv2.contourArea(c)
-                if not (20 < area < (grid_size * grid_size * 2)):
+                if not (min_area < area < max_area):
                     continue
                 M = cv2.moments(c)
                 if M["m00"] == 0:

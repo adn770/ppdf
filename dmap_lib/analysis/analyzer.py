@@ -1,4 +1,3 @@
-# --- dmap_lib/analysis/analyzer.py ---
 import logging
 import os
 from typing import List, Dict, Any, Tuple, Optional
@@ -27,6 +26,35 @@ class MapAnalyzer:
         self.feature_extractor = FeatureExtractor()
         self.map_transformer = MapTransformer()
 
+    def _save_feature_detection_debug_image(
+        self,
+        img: np.ndarray,
+        enhancements: Dict[str, Any],
+        grid_size: int,
+        region_id: str,
+        save_path: str,
+        suffix: str,
+    ):
+        """Saves a debug image visualizing detected features and layers."""
+        debug_img = img.copy()
+        layer_color, feature_color = (255, 0, 0), (0, 0, 255)  # Blue, Red
+
+        for layer in enhancements.get("layers", []):
+            px_verts = (
+                np.array(layer["high_res_vertices"]) * grid_size / 8.0
+            ).astype(np.int32)
+            cv2.drawContours(debug_img, [px_verts], -1, layer_color, 2)
+
+        for feature in enhancements.get("features", []):
+            px_verts = (
+                np.array(feature["high_res_vertices"]) * grid_size / 8.0
+            ).astype(np.int32)
+            cv2.drawContours(debug_img, [px_verts], -1, feature_color, 1)
+
+        filename = os.path.join(save_path, f"{region_id}_{suffix}.png")
+        cv2.imwrite(filename, debug_img)
+        log.info("Saved feature detection debug image to %s", filename)
+
     def analyze_region(
         self,
         img: np.ndarray,
@@ -40,13 +68,14 @@ class MapAnalyzer:
             raise ValueError("Input image to analyze_region cannot be None")
 
         color_profile, kmeans_model = self.color_analyzer.analyze(img)
-
         context = _RegionAnalysisContext()
 
         log.info("Executing Stage 4: Structural Image Preparation...")
         structural_img = self._create_structural_image(img, color_profile, kmeans_model)
         floor_only_img = self._create_floor_only_image(img, color_profile, kmeans_model)
-        stroke_only_img = self._create_stroke_only_image(img, color_profile, kmeans_model)
+        stroke_only_img = self._create_stroke_only_image(
+            img, color_profile, kmeans_model
+        )
 
         context.room_bounds = self._find_room_bounds(stroke_only_img)
         grid_info = self.structure_analyzer.discover_grid(
@@ -58,6 +87,12 @@ class MapAnalyzer:
         temp_layers = self.feature_extractor.extract(
             img, [], grid_info.size, color_profile, kmeans_model
         )
+        if save_intermediate_path:
+            self._save_feature_detection_debug_image(
+                img, temp_layers, grid_info.size, region_context["id"],
+                save_intermediate_path, "pass1_layers"
+            )
+
         if temp_layers.get("layers"):
             log.info(
                 "Refining floor plan using %d detected environmental layer(s).",
@@ -74,15 +109,40 @@ class MapAnalyzer:
             cv2.imwrite(os.path.join(save_intermediate_path, fname), corrected_floor)
 
         room_contours = self._get_floor_plan_contours(corrected_floor, grid_info.size)
-
         context.enhancement_layers = self.feature_extractor.extract(
             img, room_contours, grid_info.size, color_profile, kmeans_model
         )
+        if save_intermediate_path:
+            self._save_feature_detection_debug_image(
+                img, context.enhancement_layers, grid_info.size, region_context["id"],
+                save_intermediate_path, "pass2_features"
+            )
+
+        # --- NEW PASS: Pre-emptive Tile Classification ---
+        feature_cleaned_img = corrected_floor.copy()
+        for feature in context.enhancement_layers.get("features", []):
+             px_verts = (
+                np.array(feature["high_res_vertices"]) * grid_info.size / 8.0
+            ).astype(np.int32)
+             cv2.fillPoly(feature_cleaned_img, [px_verts], 0) # Erase feature
+        if save_intermediate_path:
+            fname = f"{region_context['id']}_pass3_feature_cleaned.png"
+            cv2.imwrite(
+                os.path.join(save_intermediate_path, fname), feature_cleaned_img
+            )
+
+        tile_classifications = self.structure_analyzer.classify_tile_content(
+            feature_cleaned_img, grid_info
+        )
 
         context.tile_grid = self.structure_analyzer.classify_features(
-            img, structural_img, room_contours, grid_info, color_profile, kmeans_model,
+            structural_img,
+            feature_cleaned_img,
+            grid_info,
+            color_profile,
+            tile_classifications,
             save_intermediate_path=save_intermediate_path,
-            region_id=region_context["id"]
+            region_id=region_context["id"],
         )
 
         if ascii_debug and context.tile_grid:
@@ -106,7 +166,9 @@ class MapAnalyzer:
     ) -> np.ndarray:
         """Creates a stroke-only image (black on white) for contour detection."""
         log.debug("Creating stroke-only image for boundary analysis.")
-        stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
+        stroke_roles = {
+            r for r in color_profile["roles"].values() if r.endswith("stroke")
+        }
         rgb_to_label = {
             tuple(c.astype("uint8")[::-1]): i
             for i, c in enumerate(kmeans.cluster_centers_)
@@ -129,7 +191,9 @@ class MapAnalyzer:
     ) -> np.ndarray:
         """Creates a clean two-color image (stroke on floor) for analysis."""
         log.debug("Creating two-color structural image (stroke on floor).")
-        stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
+        stroke_roles = {
+            r for r in color_profile["roles"].values() if r.endswith("stroke")
+        }
         rgb_to_label = {
             tuple(c.astype("uint8")[::-1]): i
             for i, c in enumerate(kmeans.cluster_centers_)

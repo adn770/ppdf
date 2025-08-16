@@ -1,4 +1,3 @@
-# --- dmap_lib/analysis/structure.py ---
 import logging
 import math
 import os
@@ -18,6 +17,73 @@ log_grid = logging.getLogger("dmap.grid")
 
 class StructureAnalyzer:
     """Identifies the core grid-based structure of the map."""
+
+    def _is_stair_tile_fft(self, tile_image: np.ndarray) -> bool:
+        """
+        Detects stairs in a tile by looking for the signature of parallel lines
+        in the 2D Fourier Transform of the image.
+        """
+        if tile_image.size < 16 * 16:
+            return False
+
+        # 1. Normalize the tile image
+        normalized_tile = cv2.resize(tile_image, (16, 16))
+        if len(normalized_tile.shape) > 2:
+            normalized_tile = cv2.cvtColor(normalized_tile, cv2.COLOR_BGR2GRAY)
+
+        # 2. Compute the 2D FFT and shift the zero-frequency component to the center
+        f = np.fft.fft2(normalized_tile)
+        fshift = np.fft.fftshift(f)
+        magnitude_spectrum = np.log(np.abs(fshift) + 1)
+
+        # 3. Zero out the center DC component and low frequencies to find high peaks
+        cy, cx = magnitude_spectrum.shape[0] // 2, magnitude_spectrum.shape[1] // 2
+        magnitude_spectrum[cy - 1 : cy + 2, cx - 1 : cx + 2] = 0
+
+        # 4. Check if the brightest remaining point (a high-frequency signal) is
+        # strong enough to indicate a repeating pattern like stairs.
+        max_val = np.max(magnitude_spectrum)
+        mean_val = np.mean(magnitude_spectrum)
+        # A strong peak will be significantly brighter than the average
+        is_stairs = max_val > (mean_val * 3.5) and max_val > 5.0
+
+        if is_stairs:
+            log.debug("Stair tile detected via FFT (Peak: %.2f, Mean: %.2f)",
+                      max_val, mean_val)
+        return is_stairs
+
+    def classify_tile_content(
+        self, feature_cleaned_img: np.ndarray, grid_info: _GridInfo
+    ) -> Dict[Tuple[int, int], str]:
+        """
+        Pre-classifies each tile as either 'floor' or 'empty'. This simplified
+        pass ensures room contiguity for the flood-fill algorithm.
+        """
+        log.info("Executing simplified pass: Base Tile Content Classification...")
+        classifications = {}
+        h, w = feature_cleaned_img.shape
+        max_gx = w // grid_info.size
+        max_gy = h // grid_info.size
+
+        for gy in range(max_gy):
+            for gx in range(max_gx):
+                px_x, px_y = gx * grid_info.size, gy * grid_info.size
+                cell_slice = feature_cleaned_img[
+                    px_y : px_y + grid_info.size, px_x : px_x + grid_info.size
+                ]
+                if cell_slice.size == 0:
+                    continue
+
+                white_pixels = cv2.countNonZero(cell_slice)
+                total_pixels = cell_slice.size
+                white_ratio = white_pixels / total_pixels if total_pixels > 0 else 0
+
+                # If a tile is less than 20% floor, it's considered empty space.
+                if white_ratio < 0.20:
+                    classifications[(gx, gy)] = "empty"
+                else:
+                    classifications[(gx, gy)] = "floor"
+        return classifications
 
     def discover_grid(
         self,
@@ -80,53 +146,59 @@ class StructureAnalyzer:
 
     def classify_features(
         self,
-        original_region_img: np.ndarray,
         structural_img: np.ndarray,
-        room_contours: List[np.ndarray],
+        feature_cleaned_img: np.ndarray,
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
-        kmeans: KMeans,
+        tile_classifications: Dict[Tuple[int, int], str],
         save_intermediate_path: Optional[str] = None,
         region_id: str = "",
     ) -> Dict[Tuple[int, int], _TileData]:
         """Perform score-based wall detection and core structure classification."""
         log.info("Executing Stage 7: Core Structure Classification...")
         tile_grid: Dict[Tuple[int, int], _TileData] = {}
-        if not room_contours:
+        if not tile_classifications:
             return {}
+
+        all_coords = list(tile_classifications.keys())
+        min_gx = min(c[0] for c in all_coords)
+        max_gx = max(c[0] for c in all_coords)
+        min_gy = min(c[1] for c in all_coords)
+        max_gy = max(c[1] for c in all_coords)
+
+        # Initialize the grid based on the simplified pre-classification pass
+        for y in range(min_gy, max_gy + 1):
+            for x in range(min_gx, max_gx + 1):
+                feature_type = tile_classifications.get((x, y), "empty")
+                tile_grid[(x, y)] = _TileData(feature_type=feature_type)
+
+        # Second pass: Re-classify floor tiles to find stairs using robust FFT
+        for (gx, gy), tile in tile_grid.items():
+            if tile.feature_type == "floor":
+                px_x = gx * grid_info.size
+                px_y = gy * grid_info.size
+                cell_slice = feature_cleaned_img[
+                    px_y : px_y + grid_info.size, px_x : px_x + grid_info.size
+                ]
+                if self._is_stair_tile_fft(cell_slice):
+                    tile.feature_type = "stairs"
 
         grid_size, offset_x, offset_y = (
             grid_info.size,
             grid_info.offset_x,
             grid_info.offset_y,
         )
-        all_pts = np.vstack(room_contours)
-        min_gx, max_gx = (
-            math.floor(np.min(all_pts[:, :, 0]) / grid_size),
-            math.ceil(np.max(all_pts[:, :, 0]) / grid_size),
-        )
-        min_gy, max_gy = (
-            math.floor(np.min(all_pts[:, :, 1]) / grid_size),
-            math.ceil(np.max(all_pts[:, :, 1]) / grid_size),
-        )
-
-        for y in range(min_gy - 1, max_gy + 2):
-            for x in range(min_gx - 1, max_gx + 2):
-                px_c = (
-                    x * grid_size + offset_x + grid_size // 2,
-                    y * grid_size + offset_y + grid_size // 2,
-                )
-                is_in = any(
-                    cv2.pointPolygonTest(c, px_c, False) >= 0 for c in room_contours
-                )
-                tile_grid[(x, y)] = _TileData(
-                    feature_type="floor" if is_in else "empty"
-                )
-
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
-        stroke_bgr = np.array(roles_inv.get("stroke", (0, 0, 0))[::-1], dtype="uint8")
+        stroke_bgr = np.array(
+            roles_inv.get("stroke", (0, 0, 0))[::-1], dtype="uint8"
+        )
         WALL_CONFIDENCE_THRESHOLD = 0.3
-        offset = grid_size // 4
+
+        # Define dynamic search area thickness and inset
+        search_thickness = max(4, grid_info.size // 4)
+        half_thickness = search_thickness // 2
+        inset = int(grid_info.size * 0.05)
+
 
         for (x, y), tile in tile_grid.items():
             if tile.feature_type == "empty":
@@ -137,30 +209,61 @@ class StructureAnalyzer:
             p_se = ((x + 1) * grid_size + offset_x, (y + 1) * grid_size + offset_y)
 
             if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
-                r_pts = np.array([p_nw, p_ne, (p_ne[0], p_ne[1]+4), (p_nw[0], p_nw[1]+4)])
+                x_start, x_end = p_nw[0] + inset, p_ne[0] - inset
+                y_center = p_nw[1]
+                r_pts = np.array([(x_start, y_center - half_thickness),
+                                  (x_end, y_center - half_thickness),
+                                  (x_end, y_center + half_thickness),
+                                  (x_start, y_center + half_thickness)])
                 tile.north_wall = self._process_boundary(
-                    p_nw, p_ne, r_pts, (0, -offset), False, structural_img, stroke_bgr,
-                    WALL_CONFIDENCE_THRESHOLD
+                    p_nw, p_ne, r_pts, (0, -half_thickness), False, structural_img,
+                    stroke_bgr, WALL_CONFIDENCE_THRESHOLD
                 )
             if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
-                r_pts = np.array([(p_ne[0]-4, p_ne[1]), p_ne, p_se, (p_se[0]-4, p_se[1])])
+                y_start, y_end = p_ne[1] + inset, p_se[1] - inset
+                x_center = p_ne[0]
+                r_pts = np.array([(x_center - half_thickness, y_start),
+                                  (x_center + half_thickness, y_start),
+                                  (x_center + half_thickness, y_end),
+                                  (x_center - half_thickness, y_end)])
                 tile.east_wall = self._process_boundary(
-                    p_ne, p_se, r_pts, (offset, 0), True, structural_img, stroke_bgr,
-                    WALL_CONFIDENCE_THRESHOLD
+                    p_ne, p_se, r_pts, (half_thickness, 0), True, structural_img,
+                    stroke_bgr, WALL_CONFIDENCE_THRESHOLD
                 )
             if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
-                r_pts = np.array([(p_sw[0],p_sw[1]-4),(p_se[0],p_se[1]-4),p_se,p_sw])
+                x_start, x_end = p_sw[0] + inset, p_se[0] - inset
+                y_center = p_sw[1]
+                r_pts = np.array([(x_start, y_center - half_thickness),
+                                  (x_end, y_center - half_thickness),
+                                  (x_end, y_center + half_thickness),
+                                  (x_start, y_center + half_thickness)])
                 tile.south_wall = self._process_boundary(
-                    p_sw, p_se, r_pts, (0, offset), False, structural_img, stroke_bgr,
-                    WALL_CONFIDENCE_THRESHOLD
+                    p_sw, p_se, r_pts, (0, half_thickness), False, structural_img,
+                    stroke_bgr, WALL_CONFIDENCE_THRESHOLD
                 )
             if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
-                r_pts = np.array([p_nw, (p_nw[0]+4, p_nw[1]), (p_sw[0]+4, p_sw[1]), p_sw])
+                y_start, y_end = p_nw[1] + inset, p_sw[1] - inset
+                x_center = p_nw[0]
+                r_pts = np.array([(x_center - half_thickness, y_start),
+                                  (x_center + half_thickness, y_start),
+                                  (x_center + half_thickness, y_end),
+                                  (x_center - half_thickness, y_end)])
                 tile.west_wall = self._process_boundary(
-                    p_nw, p_sw, r_pts, (-offset, 0), True, structural_img, stroke_bgr,
-                    WALL_CONFIDENCE_THRESHOLD
+                    p_nw, p_sw, r_pts, (-half_thickness, 0), True, structural_img,
+                    stroke_bgr, WALL_CONFIDENCE_THRESHOLD
                 )
 
+        # The debug image must be saved *before* the grid is shifted, using the
+        # original `tile_grid` coordinates to ensure correct alignment.
+        if save_intermediate_path:
+            filename = os.path.join(
+                save_intermediate_path, f"{region_id}_wall_detection.png"
+            )
+            self._save_wall_detection_debug_image(
+                structural_img, grid_info, tile_grid, filename
+            )
+
+        # Create a shifted grid for the transformer, so its coordinates start at (0,0)
         shifted_grid = {}
         c_min_gx = min(
             (k[0] for k, v in tile_grid.items() if v.feature_type != "empty"),
@@ -173,13 +276,6 @@ class StructureAnalyzer:
         for (gx, gy), tile_data in tile_grid.items():
             shifted_grid[(gx - c_min_gx, gy - c_min_gy)] = tile_data
 
-        if save_intermediate_path:
-            filename = os.path.join(
-                save_intermediate_path, f"{region_id}_wall_detection.png"
-            )
-            self._save_wall_detection_debug_image(
-                original_region_img, grid_info, shifted_grid, filename
-            )
         return shifted_grid
 
     def _process_boundary(
@@ -195,6 +291,12 @@ class StructureAnalyzer:
     ) -> Optional[str]:
         """Helper to process a single tile boundary."""
         bx, by, bw, bh = cv2.boundingRect(rect_points.astype(np.int32))
+
+        # Ensure slice coordinates are within image bounds
+        h, w = structural_img.shape[:2]
+        bx, by = max(0, bx), max(0, by)
+        bw, bh = min(w - bx, bw), min(h - by, bh)
+
         boundary_slice = (
             structural_img[by : by + bh, bx : bx + bw]
             if bh > 0 and bw > 0
@@ -218,27 +320,6 @@ class StructureAnalyzer:
         """Analyzes a boundary's pixel projection to classify it."""
         if boundary_slice.size == 0:
             return None
-
-        binary_mask = np.all(boundary_slice == stroke_bgr, axis=2).astype(np.uint8)
-        projection = np.sum(binary_mask, axis=1 if is_vertical else 0)
-        seg_len = len(projection)
-
-        peaks, _ = find_peaks(projection, prominence=1)
-        if len(peaks) == 3:
-            return "iron_bar_door"
-        if len(peaks) == 2:
-            peak_dist = abs(peaks[0] - peaks[1])
-            trough_idx = np.argmin(projection[peaks[0] : peaks[1]]) + peaks[0]
-            if peak_dist > seg_len * 0.75 and projection[trough_idx] <= 1:
-                return "secret_door"
-        if seg_len >= 10:
-            third = seg_len // 3
-            l_frame, r_frame = np.sum(projection[:third]), np.sum(
-                projection[seg_len - third :]
-            )
-            opening = np.sum(projection[third : seg_len - third])
-            if l_frame > 5 and r_frame > 5 and opening < 2:
-                return "door"
 
         if stroke_score > threshold:
             return "stone"
@@ -296,65 +377,83 @@ class StructureAnalyzer:
 
     def _save_wall_detection_debug_image(
         self,
-        original_region_img: np.ndarray,
+        base_img: np.ndarray,
         grid_info: _GridInfo,
         tile_grid: Dict[Tuple[int, int], _TileData],
         output_path: str,
     ):
         """Saves a debug image visualizing the grid and wall sample areas."""
-        h, w, _ = original_region_img.shape
-        debug_img = original_region_img.copy()
-        thickness = 4
+        if len(base_img.shape) == 2:
+            debug_img = cv2.cvtColor(base_img, cv2.COLOR_GRAY2BGR)
+        else:
+            debug_img = base_img.copy()
+        h, w, _ = debug_img.shape
 
         overlay = debug_img.copy()
         cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
         debug_img = cv2.addWeighted(overlay, 0.4, debug_img, 0.6, 0)
 
         grid_color = (255, 255, 0)
-        for x in range(0, w, grid_info.size):
-            px = x + grid_info.offset_x
+        for x_coord in range(0, w, grid_info.size):
+            px = x_coord + grid_info.offset_x
             cv2.line(debug_img, (px, 0), (px, h), grid_color, 1)
-        for y in range(0, h, grid_info.size):
-            py = y + grid_info.offset_y
+        for y_coord in range(0, h, grid_info.size):
+            py = y_coord + grid_info.offset_y
             cv2.line(debug_img, (0, py), (w, py), grid_color, 1)
 
-        stroke_centered_color, stroke_exterior_color = (0, 255, 255), (0, 165, 255)
-        offset = grid_info.size // 4
+        search_area_color = (0, 255, 255) # Bright Yellow for sample areas
+        search_thickness = max(4, grid_info.size // 4)
+        half_thickness = search_thickness // 2
+        inset = int(grid_info.size * 0.05)
 
         for (x, y), tile in tile_grid.items():
             if tile.feature_type == "empty":
                 continue
-            p_nw = (x*grid_info.size+grid_info.offset_x, y*grid_info.size+grid_info.offset_y)
-            p_ne = ((x+1)*grid_info.size+grid_info.offset_x, y*grid_info.size+grid_info.offset_y)
-            p_sw = (x*grid_info.size+grid_info.offset_x, (y+1)*grid_info.size+grid_info.offset_y)
-            p_se = ((x+1)*grid_info.size+grid_info.offset_x, (y+1)*grid_info.size+grid_info.offset_y)
 
-            boundaries = []
-            if tile_grid.get((x,y-1),_TileData("empty")).feature_type=="empty":
-                boundaries.append({"p1":p_nw, "p2":p_ne, "off":(0,-offset)})
-            if tile_grid.get((x+1,y),_TileData("empty")).feature_type=="empty":
-                boundaries.append({"p1":p_ne, "p2":p_se, "off":(offset,0)})
-            if tile_grid.get((x,y+1),_TileData("empty")).feature_type=="empty":
-                boundaries.append({"p1":p_sw, "p2":p_se, "off":(0,offset)})
-            if tile_grid.get((x-1,y),_TileData("empty")).feature_type=="empty":
-                boundaries.append({"p1":p_nw, "p2":p_sw, "off":(-offset,0)})
+            p_nw = (x * grid_info.size + grid_info.offset_x,
+                    y * grid_info.size + grid_info.offset_y)
+            p_ne = ((x + 1) * grid_info.size + grid_info.offset_x,
+                    y * grid_info.size + grid_info.offset_y)
+            p_sw = (x * grid_info.size + grid_info.offset_x,
+                    (y + 1) * grid_info.size + grid_info.offset_y)
+            p_se = ((x + 1) * grid_info.size + grid_info.offset_x,
+                    (y + 1) * grid_info.size + grid_info.offset_y)
 
-            for b in boundaries:
-                p1_arr, p2_arr = np.array(b["p1"]), np.array(b["p2"])
-                s_vec, s_len = p2_arr - p1_arr, np.linalg.norm(p2_arr - p1_arr)
-                if s_len > 0:
-                    s_vn = s_vec / s_len
-                    s_n = np.array([-s_vn[1], s_vn[0]]) * (thickness / 2)
-                    s_pts = np.array([p1_arr+s_n, p2_arr+s_n, p2_arr-s_n, p1_arr-s_n],
-                                     dtype=np.int32)
-                    cv2.polylines(debug_img, [s_pts], True, stroke_centered_color, 1)
-                    shift = np.array(b["off"])
-                    if np.linalg.norm(shift) > 0:
-                        shift = (shift/np.linalg.norm(shift)) * (thickness/2)
-                        p1_e, p2_e = p1_arr + shift, p2_arr + shift
-                        s_pts_e = np.array([p1_e+s_n,p2_e+s_n,p2_e-s_n,p1_e-s_n],
-                                           dtype=np.int32)
-                        cv2.polylines(debug_img, [s_pts_e], True, stroke_exterior_color, 1)
+            if tile_grid.get((x, y - 1), _TileData("empty")).feature_type == "empty":
+                x_start, x_end = p_nw[0] + inset, p_ne[0] - inset
+                y_center = p_nw[1]
+                r_pts = np.array([(x_start, y_center - half_thickness),
+                                  (x_end, y_center - half_thickness),
+                                  (x_end, y_center + half_thickness),
+                                  (x_start, y_center + half_thickness)], dtype=np.int32)
+                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
+
+            if tile_grid.get((x + 1, y), _TileData("empty")).feature_type == "empty":
+                y_start, y_end = p_ne[1] + inset, p_se[1] - inset
+                x_center = p_ne[0]
+                r_pts = np.array([(x_center - half_thickness, y_start),
+                                  (x_center + half_thickness, y_start),
+                                  (x_center + half_thickness, y_end),
+                                  (x_center - half_thickness, y_end)], dtype=np.int32)
+                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
+
+            if tile_grid.get((x, y + 1), _TileData("empty")).feature_type == "empty":
+                x_start, x_end = p_sw[0] + inset, p_se[0] - inset
+                y_center = p_sw[1]
+                r_pts = np.array([(x_start, y_center - half_thickness),
+                                  (x_end, y_center - half_thickness),
+                                  (x_end, y_center + half_thickness),
+                                  (x_start, y_center + half_thickness)], dtype=np.int32)
+                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
+
+            if tile_grid.get((x - 1, y), _TileData("empty")).feature_type == "empty":
+                y_start, y_end = p_nw[1] + inset, p_sw[1] - inset
+                x_center = p_nw[0]
+                r_pts = np.array([(x_center - half_thickness, y_start),
+                                  (x_center + half_thickness, y_start),
+                                  (x_center + half_thickness, y_end),
+                                  (x_center - half_thickness, y_end)], dtype=np.int32)
+                cv2.polylines(debug_img, [r_pts], True, search_area_color, 1)
 
         cv2.imwrite(output_path, debug_img)
         log.info("Saved wall detection debug image to %s", output_path)
