@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict, Any
 from collections import defaultdict
 from dataclasses import dataclass
 
+import cv2
 import numpy as np
 import noise
 from shapely.geometry import Point, Polygon, MultiPolygon, LineString
@@ -24,6 +25,7 @@ PADDING = PIXELS_PER_GRID * 2
 @dataclass
 class _RenderableShape:
     """An intermediate object to hold complex geometry for rendering."""
+
     id: str
     polygon: Polygon
     contents: List[str] | None = None
@@ -63,7 +65,9 @@ def _polygon_to_svg_path(polygon: Polygon, scale: float) -> str:
     return path_data
 
 
-def _generate_hatching(pixel_contour: np.ndarray, density: float) -> list[str]:
+def _generate_hatching_lines(
+    pixel_contour: np.ndarray, density: float, grid_size: int
+) -> list[str]:
     """Generates procedural hatching lines around a single pixel-based contour."""
     hatch_lines = []
     contour_points = pixel_contour.squeeze()
@@ -94,6 +98,89 @@ def _generate_hatching(pixel_contour: np.ndarray, density: float) -> list[str]:
                 f'<line x1="{sx:.2f}" y1="{sy:.2f}" x2="{ex:.2f}" y2="{ey:.2f}" />'
             )
     return hatch_lines
+
+
+def _generate_hatching_sketch(
+    pixel_contour: np.ndarray, density: float, grid_size: int
+) -> list[str]:
+    """Generates a multi-pass, sketchy cross-hatching effect."""
+    hatch_lines = []
+    contour_points = pixel_contour.squeeze()
+    if len(contour_points) < 2:
+        return []
+
+    # Pass 1: Longer, more parallel lines
+    edges = np.append(contour_points, [contour_points[0]], axis=0)
+    for i in range(len(edges) - 1):
+        p1, p2 = edges[i], edges[i + 1]
+        edge_len = np.linalg.norm(p2 - p1)
+        if edge_len < 1:
+            continue
+        norm = np.array([-(p2[1] - p1[1]), p2[0] - p1[0]]) / edge_len
+        num_hatches = int(edge_len / 25 * density)
+        for _ in range(num_hatches):
+            r = random.uniform(0.1, 0.9)
+            angle = random.uniform(-0.1, 0.1)
+            length = random.uniform(grid_size * 0.25, grid_size * 0.75)
+            offset = random.uniform(3, 8)
+            start_point = p1 + (p2 - p1) * r + norm * offset
+            end_point = start_point + (
+                norm * math.cos(angle) - np.array([norm[1], -norm[0]]) * math.sin(angle)
+            ) * length
+            hatch_lines.append(
+                f'<line x1="{start_point[0]:.2f}" y1="{start_point[1]:.2f}" x2="{end_point[0]:.2f}" y2="{end_point[1]:.2f}" stroke-opacity="0.7"/>'
+            )
+
+    # Pass 2: Shorter, more angled cross-hatching
+    for i in range(len(edges) - 1):
+        p1, p2 = edges[i], edges[i + 1]
+        edge_len = np.linalg.norm(p2 - p1)
+        if edge_len < 1:
+            continue
+        norm = np.array([-(p2[1] - p1[1]), p2[0] - p1[0]]) / edge_len
+        num_hatches = int(edge_len / 35 * density)
+        for _ in range(num_hatches):
+            r = random.uniform(0.2, 0.8)
+            angle = random.uniform(0.6, 1.0)  # Steeper angle
+            length = random.uniform(grid_size * 0.25, grid_size * 0.5) # Shorter
+            offset = random.uniform(4, 10)
+            start_point = p1 + (p2 - p1) * r + norm * offset
+            end_point = start_point + (
+                norm * math.cos(angle) - np.array([norm[1], -norm[0]]) * math.sin(angle)
+            ) * length
+            hatch_lines.append(
+                f'<line x1="{start_point[0]:.2f}" y1="{start_point[1]:.2f}" x2="{end_point[0]:.2f}" y2="{end_point[1]:.2f}" stroke-opacity="0.6"/>'
+            )
+
+    return hatch_lines
+
+
+def _generate_hatching_stipple(
+    pixel_contour: np.ndarray, density: float, grid_size: int
+) -> list[str]:
+    """Generates a stippled, dotted effect along the perimeter."""
+    stipples = []
+    contour_points = pixel_contour.squeeze()
+    if len(contour_points) < 2:
+        return []
+
+    edges = np.append(contour_points, [contour_points[0]], axis=0)
+    for i in range(len(edges) - 1):
+        p1, p2 = edges[i], edges[i + 1]
+        edge_len = np.linalg.norm(p2 - p1)
+        if edge_len < 1:
+            continue
+        norm = np.array([-(p2[1] - p1[1]), p2[0] - p1[0]]) / edge_len
+        num_dots = int(edge_len / 2 * density)  # Much higher density for stippling
+        for _ in range(num_dots):
+            r = random.uniform(0.0, 1.0)
+            offset = random.gauss(8, 3)  # Gaussian distribution for offset
+            radius = random.uniform(0.5, 1.5)
+            cx, cy = p1 + (p2 - p1) * r + norm * offset
+            stipples.append(
+                f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{radius:.2f}" />'
+            )
+    return stipples
 
 
 def _create_curvy_path(
@@ -162,7 +249,11 @@ def _create_curvy_path(
 
     # 4. Create a smooth Catmull-Rom spline, converted to cubic Bézier for SVG
     path_data = f"M {smoothed_points[0][0]:.2f} {smoothed_points[0][1]:.2f}"
-    pts = [smoothed_points[-1]] + smoothed_points + [smoothed_points[0], smoothed_points[1]]
+    pts = (
+        [smoothed_points[-1]]
+        + smoothed_points
+        + [smoothed_points[0], smoothed_points[1]]
+    )
 
     for i in range(1, len(pts) - 2):
         p0, p1, p2, p3 = pts[i - 1], pts[i], pts[i + 1], pts[i + 2]
@@ -308,8 +399,10 @@ def _merge_adjacent_rooms(
             if room_map[rid].contents:
                 all_contents.extend(room_map[rid].contents)
 
-        geometries = merged_poly.geoms if hasattr(merged_poly, "geoms") else [merged_poly]
-        for geom in geometries:
+        geoms = (
+            merged_poly.geoms if hasattr(merged_poly, "geoms") else [merged_poly]
+        )
+        for geom in geoms:
             if isinstance(geom, Polygon) and not geom.is_empty:
                 shape = _RenderableShape(
                     id=f"merged_{root_id}_{uuid.uuid4().hex[:4]}",
@@ -324,9 +417,23 @@ def _merge_adjacent_rooms(
     return final_shapes
 
 
-def render_svg(
-    map_data: schema.MapData, unified_contours: list | None, style_options: dict
-) -> str:
+def _shapely_to_contours(geometry: Polygon | MultiPolygon) -> List[np.ndarray]:
+    """Converts a Shapely geometry object to a list of OpenCV-style contours."""
+    contours = []
+    geoms = geometry.geoms if hasattr(geometry, "geoms") else [geometry]
+    for geom in geoms:
+        if isinstance(geom, Polygon) and not geom.is_empty:
+            exterior = np.array(geom.exterior.coords, dtype=np.int32).reshape(
+                (-1, 1, 2)
+            )
+            contours.append(exterior)
+            for interior in geom.interiors:
+                hole = np.array(interior.coords, dtype=np.int32).reshape((-1, 1, 2))
+                contours.append(hole)
+    return contours
+
+
+def render_svg(map_data: schema.MapData, style_options: dict) -> str:
     """Generates a stylized SVG from a region-based MapData object."""
     log.info("Starting SVG rendering process...")
     all_objects = [obj for region in map_data.regions for obj in region.mapObjects]
@@ -339,39 +446,29 @@ def render_svg(
     # Combine renderable shapes with other non-room objects
     non_room_objects = [o for o in all_objects if not isinstance(o, schema.Room)]
     objects_to_render = renderable_shapes + non_room_objects
-    # --- End of pre-processing ---
 
-    rooms_to_render_labels = style_options.pop("rooms", None)
-    enable_hatching = style_options.pop("hatching", False)
+    hatching_style = style_options.pop("hatching", None)
     no_features = style_options.pop("no_features", False)
 
-    if rooms_to_render_labels:
-        # Note: Filtering by label is not supported with the new renderable shapes
-        log.warning("Filtering by room labels is not currently supported with merged geometry.")
-
     if no_features:
-        objects_to_render = [o for o in objects_to_render if not isinstance(o, schema.Feature)]
-        log.info("Feature rendering disabled. Rendering %d objects.", len(objects_to_render))
+        objects_to_render = [
+            o for o in objects_to_render if not isinstance(o, schema.Feature)
+        ]
+        log.info(
+            "Feature rendering disabled. Rendering %d objects.", len(objects_to_render)
+        )
 
     if not objects_to_render:
         log.warning("No map objects to render.")
         return "<svg><text>No objects to render.</text></svg>"
 
     styles = {
-        "bg_color": "#EDE0CE",
-        "room_color": "#F7EEDE",
-        "wall_color": "#000000",
-        "shadow_color": "#999999",
-        "glow_color": "#C9C1B1",
-        "line_thickness": 7.0,
-        "hatch_density": 1.0,
-        "water_base_color": "#AEC6CF",
-        "water_ripple_color": "#77AADD",
-        "water_ripple_steps": 4,
-        "water_ripple_spacing": 0.1,
-        "water_curve_resolution": 10,
-        "water_curve_jitter": 0.3,
-        "water_curve_smoothing_strength": 0.5,
+        "bg_color": "#EDE0CE", "room_color": "#F7EEDE", "wall_color": "#000000",
+        "shadow_color": "#999999", "glow_color": "#C9C1B1", "line_thickness": 7.0,
+        "hatch_density": 1.0, "water_base_color": "#AEC6CF",
+        "water_ripple_color": "#77AADD", "water_ripple_steps": 4,
+        "water_ripple_spacing": 0.1, "water_curve_resolution": 10,
+        "water_curve_jitter": 0.3, "water_curve_smoothing_strength": 0.5,
     }
     styles.update({k: v for k, v in style_options.items() if v is not None})
     log.debug("Using styles: %s", styles)
@@ -404,39 +501,30 @@ def render_svg(
     svg.append("<defs></defs>")
     svg.append(f'<g transform="translate({tx:.2f} {ty:.2f})">')
 
-    layers = { "hatching": [], "shadows": [], "glows": [], "room_fills": [],
-               "contents": [], "doors": [], "walls": [] }
+    layers = {
+        "hatching": [], "shadows": [], "glows": [], "room_fills": [],
+        "contents": [], "doors": [], "walls": [],
+    }
     z_ordered_objects = []
 
     for obj in objects_to_render:
         if isinstance(obj, _RenderableShape):
             path_data = _polygon_to_svg_path(obj.polygon, PIXELS_PER_GRID)
             lt = styles["line_thickness"]
-            layers["shadows"].append(
-                f'<path d="{path_data}" transform="translate(3,3)" fill="{styles["shadow_color"]}" stroke="{styles["shadow_color"]}" stroke-width="{lt}" fill-rule="evenodd"/>'
-            )
-            layers["glows"].append(
-                f'<path d="{path_data}" fill="none" stroke="{styles["glow_color"]}" stroke-width="{lt*2.5}" stroke-opacity="0.4"/>'
-            )
-            layers["room_fills"].append(
-                f'<path d="{path_data}" fill="{styles["room_color"]}" fill-rule="evenodd"/>'
-            )
-            layers["walls"].append(
-                f'<path d="{path_data}" fill="none" stroke="{styles["wall_color"]}" stroke-width="{lt}"/>'
-            )
+            layers["shadows"].append(f'<path d="{path_data}" transform="translate(3,3)" fill="{styles["shadow_color"]}" stroke="{styles["shadow_color"]}" stroke-width="{lt}" fill-rule="evenodd"/>')
+            layers["glows"].append(f'<path d="{path_data}" fill="none" stroke="{styles["glow_color"]}" stroke-width="{lt*2.5}" stroke-opacity="0.4"/>')
+            layers["room_fills"].append(f'<path d="{path_data}" fill="{styles["room_color"]}" fill-rule="evenodd"/>')
+            layers["walls"].append(f'<path d="{path_data}" fill="none" stroke="{styles["wall_color"]}" stroke-width="{lt}"/>')
         elif isinstance(obj, schema.Door):
             lt = styles["line_thickness"]
-            dw, dh = ( (lt, PIXELS_PER_GRID * 0.5) if obj.orientation == "v"
-                       else (PIXELS_PER_GRID * 0.5, lt) )
+            dw, dh = ((lt, PIXELS_PER_GRID*0.5) if obj.orientation=="v" else (PIXELS_PER_GRID*0.5, lt))
             if obj.orientation == "v":
                 dx = (obj.gridPos.x * PIXELS_PER_GRID) - dw / 2
                 dy = ((obj.gridPos.y + 0.5) * PIXELS_PER_GRID) - dh / 2
             else:
                 dx = ((obj.gridPos.x + 0.5) * PIXELS_PER_GRID) - dw / 2
                 dy = (obj.gridPos.y * PIXELS_PER_GRID) - dh / 2
-            layers["doors"].append(
-                f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="5.0" />'
-            )
+            layers["doors"].append(f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="5.0" />')
         elif isinstance(obj, (schema.EnvironmentalLayer, schema.Feature)):
             z_ordered_objects.append(obj)
 
@@ -448,20 +536,32 @@ def render_svg(
             else:
                 points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
                 color = styles.get(f"{obj.layerType}_color", "#808080")
-                layers["contents"].append(
-                    f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />'
-                )
+                layers["contents"].append(f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />')
         elif isinstance(obj, schema.Feature):
             points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
-            layers["contents"].append(
-                f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>'
-            )
+            layers["contents"].append(f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>')
 
-    if unified_contours and enable_hatching:
-        log.info("Generating hatching for unified geometry (%d contours).", len(unified_contours))
+    if hatching_style:
+        log.info("Generating unified geometry for hatching...")
+        grid_size = map_data.regions[0].gridSizePx if map_data.regions else 20
+        all_polys = [s.polygon for s in renderable_shapes]
+        unified_geometry = unary_union(all_polys).buffer(0)
+        unified_contours = _shapely_to_contours(unified_geometry)
+        for c in unified_contours:
+            c *= PIXELS_PER_GRID
+
+        hatch_generators = {
+            "sketch": _generate_hatching_sketch,
+            "stipple": _generate_hatching_stipple,
+        }
+        hatch_func = hatch_generators.get(hatching_style, _generate_hatching_lines)
+
+        log.info(f"Generating '{hatching_style}' hatching for unified geometry ({len(unified_contours)} contours).")
         for contour in unified_contours:
-            layers["hatching"].extend(_generate_hatching(contour, styles["hatch_density"]))
-        svg.append(f'<g id="hatching" stroke="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
+            layers["hatching"].extend(hatch_func(contour, styles["hatch_density"], grid_size))
+
+        fill_or_stroke = 'fill' if hatching_style == 'stipple' else 'stroke'
+        svg.append(f'<g id="hatching" {fill_or_stroke}="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
 
     render_order = ["shadows", "glows", "room_fills", "contents", "doors", "walls"]
     for name in render_order:

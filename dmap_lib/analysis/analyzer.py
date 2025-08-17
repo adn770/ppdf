@@ -1,3 +1,4 @@
+# --- dmap_lib/analysis/analyzer.py ---
 import logging
 import os
 from typing import List, Dict, Any, Tuple, Optional
@@ -99,7 +100,6 @@ class MapAnalyzer:
                 py = y_coord + grid_info.offset_y
                 cv2.line(debug_canvas, (0, py), (w, py), grid_color, 1)
 
-
         log.info("Executing Stage 6: High-Resolution Feature & Layer Detection...")
         corrected_floor = floor_only_img.copy()
         temp_layers = self.feature_extractor.extract(
@@ -107,8 +107,12 @@ class MapAnalyzer:
         )
         if save_intermediate_path:
             self._save_feature_detection_debug_image(
-                img, temp_layers, grid_info.size, region_context["id"],
-                save_intermediate_path, "pass1_layers"
+                img,
+                temp_layers,
+                grid_info.size,
+                region_context["id"],
+                save_intermediate_path,
+                "pass1_layers",
             )
 
         if temp_layers.get("layers"):
@@ -132,16 +136,20 @@ class MapAnalyzer:
         )
         if save_intermediate_path:
             self._save_feature_detection_debug_image(
-                img, context.enhancement_layers, grid_info.size, region_context["id"],
-                save_intermediate_path, "pass2_features"
+                img,
+                context.enhancement_layers,
+                grid_info.size,
+                region_context["id"],
+                save_intermediate_path,
+                "pass2_features",
             )
 
         feature_cleaned_img = corrected_floor.copy()
         for feature in context.enhancement_layers.get("features", []):
-             px_verts = (
+            px_verts = (
                 np.array(feature["high_res_vertices"]) * grid_info.size / 8.0
             ).astype(np.int32)
-             cv2.fillPoly(feature_cleaned_img, [px_verts], 0) # Erase feature
+            cv2.fillPoly(feature_cleaned_img, [px_verts], 0)  # Erase feature
         if save_intermediate_path:
             fname = f"{region_context['id']}_pass3_feature_cleaned.png"
             cv2.imwrite(
@@ -158,7 +166,7 @@ class MapAnalyzer:
             grid_info,
             color_profile,
             tile_classifications,
-            debug_canvas=debug_canvas # Pass the canvas to the analyzer
+            debug_canvas=debug_canvas,  # Pass the canvas to the analyzer
         )
 
         # Save the completed debug canvas if it was created
@@ -168,7 +176,6 @@ class MapAnalyzer:
             )
             cv2.imwrite(filename, debug_canvas)
             log.info("Saved wall detection debug image to %s", filename)
-
 
         if ascii_debug and context.tile_grid:
             log.info("--- ASCII Debug Output (Pre-Transformation) ---")
@@ -301,7 +308,7 @@ def analyze_image(
     image_path: str,
     ascii_debug: bool = False,
     save_intermediate_path: Optional[str] = None,
-) -> Tuple[schema.MapData, Optional[List]]:
+) -> schema.MapData:
     """
     Top-level orchestrator for the analysis pipeline. It will load the image,
     find distinct regions, and then run the core analysis on each region.
@@ -319,7 +326,7 @@ def analyze_image(
     if not dungeon_regions:
         log.warning("No dungeon regions found in the image.")
         meta = schema.Meta(title=source_filename, sourceImage=source_filename)
-        return schema.MapData(dmapVersion="2.0.0", meta=meta, regions=[]), None
+        return schema.MapData(dmapVersion="2.0.0", meta=meta, regions=[])
 
     log.info(
         "Orchestrator found %d dungeon regions. Processing all.", len(dungeon_regions)
@@ -346,4 +353,4 @@ def analyze_image(
     )
     map_data = schema.MapData(dmapVersion="2.0.0", meta=meta_obj, regions=final_regions)
 
-    return map_data, None
+    return map_data
