@@ -19,3 +19,4 @@ opencv-python
 numpy<2.0
 easyocr
 shapely
+noise

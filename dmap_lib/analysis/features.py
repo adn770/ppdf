@@ -34,7 +34,9 @@ class FeatureExtractor:
             w_lab = kmeans.predict([w_cen])[0]
             w_mask = (labels == w_lab).reshape(original_region_img.shape[:2])
             w_mask_u8 = w_mask.astype("uint8") * 255
-            cnts, _ = cv2.findContours(w_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            cnts, _ = cv2.findContours(
+                w_mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
             for c in cnts:
                 if cv2.contourArea(c) > grid_size * grid_size:
                     verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]

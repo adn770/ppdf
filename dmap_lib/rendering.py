@@ -1,10 +1,12 @@
+# --- dmap_lib/rendering.py ---
 import math
 import random
 import logging
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
-from shapely.geometry import Point, Polygon
+import noise
+from shapely.geometry import Point, Polygon, MultiPolygon
 
 from dmap_lib import schema
 from dmap_lib.analysis.context import _TileData
@@ -53,6 +55,130 @@ def _generate_hatching(pixel_contour: np.ndarray, density: float) -> list[str]:
     return hatch_lines
 
 
+def _create_curvy_path(
+    polygon: Polygon,
+    resolution: int,
+    jitter: float,
+    smoothing_strength: float,
+    scale: float,
+    seed: int,
+) -> str:
+    """Generates a smooth, organic, curvy SVG path from a Shapely Polygon."""
+    if polygon.is_empty:
+        return ""
+
+    points = list(polygon.exterior.coords)
+
+    # 1. Subdivide edges to create more vertices
+    subdivided_points = []
+    for i in range(len(points) - 1):
+        p1 = np.array(points[i])
+        p2 = np.array(points[i + 1])
+        for j in range(resolution):
+            subdivided_points.append(p1 + (p2 - p1) * (j / resolution))
+
+    if not subdivided_points:
+        return ""
+
+    # 2. Perturb vertices using Perlin noise for a natural look
+    perturbed_points = []
+    octaves = 2
+    freq = 10.0 / scale # Noise frequency scales with the map
+
+    for i, p in enumerate(subdivided_points):
+        # Calculate normal vector
+        p1 = np.array(p)
+        p2 = np.array(subdivided_points[(i + 1) % len(subdivided_points)])
+        edge_vec = p2 - p1
+        if np.linalg.norm(edge_vec) == 0: continue
+        normal_vec = np.array([-edge_vec[1], edge_vec[0]])
+        normal_vec /= np.linalg.norm(normal_vec)
+
+        # Get noise value (normalized from -1 to 1)
+        noise_val = noise.pnoise2(p1[0] * freq, p1[1] * freq, octaves=octaves, base=seed)
+
+        displacement = noise_val * jitter * scale
+        perturbed_points.append(p1 + normal_vec * displacement)
+
+    if not perturbed_points:
+        return ""
+
+    # 3. Apply a convolutional smoothing kernel (weighted moving average)
+    smoothed_points = perturbed_points[:]
+    num_points = len(perturbed_points)
+    strength = max(0.0, min(1.0, smoothing_strength))
+
+    for _ in range(3): # Apply smoothing multiple times for a better effect
+        for i in range(num_points):
+            prev_pt = smoothed_points[(i - 1 + num_points) % num_points]
+            curr_pt = smoothed_points[i]
+            next_pt = smoothed_points[(i + 1) % num_points]
+
+            # Weighted average: 25% previous, 50% current, 25% next
+            new_pt = curr_pt * (1-strength) + (prev_pt + next_pt) * (strength / 2)
+            smoothed_points[i] = new_pt
+
+    # 4. Create a smooth Catmull-Rom spline, converted to cubic Bézier for SVG
+    path_data = f"M {smoothed_points[0][0]:.2f} {smoothed_points[0][1]:.2f}"
+    pts = [smoothed_points[-1]] + smoothed_points + [smoothed_points[0], smoothed_points[1]]
+
+    for i in range(1, len(pts) - 2):
+        p0, p1, p2, p3 = pts[i-1], pts[i], pts[i+1], pts[i+2]
+        c1 = p1 + (p2 - p0) / 6.0
+        c2 = p2 - (p3 - p1) / 6.0
+        path_data += f" C {c1[0]:.2f},{c1[1]:.2f} {c2[0]:.2f},{c2[1]:.2f} {p2[0]:.2f},{p2[1]:.2f}"
+
+    return path_data
+
+
+def _render_water_layer(layer: schema.EnvironmentalLayer, styles: dict) -> str:
+    """Renders a water layer with a procedurally generated curvy ripple effect."""
+    if not layer.gridVertices:
+        return ""
+
+    base_color = styles.get("water_base_color", "#AEC6CF")
+    ripple_color = styles.get("water_ripple_color", "#77AADD")
+    ripple_steps = styles.get("water_ripple_steps", 4)
+    ripple_spacing = styles.get("water_ripple_spacing", 0.1) * PIXELS_PER_GRID
+    resolution = styles.get("water_curve_resolution", 10)
+    jitter = styles.get("water_curve_jitter", 0.3)
+    smoothing = styles.get("water_curve_smoothing_strength", 0.5)
+
+    poly = Polygon([(v.x * PIXELS_PER_GRID, v.y * PIXELS_PER_GRID) for v in layer.gridVertices])
+    if poly.is_empty:
+        return ""
+
+    svg_parts = ['<g class="water-effect">']
+    # Use a consistent seed for each water body for stable output
+    seed = int(poly.centroid.x + poly.centroid.y)
+
+    base_path_data = _create_curvy_path(poly, resolution, jitter, smoothing, PIXELS_PER_GRID, seed)
+    if not base_path_data:
+        return ""
+    svg_parts.append(f'<path d="{base_path_data} Z" fill="{base_color}" />')
+
+    for i in range(ripple_steps):
+        ripple_jitter = jitter * (1 - (i + 1) / (ripple_steps + 1))
+        inner_poly = poly.buffer(-(ripple_spacing * (i + 1)))
+        if inner_poly.is_empty:
+            break
+
+        geoms = inner_poly.geoms if hasattr(inner_poly, "geoms") else [inner_poly]
+        for geom in geoms:
+            if geom.is_empty or not isinstance(geom, Polygon):
+                continue
+            ripple_path_data = _create_curvy_path(
+                geom, resolution // (i+1), ripple_jitter, smoothing, PIXELS_PER_GRID, seed + i + 1
+            )
+            if ripple_path_data:
+                 svg_parts.append(
+                    f'<path d="{ripple_path_data} Z" fill="none" stroke="{ripple_color}" stroke-width="1.5"/>'
+                )
+
+    svg_parts.append("</g>")
+    return "".join(svg_parts)
+
+
 def render_svg(
     map_data: schema.MapData, unified_contours: list | None, style_options: dict
 ) -> str:
@@ -93,7 +219,13 @@ def render_svg(
         "glow_color": "#C9C1B1",
         "line_thickness": 7.0,
         "hatch_density": 1.0,
-        "water_color": "#77AADD",
+        "water_base_color": "#AEC6CF",
+        "water_ripple_color": "#77AADD",
+        "water_ripple_steps": 4,
+        "water_ripple_spacing": 0.1,
+        "water_curve_resolution": 10,
+        "water_curve_jitter": 0.3,
+        "water_curve_smoothing_strength": 0.5,
     }
     styles.update({k: v for k, v in style_options.items() if v is not None})
     log.debug("Using styles: %s", styles)
@@ -116,6 +248,10 @@ def render_svg(
         f'<rect width="100%" height="100%" fill="{styles["bg_color"]}" />',
     ]
     tx, ty = PADDING - min_x * PIXELS_PER_GRID, PADDING - min_y * PIXELS_PER_GRID
+
+    svg.append('<defs></defs>')
+
+
     svg.append(f'<g transform="translate({tx:.2f} {ty:.2f})">')
 
     layers = {
@@ -162,7 +298,7 @@ def render_svg(
                 dy = (obj.gridPos.y * PIXELS_PER_GRID) - dh / 2
 
             layers["doors"].append(
-                f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="1.5" />'
+                f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{styles["room_color"]}" stroke="{styles["wall_color"]}" stroke-width="5.0" />'
             )
         elif isinstance(obj, (schema.EnvironmentalLayer, schema.Feature)):
             z_ordered_objects.append(obj)
@@ -172,13 +308,19 @@ def render_svg(
         key=lambda o: o.properties.get("z-order", 0) if o.properties else 0
     )
     for obj in z_ordered_objects:
-        points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
         if isinstance(obj, schema.EnvironmentalLayer):
-            color = styles.get(f"{obj.layerType}_color", "#808080")
-            layers["contents"].append(
-                f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />'
-            )
+            if obj.layerType == "water":
+                layers["contents"].append(_render_water_layer(obj, styles))
+            else:
+                # Fallback for other potential layer types
+                points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
+                color = styles.get(f"{obj.layerType}_color", "#808080")
+                layers["contents"].append(
+                    f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />'
+                )
         elif isinstance(obj, schema.Feature):
+            # Placeholder for future feature-specific rendering
+            points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
             layers["contents"].append(
                 f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>'
             )
@@ -198,7 +340,21 @@ def render_svg(
     for name in render_order:
         svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
 
-    svg.extend(["</g>", "</svg>"])
+    svg.append("</g>")  # Close the main content group
+
+    # Add the grid overlay on top
+    svg.append(f'<g id="grid" stroke="#AEC6CF" stroke-width="1" stroke-opacity="0.5">')
+    x = tx % PIXELS_PER_GRID
+    while x < width:
+        svg.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{height}" />')
+        x += PIXELS_PER_GRID
+    y = ty % PIXELS_PER_GRID
+    while y < height:
+        svg.append(f'<line x1="0" y1="{y}" x2="{width}" y2="{y}" />')
+        y += PIXELS_PER_GRID
+    svg.append("</g>")
+
+    svg.append("</svg>")
     log.info("SVG rendering complete.")
     return "\n".join(svg)
 
