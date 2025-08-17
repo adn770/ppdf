@@ -189,6 +189,7 @@ def render_svg(
 
     rooms_to_render_labels = style_options.pop("rooms", None)
     enable_hatching = style_options.pop("hatching", False)
+    no_features = style_options.pop("no_features", False)
 
     if rooms_to_render_labels:
         log.info("Filtering map to render only rooms: %s", rooms_to_render_labels)
@@ -206,6 +207,11 @@ def render_svg(
         children = [o for o in all_objects if o.id in child_ids]
         objects = rooms + doors + children
         log.debug("Filtered to %d total objects to render.", len(objects))
+
+    if no_features:
+        objects = [o for o in objects if not isinstance(o, schema.Feature)]
+        log.info("Feature rendering disabled. Rendering %d objects.", len(objects))
+
 
     if not objects:
         log.warning("No map objects to render.")

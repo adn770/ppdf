@@ -28,13 +28,28 @@ def run_rendering(
 def get_cli_args():
     """Configures and parses command-line arguments."""
     p = argparse.ArgumentParser(description="Converts raster dungeon maps to JSON and SVG.")
-    p.add_argument("-i", "--input", required=True, help="Path to the input PNG file.")
-    p.add_argument("-o", "--output", required=True, help="Base name for output files.")
+    p.add_argument(
+        "-i", "--input", help="Path to the input PNG or JSON file."
+    )
+    p.add_argument(
+        "-o", "--output", required=True, help="Base name for output files."
+    )
+    p.add_argument(
+        "--skip-analysis",
+        action="store_true",
+        help="Skip analysis and render directly from an existing JSON file "
+             " (e.g., <output>.json).",
+    )
     p.add_argument("--rooms", help="Comma-separated list of room numbers to render.")
     p.add_argument(
         "--hatching",
         action="store_true",
         help="Enables the procedural exterior border hatching.",
+    )
+    p.add_argument(
+        "--no-features",
+        action="store_true",
+        help="Disables the rendering of all Feature objects.",
     )
     # Logging arguments
     g_log = p.add_argument_group("Logging & Output")
@@ -76,21 +91,63 @@ def main():
     log.info("--- DMAP CLI Initialized ---")
     log.debug("Arguments received: %s", vars(args))
 
-    if args.save_intermediate:
+    # --- New Logic for Skipping Analysis ---
+    map_data = None
+    unified_geometry = None
+    json_path = f"{args.output}.json"
+
+    if args.skip_analysis:
+        log.info("Skipping analysis. Loading data from '%s'...", json_path)
         try:
-            os.makedirs(args.save_intermediate, exist_ok=True)
-            log.info("Will save intermediate images to: %s", args.save_intermediate)
-        except OSError as e:
-            log.error("Could not create intermediate image directory: %s", e)
-            args.save_intermediate = None
+            map_data = schema.load_json(json_path)
+            # Unified geometry is not saved in JSON, so it will be None
+            unified_geometry = None
+            log.info("Successfully loaded map data.")
+        except FileNotFoundError:
+            log.critical("JSON file not found for --skip-analysis: %s", json_path)
+            return
+        except Exception as e:
+            log.critical("Failed to load or parse JSON file: %s", e, exc_info=True)
+            return
 
-    try:
-        map_data, unified_geometry = analyze_image(
-            args.input,
-            ascii_debug=args.ascii_debug,
-            save_intermediate_path=args.save_intermediate,
-        )
+    # --- Original Analysis Workflow ---
+    else:
+        if not args.input:
+            log.critical("--input is required unless --skip-analysis is used.")
+            return
 
+        if args.input.endswith(".json"):
+            log.info("Input is a JSON file. Loading data and skipping analysis.")
+            try:
+                map_data = schema.load_json(args.input)
+                unified_geometry = None
+            except Exception as e:
+                log.critical("Failed to load or parse JSON file: %s", e, exc_info=True)
+                return
+        else:
+            if args.save_intermediate:
+                try:
+                    os.makedirs(args.save_intermediate, exist_ok=True)
+                    log.info("Will save intermediate images to: %s", args.save_intermediate)
+                except OSError as e:
+                    log.error("Could not create intermediate image directory: %s", e)
+                    args.save_intermediate = None
+
+            try:
+                map_data, unified_geometry = analyze_image(
+                    args.input,
+                    ascii_debug=args.ascii_debug,
+                    save_intermediate_path=args.save_intermediate,
+                )
+                log.info("Saving analysis to '%s'...", json_path)
+                schema.save_json(map_data, json_path)
+
+            except Exception as e:
+                log.critical("An unexpected error occurred during analysis: %s", e, exc_info=True)
+                return
+
+    # --- Common Rendering Path ---
+    if map_data:
         num_r = sum(
             1 for r in map_data.regions for o in r.mapObjects if isinstance(o, schema.Room)
         )
@@ -104,9 +161,6 @@ def main():
                 "Generated a unified geometry with %d outer contours.", len(unified_geometry)
             )
 
-        json_path = f"{args.output}.json"
-        log.info("Saving analysis to '%s'...", json_path)
-        schema.save_json(map_data, json_path)
 
         if args.ascii_debug:
             log.info("--- ASCII Debug Output (Post-Transformation) ---")
@@ -118,12 +172,10 @@ def main():
         render_opts = {
             "rooms": args.rooms.split(",") if args.rooms else None,
             "hatching": args.hatching,
+            "no_features": args.no_features,
         }
         run_rendering(map_data, unified_geometry, args.output, render_opts)
         log.info("--- Processing complete. ---")
-
-    except Exception as e:
-        log.critical("An unexpected error occurred: %s", e, exc_info=True)
 
 
 if __name__ == "__main__":
