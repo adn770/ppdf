@@ -65,94 +65,159 @@ def _polygon_to_svg_path(polygon: Polygon, scale: float) -> str:
     return path_data
 
 
-def _generate_hatching_lines(
-    pixel_contour: np.ndarray, density: float, grid_size: int
-) -> list[str]:
-    """Generates procedural hatching lines around a single pixel-based contour."""
-    hatch_lines = []
-    contour_points = pixel_contour.squeeze()
-    if len(contour_points) < 2:
-        return []
-
-    edges = np.append(contour_points, [contour_points[0]], axis=0)
-    for i in range(len(edges) - 1):
-        p1, p2 = edges[i], edges[i + 1]
-        dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-        edge_len = math.hypot(dx, dy)
-        if edge_len < 1:
-            continue
-
-        norm_x, norm_y = -dy / edge_len, dx / edge_len
-        num_hatches = int(edge_len / 15 * density)
-        for _ in range(num_hatches):
-            r, angle, length, offset = (
-                random.uniform(0.1, 0.9),
-                random.uniform(-0.2, 0.2),
-                random.uniform(5, 15),
-                random.uniform(2, 6),
-            )
-            sx, sy = p1[0] + dx * r + norm_x * offset, p1[1] + dy * r + norm_y * offset
-            ex = sx + (norm_x * math.cos(angle) - norm_y * math.sin(angle)) * length
-            ey = sy + (norm_x * math.sin(angle) + norm_y * math.cos(angle)) * length
-            hatch_lines.append(
-                f'<line x1="{sx:.2f}" y1="{sy:.2f}" x2="{ex:.2f}" y2="{ey:.2f}" />'
-            )
-    return hatch_lines
-
-
 def _generate_hatching_sketch(
-    pixel_contour: np.ndarray, density: float, grid_size: int
-) -> list[str]:
-    """Generates a multi-pass, sketchy cross-hatching effect."""
+    width: float,
+    height: float,
+    grid_size: int,
+    tx: float,
+    ty: float,
+    unified_geometry: Polygon | MultiPolygon,
+) -> tuple[list[str], list[str]]:
+    """
+    Generates a high-fidelity, tile-based cross-hatching effect with a grey
+    underlay, based on the user's final design.
+    """
     hatch_lines = []
-    contour_points = pixel_contour.squeeze()
-    if len(contour_points) < 2:
-        return []
+    hatch_tile_fills = []
+    grid_min_x = -tx / grid_size
+    grid_min_y = -ty / grid_size
+    grid_max_x = (width - tx) / grid_size
+    grid_max_y = (height - ty) / grid_size
 
-    # Pass 1: Longer, more parallel lines
-    edges = np.append(contour_points, [contour_points[0]], axis=0)
-    for i in range(len(edges) - 1):
-        p1, p2 = edges[i], edges[i + 1]
-        edge_len = np.linalg.norm(p2 - p1)
-        if edge_len < 1:
-            continue
-        norm = np.array([-(p2[1] - p1[1]), p2[0] - p1[0]]) / edge_len
-        num_hatches = int(edge_len / 25 * density)
-        for _ in range(num_hatches):
-            r = random.uniform(0.1, 0.9)
-            angle = random.uniform(-0.1, 0.1)
-            length = random.uniform(grid_size * 0.25, grid_size * 0.75)
-            offset = random.uniform(3, 8)
-            start_point = p1 + (p2 - p1) * r + norm * offset
-            end_point = start_point + (
-                norm * math.cos(angle) - np.array([norm[1], -norm[0]]) * math.sin(angle)
-            ) * length
-            hatch_lines.append(
-                f'<line x1="{start_point[0]:.2f}" y1="{start_point[1]:.2f}" x2="{end_point[0]:.2f}" y2="{end_point[1]:.2f}" stroke-opacity="0.7"/>'
+    hatch_distance_limit = 2.0 * grid_size
+
+    for gx in range(math.floor(grid_min_x), math.ceil(grid_max_x)):
+        for gy in range(math.floor(grid_min_y), math.ceil(grid_max_y)):
+            tile_center_px = Point((gx + 0.5) * grid_size, (gy + 0.5) * grid_size)
+            if unified_geometry.contains(tile_center_px):
+                continue
+
+            distance_to_dungeon = unified_geometry.exterior.distance(tile_center_px)
+            if distance_to_dungeon > hatch_distance_limit:
+                continue
+
+            # Add a grey fill for the tile before adding hatches
+            hatch_tile_fills.append(
+                f'<rect x="{gx * grid_size}" y="{gy * grid_size}" width="{grid_size}" height="{grid_size}" fill="#E0E0E0" />'
             )
 
-    # Pass 2: Shorter, more angled cross-hatching
-    for i in range(len(edges) - 1):
-        p1, p2 = edges[i], edges[i + 1]
-        edge_len = np.linalg.norm(p2 - p1)
-        if edge_len < 1:
-            continue
-        norm = np.array([-(p2[1] - p1[1]), p2[0] - p1[0]]) / edge_len
-        num_hatches = int(edge_len / 35 * density)
-        for _ in range(num_hatches):
-            r = random.uniform(0.2, 0.8)
-            angle = random.uniform(0.6, 1.0)  # Steeper angle
-            length = random.uniform(grid_size * 0.25, grid_size * 0.5) # Shorter
-            offset = random.uniform(4, 10)
-            start_point = p1 + (p2 - p1) * r + norm * offset
-            end_point = start_point + (
-                norm * math.cos(angle) - np.array([norm[1], -norm[0]]) * math.sin(angle)
-            ) * length
-            hatch_lines.append(
-                f'<line x1="{start_point[0]:.2f}" y1="{start_point[1]:.2f}" x2="{end_point[0]:.2f}" y2="{end_point[1]:.2f}" stroke-opacity="0.6"/>'
-            )
+            noise_radius = grid_size * 0.1
+            disp_x = noise.pnoise2(gx * 0.5, gy * 0.5, base=1) * noise_radius
+            disp_y = noise.pnoise2(gx * 0.5, gy * 0.5, base=2) * noise_radius
+            cluster_anchor = ((gx + 0.5) * grid_size + disp_x, (gy + 0.5) * grid_size + disp_y)
 
-    return hatch_lines
+            tile_corners = [
+                (gx * grid_size, gy * grid_size),  # Top-Left (0)
+                ((gx + 1) * grid_size, gy * grid_size),  # Top-Right (1)
+                ((gx + 1) * grid_size, (gy + 1) * grid_size),  # Bottom-Right (2)
+                (gx * grid_size, (gy + 1) * grid_size),  # Bottom-Left (3)
+            ]
+
+            def get_edge_index(p, gx, gy):
+                gs = grid_size
+                if abs(p[1] - gy * gs) < 1e-6: return 0
+                if abs(p[0] - (gx + 1) * gs) < 1e-6: return 1
+                if abs(p[1] - (gy + 1) * gs) < 1e-6: return 2
+                return 3
+
+            def walk_perimeter(start_point, start_edge, distance):
+                current_pos = start_point
+                current_edge = start_edge
+
+                dist_to_corner = 0
+                if current_edge == 0: dist_to_corner = tile_corners[1][0] - current_pos[0]
+                elif current_edge == 1: dist_to_corner = tile_corners[2][1] - current_pos[1]
+                elif current_edge == 2: dist_to_corner = current_pos[0] - tile_corners[3][0]
+                elif current_edge == 3: dist_to_corner = current_pos[1] - tile_corners[0][1]
+
+                while distance > dist_to_corner:
+                    distance -= dist_to_corner
+                    current_edge = (current_edge + 1) % 4
+                    current_pos = tile_corners[current_edge]
+                    dist_to_corner = grid_size
+
+                if current_edge == 0: return (current_pos[0] + distance, current_pos[1])
+                if current_edge == 1: return (current_pos[0], current_pos[1] + distance)
+                if current_edge == 2: return (current_pos[0] - distance, current_pos[1])
+                return (current_pos[0], current_pos[1] - distance)
+
+            start_edge = random.randint(0, 3)
+            p1_coord = random.uniform(0, grid_size)
+
+            if start_edge == 0: p1 = (tile_corners[0][0] + p1_coord, tile_corners[0][1])
+            elif start_edge == 1: p1 = (tile_corners[1][0], tile_corners[1][1] + p1_coord)
+            elif start_edge == 2: p1 = (tile_corners[2][0] - p1_coord, tile_corners[2][1])
+            else: p1 = (tile_corners[3][0], tile_corners[3][1] - p1_coord)
+
+            walk_dist = 1.20 * grid_size
+            p2 = walk_perimeter(p1, start_edge, walk_dist)
+            p3 = walk_perimeter(p2, get_edge_index(p2, gx, gy), walk_dist)
+
+            section_points = sorted([p1, p2, p3], key=lambda p: math.atan2(p[1] - cluster_anchor[1], p[0] - cluster_anchor[0]))
+
+            sections = []
+            for i in range(3):
+                p1_sec = section_points[i]
+                p2_sec = section_points[(i + 1) % 3]
+                path_vertices = [cluster_anchor, p1_sec]
+
+                idx1, idx2 = get_edge_index(p1_sec, gx, gy), get_edge_index(p2_sec, gx, gy)
+
+                j = idx1
+                while j != idx2:
+                    path_vertices.append(tile_corners[(j + 1) % 4])
+                    j = (j + 1) % 4
+
+                path_vertices.append(p2_sec)
+                sections.append(Polygon(path_vertices))
+
+            for i, section in enumerate(sections):
+                if i == 0:
+                    p1_sec = section_points[0]
+                    p2_sec = section_points[1]
+                    angle = math.atan2(p2_sec[1] - p1_sec[1], p2_sec[0] - p1_sec[0])
+                else:
+                    angle = random.uniform(0, math.pi)
+
+                section_bounds = section.bounds
+                sec_width = section_bounds[2] - section_bounds[0]
+                sec_height = section_bounds[3] - section_bounds[1]
+                diag = math.hypot(sec_width, sec_height)
+
+                spacing = grid_size * 0.20
+                num_lines_in_cluster = max(3, int(diag / spacing))
+
+                for j in range(num_lines_in_cluster):
+                    offset = (j - (num_lines_in_cluster - 1) / 2) * spacing
+
+                    line_start = (
+                        section.centroid.x + math.cos(angle + math.pi / 2) * offset,
+                        section.centroid.y + math.sin(angle + math.pi / 2) * offset,
+                    )
+                    long_line = LineString(
+                        [
+                            (line_start[0] - math.cos(angle) * diag, line_start[1] - math.sin(angle) * diag),
+                            (line_start[0] + math.cos(angle) * diag, line_start[1] + math.sin(angle) * diag),
+                        ]
+                    )
+
+                    clipped_line = section.intersection(long_line)
+                    if not clipped_line.is_empty and isinstance(clipped_line, LineString):
+                        p1, p2 = list(clipped_line.coords)
+                        wobble_strength = grid_size * 0.03
+                        p1 = (
+                            p1[0] + noise.pnoise2(p1[0]*0.1, p1[1]*0.1, base=10) * wobble_strength,
+                            p1[1] + noise.pnoise2(p1[0]*0.1, p1[1]*0.1, base=11) * wobble_strength
+                        )
+                        p2 = (
+                            p2[0] + noise.pnoise2(p2[0]*0.1, p2[1]*0.1, base=12) * wobble_strength,
+                            p2[1] + noise.pnoise2(p2[0]*0.1, p2[1]*0.1, base=13) * wobble_strength
+                        )
+                        stroke_w = f'stroke-width="{random.uniform(1.5, 2.0):.2f}"'
+                        hatch_lines.append(
+                            f'<line x1="{p1[0]:.2f}" y1="{p1[1]:.2f}" x2="{p2[0]:.2f}" y2="{p2[1]:.2f}" {stroke_w}/>'
+                        )
+    return hatch_lines, hatch_tile_fills
 
 
 def _generate_hatching_stipple(
@@ -463,7 +528,7 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
         return "<svg><text>No objects to render.</text></svg>"
 
     styles = {
-        "bg_color": "#EDE0CE", "room_color": "#F7EEDE", "wall_color": "#000000",
+        "bg_color": "#EDE0CE", "room_color": "#FFFFFF", "wall_color": "#000000",
         "shadow_color": "#999999", "glow_color": "#C9C1B1", "line_thickness": 7.0,
         "hatch_density": 1.0, "water_base_color": "#AEC6CF",
         "water_ripple_color": "#77AADD", "water_ripple_steps": 4,
@@ -501,9 +566,9 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
     svg.append("<defs></defs>")
     svg.append(f'<g transform="translate({tx:.2f} {ty:.2f})">')
 
-    layers = {
-        "hatching": [], "shadows": [], "glows": [], "room_fills": [],
-        "contents": [], "doors": [], "walls": [],
+    layers: Dict[str, List[Any]] = {
+        "hatching_underlay": [], "hatching": [], "shadows": [], "glows": [],
+        "room_fills": [], "contents": [], "doors": [], "walls": [],
     }
     z_ordered_objects = []
 
@@ -542,26 +607,34 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
             layers["contents"].append(f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>')
 
     if hatching_style:
-        log.info("Generating unified geometry for hatching...")
-        grid_size = map_data.regions[0].gridSizePx if map_data.regions else 20
         all_polys = [s.polygon for s in renderable_shapes]
-        unified_geometry = unary_union(all_polys).buffer(0)
-        unified_contours = _shapely_to_contours(unified_geometry)
-        for c in unified_contours:
-            c *= PIXELS_PER_GRID
+        pixel_polys = [
+            Polygon([(v[0] * PIXELS_PER_GRID, v[1] * PIXELS_PER_GRID) for v in p.exterior.coords])
+            for p in all_polys
+        ]
+        unified_pixel_geometry = unary_union(pixel_polys).buffer(0)
 
-        hatch_generators = {
-            "sketch": _generate_hatching_sketch,
-            "stipple": _generate_hatching_stipple,
-        }
-        hatch_func = hatch_generators.get(hatching_style, _generate_hatching_lines)
-
-        log.info(f"Generating '{hatching_style}' hatching for unified geometry ({len(unified_contours)} contours).")
-        for contour in unified_contours:
-            layers["hatching"].extend(hatch_func(contour, styles["hatch_density"], grid_size))
+        if hatching_style == "sketch":
+            log.info("Generating final tile-based sketch hatching...")
+            hatch_lines, hatch_fills = _generate_hatching_sketch(
+                width, height, PIXELS_PER_GRID, tx, ty, unified_pixel_geometry
+            )
+            layers["hatching_underlay"] = hatch_fills
+            layers["hatching"] = hatch_lines
+        else:
+            log.info("Generating unified geometry for contour hatching...")
+            unified_contours = _shapely_to_contours(unified_pixel_geometry)
+            hatch_generators = {"stipple": _generate_hatching_stipple}
+            hatch_func = hatch_generators.get(hatching_style, _generate_hatching_stipple)
+            log.info(f"Generating '{hatching_style}' hatching for unified geometry ({len(unified_contours)} contours).")
+            for contour in unified_contours:
+                layers["hatching"].extend(
+                    hatch_func(contour, styles["hatch_density"], PIXELS_PER_GRID)
+                )
 
         fill_or_stroke = 'fill' if hatching_style == 'stipple' else 'stroke'
-        svg.append(f'<g id="hatching" {fill_or_stroke}="{styles["wall_color"]}" stroke-width="1.2">{"".join(layers["hatching"])}</g>')
+        svg.append(f'<g id="hatching-underlay">{"".join(layers["hatching_underlay"])}</g>')
+        svg.append(f'<g id="hatching" {fill_or_stroke}="{styles["wall_color"]}" stroke-width="1.0">{"".join(layers["hatching"])}</g>')
 
     render_order = ["shadows", "glows", "room_fills", "contents", "doors", "walls"]
     for name in render_order:
