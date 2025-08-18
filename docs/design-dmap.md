@@ -16,9 +16,9 @@ request into a formal plan that requires developer approval before execution.
     signal its readiness.
 
 ### 0.2. Code & Document Generation
--   **Complete Code**: All source code must be complete and self-contained. "Self-contained"
-    means the code must execute without errors assuming all necessary libraries are
-    installed. All required `import` statements must be present.
+-   **Complete Code**: All source code must be complete and self-contained.
+    "Self-contained" means the code must execute without errors assuming all necessary
+    libraries are installed. All required `import` statements must be present.
 -   **File Content Presentation**: All generated source code for a specific file **must**
     begin with a single header line in the format: `# --- path/to/your/file.ext ---`.
 -   **Asymmetric Guard Convention**: The developer may use multi-file guards (e.g.,
@@ -101,7 +101,7 @@ The analysis engine employs a sophisticated, **region-first** multi-stage pipeli
 It first isolates the primary dungeon area from the surrounding canvas and any text
 blocks. Only then does it perform a **multi-pass semantic color analysis** on the
 isolated region to identify the functional role of each color (e.g., `floor`,
-`wall`, `shadow`, `glow`). This allows for intelligent pre-processing and robust,
+`stroke`, `shadow`, `glow`). This allows for intelligent pre-processing and robust,
 score-based wall detection that combines stroke thickness, shadow, and glow cues.
 
 The pipeline cleanly separates the detection of the core, grid-aligned structure
@@ -115,13 +115,21 @@ complex dungeon maps.
 
 ## 2. File System Structure
 
-The project will be organized into a library package and a command-line script.
+The project is organized into a library package and a command-line script.
 This structure promotes code reuse and clean separation of concerns.
 
 `ppdf/`
 ├── **dmap_lib/**: The installable library package.
 │   ├── `__init__.py`
-│   ├── `analysis.py`: Image analysis, feature detection, and number recognition.
+│   ├── `analysis/`: The core analysis engine, split into modules.
+│   │   ├── `__init__.py`
+│   │   ├── `analyzer.py`: Main `MapAnalyzer` orchestrator class.
+│   │   ├── `color.py`: `ColorAnalyzer` class for semantic color analysis.
+│   │   ├── `context.py`: Internal dataclasses for the analysis pipeline.
+│   │   ├── `features.py`: `FeatureExtractor` for high-res layers.
+│   │   ├── `regions.py`: Logic for Stage 1 region and text detection.
+│   │   ├── `structure.py`: `StructureAnalyzer` for grid and wall detection.
+│   │   └── `transformer.py`: `MapTransformer` for final entity generation.
 │   ├── `log_utils.py`: Utilities for configuring the logging system.
 │   ├── `schema.py`: Data structures (dataclasses) and JSON serialization.
 │   └── `rendering.py`: Procedural SVG generation logic.
@@ -144,7 +152,8 @@ API for analysis and rendering.
 -   **Key Function**: `analyze_image(image_path: str) -> MapData`
     -   Implements the full multi-stage analysis pipeline detailed in Section 4.
     -   Accepts an image path and returns the final, structured `MapData` object.
-    -   Orchestrates the flow of data between stages for each identified region.
+    -   Orchestrates the flow of data between specialized analyzer classes for each
+        identified region.
 
 ### 3.2. `schema` Module
 -   **Purpose**: To define the canonical data structures and handle serialization.
@@ -164,32 +173,34 @@ API for analysis and rendering.
     -   Accepts a `MapData` object and style parameters.
     -   Renders objects in a sequence that respects their type and `z-order`
         property to ensure correct layering (e.g., water is drawn below columns).
-    -   Procedurally draws all `mapObjects`, including stylized `Feature`s.
+    -   Procedurally draws all `mapObjects`, including stylized `Feature`s and
+        `EnvironmentalLayer`s like water with a curvy ripple effect.
 
 #### 3.3.1. Render Style Specification
 This section defines the target visual style for the SVG output.
 
 -   **Color Palette**:
     -   **Background**: `#EDE0CE` (A light parchment color).
-    -   **Room Fill**: `#F7EEDE` (A slightly lighter parchment/off-white).
+    -   **Room Fill**: `#FFFFFF` (White).
     -   **Wall & Detail Lines**: `#000000` (Black).
     -   **Shadow/Offset**: `#999999` (A dark gray for the drop shadow effect).
-    -   **Glow/Underlayer**: `#C9C1B1` (A light gray-brown for a soft border effect).
+    -   **Glow/Underlayer**: `#C0C0C0` (A light gray for a soft border effect).
 
--   **Layering and Effects**: The final look is achieved through three distinct layers
-    rendered from bottom to top: Shadow, Glow/Underlayer, and Main.
+-   **Layering and Effects**: The final look is achieved through multiple distinct layers
+    rendered from bottom to top: Shadow, Glow/Underlayer, Room Fill, and Main Walls.
 
 -   **Border Hatching**:
-    -   An **optional** feature, disabled by default, controlled by the `--hatching`
-        CLI flag.
-    -   When enabled, a series of procedurally generated, slightly randomized, short
-        black lines are drawn around the exterior perimeter of all rendered polygons.
+    -   An **optional** feature, controlled by the `--hatching`
+        CLI flag, which accepts `sketch` or `stipple` styles.
+    -   When enabled, a series of procedurally generated, slightly randomized lines
+        or dots are drawn around the exterior perimeter of all rendered polygons.
 
 ---
 
 ## 4. The Analysis Pipeline
 
-The `dmap` analysis engine is a **region-first** pipeline. It isolates the main
+The `dmap` analysis engine is an object-oriented, **region-first** pipeline,
+orchestrated by the `MapAnalyzer` class. It isolates the main
 dungeon area(s) before performing a detailed, multi-pass color analysis. This
 ensures that the analysis is focused only on relevant map data, leading to much
 higher accuracy.
@@ -197,46 +208,53 @@ higher accuracy.
 ### Stage 1: Region Detection and Metadata Parsing
 -   **Input**: Source Image
 -   **Output**: A list of `Region` contexts, `Metadata` object.
--   **Process**: The pipeline first identifies all distinct content areas on the
-    canvas. Areas with a high density of lines are classified as 'dungeon', while
-    others are treated as 'text'. OCR is run on text regions to extract the map's
-    title and notes. The rest of the pipeline then runs on each 'dungeon' region.
+-   **Process**: The `analyze_image` orchestrator first identifies all distinct content
+    areas on the canvas using `detect_content_regions`. Areas with a high density
+    of lines are classified as 'dungeon', while others are treated as 'text'. OCR is
+    run on text regions by `parse_text_metadata` to extract the map's title and
+    notes. The rest of the pipeline then runs on each 'dungeon' region.
 
-### Stage 2: Multi-Pass Semantic Color Analysis (Per-Region)
+### The Per-Region Pipeline (Orchestrated by `MapAnalyzer`)
+
+For each detected 'dungeon' region, the following pipeline is executed:
+
+### Stage 2: Multi-Pass Semantic Color Analysis
+-   **Component**: `ColorAnalyzer`
 -   **Input**: An isolated Dungeon Region Image
--   **Output**: `color_profile` (map of colors to semantic roles)
+-   **Output**: `color_profile` (map of colors to semantic roles), `KMeans` model
 -   **Process**: This stage performs a sophisticated, multi-pass analysis on the
     region's color palette to assign semantic meaning.
     1.  **Anchor Identification**: The `floor` color is identified as the most
-        common color in the center of the region. The `background` color concept is
-        no longer used, as the canvas has already been removed.
-    2.  **Stroke Identification**: The system creates a mask of the `floor` to find
-        its perimeter. By sampling the colors along this perimeter, it identifies the
-        most common non-floor color as the `stroke`.
-    3.  **Border Identification**: The system searches the area immediately adjacent
-        to all `stroke` pixels. The two most common colors found here are identified;
-        the lighter is classified as `glow` and the darker as `shadow`.
-    4.  **Interior Pattern Identification**: The system analyzes colors that appear
-        in large patches *inside* the `floor` areas. The darkest, most common color
-        found here is classified as `water_pattern`.
-    5.  **Alias Classification**: Any remaining unassigned colors are classified as
-        aliases of their nearest primary color (e.g., `alias_stroke`).
+        common color in the center of the region.
+    2.  **Stroke Identification**: The system finds the perimeter of the `floor` to
+        identify the most common non-floor color as the `stroke`.
+    3.  **Border Identification**: The area adjacent to `stroke` pixels is searched
+        to identify the lighter `glow` and darker `shadow` colors.
+    4.  **Environmental Layer Identification**: Large patches of color inside `floor`
+        areas are identified (e.g., `water`).
+    5.  **Alias Classification**: Remaining colors are classified as aliases of
+        their nearest primary color.
 
-### Stage 3: Structural Analysis Filtering
+### Stage 3: Structural Image Preparation
+-   **Component**: `MapAnalyzer`
 -   **Input**: Dungeon Region Image, `color_profile`
--   **Output**: `filtered_image`
--   **Process**: A new, temporary image is created in memory containing only pixels
-    matching the `stroke` and `floor` colors. This produces a clean, two-color
-    image ideal for robust geometric analysis.
+-   **Output**: `structural_image`, `floor_only_image`, `stroke_only_image`
+-   **Process**: The `MapAnalyzer` generates several single-purpose, temporary images
+    in memory. This includes a clean, two-color image with only `stroke` on `floor`
+    pixels, and binary masks for floor and stroke areas. These filtered images are
+    crucial for robust geometric analysis in subsequent stages.
 
 ### Stage 4: Grid Discovery
--   **Input**: `filtered_image`
--   **Output**: `gridSizePx` (integer)
--   **Process**: Heuristics are run on the `filtered_image` to detect the grid size
-    in pixels, which is fundamental for all subsequent grid-based calculations.
+-   **Component**: `StructureAnalyzer`
+-   **Input**: `structural_image`, `room_bounds`
+-   **Output**: `GridInfo` (size and offset)
+-   **Process**: Heuristics are run on the `structural_image` to detect the grid size
+    in pixels via peak-finding on pixel projections. The grid offset is calculated
+    from the bounding boxes of the main room shapes.
 
 ### Stage 5: High-Resolution Feature & Layer Detection
--   **Input**: *Original* Dungeon Region Image, `color_profile`
+-   **Component**: `FeatureExtractor`
+-   **Input**: *Original* Dungeon Region Image, `color_profile`, `room_contours`
 -   **Output**: `enhancement_layers` (a dictionary of high-res feature lists)
 -   **Process**: This stage operates on the original region image to find features
     that do not align with the main grid, such as columns and water pools. All
@@ -244,25 +262,29 @@ higher accuracy.
     unit** coordinate system and stored with a `z-order` attribute.
 
 ### Stage 6: Core Structure Classification
--   **Input**: `filtered_image`, `original_region_image`, `color_profile`, `gridSizePx`
+-   **Component**: `StructureAnalyzer`
+-   **Input**: `structural_image`, `feature_cleaned_image`, `GridInfo`
 -   **Output**: `tile_grid` (a grid of `_TileData` objects)
 -   **Process**: This is the heart of the structural analysis.
-    1.  A grid is overlaid on the `filtered_image`.
-    2.  **Score-Based Wall Detection**: The pipeline analyzes the boundaries between
-        `floor` and `empty` grid cells. A boundary is classified as a `wall` if its
-        confidence score—a weighted sum of stroke thickness, adjacent shadow presence,
-        and adjacent glow presence—exceeds a threshold.
-    3.  Doorways are detected.
-    4.  The `tile_grid` is populated with the core structure: `wall`, `door`, and
-        `floor` information.
+    1.  A grid is overlaid on a `feature_cleaned_image` (the floor plan with
+        features like columns digitally removed).
+    2.  Each tile is first classified as `floor` or `empty`.
+    3.  **Score-Based Wall Detection**: The pipeline analyzes the boundaries between
+        `floor` and `empty` grid cells, classifying a boundary as a `wall` if its
+        confidence score exceeds a threshold.
+    4.  Doorways are detected in passageways using pattern recognition on tile slices.
+    5.  The `tile_grid` is populated with the core structure: `wall`, `door`, and
+        `floor` information for each tile edge and center.
 
 ### Stage 7: Transformation & Entity Generation
--   **Input**: `tile_grid`, `enhancement_layers`
--   **Output**: The final `MapData` object.
--   **Process**: This final stage transforms the intermediate data into the final
-    schema-compliant objects by tracing wall perimeters to create `Room` polygons,
-    linking `Door` objects, and integrating the high-resolution features from the
-    `enhancement_layers`.
+-   **Component**: `MapTransformer`
+-   **Input**: `_RegionAnalysisContext` (containing `tile_grid`, `enhancement_layers`)
+-   **Output**: The final list of `MapObject` entities for the region.
+-   **Process**: This final stage transforms the intermediate `tile_grid` into the final
+    schema-compliant objects by classifying floor tiles into chambers or corridors,
+    merging chamber tiles into complex polygons, tracing wall perimeters to create
+    `Room` polygons, linking `Door` objects, and integrating the high-resolution
+    features from the `enhancement_layers`.
 
 ---
 
@@ -284,10 +306,12 @@ The intermediate JSON format is designed to be extensible and resolution-indepen
           "id": "region_floor_1",
           "label": "Ground Floor",
           "gridSizePx": 20,
+          "bounds": [],
           "mapObjects": [
             {
               "id": "room_uuid_1",
               "type": "room",
+              "shape": "polygon",
               "roomType": "chamber",
               "label": "1",
               "gridVertices": [{"x": 10, "y": 10}, ...],
@@ -297,6 +321,7 @@ The intermediate JSON format is designed to be extensible and resolution-indepen
               "id": "feature_column_1",
               "type": "feature",
               "featureType": "column",
+              "shape": "polygon",
               "gridVertices": [{"x": 15, "y": 15}, ...],
               "properties": {
                 "z-order": 1
@@ -316,19 +341,22 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
 
 -   **Usage**: `python dmap.py -i <input.png> -o <output_name> [OPTIONS]`
 -   **Arguments & Flags**:
-    -   `--input` / `-i`: **(Required)** Path to the input PNG file.
+    -   `--input` / `-i`: Path to the input PNG or JSON file. Required unless
+        `--skip-analysis` is used.
     -   `--output` / `-o`: **(Required)** The base name for the output `.json` and
         `.svg` files.
+    -   `--skip-analysis`: Skip analysis and render directly from an existing
+        `<output>.json` file.
     -   `--rooms`: A comma-separated list of room numbers to render. If omitted,
         the entire map is rendered.
-    -   `--hatching`: A boolean flag to enable procedural exterior border hatching.
-        Disabled by default.
-    -   `--hatch-density`: A float multiplier for border hatching density.
-    -   `--bg-color`: SVG background color (hex).
-    -   `--wall-color`: Color for room outlines and details (hex).
-    -   `--room-color`: Fill color for rooms (hex).
-    -   `--line-thickness`: A float multiplier for line thickness.
-    -   `--no-grid`: A boolean flag to disable rendering the grid inside rooms.
+    -   `--hatching`: Enables and selects the style of procedural exterior border
+        hatching (`sketch` or `stipple`).
+    -   `--no-features`: Disables the rendering of all `Feature` objects.
+    -   `--save-intermediate`: Save intermediate analysis images to a directory for
+        debugging.
+    -   `--ascii-debug`: Render an ASCII map of the final structure for debugging.
+    -   `--debug`: Enable detailed DEBUG logging for specific topics (e.g., `analysis`,
+        `grid`, `render`).
 
 ---
 
@@ -494,255 +522,449 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
 ### Phase 6: High-Fidelity Rendering and Analysis
 
 -   **Milestone 12: Implement Polygon Union for Unified Geometry**
-    -   **Goal**: Create a single, unified polygon representing the entire map's floor space.
-    -   **Description**: This is a critical prerequisite for advanced rendering. It involves merging all individual room polygons into one complex shape using a robust geometry library, which is essential for creating the unified exterior border.
+    -   **Goal**: Create a single, unified polygon representing the entire map's floor
+        space.
+    -   **Description**: This is a critical prerequisite for advanced rendering. It
+        involves merging all individual room polygons into one complex shape using a
+        robust geometry library, which is essential for creating the unified exterior
+        border.
     -   **Key Tasks**:
-        1.  Integrate the `shapely` library into the project for computational geometry operations.
-        2.  In `analysis.py`, convert all detected room contours into `shapely` Polygon objects.
-        3.  Use `shapely.ops.unary_union` to merge all room polygons into a single geometry object.
-        4.  Create a helper function to convert the unified `shapely` geometry back into a list of vertex contours usable by the rendering engine.
-    -   **Outcome**: The analysis pipeline will produce a single, unified geometry representing the entire map's exterior boundary, in addition to the individual room objects.
+        1.  Integrate the `shapely` library into the project for computational geometry
+            operations.
+        2.  In `analysis.py`, convert all detected room contours into `shapely` Polygon
+            objects.
+        3.  Use `shapely.ops.unary_union` to merge all room polygons into a single
+            geometry object.
+        4.  Create a helper function to convert the unified `shapely` geometry back
+            into a list of vertex contours usable by the rendering engine.
+    -   **Outcome**: The analysis pipeline will produce a single, unified geometry
+        representing the entire map's exterior boundary, in addition to the
+        individual room objects.
 
 -   **Milestone 13: Implement Advanced Exterior Hatching**
     -   **Goal**: Replicate the target SVG's unified, sketchy exterior hatching.
-    -   **Description**: This milestone replaces the per-room hatching with a new algorithm that operates on the unified geometry from the previous milestone, providing a more professional and aesthetically pleasing result.
+    -   **Description**: This milestone replaces the per-room hatching with a new
+        algorithm that operates on the unified geometry from the previous milestone,
+        providing a more professional and aesthetically pleasing result.
     -   **Key Tasks**:
-        1.  In `rendering.py`, create a new `_generate_unified_hatching` function that accepts the unified map geometry.
-        2.  Adapt the existing hatching logic (generating randomized short lines along an edge) to trace the `exterior` boundary of the unified shape.
-        3.  Ensure the hatching is drawn correctly around complex shapes and does not appear in the interior of the dungeon.
-    -   **Outcome**: The generated SVG will feature a single, continuous field of hatching around the entire dungeon complex, matching the target style.
+        1.  In `rendering.py`, create a new `_generate_unified_hatching` function that
+            accepts the unified map geometry.
+        2.  Adapt the existing hatching logic (generating randomized short lines along
+            an edge) to trace the `exterior` boundary of the unified shape.
+        3.  Ensure the hatching is drawn correctly around complex shapes and does not
+            appear in the interior of the dungeon.
+    -   **Outcome**: The generated SVG will feature a single, continuous field of
+        hatching around the entire dungeon complex, matching the target style.
 
 -   **Milestone 14: Replicate Target Style and Door Rendering**
     -   **Goal**: Precisely match the visual aesthetic of the `stronghold.svg` example.
-    -   **Description**: This milestone updates the default style parameters and adds specific drawing logic for doors to fully conform to the target style guide.
+    -   **Description**: This milestone updates the default style parameters and adds
+        specific drawing logic for doors to fully conform to the target style guide.
     -   **Key Tasks**:
-        1.  In `rendering.py`, update the default `styles` dictionary to use the exact color palette and line weights from the `Render Style Specification`.
-        2.  Modify the door rendering logic to draw doors as rectangles filled with the room color and a thin black outline.
-        3.  Fine-tune the three-layer rendering effect (shadow, glow, main) to work seamlessly with the new style parameters.
-    -   **Outcome**: The SVG output's colors, line weights, and feature appearance will be visually indistinguishable from the target `stronghold.svg` example.
+        1.  In `rendering.py`, update the default `styles` dictionary to use the exact
+            color palette and line weights from the `Render Style Specification`.
+        2.  Modify the door rendering logic to draw doors as rectangles filled with
+            the room color and a thin black outline.
+        3.  Fine-tune the three-layer rendering effect (shadow, glow, main) to work
+            seamlessly with the new style parameters.
+    -   **Outcome**: The SVG output's colors, line weights, and feature appearance will
+        be visually indistinguishable from the target `stronghold.svg` example.
 
 -   **Milestone 15: Improve Door Detection Heuristics**
-    -   **Goal**: Reliably detect doors in maps where they are represented as gaps in walls.
-    -   **Description**: This milestone replaces the simple contour-based door detector with a more robust, geometry-based approach that can identify narrow passages between rooms.
+    -   **Goal**: Reliably detect doors in maps where they are represented as gaps in
+        walls.
+    -   **Description**: This milestone replaces the simple contour-based door detector
+        with a more robust, geometry-based approach that can identify narrow passages
+        between rooms.
     -   **Key Tasks**:
-        1.  In `analysis.py`, create a new door detection function that operates *after* rooms have been identified.
-        2.  For every pair of rooms, calculate the intersection of their slightly "dilated" shapes (using `shapely.buffer`).
-        3.  If the intersection is a small, compact area, classify it as a door connection.
-        4.  The centroid of this intersection area becomes the position of the detected `Door` object.
-    -   **Outcome**: The tool can accurately detect and place doors on a wider variety of map styles, including those like `stronghold.png` where doors are not distinct objects.
+        1.  In `analysis.py`, create a new door detection function that operates *after*
+            rooms have been identified.
+        2.  For every pair of rooms, calculate the intersection of their slightly
+            "dilated" shapes (using `shapely.buffer`).
+        3.  If the intersection is a small, compact area, classify it as a door
+            connection.
+        4.  The centroid of this intersection area becomes the position of the detected
+            `Door` object.
+    -   **Outcome**: The tool can accurately detect and place doors on a wider variety
+        of map styles, including those like `stronghold.png` where doors are not
+        distinct objects.
 
 ### Phase 7: Observability and Refinement
 
 * **Milestone 16: Implement Advanced Logging System**
-    * **Goal**: Integrate a sophisticated, topic-based logging system to improve the tool's observability and ease of debugging.
-    * **Description**: This comprehensive milestone introduces a new logging utility inspired by the `ppdf` project. It will replace all `print()` statements with structured, topic-based log messages, add command-line flags for controlling log verbosity and output, and provide a clear, color-coded format for console output.
+    * **Goal**: Integrate a sophisticated, topic-based logging system to improve the
+        tool's observability and ease of debugging.
+    * **Description**: This comprehensive milestone introduces a new logging utility
+        inspired by the `ppdf` project. It will replace all `print()` statements with
+        structured, topic-based log messages, add command-line flags for controlling
+        log verbosity and output, and provide a clear, color-coded format for console
+        output.
     * **Key Tasks**:
-        1.  Create a new `dmap_lib/log_utils.py` module to house the `setup_logging` function and a custom `RichLogFormatter` class.
-        2.  Define the logging topics for `dmap`: `main`, `analysis`, `grid`, `ocr`, `geometry`, and `render`.
+        1.  Create a new `dmap_lib/log_utils.py` module to house the `setup_logging`
+            function and a custom `RichLogFormatter` class.
+        2.  Define the logging topics for `dmap`: `main`, `analysis`, `grid`, `ocr`,
+            `geometry`, and `render`.
         3.  Add `--debug`, `--color-logs`, and `--log-file` arguments to `dmap.py`.
-        4.  Call `setup_logging` at startup in `dmap.py` and replace all `print` calls with structured logging.
-        5.  Instrument `dmap_lib/analysis.py` with detailed `log.info` and `log.debug` calls using topic-specific loggers.
-        6.  Instrument `dmap_lib/rendering.py` with `log.info` and `log.debug` calls using the `dmap.render` logger.
-    * **Outcome**: The `dmap` tool will have a comprehensive and configurable logging system. Developers can easily enable detailed debug output for specific components, and all output will be structured and informative, significantly improving the development and debugging experience.
+        4.  Call `setup_logging` at startup in `dmap.py` and replace all `print` calls
+            with structured logging.
+        5.  Instrument `dmap_lib/analysis.py` with detailed `log.info` and `log.debug`
+            calls using topic-specific loggers.
+        6.  Instrument `dmap_lib/rendering.py` with `log.info` and `log.debug` calls
+            using the `dmap.render` logger.
+    * **Outcome**: The `dmap` tool will have a comprehensive and configurable logging
+        system. Developers can easily enable detailed debug output for specific
+        components, and all output will be structured and informative, significantly
+        improving the development and debugging experience.
 
 ### Phase 8: Final Polish and Heuristics
 
 * **Milestone 17: High-Fidelity Shape Extraction**
-    * **Goal**: Restore the sharp, angular geometry of the rooms by replacing the distorting morphological operations.
-    * **Description**: This milestone replaces the "blobby" shape generation with a more precise "hole-filling" algorithm. It will digitally remove grid dots from the floor plan without distorting the room's original shape, resulting in a crisp final render.
+    * **Goal**: Restore the sharp, angular geometry of the rooms by replacing the
+        distorting morphological operations.
+    * **Description**: This milestone replaces the "blobby" shape generation with a
+        more precise "hole-filling" algorithm. It will digitally remove grid dots
+        from the floor plan without distorting the room's original shape, resulting
+        in a crisp final render.
     * **Key Tasks**:
         1.  In `analysis.py`, remove the `cv2.morphologyEx` call.
-        2.  Change the initial `cv2.findContours` mode to `cv2.RETR_TREE` to find all shapes, including holes.
-        3.  Create a new function to iterate through all found contours. If a contour is very small (like a grid dot), "paint" it over on the binary image.
-        4.  Run a final `cv2.findContours` call on the cleaned image to get the final, crisp room polygons.
-    * **Outcome**: The generated room polygons will accurately match the sharp corners and straight lines of the source map, eliminating the distorted appearance.
+        2.  Change the initial `cv2.findContours` mode to `cv2.RETR_TREE` to find all
+            shapes, including holes.
+        3.  Create a new function to iterate through all found contours. If a contour
+            is very small (like a grid dot), "paint" it over on the binary image.
+        4.  Run a final `cv2.findContours` call on the cleaned image to get the
+            final, crisp room polygons.
+    * **Outcome**: The generated room polygons will accurately match the sharp corners
+        and straight lines of the source map, eliminating the distorted appearance.
 
 * **Milestone 18: Wall Mask Generation and OCR**
     * **Goal**: Correctly extract room numbers by scanning the wall areas of the map.
-    * **Description**: This milestone implements a new strategy to perform OCR on the walls of the dungeon instead of the empty floor space. It will generate a "wall mask" image containing only the wall pixels and scan it for numbers.
+    * **Description**: This milestone implements a new strategy to perform OCR on the
+        walls of the dungeon instead of the empty floor space. It will generate a
+        "wall mask" image containing only the wall pixels and scan it for numbers.
     * **Key Tasks**:
-        1.  In `analysis.py`, create the "wall mask" image by taking the unified room polygon, making it slightly larger, and then subtracting the original shape.
+        1.  In `analysis.py`, create the "wall mask" image by taking the unified room
+            polygon, making it slightly larger, and then subtracting the original
+            shape.
         2.  Run the `easyocr` engine on this new wall mask.
         3.  For each number found, associate it with the closest room polygon.
         4.  Update the corresponding `Room` object with the correct `label`.
-    * **Outcome**: The tool will successfully read numbers from the wall areas and correctly label the rooms in the final JSON output.
+    * **Outcome**: The tool will successfully read numbers from the wall areas and
+        correctly label the rooms in the final JSON output.
 
 ### Phase 9: Semantic Redesign and Pipeline Refactoring
 
 * **Milestone 19: Semantic Schema Update**
-    * **Goal**: To update the core data structures to support regional maps and richer feature representation.
-    * **Description**: This is the foundational step for the new architecture. It refactors the dataclasses in `dmap_lib/schema.py` to match the approved "Revision 3" of the semantic schema design.
+    * **Goal**: To update the core data structures to support regional maps and richer
+        feature representation.
+    * **Description**: This is the foundational step for the new architecture. It
+        refactors the dataclasses in `dmap_lib/schema.py` to match the approved
+        "Revision 3" of the semantic schema design.
     * **Key Tasks**:
-        1.  In `schema.py`, modify `MapData` to contain a `regions: List[Region]` instead of `mapObjects`.
+        1.  In `schema.py`, modify `MapData` to contain a `regions: List[Region]`
+            instead of `mapObjects`.
         2.  Create the new `Region` dataclass with a `label` and `mapObjects` list.
-        3.  Expand the `Meta` dataclass to include optional `legend` and `notes` fields.
+        3.  Expand the `Meta` dataclass to include optional `legend` and `notes`
+            fields.
         4.  Create the new `EnvironmentalLayer` dataclass.
-        5.  Modify the `Room` dataclass to include a `roomType: str` field (e.g., "chamber", "corridor").
-    * **Outcome**: The `dmap_lib/schema.py` module fully reflects the new, more expressive data model, ready to be used by the redesigned analysis and rendering engines.
+        5.  Modify the `Room` dataclass to include a `roomType: str` field (e.g.,
+            "chamber", "corridor").
+    * **Outcome**: The `dmap_lib/schema.py` module fully reflects the new, more
+        expressive data model, ready to be used by the redesigned analysis and
+        rendering engines.
 
 * **Milestone 20: Optional Hatching Implementation**
-    * **Goal**: To make the exterior SVG border hatching an optional, disabled-by-default feature.
-    * **Description**: This milestone implements the approved design for optional hatching, providing more control over the final visual style of the SVG output.
+    * **Goal**: To make the exterior SVG border hatching an optional,
+        disabled-by-default feature.
+    * **Description**: This milestone implements the approved design for optional
+        hatching, providing more control over the final visual style of the SVG
+        output.
     * **Key Tasks**:
-        1.  In `dmap.py`, add a `--hatching` boolean flag to the CLI arguments, disabled by default.
-        2.  Pass the state of this flag into the `render_svg` function via the `style_options`.
-        3.  In `rendering.py`, make the generation and inclusion of the hatching SVG group conditional on this flag being true.
-    * **Outcome**: The `dmap` tool no longer produces hatching unless explicitly requested via the `--hatching` flag.
+        1.  In `dmap.py`, add a `--hatching` boolean flag to the CLI arguments,
+            disabled by default.
+        2.  Pass the state of this flag into the `render_svg` function via the
+            `style_options`.
+        3.  In `rendering.py`, make the generation and inclusion of the hatching SVG
+            group conditional on this flag being true.
+    * **Outcome**: The `dmap` tool no longer produces hatching unless explicitly
+        requested via the `--hatching` flag.
 
 * **Milestone 21: Analysis Pipeline Scaffolding**
-    * **Goal**: To replace the existing analysis logic with the structure of the new multi-stage pipeline.
-    * **Description**: This milestone completely rewrites `dmap_lib/analysis.py`, creating the skeleton of the new analysis engine. It will contain placeholder functions for each stage but will not yet have the full implementation logic.
+    * **Goal**: To replace the existing analysis logic with the structure of the new
+        multi-stage pipeline.
+    * **Description**: This milestone completely rewrites `dmap_lib/analysis.py`,
+        creating the skeleton of the new analysis engine. It will contain placeholder
+        functions for each stage but will not yet have the full implementation logic.
     * **Key Tasks**:
-        1.  Define a series of placeholder functions for each of the 8 pipeline stages (e.g., `_stage1_detect_regions`, `_stage6_classify_tiles`).
-        2.  Rewrite the main `analyze_image` function to call these stage functions in the correct order.
-        3.  Ensure the function returns a valid, empty `MapData` object based on the new schema.
-    * **Outcome**: A new `analysis.py` file with a clean, well-defined structure that is ready for the detailed implementation of each analysis stage.
+        1.  Define a series of placeholder functions for each of the 8 pipeline stages
+            (e.g., `_stage1_detect_regions`, `_stage6_classify_tiles`).
+        2.  Rewrite the main `analyze_image` function to call these stage functions in
+            the correct order.
+        3.  Ensure the function returns a valid, empty `MapData` object based on the
+            new schema.
+    * **Outcome**: A new `analysis.py` file with a clean, well-defined structure that
+        is ready for the detailed implementation of each analysis stage.
 
 * **Milestone 22: Implement Region and Metadata Analysis**
-    * **Goal**: To implement the initial stages of the pipeline that identify map regions and parse textual metadata.
-    -   **Description**: This milestone breathes life into the pipeline scaffolding, enabling `dmap` to understand complex layouts with multiple map areas and text blocks.
+    * **Goal**: To implement the initial stages of the pipeline that identify map
+        regions and parse textual metadata.
+    -   **Description**: This milestone breathes life into the pipeline scaffolding,
+        enabling `dmap` to understand complex layouts with multiple map areas and text
+        blocks.
     -   **Key Tasks**:
-        1.  Implement the logic for Stage 1 (`_stage1_detect_regions`) to find all distinct map areas on the source image.
-        2.  Implement the logic for Stage 4 (`_stage4_analyze_text`) to perform OCR on non-dungeon regions.
-        3.  Populate the `MapData` object with a `Region` for each dungeon area and populate the `Meta` object with any text found.
-    -   **Outcome**: The `analyze_image` function can now correctly parse a source image like `lost_basilica_title.jpg` and produce a `MapData` object containing correctly labeled `Region`s and populated `meta` fields.
+        1.  Implement the logic for Stage 1 (`_stage1_detect_regions`) to find all
+            distinct map areas on the source image.
+        2.  Implement the logic for Stage 4 (`_stage4_analyze_text`) to perform OCR
+            on non-dungeon regions.
+        3.  Populate the `MapData` object with a `Region` for each dungeon area and
+            populate the `Meta` object with any text found.
+    -   **Outcome**: The `analyze_image` function can now correctly parse a source image
+        like `lost_basilica_title.jpg` and produce a `MapData` object containing
+        correctly labeled `Region`s and populated `meta` fields.
 
 * **Milestone 23: Implement Room and Corridor Detection**
-    -   **Goal**: To implement the core logic for identifying and classifying all navigable floor space within a region.
-    -   **Description**: This milestone focuses on identifying the primary shapes of the dungeon, distinguishing between rooms and the passages that connect them.
+    -   **Goal**: To implement the core logic for identifying and classifying all
+        navigable floor space within a region.
+    -   **Description**: This milestone focuses on identifying the primary shapes of
+        the dungeon, distinguishing between rooms and the passages that connect them.
     -   **Key Tasks**:
-        1.  Implement Stage 5 (`_stage5_identify_rooms`) using a greedy algorithm to find room boundaries.
-        2.  Implement Stage 7 (`_stage7_discover_corridors`) to find the connecting passages.
-        3.  For each discovered space, create a `Room` object and set its `roomType` to either "chamber" or "corridor".
-    -   **Outcome**: The pipeline now populates each `Region`'s `mapObjects` list with `Room` objects representing the complete floor plan.
+        1.  Implement Stage 5 (`_stage5_identify_rooms`) using a greedy algorithm to
+            find room boundaries.
+        2.  Implement Stage 7 (`_stage7_discover_corridors`) to find the connecting
+            passages.
+        3.  For each discovered space, create a `Room` object and set its `roomType`
+            to either "chamber" or "corridor".
+    -   **Outcome**: The pipeline now populates each `Region`'s `mapObjects` list with
+        `Room` objects representing the complete floor plan.
 
 * **Milestone 24: Implement Detailed Feature Classification**
-    -   **Goal**: To populate the map with fine-grained features and environmental layers.
-    -   **Description**: This milestone implements the tile-based classification stage, which is the heart of the new pipeline's high-fidelity analysis.
+    -   **Goal**: To populate the map with fine-grained features and environmental
+        layers.
+    -   **Description**: This milestone implements the tile-based classification stage,
+        which is the heart of the new pipeline's high-fidelity analysis.
     -   **Key Tasks**:
-        1.  Implement Stage 6 (`_stage6_classify_tiles`) to iterate through each grid cell of a room and identify its contents.
-        2.  For each identified item, create the appropriate `Feature` or `EnvironmentalLayer` object.
-        3.  Populate the `contents` list of the parent `Room` object with the IDs of the newly created features.
-    -   **Outcome**: The generated `MapData` object is now fully detailed, containing all specific features like columns, altars, rubble, and water layers.
+        1.  Implement Stage 6 (`_stage6_classify_tiles`) to iterate through each grid
+            cell of a room and identify its contents.
+        2.  For each identified item, create the appropriate `Feature` or
+            `EnvironmentalLayer` object.
+        3.  Populate the `contents` list of the parent `Room` object with the IDs of
+            the newly created features.
+    -   **Outcome**: The generated `MapData` object is now fully detailed, containing all
+        specific features like columns, altars, rubble, and water layers.
 
 * **Milestone 25: Update Rendering Engine for New Schema**
-    -   **Goal**: To make the SVG rendering engine compatible with the new region-based and feature-rich data schema.
-    -   **Description**: This final milestone updates the renderer to understand the new `MapData` structure, enabling it to draw complex, multi-part maps with all the newly detected details.
+    -   **Goal**: To make the SVG rendering engine compatible with the new region-based
+        and feature-rich data schema.
+    -   **Description**: This final milestone updates the renderer to understand the new
+        `MapData` structure, enabling it to draw complex, multi-part maps with all
+        the newly detected details.
     -   **Key Tasks**:
-        1.  Modify `render_svg` to iterate through the `MapData.regions` list, potentially rendering each as a separate group.
-        2.  Add specific drawing logic to render `EnvironmentalLayer` objects correctly (e.g., a semi-transparent fill with a pattern).
-        3.  Expand the rendering logic to draw all the new, standardized `Feature` types.
-    -   **Outcome**: The `dmap.py` tool is once again fully functional, capable of analyzing a complex map and rendering a complete, detailed, and stylistically correct SVG based on the new, semantically rich schema.
+        1.  Modify `render_svg` to iterate through the `MapData.regions` list,
+            potentially rendering each as a separate group.
+        2.  Add specific drawing logic to render `EnvironmentalLayer` objects
+            correctly (e.g., a semi-transparent fill with a pattern).
+        3.  Expand the rendering logic to draw all the new, standardized `Feature`
+            types.
+    -   **Outcome**: The `dmap.py` tool is once again fully functional, capable of
+        analyzing a complex map and rendering a complete, detailed, and stylistically
+        correct SVG based on the new, semantically rich schema.
 
 ### Phase 10: Debugging and Visualization
 
 * **Milestone 26: Implement ASCII Renderer Class and CLI Flag**
-    -   **Goal**: Create the foundational `ASCIIRenderer` class and the CLI flag to control it.
-    -   **Description**: This milestone establishes the core components for the new debugging feature. It creates the renderer class with placeholder methods and adds the necessary command-line argument to `dmap.py`.
+    -   **Goal**: Create the foundational `ASCIIRenderer` class and the CLI flag to
+        control it.
+    -   **Description**: This milestone establishes the core components for the new
+        debugging feature. It creates the renderer class with placeholder methods and
+        adds the necessary command-line argument to `dmap.py`.
     -   **Key Tasks**:
-        1.  In `dmap_lib/rendering.py`, create the new `ASCIIRenderer` class with an `__init__` method and empty stubs for `render_from_json`, `render_from_tiles`, and `get_output`.
-        2.  In `dmap.py`, add the `--ascii-debug` boolean flag to the `argparse` configuration.
-    -   **Outcome**: The project structure is updated with the new class and CLI flag, ready for the rendering logic to be implemented.
+        1.  In `dmap_lib/rendering.py`, create the new `ASCIIRenderer` class with an
+            `__init__` method and empty stubs for `render_from_json`,
+            `render_from_tiles`, and `get_output`.
+        2.  In `dmap.py`, add the `--ascii-debug` boolean flag to the `argparse`
+            configuration.
+    -   **Outcome**: The project structure is updated with the new class and CLI flag,
+        ready for the rendering logic to be implemented.
 
 * **Milestone 27: Implement Post-Transformation (JSON) ASCII Rendering**
     -   **Goal**: Enable ASCII rendering of the final `MapData` JSON structure.
-    -   **Description**: This milestone implements the logic to visualize the final output of the analysis pipeline. It reads the structured `MapData` object and draws an ASCII representation of its rooms, doors, and features.
+    -   **Description**: This milestone implements the logic to visualize the final
+        output of the analysis pipeline. It reads the structured `MapData` object
+        and draws an ASCII representation of its rooms, doors, and features.
     -   **Key Tasks**:
-        1.  In `dmap_lib/rendering.py`, implement the `render_from_json` method. This includes logic for drawing polygon walls (`#`), floors (`.`), doors (`+`), features (`O`), and environmental layers (`~`).
-        2.  In `dmap.py`, add logic to check for the `--ascii-debug` flag after analysis. If present, instantiate the renderer, call `render_from_json`, and print the result.
-    -   **Outcome**: The `dmap` tool can now produce a complete ASCII map of the final JSON data when the `--ascii-debug` flag is used.
+        1.  In `dmap_lib/rendering.py`, implement the `render_from_json` method. This
+            includes logic for drawing polygon walls (`#`), floors (`.`), doors (`+`),
+            features (`O`), and environmental layers (`~`).
+        2.  In `dmap.py`, add logic to check for the `--ascii-debug` flag after
+            analysis. If present, instantiate the renderer, call `render_from_json`,
+            and print the result.
+    -   **Outcome**: The `dmap` tool can now produce a complete ASCII map of the final
+        JSON data when the `--ascii-debug` flag is used.
 
 * **Milestone 28: Implement Pre-Transformation (Tile-Based) ASCII Rendering**
-    -   **Goal**: Enable ASCII rendering of the intermediate tile-based model for deep debugging.
-    -   **Description**: This milestone provides a direct view into the results of the tile classification stage, allowing for precise debugging of the core analysis algorithms before they are transformed into the final entity structure.
+    -   **Goal**: Enable ASCII rendering of the intermediate tile-based model for deep
+        debugging.
+    -   **Description**: This provides a direct view into the results of the tile
+        classification stage, allowing for precise debugging of the core analysis
+        algorithms before they are transformed into the final entity structure.
     -   **Key Tasks**:
-        1.  In `dmap_lib/analysis.py`, modify the pipeline after Stage 6 to generate an intermediate `tile_grid` mapping coordinates to tile types.
-        2.  In `dmap_lib/rendering.py`, implement the `render_from_tiles` method to draw the map based on this `tile_grid`.
-        3.  In `dmap_lib/analysis.py`, modify `analyze_image` to accept a debug flag. If true, it will call the `render_from_tiles` method and print the result before proceeding to Stage 7.
-    -   **Outcome**: Developers can use the `--ascii-debug` flag to see a direct, character-based visualization of the tile classification results, greatly aiding in the debugging of the analysis pipeline.
+        1.  In `dmap_lib/analysis.py`, modify the pipeline after Stage 6 to generate
+            an intermediate `tile_grid` mapping coordinates to tile types.
+        2.  In `dmap_lib/rendering.py`, implement the `render_from_tiles` method to
+            draw the map based on this `tile_grid`.
+        3.  In `dmap_lib/analysis.py`, modify `analyze_image` to accept a debug flag.
+            If true, it will call the `render_from_tiles` method and print the
+            result before proceeding to Stage 7.
+    -   **Outcome**: Developers can use the `--ascii-debug` flag to see a direct,
+        character-based visualization of the tile classification results, greatly
+        aiding in the debugging of the analysis pipeline.
 
 ### Phase 11: Advanced Analysis Engine Refactoring
 
 * **Milestone 29: Define Internal Tile Dataclass**
     -   **Goal**: Establish the new core data structure for the tile-based analysis.
-    -   **Description**: This milestone creates the new internal `Tile` dataclass within the analysis module. This structure is central to the new tile-edge wall representation and must be defined before the logic that populates it.
+    -   **Description**: This milestone creates the new internal `Tile` dataclass
+        within the analysis module. This structure is central to the new tile-edge
+        wall representation and must be defined before the logic that populates it.
     -   **Key Tasks**:
-        1.  In `dmap_lib/analysis.py`, define a new internal dataclass (e.g., `_TileData`) with fields for `feature_type` and `north_wall`, `east_wall`, `south_wall`, `west_wall`.
-        2.  Update the `_stage6_classify_features` function signature to reflect that it will now produce a grid of these new objects.
-    -   **Outcome**: A new internal data model for a tile is defined, and the pipeline structure is updated to reflect its future use.
+        1.  In `dmap_lib/analysis.py`, define a new internal dataclass (e.g.,
+            `_TileData`) with fields for `feature_type` and `north_wall`, `east_wall`,
+            `south_wall`, `west_wall`.
+        2.  Update the `_stage6_classify_features` function signature to reflect that
+            it will now produce a grid of these new objects.
+    -   **Outcome**: A new internal data model for a tile is defined, and the pipeline
+        structure is updated to reflect its future use.
 
 * **Milestone 30: Implement Tile Feature Classification**
-    -   **Goal**: Rewrite the feature classification stage to identify the primary content of each grid tile.
-    -   **Description**: This milestone implements the first half of the new Stage 6 logic. It focuses on analyzing the area *within* each grid cell to determine what it contains, populating the `feature_type` of each `_TileData` object in the intermediate grid.
+    -   **Goal**: Rewrite the feature classification stage to identify the primary
+        content of each grid tile.
+    -   **Description**: This milestone implements the first half of the new Stage 6
+        logic. It focuses on analyzing the area *within* each grid cell to determine
+        what it contains, populating the `feature_type` of each `_TileData` object
+        in the intermediate grid.
     -   **Key Tasks**:
-        1.  In `_stage6_classify_features`, create a loop that iterates over every `(x, y)` coordinate of a region's grid.
-        2.  For each coordinate, analyze the corresponding pixel area in the source image.
-        3.  Implement heuristics to classify the area as `floor`, `column`, `pit`, etc., and create a `_TileData` object with the correct `feature_type`.
-        4.  Store these objects in the `tile_grid`. The wall attributes will remain `None`.
-    -   **Outcome**: Stage 6 can now produce a complete `tile_grid` where every tile has its primary feature correctly identified.
+        1.  In `_stage6_classify_features`, create a loop that iterates over every
+            `(x, y)` coordinate of a region's grid.
+        2.  For each coordinate, analyze the corresponding pixel area in the source
+            image.
+        3.  Implement heuristics to classify the area as `floor`, `column`, `pit`,
+            etc., and create a `_TileData` object with the correct `feature_type`.
+        4.  Store these objects in the `tile_grid`. The wall attributes will remain
+            `None`.
+    -   **Outcome**: Stage 6 can now produce a complete `tile_grid` where every tile
+        has its primary feature correctly identified.
 
 * **Milestone 31: Implement Tile-Edge Wall Detection**
-    -   **Goal**: Enhance the classification stage to detect walls on the boundaries between tiles.
-    -   **Description**: This milestone implements the second half of the Stage 6 logic. It analyzes the pixel lines *between* grid cells to identify and classify walls, doors, and other edge-based features.
+    -   **Goal**: Enhance the classification stage to detect walls on the boundaries
+        between tiles.
+    -   **Description**: This milestone implements the second half of the Stage 6
+        logic. It analyzes the pixel lines *between* grid cells to identify and
+        classify walls, doors, and other edge-based features.
     -   **Key Tasks**:
-        1.  In `_stage6_classify_features`, add logic to analyze the boundaries of each tile.
-        2.  For each tile at `(x, y)`, analyze the pixels between it and its neighbors (e.g., `(x, y-1)` for the north wall).
-        3.  Implement heuristics to classify these boundaries as `stone`, `door`, `window`, or `None` (open space).
-        4.  Update the `north_wall`, `east_wall`, `south_wall`, and `west_wall` attributes of the `_TileData` objects in the `tile_grid`.
-    -   **Outcome**: The intermediate `tile_grid` is now fully populated, containing both the feature type of each tile and the wall types on all its edges.
+        1.  In `_stage6_classify_features`, add logic to analyze the boundaries of
+            each tile.
+        2.  For each tile at `(x, y)`, analyze the pixels between it and its neighbors
+            (e.g., `(x, y-1)` for the north wall).
+        3.  Implement heuristics to classify these boundaries as `stone`, `door`,
+            `window`, or `None` (open space).
+        4.  Update the `north_wall`, `east_wall`, `south_wall`, and `west_wall`
+            attributes of the `_TileData` objects in the `tile_grid`.
+    -   **Outcome**: The intermediate `tile_grid` is now fully populated, containing
+        both the feature type of each tile and the wall types on all its edges.
 
 ### Phase 12: Wall-Tracing Transformation and Entity Generation
 
 * **Milestone 32: Implement Room Area Discovery and Feature Extraction**
-    -   **Goal**: To identify all contiguous room areas and extract simple, self-contained features from the `tile_grid`.
-    -   **Description**: This first step focuses on finding *what* and *where* the rooms and features are, without yet calculating their precise polygonal shape. It lays the groundwork for the more complex tracing and linking steps.
+    -   **Goal**: To identify all contiguous room areas and extract simple,
+        self-contained features from the `tile_grid`.
+    -   **Description**: This first step focuses on finding *what* and *where* the
+        rooms and features are, without yet calculating their precise polygonal
+        shape. It lays the groundwork for the more complex tracing and linking steps.
     -   **Key Tasks**:
-        1.  In `_stage7_transform_to_mapdata`, implement a Flood Fill (or BFS) algorithm to find all unique, contiguous groups of `floor` tiles. Each group represents a single room area.
-        2.  For each room area, create a placeholder `Room` object. Store the set of tile coordinates belonging to that room in a temporary property.
-        3.  Create a `coord_to_room_id` map to easily find which room a given tile belongs to.
-        4.  Implement the logic to iterate through the `tile_grid`, find all tiles with `feature_type = 'column'`, create `schema.Feature` objects for them, and use the `coord_to_room_id` map to link them to the correct parent room's `contents` list.
-    -   **Outcome**: The `_stage7` function can now produce `Feature` objects and a list of placeholder `Room` objects, each associated with a set of its constituent tiles. The "Found 0 rooms" message will be resolved, though the room shapes will be inaccurate.
+        1.  In `_stage7_transform_to_mapdata`, implement a Flood Fill (or BFS)
+            algorithm to find all unique, contiguous groups of `floor` tiles. Each
+            group represents a single room area.
+        2.  For each room area, create a placeholder `Room` object. Store the set of
+            tile coordinates belonging to that room in a temporary property.
+        3.  Create a `coord_to_room_id` map to easily find which room a given tile
+            belongs to.
+        4.  Implement the logic to iterate through the `tile_grid`, find all tiles
+            with `feature_type = 'column'`, create `schema.Feature` objects for
+            them, and use the `coord_to_room_id` map to link them to the correct
+            parent room's `contents` list.
+    -   **Outcome**: The `_stage7` function can now produce `Feature` objects and a
+        list of placeholder `Room` objects, each associated with a set of its
+        constituent tiles. The "Found 0 rooms" message will be resolved, though the
+        room shapes will be inaccurate.
 
 * **Milestone 33: Implement Perimeter Wall Tracing**
-    -   **Goal**: To implement the core wall-following algorithm that generates a precise polygon for a single room area.
-    -   **Description**: This milestone develops the most complex part of the transformation: the algorithm that traces the perimeter of a room by following the `wall` attributes in the `tile_grid`.
+    -   **Goal**: To implement the core wall-following algorithm that generates a
+        precise polygon for a single room area.
+    -   **Description**: This milestone develops the most complex part of the
+        transformation: the algorithm that traces the perimeter of a room by
+        following the `wall` attributes in the `tile_grid`.
     -   **Key Tasks**:
-        1.  Create a new helper function, e.g., `_trace_room_perimeter`, that takes a set of a room's tiles and the `tile_grid` as input.
-        2.  Inside this function, find a consistent starting point (e.g., the top-leftmost tile).
-        3.  Implement a "right-hand rule" wall-following algorithm. It will start at a corner of the starting tile and trace along connected wall segments, adding a vertex to a path every time the direction changes.
+        1.  Create a new helper function, e.g., `_trace_room_perimeter`, that takes a
+            set of a room's tiles and the `tile_grid` as input.
+        2.  Inside this function, find a consistent starting point (e.g., the
+            top-leftmost tile).
+        3.  Implement a "right-hand rule" wall-following algorithm. It will start at
+            a corner of the starting tile and trace along connected wall segments,
+            adding a vertex to a path every time the direction changes.
         4.  The algorithm must continue until it returns to the starting vertex.
         5.  Return the completed list of `gridVertices`.
-    -   **Outcome**: A robust, reusable function that can accurately trace the perimeter of any given room area from the `tile_grid`.
+    -   **Outcome**: A robust, reusable function that can accurately trace the
+        perimeter of any given room area from the `tile_grid`.
 
 * **Milestone 34: Integrate Tracing for a Single Room**
-    -   **Goal**: To integrate the wall-tracing function for the *first discovered room only* and add extensive debugging output.
-    -   **Description**: This milestone focuses on verifying the `_trace_room_perimeter` function's output on a single, controlled case. It replaces the bounding box for just the first room and adds logging to inspect the generated path, making the complex tracing algorithm easier to debug.
+    -   **Goal**: To integrate the wall-tracing function for the *first discovered
+        room only* and add extensive debugging output.
+    -   **Description**: This milestone focuses on verifying the
+        `_trace_room_perimeter` function's output on a single, controlled case. It
+        replaces the bounding box for just the first room and adds logging to inspect
+        the generated path, making the complex tracing algorithm easier to debug.
     -   **Key Tasks**:
-        1.  In `_stage7_transform_to_mapdata`, modify the loop over `room_areas`. For the *first* area only, call the `_trace_room_perimeter` function.
-        2.  Add a `DEBUG` log line to print the returned `gridVertices` path from the tracer.
+        1.  In `_stage7_transform_to_mapdata`, modify the loop over `room_areas`. For
+            the *first* area only, call the `_trace_room_perimeter` function.
+        2.  Add a `DEBUG` log line to print the returned `gridVertices` path from the
+            tracer.
         3.  Create a `Room` object for this first room using the traced vertices.
-        4.  For all *other* room areas, continue to use the old placeholder bounding box logic.
-    -   **Outcome**: The tool will generate a map where one room has its precise shape, and the rest are simple boxes. The log will contain the detailed vertex path for the traced room, allowing for easy debugging of the algorithm.
+        4.  For all *other* room areas, continue to use the old placeholder bounding
+            box logic.
+    -   **Outcome**: The tool will generate a map where one room has its precise shape,
+        and the rest are simple boxes. The log will contain the detailed vertex path
+        for the traced room, allowing for easy debugging of the algorithm.
 
 * **Milestone 35: Apply Wall Tracing to All Rooms**
-    -   **Goal**: To apply the now-verified wall-tracing algorithm to all discovered room areas.
-    -   **Description**: This milestone expands the integration from the previous step to all rooms, replacing all remaining placeholder shapes with high-fidelity polygons.
+    -   **Goal**: To apply the now-verified wall-tracing algorithm to all discovered
+        room areas.
+    -   **Description**: This milestone expands the integration from the previous step
+        to all rooms, replacing all remaining placeholder shapes with high-fidelity
+        polygons.
     -   **Key Tasks**:
-        1.  In `_stage7_transform_to_mapdata`, remove the "first room only" condition from the loop.
+        1.  In `_stage7_transform_to_mapdata`, remove the "first room only" condition
+            from the loop.
         2.  Call `_trace_room_perimeter` for *every* room area found.
         3.  Create all `Room` objects using their accurately traced vertices.
         4.  Remove all temporary properties from the final `Room` objects.
-    -   **Outcome**: The `dmap` tool generates `MapData` with `Room` objects that have precise polygons for *all* rooms. The SVG and ASCII renderings will show correct shapes for the entire map.
+    -   **Outcome**: The `dmap` tool generates `MapData` with `Room` objects that have
+        precise polygons for *all* rooms. The SVG and ASCII renderings will show
+        correct shapes for the entire map.
 
 * **Milestone 36: Implement Door Extraction and Linking**
-    -   **Goal**: To extract door information from the `tile_grid` and link adjacent rooms correctly.
-    -   **Description**: This final milestone completes the transformation by identifying all doors and establishing the topological connections between the newly traced rooms.
+    -   **Goal**: To extract door information from the `tile_grid` and link adjacent
+        rooms correctly.
+    -   **Description**: This final milestone completes the transformation by
+        identifying all doors and establishing the topological connections between
+        the newly traced rooms.
     -   **Key Tasks**:
         1.  Create and implement the `_extract_doors_from_grid` helper function.
-        2.  This function will find `'door'` attributes in the `tile_grid` and use the `coord_to_room_id` map to find the rooms they connect.
-        3.  Create `schema.Door` objects with the correct `gridPos`, `orientation`, and `connects` data.
+        2.  This function will find `'door'` attributes in the `tile_grid` and use the
+            `coord_to_room_id` map to find the rooms they connect.
+        3.  Create `schema.Door` objects with the correct `gridPos`, `orientation`,
+            and `connects` data.
         4.  Integrate this function into `_stage7_transform_to_mapdata`.
-    -   **Outcome**: The `MapData` is now fully complete, with accurate rooms, features, and doors that are all correctly linked.
+    -   **Outcome**: The `MapData` is now fully complete, with accurate rooms,
+        features, and doors that are all correctly linked.
 
 ### Phase 13: Semantic Color Analysis & Filtering
 
@@ -885,66 +1107,109 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
 
 * **Milestone 45: Encapsulate the Core Pipeline**
     * **Goal**: To perform a pure refactoring by renaming the main analysis function.
-    * **Description**: This is a preparatory, zero-risk step. We will rename `analyze_image` to better reflect its future role as a pipeline that runs on a single, pre-defined image area. All calls to this function will be updated.
+    * **Description**: This is a preparatory, zero-risk step. We will rename
+        `analyze_image` to better reflect its future role as a pipeline that runs on
+        a single, pre-defined image area. All calls to this function will be updated.
     * **Key Tasks**:
-        1.  Rename the `analyze_image` function in `analysis.py` to `_run_analysis_on_region`.
+        1.  Rename the `analyze_image` function in `analysis.py` to
+            `_run_analysis_on_region`.
         2.  Update the call site in `dmap.py` to use the new function name.
-    * **Outcome**: The code is functionally identical, but the main analysis logic is now clearly named and encapsulated.
+    * **Outcome**: The code is functionally identical, but the main analysis logic is
+        now clearly named and encapsulated.
 
 * **Milestone 46: Introduce the Orchestrator Scaffolding**
-    * **Goal**: To create the new top-level `analyze_image` function as a simple pass-through.
-    * **Description**: This milestone introduces the new orchestrator function that will eventually manage the region loop. For now, it will simply load the image and immediately delegate to the encapsulated pipeline function from the previous milestone.
+    * **Goal**: To create the new top-level `analyze_image` function as a simple
+        pass-through.
+    * **Description**: This milestone introduces the new orchestrator function that will
+        eventually manage the region loop. For now, it will simply load the image
+        and immediately delegate to the encapsulated pipeline function from the
+        previous milestone.
     * **Key Tasks**:
         1.  Create a new `analyze_image` function in `analysis.py`.
         2.  This function will accept the `image_path` and load the `img`.
         3.  It will immediately call `_run_analysis_on_region`, passing the `img` to it.
-        4.  Update the call site in `dmap.py` to point to this new `analyze_image` function.
-    * **Outcome**: The new orchestrator is wired in place. The program's behavior remains unchanged, but the structural scaffolding is now present.
+        4.  Update the call site in `dmap.py` to point to this new `analyze_image`
+            function.
+    * **Outcome**: The new orchestrator is wired in place. The program's behavior
+        remains unchanged, but the structural scaffolding is now present.
 
 * **Milestone 47: Implement and Verify Region Detection**
-    * **Goal**: To activate region-detection logic and log its output without altering the pipeline flow.
-    * **Description**: In this step, we will execute the region-finding stages. However, instead of acting on the results, we will simply log them. This allows us to verify that region detection is working correctly before we start feeding regions into the pipeline.
+    * **Goal**: To activate region-detection logic and log its output without altering
+        the pipeline flow.
+    * **Description**: In this step, we will execute the region-finding stages.
+        However, instead of acting on the results, we will simply log them. This
+        allows us to verify that region detection is working correctly before we
+        start feeding regions into the pipeline.
     * **Key Tasks**:
         1.  In the `analyze_image` orchestrator, call `_stage1_detect_regions`.
         2.  Add a `log.debug` statement to report the number of regions found.
-        3.  The orchestrator will still pass the original, full `img` to `_run_analysis_on_region`.
-    * **Outcome**: The console log will now show that regions are being detected. The core analysis pipeline is still unaffected and runs only once on the full image.
+        3.  The orchestrator will still pass the original, full `img` to
+            `_run_analysis_on_region`.
+    * **Outcome**: The console log will now show that regions are being detected. The
+        core analysis pipeline is still unaffected and runs only once on the full
+        image.
 
 * **Milestone 48: Process a Single Cropped Region**
-    * **Goal**: To make the pipeline process a single, automatically cropped dungeon region for the first time.
-    * **Description**: This is the first functional change to the pipeline's input. The orchestrator will now select the largest detected dungeon region, crop the source image to its bounds, and pass only that cropped image to the pipeline runner.
+    * **Goal**: To make the pipeline process a single, automatically cropped dungeon
+        region for the first time.
+    * **Description**: This is the first functional change to the pipeline's input.
+        The orchestrator will now select the largest detected dungeon region, crop
+        the source image to its bounds, and pass only that cropped image to the
+        pipeline runner.
     * **Key Tasks**:
-        1.  In `analyze_image`, get the list of dungeon regions from the detection stage.
+        1.  In `analyze_image`, get the list of dungeon regions from the detection
+            stage.
         2.  Identify the largest region based on its contour.
-        3.  Create a new, cropped `region_img` from the source `img` using the region's bounding box.
+        3.  Create a new, cropped `region_img` from the source `img` using the
+            region's bounding box.
         4.  Pass this `region_img` to the `_run_analysis_on_region` function.
-    * **Outcome**: The tool now analyzes only the main dungeon area, ignoring all text and secondary regions. This verifies that the pipeline can run successfully on a cropped image.
+    * **Outcome**: The tool now analyzes only the main dungeon area, ignoring all text
+        and secondary regions. This verifies that the pipeline can run successfully on
+        a cropped image.
 
 * **Milestone 49: Activate the Multi-Region Processing Loop**
-    * **Goal**: To wrap the single-region logic in a loop to process all detected dungeon areas.
-    * **Description**: This milestone expands the logic from the previous step to handle all dungeon regions. It will loop through each detected region, run the pipeline, and aggregate the results into a single `MapData` object.
+    * **Goal**: To wrap the single-region logic in a loop to process all detected
+        dungeon areas.
+    * **Description**: This milestone expands the logic from the previous step to
+        handle all dungeon regions. It will loop through each detected region, run
+        the pipeline, and aggregate the results into a single `MapData` object.
     * **Key Tasks**:
-        1.  In `analyze_image`, create a loop to iterate over all detected dungeon regions.
+        1.  In `analyze_image`, create a loop to iterate over all detected dungeon
+            regions.
         2.  Move the cropping and pipeline-calling logic inside this loop.
-        3.  Implement logic to collect the results from each pipeline run and append them to the final `MapData` object's list of `regions`.
-    * **Outcome**: The tool now correctly analyzes maps with multiple, separate dungeon areas. The analysis is still inefficient but is now structurally complete.
+        3.  Implement logic to collect the results from each pipeline run and append
+            them to the final `MapData` object's list of `regions`.
+    * **Outcome**: The tool now correctly analyzes maps with multiple, separate dungeon
+        areas. The analysis is still inefficient but is now structurally complete.
 
 * **Milestone 50: Relocate the Color Analysis Call**
-    * **Goal**: To move the color analysis function call from the global scope into the per-region pipeline.
-    * **Description**: This is a critical step to make the analysis context-aware. We will move the function call that performs the color analysis so that it executes inside the loop for each region.
+    * **Goal**: To move the color analysis function call from the global scope into
+        the per-region pipeline.
+    * **Description**: This is a critical step to make the analysis context-aware. We
+        will move the function call that performs the color analysis so that it
+        executes inside the loop for each region.
     * **Key Tasks**:
         1.  Cut the `_stage0_analyze_colors` call from the `analyze_image` orchestrator.
         2.  Paste the call at the beginning of the `_run_analysis_on_region` function.
-    * **Outcome**: Color analysis is now performed for each region. It is more accurate but is now called `_stage0` inside a per-region context, which is semantically incorrect and will be fixed next.
+    * **Outcome**: Color analysis is now performed for each region. It is more
+        accurate but is now called `_stage0` inside a per-region context, which is
+        semantically incorrect and will be fixed next.
 
 * **Milestone 51: Finalize the Per-Region Color Analysis**
-    * **Goal**: To semantically finalize the color analysis stage, making it truly per-region.
-    * **Description**: This final milestone cleans up the color analysis stage. We will rename the function to match its new role in the pipeline and remove the now-obsolete `background` detection heuristic, which is a source of errors when run on cropped images.
+    * **Goal**: To semantically finalize the color analysis stage, making it truly
+        per-region.
+    * **Description**: This final milestone cleans up the color analysis stage. We will
+        rename the function to match its new role in the pipeline and remove the
+        now-obsolete `background` detection heuristic, which is a source of errors
+        when run on cropped images.
     * **Key Tasks**:
         1.  Rename `_stage0_analyze_colors` to `_stage2_analyze_region_colors`.
         2.  Update its call site inside `_run_analysis_on_region`.
-        3.  Modify the function's internal logic to remove the code that identifies a `background` color role.
-    * **Outcome**: The refactoring is complete. The pipeline is now a true region-first system, and the color analysis is more robust, accurate, and correctly implemented.
+        3.  Modify the function's internal logic to remove the code that identifies a
+            `background` color role.
+    * **Outcome**: The refactoring is complete. The pipeline is now a true region-first
+        system, and the color analysis is more robust, accurate, and correctly
+        implemented.
 
 ### Phase 17: Structural Scaffolding
 
