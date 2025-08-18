@@ -72,6 +72,7 @@ def _generate_hatching_sketch(
     tx: float,
     ty: float,
     unified_geometry: Polygon | MultiPolygon,
+    styles: dict,
 ) -> tuple[list[str], list[str]]:
     """
     Generates a high-fidelity, tile-based cross-hatching effect with a grey
@@ -85,6 +86,7 @@ def _generate_hatching_sketch(
     grid_max_y = (height - ty) / grid_size
 
     hatch_distance_limit = 2.0 * grid_size
+    underlay_color = styles.get("glow_color", "#C0C0C0")
 
     for gx in range(math.floor(grid_min_x), math.ceil(grid_max_x)):
         for gy in range(math.floor(grid_min_y), math.ceil(grid_max_y)):
@@ -98,7 +100,7 @@ def _generate_hatching_sketch(
 
             # Add a grey fill for the tile before adding hatches
             hatch_tile_fills.append(
-                f'<rect x="{gx * grid_size}" y="{gy * grid_size}" width="{grid_size}" height="{grid_size}" fill="#E0E0E0" />'
+                f'<rect x="{gx * grid_size}" y="{gy * grid_size}" width="{grid_size}" height="{grid_size}" fill="{underlay_color}" />'
             )
 
             noise_radius = grid_size * 0.1
@@ -529,7 +531,7 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
 
     styles = {
         "bg_color": "#EDE0CE", "room_color": "#FFFFFF", "wall_color": "#000000",
-        "shadow_color": "#999999", "glow_color": "#C9C1B1", "line_thickness": 7.0,
+        "shadow_color": "#999999", "glow_color": "#C0C0C0", "line_thickness": 7.0,
         "hatch_density": 1.0, "water_base_color": "#AEC6CF",
         "water_ripple_color": "#77AADD", "water_ripple_steps": 4,
         "water_ripple_spacing": 0.1, "water_curve_resolution": 10,
@@ -568,7 +570,7 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
 
     layers: Dict[str, List[Any]] = {
         "hatching_underlay": [], "hatching": [], "shadows": [], "glows": [],
-        "room_fills": [], "contents": [], "doors": [], "walls": [],
+        "hole_fills": [], "room_fills": [], "contents": [], "doors": [], "walls": [],
     }
     z_ordered_objects = []
 
@@ -609,15 +611,23 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
     if hatching_style:
         all_polys = [s.polygon for s in renderable_shapes]
         pixel_polys = [
-            Polygon([(v[0] * PIXELS_PER_GRID, v[1] * PIXELS_PER_GRID) for v in p.exterior.coords])
+            Polygon([(v[0] * PIXELS_PER_GRID, v[1] * PIXELS_PER_GRID) for v in p.exterior.coords],
+                    [[(v[0] * PIXELS_PER_GRID, v[1] * PIXELS_PER_GRID) for v in hole.coords] for hole in p.interiors])
             for p in all_polys
         ]
         unified_pixel_geometry = unary_union(pixel_polys).buffer(0)
 
+        geoms_to_fill = unified_pixel_geometry.geoms if hasattr(unified_pixel_geometry, "geoms") else [unified_pixel_geometry]
+        for geom in geoms_to_fill:
+            if isinstance(geom, Polygon):
+                for interior in geom.interiors:
+                    hole_path = _polygon_to_svg_path(Polygon(interior), 1.0)
+                    layers["hole_fills"].append(f'<path d="{hole_path}" fill="{styles["glow_color"]}" />')
+
         if hatching_style == "sketch":
             log.info("Generating final tile-based sketch hatching...")
             hatch_lines, hatch_fills = _generate_hatching_sketch(
-                width, height, PIXELS_PER_GRID, tx, ty, unified_pixel_geometry
+                width, height, PIXELS_PER_GRID, tx, ty, unified_pixel_geometry, styles
             )
             layers["hatching_underlay"] = hatch_fills
             layers["hatching"] = hatch_lines
@@ -632,13 +642,21 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
                     hatch_func(contour, styles["hatch_density"], PIXELS_PER_GRID)
                 )
 
-        fill_or_stroke = 'fill' if hatching_style == 'stipple' else 'stroke'
-        svg.append(f'<g id="hatching-underlay">{"".join(layers["hatching_underlay"])}</g>')
-        svg.append(f'<g id="hatching" {fill_or_stroke}="{styles["wall_color"]}" stroke-width="1.0">{"".join(layers["hatching"])}</g>')
+    render_order = [
+        "shadows", "glows", "hole_fills", "hatching_underlay", "hatching",
+        "room_fills", "contents", "doors", "walls",
+    ]
 
-    render_order = ["shadows", "glows", "room_fills", "contents", "doors", "walls"]
     for name in render_order:
-        svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
+        if name in ["hatching_underlay", "hatching"]:
+            if hatching_style: # Only add hatching groups if a style is selected
+                if name == "hatching_underlay":
+                    svg.append(f'<g id="hatching-underlay">{"".join(layers[name])}</g>')
+                elif name == "hatching":
+                    fill_or_stroke = 'fill' if hatching_style == 'stipple' else 'stroke'
+                    svg.append(f'<g id="hatching" {fill_or_stroke}="{styles["wall_color"]}" stroke-width="1.0">{"".join(layers[name])}</g>')
+        else:
+            svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
 
     svg.append("</g>")
     svg.append(f'<g id="grid" stroke="#AEC6CF" stroke-width="1" stroke-opacity="0.5">')
