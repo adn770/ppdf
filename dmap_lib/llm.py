@@ -12,7 +12,12 @@ log_llm = logging.getLogger("dmap.llm")
 
 
 def query_llava(
-    ollama_url: str, model: str, image: np.ndarray, prompt: str
+    ollama_url: str,
+    model: str,
+    image: np.ndarray,
+    prompt: str,
+    temperature: float = 0.3,
+    context_size: int = 8192,
 ) -> Optional[Dict[str, Any]]:
     """
     Queries a LLaVA model via the Ollama API with an image and a prompt.
@@ -22,6 +27,8 @@ def query_llava(
         model: The name of the LLaVA model to use.
         image: The image to analyze (as a NumPy array).
         prompt: The text prompt to send with the image.
+        temperature: The temperature for the model's generation.
+        context_size: The context window size for the model.
 
     Returns:
         A dictionary containing the parsed JSON response from the model, or None if
@@ -35,10 +42,13 @@ def query_llava(
         "prompt": prompt,
         "stream": False,
         "images": [img_base64],
+        "options": {"temperature": temperature, "num_ctx": context_size},
     }
     raw_json = ""  # Initialize raw_json to ensure it's available for logging
     try:
-        log_llm.debug("Sending request to LLaVA at %s with model %s.", ollama_url, model)
+        log_llm.debug(
+            "Sending request to LLaVA (prompt length: %d chars).", len(prompt)
+        )
         response = requests.post(
             f"{ollama_url}/api/generate", json=payload, timeout=60
         )

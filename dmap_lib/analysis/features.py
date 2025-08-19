@@ -87,10 +87,19 @@ class FeatureExtractor:
 class LLaVAFeatureEnhancer:
     """Enhances feature classification using a multimodal LLM (LLaVA)."""
 
-    def __init__(self, ollama_url: str, ollama_model: str, llava_mode: str):
+    def __init__(
+        self,
+        ollama_url: str,
+        ollama_model: str,
+        llava_mode: str,
+        temperature: float,
+        context_size: int,
+    ):
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
         self.llava_mode = llava_mode
+        self.temperature = temperature
+        self.context_size = context_size
         log_llm.info("LLaVA Feature Enhancer initialized in '%s' mode.", llava_mode)
 
     def enhance(
@@ -123,13 +132,21 @@ class LLaVAFeatureEnhancer:
             verts = (
                 np.array(feature["high_res_vertices"]) * grid_size / 8.0
             ).astype(np.int32)
-            x, y, w, h = cv2.boundingRect(verts)
+            M = cv2.moments(verts)
+            if M["m00"] == 0:
+                continue
 
-            padding = int(grid_size * 0.2)
-            x1 = max(0, x - padding)
-            y1 = max(0, y - padding)
-            x2 = min(original_region_img.shape[1], x + w + padding)
-            y2 = min(original_region_img.shape[0], y + h + padding)
+            # 1. Find the centroid and the grid tile it belongs to
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            gx, gy = cx // grid_size, cy // grid_size
+
+            # 2. Calculate the 3x3 grid area for the crop
+            crop_size = 3 * grid_size
+            x1 = max(0, (gx - 1) * grid_size)
+            y1 = max(0, (gy - 1) * grid_size)
+            x2 = min(original_region_img.shape[1], (gx + 2) * grid_size)
+            y2 = min(original_region_img.shape[0], (gy + 2) * grid_size)
 
             cropped_feature_img = original_region_img[y1:y2, x1:x2]
             if cropped_feature_img.size == 0:
@@ -140,13 +157,18 @@ class LLaVAFeatureEnhancer:
                 self.ollama_model,
                 cropped_feature_img,
                 LLAVA_PROMPT_CLASSIFIER,
+                temperature=self.temperature,
+                context_size=self.context_size,
             )
 
             if response and "feature_type" in response:
                 new_type = response["feature_type"]
                 if isinstance(new_type, str):
                     log_llm.info(
-                        "LLaVA classified feature as '%s'.", new_type
+                        "LLaVA classified feature at tile (%d, %d) as '%s'.",
+                        gx,
+                        gy,
+                        new_type,
                     )
                     feature["featureType"] = new_type
                 else:
@@ -165,7 +187,12 @@ class LLaVAFeatureEnhancer:
         """Runs the full-region oracle enhancement."""
         log_llm.info("Querying LLaVA in oracle mode...")
         response = query_llava(
-            self.ollama_url, self.ollama_model, original_region_img, LLAVA_PROMPT_ORACLE
+            self.ollama_url,
+            self.ollama_model,
+            original_region_img,
+            LLAVA_PROMPT_ORACLE,
+            temperature=self.temperature,
+            context_size=self.context_size,
         )
 
         if not response or "features" not in response:

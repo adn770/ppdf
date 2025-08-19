@@ -66,6 +66,8 @@ class MapAnalyzer:
         llava_mode: Optional[str] = None,
         ollama_url: Optional[str] = None,
         ollama_model: Optional[str] = None,
+        llm_temp: float = 0.3,
+        llm_ctx_size: int = 8192,
     ) -> schema.Region:
         """Runs the full pipeline on a single cropped image region."""
         log.info("Running analysis pipeline on region: %s", region_context["id"])
@@ -151,7 +153,7 @@ class MapAnalyzer:
         if llava_mode and ollama_url and ollama_model:
             log.debug("Calling LLaVA feature enhancement in '%s' mode.", llava_mode)
             self.llava_enhancer = LLaVAFeatureEnhancer(
-                ollama_url, ollama_model, llava_mode
+                ollama_url, ollama_model, llava_mode, llm_temp, llm_ctx_size
             )
             context.enhancement_layers = self.llava_enhancer.enhance(
                 context.enhancement_layers, img, grid_info.size
@@ -324,6 +326,8 @@ def analyze_image(
     llava_mode: Optional[str] = None,
     llm_url: Optional[str] = None,
     llm_model: Optional[str] = None,
+    llm_temp: float = 0.3,
+    llm_ctx_size: int = 8192,
 ) -> schema.MapData:
     """
     Top-level orchestrator for the analysis pipeline. It will load the image,
@@ -360,6 +364,8 @@ def analyze_image(
             llava_mode=llava_mode,
             ollama_url=llm_url,
             ollama_model=llm_model,
+            llm_temp=llm_temp,
+            llm_ctx_size=llm_ctx_size,
         )
         final_regions.append(processed_region)
 

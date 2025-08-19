@@ -99,6 +99,18 @@ def get_cli_args():
         default="http://localhost:11434",
         help="The base URL of the Ollama server (default: http://localhost:11434).",
     )
+    g_llm.add_argument(
+        "--llm-temp",
+        type=float,
+        default=0.3,
+        help="Set the temperature for the LLaVA model (default: 0.3).",
+    )
+    g_llm.add_argument(
+        "--llm-ctx-size",
+        type=int,
+        default=8192,
+        help="Set the context window size for the LLaVA model (default: 8192).",
+    )
     return p.parse_args()
 
 
@@ -160,6 +172,8 @@ def main():
                     llava_mode=args.llava_mode,
                     llm_url=args.llm_url,
                     llm_model=args.llm_model,
+                    llm_temp=args.llm_temp,
+                    llm_ctx_size=args.llm_ctx_size,
                 )
                 log.info("Saving analysis to '%s'...", json_path)
                 schema.save_json(map_data, json_path)
