@@ -130,7 +130,9 @@ This structure promotes code reuse and clean separation of concerns.
 │   │   ├── `regions.py`: Logic for Stage 1 region and text detection.
 │   │   ├── `structure.py`: `StructureAnalyzer` for grid and wall detection.
 │   │   └── `transformer.py`: `MapTransformer` for final entity generation.
+│   ├── `llm.py`: Ollama/LLaVA API communication and prompting.
 │   ├── `log_utils.py`: Utilities for configuring the logging system.
+│   ├── `prompts.py`: Constant definitions for LLM system prompts.
 │   ├── `schema.py`: Data structures (dataclasses) and JSON serialization.
 │   └── `rendering.py`: Procedural SVG generation logic.
 │
@@ -357,6 +359,11 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   `--ascii-debug`: Render an ASCII map of the final structure for debugging.
     -   `--debug`: Enable detailed DEBUG logging for specific topics (e.g., `analysis`,
         `grid`, `render`).
+-   **LLM Feature Enhancement**:
+    -   `--llava`: Enable feature enhancement with LLaVA (`classifier`).
+    -   `-M, --llm-model`: The LLaVA model to use (default: `llava:latest`).
+    -   `-U, --llm-url`: The base URL of the Ollama server (default:
+        `http://localhost:11434`).
 
 ---
 
@@ -1303,3 +1310,111 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Outcome**: The `dmap_lib/analysis.py` file now contains only the new,
         refactored class-based implementation. The codebase is significantly
         cleaner, more organized, and easier to maintain.
+
+### Phase 20: LLaVA Integration for Feature Enhancement
+
+-   **Milestone 58: API and CLI Scaffolding**
+    -   **Goal**: To create the API communication layer and integrate the new CLI
+        arguments.
+    -   **Description**: This milestone establishes the foundational components for
+        communicating with an Ollama server and exposes the necessary controls to the
+        user through the command-line interface.
+    -   **Key Tasks**:
+        1.  In `dmap.py`, add the `--llava`, `-M/--llm-model`, and `-U/--llm-url`
+            arguments using `argparse`.
+        2.  Create the new `dmap_lib/llm.py` file.
+        3.  Implement the `query_llava` function, including image encoding, request
+            logic, and robust error handling.
+        4.  In `dmap_lib/log_utils.py`, add a new logging topic for `llm` to
+            `PROJECT_TOPICS`.
+    -   **Outcome**: A runnable CLI that accepts the new arguments and a functional API
+        module capable of sending an image and prompt to an Ollama server.
+
+-   **Milestone 59: Create LLaVA Enhancer Class Skeleton**
+    -   **Goal**: To introduce the new `LLaVAFeatureEnhancer` class and its prompt into
+        the codebase without functional logic.
+    -   **Description**: This milestone creates the structural placeholder for the LLaVA
+        logic and defines the prompt that will be used for classification, ensuring the
+        core components are in place before adding complex behavior.
+    -   **Key Tasks**:
+        1.  In `dmap_lib/analysis/features.py`, create the new `LLaVAFeatureEnhancer`
+            class.
+        2.  Add an empty `enhance` method to the class.
+        3.  Create a new `dmap_lib/prompts.py` module to define the
+            `LLAVA_PROMPT_CLASSIFIER` constant containing the text prompt for the LLM.
+    -   **Outcome**: The new `LLaVAFeatureEnhancer` class and its associated prompt are
+        defined and importable, ready for integration into the pipeline.
+
+-   **Milestone 60: Integrate Enhancer into Analysis Pipeline**
+    -   **Goal**: To modify the main analysis pipeline to conditionally call the new
+        enhancer.
+    -   **Description**: This step wires the new enhancer into the `MapAnalyzer`. The call
+        will be guarded by the new `--llava` CLI flag, but for now, the call will not
+        perform any action. This verifies the data flow and control logic.
+    -   **Key Tasks**:
+        1.  In `dmap.py`, pass the `llava_mode`, `llm_url`, and `llm_model` arguments
+            into the `analyze_image` function.
+        2.  In `dmap_lib/analysis/analyzer.py`, update `analyze_image` and
+            `MapAnalyzer.analyze_region` to accept the new LLM parameters.
+        3.  In `analyze_region`, after the `FeatureExtractor` runs, add a conditional
+            block that checks if `llava_mode` is 'classifier'.
+        4.  Inside the block, instantiate `LLaVAFeatureEnhancer` and call its empty
+            `enhance` method, logging a debug message indicating it was called.
+    -   **Outcome**: The `dmap` tool, when run with `--llava classifier`, will correctly
+        enter the enhancement step and log that the process was initiated, though no
+        features will be modified.
+
+-   **Milestone 61: Implement Feature Image Cropping**
+    -   **Goal**: To implement the logic for extracting individual feature images from
+        the main region image.
+    -   **Description**: This milestone focuses on the computer vision task of cropping
+        the precise pixel data for each feature detected by the `FeatureExtractor`. This
+        is a critical prerequisite for sending targeted images to the LLM.
+    -   **Key Tasks**:
+        1.  In the `LLaVAFeatureEnhancer.enhance` method, iterate through the features
+            passed in the `enhancement_layers`.
+        2.  For each feature, calculate its bounding box from its `high_res_vertices`.
+        3.  Use the bounding box to crop the feature's image from the
+            `original_region_img`.
+        4.  For debugging, add a `log.debug` statement to report the dimensions of each
+            cropped image.
+    -   **Outcome**: The enhancer can now isolate the image data for every detected
+        feature.
+
+-   **Milestone 62: Implement and Verify Single LLaVA API Call**
+    -   **Goal**: To send one cropped feature image to the LLaVA API and log the raw
+        response.
+    -   **Description**: This milestone connects the pipeline to the Ollama API for the
+        first time in a controlled manner. It will process only the *first* feature it
+        finds, send it for classification, and log the output without attempting to
+        parse or merge it. This isolates the API call for easy debugging.
+    -   **Key Tasks**:
+        1.  In `LLaVAFeatureEnhancer.enhance`, modify the feature loop to process only
+            the first feature and then break.
+        2.  Call the `llm.query_llava` function with the cropped image and the
+            classifier prompt.
+        3.  Add a `log_llm.debug` statement to print the raw JSON or error message
+            returned from the API call.
+    -   **Outcome**: The tool, when run, will send a single feature to the LLaVA model
+        and print the model's raw classification response to the debug log, verifying
+        the end-to-end API connection.
+
+-   **Milestone 63: Implement Full Feature Enhancement and Merging**
+    -   **Goal**: To process all features through LLaVA, parse the results, and merge
+        them back into the final map data.
+    -   **Description**: This final milestone fully enables the feature enhancement
+        pipeline. It removes the single-feature limitation, adds JSON parsing for the
+        LLM's response, and updates the feature objects with the new, more descriptive
+        `featureType`.
+    -   **Key Tasks**:
+        1.  In `LLaVAFeatureEnhancer.enhance`, remove the `break` to allow the loop to
+            process all features.
+        2.  Add logic to parse the JSON response from `query_llava`.
+        3.  If a valid `featureType` is returned by the LLM, update the corresponding
+            feature dictionary in the `enhancement_layers` with the new type.
+        4.  Ensure the method returns the modified `enhancement_layers` object.
+        5.  In `MapAnalyzer`, correctly receive and use the returned, modified context
+            for the final transformation stage.
+    -   **Outcome**: When `--llava classifier` is used, the final JSON and SVG output
+        will contain features with semantically rich types (e.g., "stairs", "altar") as
+        classified by the LLaVA model.
