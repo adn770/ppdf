@@ -360,7 +360,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   `--debug`: Enable detailed DEBUG logging for specific topics (e.g., `analysis`,
         `grid`, `render`).
 -   **LLM Feature Enhancement**:
-    -   `--llava`: Enable feature enhancement with LLaVA (`classifier`).
+    -   `--llava`: Enable feature enhancement with LLaVA (`classifier` or `oracle`).
     -   `-M, --llm-model`: The LLaVA model to use (default: `llava:latest`).
     -   `-U, --llm-url`: The base URL of the Ollama server (default:
         `http://localhost:11434`).
@@ -1418,3 +1418,54 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Outcome**: When `--llava classifier` is used, the final JSON and SVG output
         will contain features with semantically rich types (e.g., "stairs", "altar") as
         classified by the LLaVA model.
+
+### Phase 21: LLaVA Oracle Mode Enhancement
+
+-   **Milestone 64: Add Oracle Mode to CLI and Prompts**
+    -   **Goal**: To prepare the project for the oracle mode implementation by adding
+        the necessary CLI options and the new, more complex prompt.
+    -   **Description**: This milestone updates the user-facing controls and defines
+        the sophisticated prompt required to instruct the LLM to perform a full-region
+        analysis.
+    -   **Key Tasks**:
+        1.  In `dmap.py`, update the `--llava` argument's choices to include `oracle`.
+        2.  In `dmap_lib/prompts.py`, create the new `LLAVA_PROMPT_ORACLE` constant.
+            This prompt will ask the LLM to return a JSON object with a list of all
+            features it identifies, including their `featureType` and bounding box.
+    -   **Outcome**: The CLI accepts `--llava oracle`, and the new prompt is available
+        for use by the enhancer.
+
+-   **Milestone 65: Implement Oracle Mode API Call**
+    -   **Goal**: To implement the logic for sending the entire region image to the
+        LLaVA model.
+    -   **Description**: This step adds the 'oracle' branch to the `LLaVAFeatureEnhancer`.
+        It will send the full image of a dungeon region for analysis and log the raw
+        response for debugging.
+    -   **Key Tasks**:
+        1.  In `dmap_lib/analysis/features.py`, add logic to the `LLaVAFeatureEnhancer`
+            to handle the `oracle` mode.
+        2.  This logic will call `llm.query_llava` using the *entire*
+            `original_region_img` and the new `LLAVA_PROMPT_ORACLE`.
+        3.  Add a `log_llm.debug` statement to print the raw JSON response from the
+            model.
+    -   **Outcome**: When run with `--llava oracle`, the tool sends the full region
+        image to the LLM and logs the complete, unprocessed response, verifying the API
+        call.
+
+-   **Milestone 66: Implement Oracle Response Parsing and Reconciliation**
+    -   **Goal**: To parse the LLM's response and merge its findings with the
+        geometrically detected features.
+    -   **Description**: This is the core of the oracle mode. It implements the logic
+        to interpret the LLM's JSON output and reconciles it with the
+        `FeatureExtractor`'s baseline results. This ensures the semantic richness of
+        the LLM without losing the geometric precision of the original extractor.
+    -   **Key Tasks**:
+        1.  In `LLaVAFeatureEnhancer.enhance`, add logic to parse the JSON list of
+            features returned by the oracle prompt.
+        2.  For each feature identified by the LLM, find the closest corresponding
+            feature (by centroid distance) in the `enhancement_layers`.
+        3.  If a close match is found, update the geometrically-sound feature's
+            `featureType` with the semantically richer one from the LLM.
+    -   **Outcome**: The `--llava oracle` mode produces a final `MapData` object that
+        combines the geometric accuracy of the `FeatureExtractor` with the advanced
+        semantic classification from the LLaVA oracle pass.
