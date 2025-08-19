@@ -1,3 +1,4 @@
+# --- dmap.py ---
 import argparse
 import os
 import logging
@@ -83,6 +84,7 @@ def get_cli_args():
     g_llm.add_argument(
         "--llava",
         choices=["classifier"],
+        dest="llava_mode",
         help="Enable feature enhancement with LLaVA.",
     )
     g_llm.add_argument(
@@ -113,7 +115,6 @@ def main():
     log.info("--- DMAP CLI Initialized ---")
     log.debug("Arguments received: %s", vars(args))
 
-    # --- New Logic for Skipping Analysis ---
     map_data = None
     json_path = f"{args.output}.json"
 
@@ -128,8 +129,6 @@ def main():
         except Exception as e:
             log.critical("Failed to load or parse JSON file: %s", e, exc_info=True)
             return
-
-    # --- Original Analysis Workflow ---
     else:
         if not args.input:
             log.critical("--input is required unless --skip-analysis is used.")
@@ -158,6 +157,9 @@ def main():
                     args.input,
                     ascii_debug=args.ascii_debug,
                     save_intermediate_path=args.save_intermediate,
+                    llava_mode=args.llava_mode,
+                    llm_url=args.llm_url,
+                    llm_model=args.llm_model,
                 )
                 log.info("Saving analysis to '%s'...", json_path)
                 schema.save_json(map_data, json_path)
@@ -168,7 +170,6 @@ def main():
                 )
                 return
 
-    # --- Common Rendering Path ---
     if map_data:
         num_r = sum(
             1

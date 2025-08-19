@@ -10,7 +10,7 @@ from sklearn.cluster import KMeans
 from dmap_lib import schema, rendering
 from .color import ColorAnalyzer
 from .structure import StructureAnalyzer
-from .features import FeatureExtractor
+from .features import FeatureExtractor, LLaVAFeatureEnhancer
 from .transformer import MapTransformer
 from .context import _RegionAnalysisContext
 from .regions import detect_content_regions, parse_text_metadata
@@ -26,6 +26,7 @@ class MapAnalyzer:
         self.structure_analyzer = StructureAnalyzer()
         self.feature_extractor = FeatureExtractor()
         self.map_transformer = MapTransformer()
+        self.llava_enhancer = None
 
     def _save_feature_detection_debug_image(
         self,
@@ -62,6 +63,9 @@ class MapAnalyzer:
         region_context: Dict[str, Any],
         ascii_debug: bool = False,
         save_intermediate_path: Optional[str] = None,
+        llava_mode: Optional[str] = None,
+        ollama_url: Optional[str] = None,
+        ollama_model: Optional[str] = None,
     ) -> schema.Region:
         """Runs the full pipeline on a single cropped image region."""
         log.info("Running analysis pipeline on region: %s", region_context["id"])
@@ -144,6 +148,13 @@ class MapAnalyzer:
                 "pass2_features",
             )
 
+        if llava_mode == "classifier" and ollama_url and ollama_model:
+            log.debug("Calling LLaVA feature enhancement.")
+            self.llava_enhancer = LLaVAFeatureEnhancer(ollama_url, ollama_model)
+            context.enhancement_layers = self.llava_enhancer.enhance(
+                context.enhancement_layers, img, grid_info.size
+            )
+
         feature_cleaned_img = corrected_floor.copy()
         for feature in context.enhancement_layers.get("features", []):
             px_verts = (
@@ -166,7 +177,7 @@ class MapAnalyzer:
             grid_info,
             color_profile,
             tile_classifications,
-            debug_canvas=debug_canvas,  # Pass the canvas to the analyzer
+            debug_canvas=debug_canvas,
         )
 
         # Save the completed debug canvas if it was created
@@ -308,6 +319,9 @@ def analyze_image(
     image_path: str,
     ascii_debug: bool = False,
     save_intermediate_path: Optional[str] = None,
+    llava_mode: Optional[str] = None,
+    llm_url: Optional[str] = None,
+    llm_model: Optional[str] = None,
 ) -> schema.MapData:
     """
     Top-level orchestrator for the analysis pipeline. It will load the image,
@@ -341,6 +355,9 @@ def analyze_image(
             region_context,
             ascii_debug=ascii_debug,
             save_intermediate_path=save_intermediate_path,
+            llava_mode=llava_mode,
+            ollama_url=llm_url,
+            ollama_model=llm_model,
         )
         final_regions.append(processed_region)
 
