@@ -1,3 +1,4 @@
+# --- dmap_lib/llm.py ---
 import base64
 import json
 import logging
@@ -35,7 +36,7 @@ def query_llava(
         "stream": False,
         "images": [img_base64],
     }
-
+    raw_json = ""  # Initialize raw_json to ensure it's available for logging
     try:
         log_llm.debug("Sending request to LLaVA at %s with model %s.", ollama_url, model)
         response = requests.post(
@@ -45,7 +46,16 @@ def query_llava(
         response_data = response.json()
         raw_json = response_data.get("response", "{}")
         log_llm.debug("Raw LLaVA response:\n%s", raw_json)
-        return json.loads(raw_json)
+
+        # Clean the response to handle markdown code blocks
+        cleaned_json = raw_json.strip()
+        if cleaned_json.startswith("```json"):
+            cleaned_json = cleaned_json[7:]
+        if cleaned_json.endswith("```"):
+            cleaned_json = cleaned_json[:-3]
+        cleaned_json = cleaned_json.strip()
+
+        return json.loads(cleaned_json)
     except requests.exceptions.RequestException as e:
         log_llm.error("Failed to connect to Ollama API at %s: %s", ollama_url, e)
         return None

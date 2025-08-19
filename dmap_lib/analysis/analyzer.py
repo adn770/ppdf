@@ -148,9 +148,11 @@ class MapAnalyzer:
                 "pass2_features",
             )
 
-        if llava_mode == "classifier" and ollama_url and ollama_model:
-            log.debug("Calling LLaVA feature enhancement.")
-            self.llava_enhancer = LLaVAFeatureEnhancer(ollama_url, ollama_model)
+        if llava_mode and ollama_url and ollama_model:
+            log.debug("Calling LLaVA feature enhancement in '%s' mode.", llava_mode)
+            self.llava_enhancer = LLaVAFeatureEnhancer(
+                ollama_url, ollama_model, llava_mode
+            )
             context.enhancement_layers = self.llava_enhancer.enhance(
                 context.enhancement_layers, img, grid_info.size
             )

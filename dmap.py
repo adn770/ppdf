@@ -83,7 +83,7 @@ def get_cli_args():
     g_llm = p.add_argument_group("LLM Feature Enhancement")
     g_llm.add_argument(
         "--llava",
-        choices=["classifier"],
+        choices=["classifier", "oracle"],
         dest="llava_mode",
         help="Enable feature enhancement with LLaVA.",
     )
