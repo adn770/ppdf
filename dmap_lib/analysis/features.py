@@ -98,5 +98,40 @@ class LLaVAFeatureEnhancer:
         original_region_img: np.ndarray,
         grid_size: int,
     ) -> Dict[str, Any]:
-        """Stub for feature enhancement logic."""
+        """Crops features, sends them to LLaVA for analysis, and logs the result."""
+        features = enhancement_layers.get("features", [])
+        if not features:
+            return enhancement_layers
+
+        # 1. Process only the first feature for now to verify the API call
+        feature = features[0]
+        verts = (
+            np.array(feature["high_res_vertices"]) * grid_size / 8.0
+        ).astype(np.int32)
+        x, y, w, h = cv2.boundingRect(verts)
+
+        padding = int(grid_size * 0.2)
+        x1, y1 = max(0, x - padding), max(0, y - padding)
+        x2, y2 = min(original_region_img.shape[1], x + w + padding), min(
+            original_region_img.shape[0], y + h + padding
+        )
+
+        cropped_feature_img = original_region_img[y1:y2, x1:x2]
+
+        if cropped_feature_img.size == 0:
+            log_llm.warning("Cropped feature image is empty. Skipping.")
+            return enhancement_layers
+
+        # 2. Call the LLaVA API
+        log_llm.info("Sending feature to LLaVA for classification...")
+        llava_response = query_llava(
+            prompt=LLAVA_PROMPT_CLASSIFIER,
+            image=cropped_feature_img,
+            ollama_url=self.ollama_url,
+            model=self.ollama_model,
+        )
+
+        # 3. Log the raw response for debugging
+        log_llm.debug("LLaVA raw response:\n%s", llava_response)
+
         return enhancement_layers
