@@ -1,12 +1,16 @@
 # --- dmap_lib/analysis/features.py ---
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 
+from dmap_lib.llm import query_llava
+from dmap_lib.prompts import LLAVA_PROMPT_CLASSIFIER
+
 log = logging.getLogger("dmap.analysis")
+log_llm = logging.getLogger("dmap.llm")
 
 
 class FeatureExtractor:
@@ -54,9 +58,8 @@ class FeatureExtractor:
             s_mask_u8 = s_mask.astype("uint8") * 255
             cnts, _ = cv2.findContours(s_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-            # --- BUG FIX: Use a dynamic threshold to filter out small grid dots ---
-            min_area = (grid_size * grid_size) * 0.05  # Feature must be 5% of a grid cell
-            max_area = (grid_size * grid_size) * 2.0   # Feature can't be > 2 grid cells
+            min_area = (grid_size * grid_size) * 0.05
+            max_area = (grid_size * grid_size) * 2.0
 
             for c in cnts:
                 area = cv2.contourArea(c)
@@ -79,3 +82,21 @@ class FeatureExtractor:
             len(enhancements["layers"]),
         )
         return enhancements
+
+
+class LLaVAFeatureEnhancer:
+    """Enhances feature classification using a multimodal LLM (LLaVA)."""
+
+    def __init__(self, ollama_url: str, ollama_model: str):
+        self.ollama_url = ollama_url
+        self.ollama_model = ollama_model
+        log_llm.info("LLaVA Feature Enhancer initialized.")
+
+    def enhance(
+        self,
+        enhancement_layers: Dict[str, Any],
+        original_region_img: np.ndarray,
+        grid_size: int,
+    ) -> Dict[str, Any]:
+        """Stub for feature enhancement logic."""
+        return enhancement_layers

@@ -11,6 +11,7 @@ PROJECT_TOPICS = {
         "render",
         "transform",
         "wallscore",
+        "llm",
     }
 }
 

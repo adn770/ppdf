@@ -1,4 +1,3 @@
-# --- dmap.py ---
 import argparse
 import os
 import logging
@@ -77,7 +76,26 @@ def get_cli_args():
         const="all",
         dest="debug_topics",
         metavar="TOPICS",
-        help="Enable DEBUG logging (all,analysis,grid,ocr,geometry,render).",
+        help="Enable DEBUG logging (all,analysis,grid,ocr,geometry,render,llm).",
+    )
+    # LLaVA arguments
+    g_llm = p.add_argument_group("LLM Feature Enhancement")
+    g_llm.add_argument(
+        "--llava",
+        choices=["classifier"],
+        help="Enable feature enhancement with LLaVA.",
+    )
+    g_llm.add_argument(
+        "-M",
+        "--llm-model",
+        default="llava:latest",
+        help="The LLaVA model to use (default: llava:latest).",
+    )
+    g_llm.add_argument(
+        "-U",
+        "--llm-url",
+        default="http://localhost:11434",
+        help="The base URL of the Ollama server (default: http://localhost:11434).",
     )
     return p.parse_args()
 
