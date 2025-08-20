@@ -3,8 +3,14 @@ LLAVA_PROMPT_CLASSIFIER = """
 Analyze the provided image, which shows a 3x3 grid area of a TTRPG dungeon map.
 Your task is to classify the single, primary feature located in the CENTER tile of this 3x3 grid.
 The surrounding tiles are provided for context. Respond with a single JSON object with one key: "feature_type".
+
+A geometric analysis has provided a hint for the feature type: "[HINT]".
+Use this hint to inform your final classification. For example, if the hint is "door", you should
+refine it to one of the more specific door types if the visual information supports it.
+
 Possible values are "door", "secret_door", "iron_bar_door", "double_door", "stairs", "column",
 "altar", "statue", "pit", "rubble", or null if it's just an empty floor tile.
+
 Example Response:
 { "feature_type": "stairs" }
 """

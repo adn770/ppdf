@@ -139,11 +139,12 @@ class FeatureExtractor:
             cnts, _ = cv2.findContours(s_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
             min_area = (grid_size * grid_size) * 0.05
-            max_area = (grid_size * grid_size) * 4.0 # Increased for stairs
+            max_area_compact = (grid_size * grid_size) * 1.5
+            max_area_elongated = (grid_size * grid_size) * 4.0
 
             for c in cnts:
                 area = cv2.contourArea(c)
-                if not (min_area < area < max_area):
+                if area < min_area:
                     continue
 
                 M = cv2.moments(c)
@@ -163,7 +164,15 @@ class FeatureExtractor:
                     _, (w, h), _ = cv2.minAreaRect(c)
                     aspect_ratio = max(w, h) / min(w, h) if min(w,h) > 0 else 0
 
-                    feature_type = "stairs" if aspect_ratio > 2.5 else "column"
+                    if aspect_ratio > 2.5:
+                        if area > max_area_elongated:
+                            continue
+                        feature_type = "stairs"
+                    else:
+                        if area > max_area_compact:
+                            continue
+                        feature_type = "column"
+
 
                     raw_features.append({"featureType": feature_type,
                                          "gridVertices": verts,
@@ -197,6 +206,39 @@ class LLaVAFeatureEnhancer:
         self.context_size = context_size
         log_llm.info("LLaVA Feature Enhancer initialized in '%s' mode.", llava_mode)
 
+    def _save_pre_llava_debug_image(
+        self,
+        img: np.ndarray,
+        enhancements: Dict[str, Any],
+        grid_size: int,
+        region_id: str,
+        save_path: str,
+    ):
+        """Saves a debug image visualizing all feature bounding boxes before LLaVA."""
+        debug_img = img.copy()
+        feature_color = (0, 165, 255)  # Orange
+
+        for feature in enhancements.get("features", []):
+            px_verts = (
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
+            ).astype(np.int32)
+            x, y, w, h = cv2.boundingRect(px_verts)
+            cv2.rectangle(debug_img, (x, y), (x + w, y + h), feature_color, 2)
+            cv2.putText(
+                debug_img,
+                feature.get("featureType", "unknown"),
+                (x, y - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                feature_color,
+                2,
+            )
+
+        filename = os.path.join(save_path, f"{region_id}_pre_llava_features.png")
+        cv2.imwrite(filename, debug_img)
+        log.info("Saved pre-LLaVA feature bounding box debug image to %s", filename)
+
+
     def enhance(
         self,
         enhancement_layers: Dict[str, Any],
@@ -206,6 +248,11 @@ class LLaVAFeatureEnhancer:
         save_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Crops features and sends them to LLaVA for analysis."""
+        if save_path:
+            self._save_pre_llava_debug_image(
+                original_region_img, enhancement_layers, grid_size, region_id, save_path
+            )
+
         if self.llava_mode == "classifier":
             return self._enhance_classifier(
                 enhancement_layers, original_region_img, grid_size, region_id, save_path
@@ -321,11 +368,16 @@ class LLaVAFeatureEnhancer:
             if cropped_feature_img.size == 0:
                 continue
 
+            # 3. Format the prompt with the pre-classification hint
+            pre_classified_type = feature.get("featureType", "unknown")
+            prompt = LLAVA_PROMPT_CLASSIFIER.replace("[HINT]", pre_classified_type)
+
+
             response = query_llava(
                 self.ollama_url,
                 self.ollama_model,
                 cropped_feature_img,
-                LLAVA_PROMPT_CLASSIFIER,
+                prompt,
                 temperature=self.temperature,
                 context_size=self.context_size,
             )

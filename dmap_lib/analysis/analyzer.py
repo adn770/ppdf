@@ -39,7 +39,9 @@ class MapAnalyzer:
     ):
         """Saves a debug image visualizing detected features and layers."""
         debug_img = img.copy()
-        layer_color, feature_color = (255, 0, 0), (0, 0, 255)  # Blue, Red
+        layer_color = (255, 0, 0)  # Blue
+        feature_color = (0, 0, 255)  # Red
+        door_color = (0, 255, 0) # Green for doors
 
         for layer in enhancements.get("layers", []):
             px_verts = (
@@ -51,7 +53,15 @@ class MapAnalyzer:
             px_verts = (
                 np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
             ).astype(np.int32)
-            cv2.drawContours(debug_img, [px_verts], -1, feature_color, 1)
+
+            if "door" in feature.get("featureType"):
+                x, y, w, h = cv2.boundingRect(px_verts)
+                # Draw a filled rectangle for door bounding boxes
+                cv2.rectangle(debug_img, (x, y), (x + w, y + h), door_color, -1)
+            else:
+                # Draw contours for other features
+                cv2.drawContours(debug_img, [px_verts], -1, feature_color, 1)
+
 
         filename = os.path.join(save_path, f"{region_id}_{suffix}.png")
         cv2.imwrite(filename, debug_img)
@@ -140,28 +150,6 @@ class MapAnalyzer:
         context.enhancement_layers = self.feature_extractor.extract(
             img, room_contours, grid_info, color_profile, kmeans_model
         )
-        if save_intermediate_path:
-            self._save_feature_detection_debug_image(
-                img,
-                context.enhancement_layers,
-                grid_info.size,
-                region_context["id"],
-                save_intermediate_path,
-                "pass2_features",
-            )
-
-        if llava_mode and ollama_url and ollama_model:
-            log.debug("Calling LLaVA feature enhancement in '%s' mode.", llava_mode)
-            self.llava_enhancer = LLaVAFeatureEnhancer(
-                ollama_url, ollama_model, llava_mode, llm_temp, llm_ctx_size
-            )
-            context.enhancement_layers = self.llava_enhancer.enhance(
-                context.enhancement_layers,
-                img,
-                grid_info.size,
-                region_context["id"],
-                save_intermediate_path,
-            )
 
         tile_classifications = self.structure_analyzer.classify_tile_content(
             corrected_floor, grid_info
@@ -176,6 +164,32 @@ class MapAnalyzer:
             context=context,
             debug_canvas=debug_canvas,
         )
+
+        if llava_mode and ollama_url and ollama_model:
+            num_features = len(context.enhancement_layers.get("features", []))
+            log.info("Executing Stage 8: LLaVA Feature Enhancement on %d features...", num_features)
+            log.debug("Calling LLaVA feature enhancement in '%s' mode.", llava_mode)
+            self.llava_enhancer = LLaVAFeatureEnhancer(
+                ollama_url, ollama_model, llava_mode, llm_temp, llm_ctx_size
+            )
+            context.enhancement_layers = self.llava_enhancer.enhance(
+                context.enhancement_layers,
+                img,
+                grid_info.size,
+                region_context["id"],
+                save_intermediate_path,
+            )
+
+        # Save the feature detection image *after* all features (including doors) are added
+        if save_intermediate_path:
+            self._save_feature_detection_debug_image(
+                img,
+                context.enhancement_layers,
+                grid_info.size,
+                region_context["id"],
+                save_intermediate_path,
+                "pass2_features",
+            )
 
         # Save the completed debug canvas if it was created
         if debug_canvas is not None and save_intermediate_path:

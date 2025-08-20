@@ -10,7 +10,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from sklearn.cluster import KMeans
 
-from .context import _GridInfo, _TileData
+from .context import _GridInfo, _TileData, _RegionAnalysisContext
 
 log = logging.getLogger("dmap.analysis")
 log_grid = logging.getLogger("dmap.grid")
@@ -25,6 +25,7 @@ class StructureAnalyzer:
         structural_img: np.ndarray,
         grid_info: _GridInfo,
         stroke_bgr: np.ndarray,
+        context: _RegionAnalysisContext,
         debug_canvas: Optional[np.ndarray] = None,
     ):
         """
@@ -86,6 +87,21 @@ class StructureAnalyzer:
                     processed_tiles.add((x, y))
                     processed_tiles.add((x, y + 1))
 
+                    verts = [
+                        {"x": round(float(x), 1), "y": round(float(y + 1), 1)},
+                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
+                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
+                        {"x": round(float(x), 1), "y": round(float(y + 1), 1)},
+                    ]
+                    door_feature = {
+                        "featureType": "door",
+                        "gridVertices": verts,
+                        "properties": {"z-order": 1},
+                    }
+                    context.enhancement_layers.setdefault("features", []).append(door_feature)
+                    log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
+
+
             elif tile.north_wall == "stone" and tile.south_wall == "stone":
                 neighbor_east = tile_grid.get((x + 1, y))
                 if neighbor_east and neighbor_east.feature_type == "floor":
@@ -96,6 +112,20 @@ class StructureAnalyzer:
                     neighbor_east.west_wall = door_type
                     processed_tiles.add((x, y))
                     processed_tiles.add((x + 1, y))
+
+                    verts = [
+                        {"x": round(float(x + 1), 1), "y": round(float(y), 1)},
+                        {"x": round(float(x + 1), 1), "y": round(float(y), 1)},
+                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
+                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
+                    ]
+                    door_feature = {
+                        "featureType": "door",
+                        "gridVertices": verts,
+                        "properties": {"z-order": 1},
+                    }
+                    context.enhancement_layers.setdefault("features", []).append(door_feature)
+                    log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
 
     def classify_tile_content(
         self, feature_cleaned_img: np.ndarray, grid_info: _GridInfo
@@ -337,7 +367,7 @@ class StructureAnalyzer:
                 )
 
         self._detect_passageway_doors(
-            tile_grid, structural_img, grid_info, stroke_bgr, debug_canvas
+            tile_grid, structural_img, grid_info, stroke_bgr, context, debug_canvas
         )
 
         shifted_grid = {}
