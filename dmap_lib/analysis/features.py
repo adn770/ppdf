@@ -5,6 +5,8 @@ from typing import List, Dict, Any, Optional
 
 import cv2
 import numpy as np
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 from sklearn.cluster import KMeans
 
 from dmap_lib.llm import query_llava
@@ -16,6 +18,74 @@ log_llm = logging.getLogger("dmap.llm")
 
 class FeatureExtractor:
     """Handles detection of non-grid-aligned features."""
+
+    def _consolidate_features(
+        self, features: List[Dict[str, Any]], grid_size: int
+    ) -> List[Dict[str, Any]]:
+        """Merges overlapping or very close feature polygons."""
+        if not features:
+            return []
+
+        log.debug("Consolidating %d raw features...", len(features))
+        polygons = []
+        for i, f in enumerate(features):
+            verts = (np.array(f["high_res_vertices"]) * grid_size / 8.0)
+            if len(verts) < 3:
+                continue
+            polygons.append(
+                {"poly": Polygon(verts), "original_feature": f, "id": i, "grouped": False}
+            )
+
+        groups = []
+        for i, p1_data in enumerate(polygons):
+            if p1_data["grouped"]:
+                continue
+
+            current_group = [p1_data]
+            p1_data["grouped"] = True
+
+            for j, p2_data in enumerate(polygons):
+                if i == j or p2_data["grouped"]:
+                    continue
+
+                # Merge if polygons are very close (e.g., within half a grid unit)
+                if p1_data["poly"].distance(p2_data["poly"]) < (grid_size / 2.0):
+                    current_group.append(p2_data)
+                    p2_data["grouped"] = True
+
+            groups.append(current_group)
+
+        consolidated = []
+        for group in groups:
+            if not group:
+                continue
+
+            # Merge all polygons in the group
+            merged_poly = unary_union([g["poly"] for g in group])
+
+            # Find the largest original feature to determine the type
+            largest_feature = max(group, key=lambda g: g["poly"].area)["original_feature"]
+
+            if hasattr(merged_poly, 'geoms'): # It's a MultiPolygon
+                 # For now, we only take the largest polygon from the multipolygon
+                main_geom = max(merged_poly.geoms, key=lambda p: p.area)
+            else:
+                main_geom = merged_poly
+
+            if main_geom.is_empty or not isinstance(main_geom, Polygon):
+                continue
+
+            new_verts = [(v[0] / grid_size * 8.0, v[1] / grid_size * 8.0)
+                         for v in main_geom.exterior.coords]
+
+            consolidated.append({
+                "featureType": largest_feature["featureType"],
+                "high_res_vertices": new_verts,
+                "properties": largest_feature["properties"],
+            })
+
+        log.info("Consolidated %d raw features into %d final features.", len(features), len(consolidated))
+        return consolidated
 
     def extract(
         self,
@@ -50,6 +120,7 @@ class FeatureExtractor:
                                                    "properties": {"z-order": 0}})
 
         # --- 2. Detect Column Features ---
+        raw_features = []
         if room_contours:
             s_rgb = roles_inv.get("stroke", (0,0,0))
             s_bgr = np.array(s_rgb[::-1], dtype="uint8")
@@ -73,9 +144,11 @@ class FeatureExtractor:
                 if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0
                        for rc in room_contours):
                     verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
-                    enhancements["features"].append({"featureType": "column",
+                    raw_features.append({"featureType": "column",
                                                      "high_res_vertices": verts,
                                                      "properties": {"z-order": 1}})
+
+        enhancements["features"] = self._consolidate_features(raw_features, grid_size)
 
         log.info(
             "Detected %d features and %d layers.",
