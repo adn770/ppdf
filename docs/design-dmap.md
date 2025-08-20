@@ -12,7 +12,7 @@ request into a formal plan that requires developer approval before execution.
 ### 0.1. Main Rules
 -   **Developer-Led Workflow**: The developer always initiates the activity.
 -   **Providing Context**: The developer will provide the relevant project context.
--   **Confirmation and Readiness**: The assistant will confirm its understanding and
+-   **Confirmation and Readiness**: the assistant will confirm its understanding and
     signal its readiness.
 
 ### 0.2. Code & Document Generation
@@ -254,39 +254,45 @@ For each detected 'dungeon' region, the following pipeline is executed:
     in pixels via peak-finding on pixel projections. The grid offset is calculated
     from the bounding boxes of the main room shapes.
 
-### Stage 5: High-Resolution Feature & Layer Detection
+### Stage 5: High-Resolution Feature & Layer Pre-Classification
 -   **Component**: `FeatureExtractor`
 -   **Input**: *Original* Dungeon Region Image, `color_profile`, `room_contours`
 -   **Output**: `enhancement_layers` (a dictionary of high-res feature lists)
 -   **Process**: This stage operates on the original region image to find features
-    that do not align with the main grid, such as columns and water pools. All
-    found features are converted into high-resolution polygons using a **1/8th grid
-    unit** coordinate system and stored with a `z-order` attribute.
+    that do not align with the main grid. It uses simple geometric heuristics to
+    perform a pre-classification. For example, small circular or square shapes are
+    pre-classified as `"column"`, while long, rectangular shapes are pre-classified as
+    `"stairs"`. Environmental layers like water are also detected. All found items
+    are converted into high-resolution polygons using a **1/8th grid unit**
+    coordinate system and stored with a `z-order` attribute, ready for LLM refinement.
 
-### Stage 6: Core Structure Classification
+### Stage 6: Core Structure and Passage Detection
 -   **Component**: `StructureAnalyzer`
 -   **Input**: `structural_image`, `feature_cleaned_image`, `GridInfo`
 -   **Output**: `tile_grid` (a grid of `_TileData` objects)
 -   **Process**: This is the heart of the structural analysis.
     1.  A grid is overlaid on a `feature_cleaned_image` (the floor plan with
-        features like columns digitally removed).
+        features digitally removed).
     2.  Each tile is first classified as `floor` or `empty`.
     3.  **Score-Based Wall Detection**: The pipeline analyzes the boundaries between
         `floor` and `empty` grid cells, classifying a boundary as a `wall` if its
         confidence score exceeds a threshold.
-    4.  Doorways are detected in passageways using pattern recognition on tile slices.
+    4.  **Passageway Pre-classification**: A simplified heuristic checks for non-empty
+        floor tiles in narrow passageways. These tiles are pre-classified with a
+        generic `"door"` type, to be refined later by the LLM.
     5.  The `tile_grid` is populated with the core structure: `wall`, `door`, and
-        `floor` information for each tile edge and center.
+        `floor` information.
 
 ### Stage 7: Transformation & Entity Generation
 -   **Component**: `MapTransformer`
 -   **Input**: `_RegionAnalysisContext` (containing `tile_grid`, `enhancement_layers`)
 -   **Output**: The final list of `MapObject` entities for the region.
 -   **Process**: This final stage transforms the intermediate `tile_grid` into the final
-    schema-compliant objects by classifying floor tiles into chambers or corridors,
-    merging chamber tiles into complex polygons, tracing wall perimeters to create
-    `Room` polygons, linking `Door` objects, and integrating the high-resolution
-    features from the `enhancement_layers`.
+    schema-compliant objects. It classifies floor tiles into chambers or corridors,
+    merges chamber tiles into complex polygons, and traces wall perimeters to create
+    `Room` polygons. It now creates `Feature` objects for the pre-classified doors
+    from Stage 6 and integrates them with the high-resolution features from the
+    `enhancement_layers` for a unified feature list.
 
 ---
 
@@ -1469,3 +1475,51 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Outcome**: The `--llava oracle` mode produces a final `MapData` object that
         combines the geometric accuracy of the `FeatureExtractor` with the advanced
         semantic classification from the LLaVA oracle pass.
+
+### Phase 22: LLM-First Feature Classification Refactoring
+
+-   **Milestone 67: Remove CV-based Heuristics**
+    -   **Goal**: To eliminate the complex CV-based heuristics for identifying specific
+        door types and stairs.
+    -   **Description**: This milestone streamlines the `StructureAnalyzer` by removing
+        the brittle, pattern-matching logic that attempted to classify features
+        based on their visual signature. This logic will be replaced by a simpler
+        geometric pre-classification followed by LLaVA-based refinement.
+    -   **Key Tasks**:
+        1.  In `dmap_lib/analysis/structure.py`, delete the `_is_stair_tile_fft` and
+            `_classify_door_type` methods.
+        2.  In the `classify_features` method, remove the call to `_is_stair_tile_fft`.
+        3.  Update the `_detect_passageway_doors` method to use a simple pixel count
+            (`cv2.countNonZero`) to identify a passageway as a generic `"door"`,
+            removing the call to `_classify_door_type`.
+    -   **Outcome**: The `StructureAnalyzer` is simplified to focus on core structure
+        (walls, floors) and identifying potential feature locations (passageways)
+        without attempting to classify their specific type.
+
+-   **Milestone 68: Implement Stair Pre-classification Heuristic**
+    -   **Goal**: To add a simple, geometry-based heuristic to pre-classify potential
+        staircases.
+    -   **Description**: This milestone adds a pre-classification step to the
+        `FeatureExtractor`, allowing it to identify shapes that are likely to be
+        stairs based on their geometry, preparing them for LLaVA refinement.
+    -   **Key Tasks**:
+        1.  In `dmap_lib/analysis/features.py`, update the `extract` method to find
+            contours with a high aspect ratio that are roughly rectangular.
+        2.  Pre-classify these identified contours with the `featureType` of `"stairs"`.
+    -   **Outcome**: The pipeline can now geometrically identify and pre-classify both
+        columns and potential staircases before they are sent to the LLM.
+
+-   **Milestone 69: Expand LLaVA Prompts for Refinement**
+    -   **Goal**: To update the LLaVA prompts to include the full taxonomy of features
+        it is now responsible for classifying.
+    -   **Description**: This final step ensures the LLM is aware of the new feature
+        types it needs to distinguish between.
+    -   **Key Tasks**:
+        1.  In `dmap_lib/prompts.py`, update both the `LLAVA_PROMPT_CLASSIFIER` and
+            `LLAVA_PROMPT_ORACLE` constants.
+        2.  Add `"stairs"`, `"door"`, `"secret_door"`, `"iron_bar_door"`, and
+            `"double_door"` to the list of possible `feature_type` values in both
+            prompts.
+    -   **Outcome**: The LLaVA model will be correctly prompted, enabling it to
+        accurately refine the generic "door" and "stairs" pre-classifications into
+        their final, specific types.
