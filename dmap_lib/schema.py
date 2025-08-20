@@ -1,3 +1,4 @@
+# --- dmap_lib/schema.py ---
 import json
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -7,8 +8,18 @@ from typing import Any, Dict, List, Optional, Union
 class GridPoint:
     """Represents a single point in the grid-based coordinate system."""
 
-    x: int
-    y: int
+    x: float
+    y: float
+
+
+@dataclass
+class BoundingBox:
+    """Represents an axis-aligned bounding box."""
+
+    x: float
+    y: float
+    width: float
+    height: float
 
 
 # The 'properties' field can have varied content. A flexible dictionary is best.
@@ -59,6 +70,7 @@ class Feature:
     featureType: str
     shape: str
     gridVertices: List[GridPoint]
+    bounds: Optional[BoundingBox] = None
     properties: Optional[Properties] = None
     type: str = "feature"
 
@@ -70,6 +82,7 @@ class EnvironmentalLayer:
     id: str
     layerType: str  # e.g., "water", "rubble", "chasm"
     gridVertices: List[GridPoint]
+    bounds: Optional[BoundingBox] = None
     properties: Optional[Properties] = None
     type: str = "layer"
 
@@ -116,10 +129,14 @@ def _deserialize_map_objects(objects_data: List[Dict]) -> List[MapObject]:
                 obj_data["gridPos"] = GridPoint(**obj_data["gridPos"])
             map_objects.append(Door(type=obj_type, **obj_data))
         elif obj_type == "feature":
+            if obj_data.get("bounds"):
+                obj_data["bounds"] = BoundingBox(**obj_data["bounds"])
             if obj_data.get("gridVertices"):
                 obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
             map_objects.append(Feature(type=obj_type, **obj_data))
         elif obj_type == "layer":
+            if obj_data.get("bounds"):
+                obj_data["bounds"] = BoundingBox(**obj_data["bounds"])
             if obj_data.get("gridVertices"):
                 obj_data["gridVertices"] = [GridPoint(**v) for v in obj_data["gridVertices"]]
             map_objects.append(EnvironmentalLayer(type=obj_type, **obj_data))

@@ -11,6 +11,7 @@ from sklearn.cluster import KMeans
 
 from dmap_lib.llm import query_llava
 from dmap_lib.prompts import LLAVA_PROMPT_CLASSIFIER, LLAVA_PROMPT_ORACLE
+from .context import _GridInfo
 
 log = logging.getLogger("dmap.analysis")
 log_llm = logging.getLogger("dmap.llm")
@@ -20,7 +21,7 @@ class FeatureExtractor:
     """Handles detection of non-grid-aligned features."""
 
     def _consolidate_features(
-        self, features: List[Dict[str, Any]], grid_size: int
+        self, features: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """Merges overlapping or very close feature polygons."""
         if not features:
@@ -29,7 +30,7 @@ class FeatureExtractor:
         log.debug("Consolidating %d raw features...", len(features))
         polygons = []
         for i, f in enumerate(features):
-            verts = (np.array(f["high_res_vertices"]) * grid_size / 8.0)
+            verts = [(v["x"], v["y"]) for v in f["gridVertices"]]
             if len(verts) < 3:
                 continue
             polygons.append(
@@ -49,7 +50,7 @@ class FeatureExtractor:
                     continue
 
                 # Merge if polygons are very close (e.g., within half a grid unit)
-                if p1_data["poly"].distance(p2_data["poly"]) < (grid_size / 2.0):
+                if p1_data["poly"].distance(p2_data["poly"]) < 0.5:
                     current_group.append(p2_data)
                     p2_data["grouped"] = True
 
@@ -75,12 +76,14 @@ class FeatureExtractor:
             if main_geom.is_empty or not isinstance(main_geom, Polygon):
                 continue
 
-            new_verts = [(v[0] / grid_size * 8.0, v[1] / grid_size * 8.0)
-                         for v in main_geom.exterior.coords]
+            new_verts = [
+                {"x": round(v[0], 1), "y": round(v[1], 1)}
+                for v in main_geom.exterior.coords
+            ]
 
             consolidated.append({
                 "featureType": largest_feature["featureType"],
-                "high_res_vertices": new_verts,
+                "gridVertices": new_verts,
                 "properties": largest_feature["properties"],
             })
 
@@ -91,7 +94,7 @@ class FeatureExtractor:
         self,
         original_region_img: np.ndarray,
         room_contours: List[np.ndarray],
-        grid_size: int,
+        grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         kmeans: KMeans,
     ) -> Dict[str, Any]:
@@ -100,6 +103,7 @@ class FeatureExtractor:
         enhancements: Dict[str, List] = {"features": [], "layers": []}
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
         labels = kmeans.predict(original_region_img.reshape(-1, 3))
+        grid_size = grid_info.size
 
         # --- 1. Detect Water Layers ---
         if "water" in roles_inv:
@@ -114,9 +118,13 @@ class FeatureExtractor:
             )
             for c in cnts:
                 if cv2.contourArea(c) > grid_size * grid_size:
-                    verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
+                    verts = [
+                        {"x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
+                         "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1)}
+                        for v in c
+                    ]
                     enhancements["layers"].append({"layerType": "water",
-                                                   "high_res_vertices": verts,
+                                                   "gridVertices": verts,
                                                    "properties": {"z-order": 0}})
 
         # --- 2. Detect Column Features ---
@@ -143,12 +151,16 @@ class FeatureExtractor:
                 cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
                 if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0
                        for rc in room_contours):
-                    verts = [(v[0][0]/grid_size*8.0, v[0][1]/grid_size*8.0) for v in c]
+                    verts = [
+                        {"x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
+                         "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1)}
+                        for v in c
+                    ]
                     raw_features.append({"featureType": "column",
-                                                     "high_res_vertices": verts,
+                                                     "gridVertices": verts,
                                                      "properties": {"z-order": 1}})
 
-        enhancements["features"] = self._consolidate_features(raw_features, grid_size)
+        enhancements["features"] = self._consolidate_features(raw_features)
 
         log.info(
             "Detected %d features and %d layers.",
@@ -209,7 +221,7 @@ class LLaVAFeatureEnhancer:
 
         for feature in geom_features:
             px_verts = (
-                np.array(feature["high_res_vertices"]) * grid_size / 8.0
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
             ).astype(np.int32)
             x, y, w, h = cv2.boundingRect(px_verts)
             cv2.rectangle(debug_img, (x, y), (x + w, y + h), geom_color, 2)
@@ -247,7 +259,7 @@ class LLaVAFeatureEnhancer:
 
         for feature in classified_features:
             px_verts = (
-                np.array(feature["high_res_vertices"]) * grid_size / 8.0
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
             ).astype(np.int32)
             x, y, w, h = cv2.boundingRect(px_verts)
             cv2.rectangle(debug_img, (x, y), (x + w, y + h), feature_color, 2)
@@ -279,9 +291,7 @@ class LLaVAFeatureEnhancer:
             return enhancement_layers
 
         for feature in features:
-            verts = (
-                np.array(feature["high_res_vertices"]) * grid_size / 8.0
-            ).astype(np.int32)
+            verts = np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]).astype(np.int32)
             M = cv2.moments(verts)
             if M["m00"] == 0:
                 continue
@@ -371,7 +381,7 @@ class LLaVAFeatureEnhancer:
         # Pre-calculate centroids of geometrically detected features
         geom_centroids = []
         for feature in geom_features:
-            verts = (np.array(feature["high_res_vertices"]) * grid_size / 8.0)
+            verts = (np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]))
             M = cv2.moments(verts.astype(np.int32))
             if M["m00"] != 0:
                 cx = M["m10"] / M["m00"]

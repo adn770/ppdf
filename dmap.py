@@ -25,13 +25,9 @@ def run_rendering(map_data: schema.MapData, output_name: str, options: dict):
 
 def get_cli_args():
     """Configures and parses command-line arguments."""
-    p = argparse.ArgumentParser(
-        description="Converts raster dungeon maps to JSON and SVG."
-    )
+    p = argparse.ArgumentParser(description="Converts raster dungeon maps to JSON and SVG.")
     p.add_argument("-i", "--input", help="Path to the input PNG or JSON file.")
-    p.add_argument(
-        "-o", "--output", required=True, help="Base name for output files."
-    )
+    p.add_argument("-o", "--output", required=True, help="Base name for output files.")
     p.add_argument(
         "--skip-analysis",
         action="store_true",
@@ -51,20 +47,14 @@ def get_cli_args():
     )
     # Logging arguments
     g_log = p.add_argument_group("Logging & Output")
-    g_log.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable INFO logging."
-    )
+    g_log.add_argument("-v", "--verbose", action="store_true", help="Enable INFO logging.")
     g_log.add_argument(
         "--save-intermediate",
         metavar="DIR",
         help="Save intermediate analysis images to a directory.",
     )
-    g_log.add_argument(
-        "--color-logs", action="store_true", help="Enable colored logging."
-    )
-    g_log.add_argument(
-        "--log-file", metavar="FILE", help="Redirect log output to a file."
-    )
+    g_log.add_argument("--color-logs", action="store_true", help="Enable colored logging.")
+    g_log.add_argument("--log-file", metavar="FILE", help="Redirect log output to a file.")
     g_log.add_argument(
         "--ascii-debug",
         action="store_true",
@@ -157,9 +147,7 @@ def main():
             if args.save_intermediate:
                 try:
                     os.makedirs(args.save_intermediate, exist_ok=True)
-                    log.info(
-                        "Will save intermediate images to: %s", args.save_intermediate
-                    )
+                    log.info("Will save intermediate images to: %s", args.save_intermediate)
                 except OSError as e:
                     log.error("Could not create intermediate image directory: %s", e)
                     args.save_intermediate = None
@@ -186,16 +174,10 @@ def main():
 
     if map_data:
         num_r = sum(
-            1
-            for r in map_data.regions
-            for o in r.mapObjects
-            if isinstance(o, schema.Room)
+            1 for r in map_data.regions for o in r.mapObjects if isinstance(o, schema.Room)
         )
         num_d = sum(
-            1
-            for r in map_data.regions
-            for o in r.mapObjects
-            if isinstance(o, schema.Door)
+            1 for r in map_data.regions for o in r.mapObjects if isinstance(o, schema.Door)
         )
         log.info("--- Analysis Results ---")
         log.info("Found %d rooms and %d doors.", num_r, num_d)

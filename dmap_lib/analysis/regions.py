@@ -27,18 +27,20 @@ def detect_content_regions(img: np.ndarray) -> List[Dict[str, Any]]:
     for i, contour in enumerate(contours):
         if cv2.contourArea(contour) > min_area:
             x, y, w, h = cv2.boundingRect(contour)
-            region_contexts.append({
-                "id": f"region_{i}",
-                "contour": contour,
-                "bounds_rect": (x, y, w, h),
-                "bounds_img": img[y : y + h, x : x + w],
-            })
+            region_contexts.append(
+                {
+                    "id": f"region_{i}",
+                    "contour": contour,
+                    "bounds_rect": (x, y, w, h),
+                    "bounds_img": img[y : y + h, x : x + w],
+                }
+            )
     log.info("Found %d potential content regions.", len(region_contexts))
     return region_contexts
 
 
 def parse_text_metadata(
-    region_contexts: List[Dict[str, Any]]
+    region_contexts: List[Dict[str, Any]],
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Stage 2: Classify regions and parse text for metadata."""
     log.info("Executing Stage 2: Text & Metadata Parsing...")
@@ -64,9 +66,7 @@ def parse_text_metadata(
 
         context["type"] = "text"
         log.debug("Region '%s' classified as 'text', running OCR.", context["id"])
-        ocr_res = OCR_READER.readtext(
-            context["bounds_img"], detail=1, paragraph=False
-        )
+        ocr_res = OCR_READER.readtext(context["bounds_img"], detail=1, paragraph=False)
         for bbox, text, prob in ocr_res:
             h = bbox[2][1] - bbox[0][1]
             text_blobs.append({"text": text, "height": h})

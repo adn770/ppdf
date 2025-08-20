@@ -46,12 +46,8 @@ def query_llava(
     }
     raw_json = ""  # Initialize raw_json to ensure it's available for logging
     try:
-        log_llm.debug(
-            "Sending request to LLaVA (prompt length: %d chars).", len(prompt)
-        )
-        response = requests.post(
-            f"{ollama_url}/api/generate", json=payload, timeout=60
-        )
+        log_llm.debug("Sending request to LLaVA (prompt length: %d chars).", len(prompt))
+        response = requests.post(f"{ollama_url}/api/generate", json=payload, timeout=60)
         response.raise_for_status()
         response_data = response.json()
         raw_json = response_data.get("response", "{}")

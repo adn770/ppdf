@@ -1,8 +1,9 @@
+# --- dmap_lib/analysis/transformer.py ---
 import logging
 import uuid
 from typing import List, Any, Dict, Tuple
 
-from shapely.geometry import box, Polygon, MultiPolygon
+from shapely.geometry import box, Polygon, MultiPolygon, Point
 from shapely.ops import unary_union
 
 from dmap_lib import schema
@@ -64,8 +65,10 @@ class MapTransformer:
 
         # Create 1x1 rooms for each passageway tile
         for gx, gy in passageway_tiles:
-            verts = [schema.GridPoint(x=gx, y=gy), schema.GridPoint(x=gx + 1, y=gy),
-                     schema.GridPoint(x=gx + 1, y=gy + 1), schema.GridPoint(x=gx, y=gy + 1)]
+            verts = [schema.GridPoint(x=float(gx), y=float(gy)),
+                     schema.GridPoint(x=float(gx + 1), y=float(gy)),
+                     schema.GridPoint(x=float(gx + 1), y=float(gy + 1)),
+                     schema.GridPoint(x=float(gx), y=float(gy + 1))]
             room_id = f"room_{uuid.uuid4().hex[:8]}"
             rooms.append(schema.Room(id=room_id, shape="polygon", gridVertices=verts,
                                       roomType="corridor", contents=[]))
@@ -84,7 +87,7 @@ class MapTransformer:
             for geom in geometries:
                 if geom.area < 0.5:
                     continue
-                verts = [schema.GridPoint(x=int(x), y=int(y))
+                verts = [schema.GridPoint(x=float(x), y=float(y))
                          for x, y in geom.exterior.coords]
                 room_id = f"room_{uuid.uuid4().hex[:8]}"
                 rooms.append(schema.Room(id=room_id, shape="polygon", gridVertices=verts,
@@ -99,7 +102,7 @@ class MapTransformer:
             min_x, min_y, max_x, max_y = [int(b) for b in poly.bounds]
             for gy in range(min_y, max_y):
                 for gx in range(min_x, max_x):
-                    if poly.contains(box(gx, gy, gx+1, gy+1).centroid):
+                    if poly.contains(Point(gx + 0.5, gy + 0.5)):
                          coord_to_room_id[(gx, gy)] = room.id
 
 
@@ -108,15 +111,23 @@ class MapTransformer:
 
         features, layers = [], []
         room_map = {r.id: r for r in rooms}
-        room_polygons = {r.id: Polygon([(v.x, v.y) for v in r.gridVertices]) for r in rooms}
+        room_polygons = {r.id: Polygon([(v.x, v.y) for v in room.gridVertices]) for r in rooms}
 
 
         for item in context.enhancement_layers.get("features", []):
-            verts = [schema.GridPoint(x=int(v[0]/8), y=int(v[1]/8))
-                     for v in item["high_res_vertices"]]
+            verts = [schema.GridPoint(**v) for v in item["gridVertices"]]
+            min_x = round(min(v.x for v in verts), 1)
+            min_y = round(min(v.y for v in verts), 1)
+            max_x = round(max(v.x for v in verts), 1)
+            max_y = round(max(v.y for v in verts), 1)
+            bounds = schema.BoundingBox(x=min_x, y=min_y,
+                                        width=round(max_x - min_x, 1),
+                                        height=round(max_y - min_y, 1))
+
             feature = schema.Feature(id=f"feature_{uuid.uuid4().hex[:8]}",
                                      featureType=item["featureType"], shape="polygon",
-                                     gridVertices=verts, properties=item["properties"])
+                                     gridVertices=verts, properties=item["properties"],
+                                     bounds=bounds)
             features.append(feature)
             center = Polygon([(v.x, v.y) for v in verts]).centroid
             for room_id, poly in room_polygons.items():
@@ -126,12 +137,20 @@ class MapTransformer:
                     break
 
         for item in context.enhancement_layers.get("layers", []):
-            verts = [schema.GridPoint(x=int(v[0]/8), y=int(v[1]/8))
-                     for v in item["high_res_vertices"]]
+            verts = [schema.GridPoint(**v) for v in item["gridVertices"]]
+            min_x = round(min(v.x for v in verts), 1)
+            min_y = round(min(v.y for v in verts), 1)
+            max_x = round(max(v.x for v in verts), 1)
+            max_y = round(max(v.y for v in verts), 1)
+            bounds = schema.BoundingBox(x=min_x, y=min_y,
+                                        width=round(max_x - min_x, 1),
+                                        height=round(max_y - min_y, 1))
+
             layer = schema.EnvironmentalLayer(id=f"layer_{uuid.uuid4().hex[:8]}",
                                               layerType=item["layerType"],
                                               gridVertices=verts,
-                                              properties=item["properties"])
+                                              properties=item["properties"],
+                                              bounds=bounds)
             layers.append(layer)
             center = Polygon([(v.x, v.y) for v in verts]).centroid
             for room_id, poly in room_polygons.items():
@@ -175,7 +194,7 @@ class MapTransformer:
                         elif wall_type == "iron_bar_door": props["type"] = "iron_bar"
                         elif wall_type == "double_door": props["type"] = "double"
 
-                        pos = schema.GridPoint(x=gx, y=gy + 1)
+                        pos = schema.GridPoint(x=float(gx), y=float(gy + 1))
                         doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}",
                                                  gridPos=pos, orientation="h",
                                                  connects=[r1, r2],
@@ -195,7 +214,7 @@ class MapTransformer:
                         elif wall_type == "iron_bar_door": props["type"] = "iron_bar"
                         elif wall_type == "double_door": props["type"] = "double"
 
-                        pos = schema.GridPoint(x=gx + 1, y=gy)
+                        pos = schema.GridPoint(x=float(gx + 1), y=float(gy))
                         doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}",
                                                  gridPos=pos, orientation="v",
                                                  connects=[r1, r2],

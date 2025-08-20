@@ -43,13 +43,13 @@ class MapAnalyzer:
 
         for layer in enhancements.get("layers", []):
             px_verts = (
-                np.array(layer["high_res_vertices"]) * grid_size / 8.0
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in layer["gridVertices"]])
             ).astype(np.int32)
             cv2.drawContours(debug_img, [px_verts], -1, layer_color, 2)
 
         for feature in enhancements.get("features", []):
             px_verts = (
-                np.array(feature["high_res_vertices"]) * grid_size / 8.0
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
             ).astype(np.int32)
             cv2.drawContours(debug_img, [px_verts], -1, feature_color, 1)
 
@@ -109,7 +109,7 @@ class MapAnalyzer:
         log.info("Executing Stage 6: High-Resolution Feature & Layer Detection...")
         corrected_floor = floor_only_img.copy()
         temp_layers = self.feature_extractor.extract(
-            img, [], grid_info.size, color_profile, kmeans_model
+            img, [], grid_info, color_profile, kmeans_model
         )
         if save_intermediate_path:
             self._save_feature_detection_debug_image(
@@ -128,7 +128,7 @@ class MapAnalyzer:
             )
             for layer in temp_layers["layers"]:
                 px_verts = (
-                    np.array(layer["high_res_vertices"]) * grid_info.size / 8.0
+                    np.array([(v["x"] * grid_info.size, v["y"] * grid_info.size) for v in layer["gridVertices"]])
                 ).astype(np.int32)
                 cv2.fillPoly(corrected_floor, [px_verts], 255)
 
@@ -138,7 +138,7 @@ class MapAnalyzer:
 
         room_contours = self._get_floor_plan_contours(corrected_floor, grid_info.size)
         context.enhancement_layers = self.feature_extractor.extract(
-            img, room_contours, grid_info.size, color_profile, kmeans_model
+            img, room_contours, grid_info, color_profile, kmeans_model
         )
         if save_intermediate_path:
             self._save_feature_detection_debug_image(
@@ -166,7 +166,7 @@ class MapAnalyzer:
         feature_cleaned_img = corrected_floor.copy()
         for feature in context.enhancement_layers.get("features", []):
             px_verts = (
-                np.array(feature["high_res_vertices"]) * grid_info.size / 8.0
+                np.array([(v["x"] * grid_info.size, v["y"] * grid_info.size) for v in feature["gridVertices"]])
             ).astype(np.int32)
             cv2.fillPoly(feature_cleaned_img, [px_verts], 0)  # Erase feature
         if save_intermediate_path:

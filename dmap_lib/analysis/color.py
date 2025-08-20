@@ -13,9 +13,7 @@ log = logging.getLogger("dmap.analysis")
 class ColorAnalyzer:
     """Encapsulates color quantization and semantic role assignment."""
 
-    def analyze(
-        self, img: np.ndarray, num_colors: int = 8
-    ) -> Tuple[Dict[str, Any], KMeans]:
+    def analyze(self, img: np.ndarray, num_colors: int = 8) -> Tuple[Dict[str, Any], KMeans]:
         """
         Analyzes image colors and returns a color profile.
         """
@@ -84,16 +82,13 @@ class ColorAnalyzer:
         # --- Pass 3: Border Color Identification (Glow & Shadow) ---
         stroke_label = kmeans.predict([np.array(stroke_rgb[::-1])])[0]
         stroke_mask = (all_labels == stroke_label).astype(np.uint8)
-        dilated_mask = cv2.dilate(
-            stroke_mask, np.ones((3, 3), np.uint8), iterations=2
-        )
+        dilated_mask = cv2.dilate(stroke_mask, np.ones((3, 3), np.uint8), iterations=2)
         search_mask = dilated_mask - stroke_mask
         adjacent_labels = all_labels[search_mask == 1]
         valid_adj = [
             l
             for l in adjacent_labels
-            if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1])
-            in unassigned_colors
+            if tuple(kmeans.cluster_centers_[l].astype("uint8")[::-1]) in unassigned_colors
         ]
         if len(valid_adj) > 1:
             top_two = [item[0] for item in Counter(valid_adj).most_common(2)]
