@@ -1,5 +1,6 @@
 # --- dmap_lib/analysis/features.py ---
 import logging
+import os
 from typing import List, Dict, Any, Optional
 
 import cv2
@@ -107,21 +108,97 @@ class LLaVAFeatureEnhancer:
         enhancement_layers: Dict[str, Any],
         original_region_img: np.ndarray,
         grid_size: int,
+        region_id: str,
+        save_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Crops features and sends them to LLaVA for analysis."""
         if self.llava_mode == "classifier":
             return self._enhance_classifier(
-                enhancement_layers, original_region_img, grid_size
+                enhancement_layers, original_region_img, grid_size, region_id, save_path
             )
         elif self.llava_mode == "oracle":
-            return self._enhance_oracle(enhancement_layers, original_region_img, grid_size)
+            return self._enhance_oracle(
+                enhancement_layers, original_region_img, grid_size, region_id, save_path
+            )
         return enhancement_layers
+
+    def _save_oracle_debug_image(
+        self,
+        img: np.ndarray,
+        geom_features: List[Dict[str, Any]],
+        llm_features: List[Dict[str, Any]],
+        grid_size: int,
+        region_id: str,
+        save_path: str,
+    ):
+        debug_img = img.copy()
+        geom_color, llm_color = (255, 0, 0), (0, 0, 255)  # Blue, Red
+
+        for feature in geom_features:
+            px_verts = (
+                np.array(feature["high_res_vertices"]) * grid_size / 8.0
+            ).astype(np.int32)
+            x, y, w, h = cv2.boundingRect(px_verts)
+            cv2.rectangle(debug_img, (x, y), (x + w, y + h), geom_color, 2)
+
+        for feature in llm_features:
+            bbox = feature.get("bounding_box")
+            if not bbox:
+                continue
+            x, y, w, h = bbox.get("x", 0), bbox.get("y", 0), bbox.get("width", 0), bbox.get("height", 0)
+            cv2.rectangle(debug_img, (x, y), (x + w, y + h), llm_color, 2)
+            cv2.putText(
+                debug_img,
+                feature.get("feature_type", "unknown"),
+                (x, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                llm_color,
+                2,
+            )
+
+        filename = os.path.join(save_path, f"{region_id}_llava_oracle_reconciliation.png")
+        cv2.imwrite(filename, debug_img)
+        log.info("Saved LLaVA oracle debug image to %s", filename)
+
+    def _save_classifier_debug_image(
+        self,
+        img: np.ndarray,
+        classified_features: List[Dict[str, Any]],
+        grid_size: int,
+        region_id: str,
+        save_path: str,
+    ):
+        debug_img = img.copy()
+        feature_color = (0, 255, 0)  # Green
+
+        for feature in classified_features:
+            px_verts = (
+                np.array(feature["high_res_vertices"]) * grid_size / 8.0
+            ).astype(np.int32)
+            x, y, w, h = cv2.boundingRect(px_verts)
+            cv2.rectangle(debug_img, (x, y), (x + w, y + h), feature_color, 2)
+            cv2.putText(
+                debug_img,
+                feature.get("featureType", "unknown"),
+                (x, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                feature_color,
+                2,
+            )
+
+        filename = os.path.join(save_path, f"{region_id}_llava_classifier_results.png")
+        cv2.imwrite(filename, debug_img)
+        log.info("Saved LLaVA classifier debug image to %s", filename)
 
     def _enhance_classifier(
         self,
         enhancement_layers: Dict[str, Any],
         original_region_img: np.ndarray,
         grid_size: int,
+        region_id: str,
+        save_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Runs the per-feature classification enhancement."""
         features = enhancement_layers.get("features", [])
@@ -176,6 +253,10 @@ class LLaVAFeatureEnhancer:
             else:
                 log_llm.warning("LLaVA analysis failed or returned invalid format.")
 
+        if save_path:
+            self._save_classifier_debug_image(
+                original_region_img, features, grid_size, region_id, save_path
+            )
         return enhancement_layers
 
     def _enhance_oracle(
@@ -183,6 +264,8 @@ class LLaVAFeatureEnhancer:
         enhancement_layers: Dict[str, Any],
         original_region_img: np.ndarray,
         grid_size: int,
+        region_id: str,
+        save_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Runs the full-region oracle enhancement."""
         log_llm.info("Querying LLaVA in oracle mode...")
@@ -206,6 +289,10 @@ class LLaVAFeatureEnhancer:
 
         geom_features = enhancement_layers.get("features", [])
         if not geom_features:
+            if save_path:
+                self._save_oracle_debug_image(
+                    original_region_img, [], llm_features, grid_size, region_id, save_path
+                )
             return enhancement_layers
 
         # Pre-calculate centroids of geometrically detected features
@@ -250,4 +337,8 @@ class LLaVAFeatureEnhancer:
                     reconciliation_count += 1
 
         log_llm.info("Reconciliation complete. Updated %d features.", reconciliation_count)
+        if save_path:
+            self._save_oracle_debug_image(
+                original_region_img, geom_features, llm_features, grid_size, region_id, save_path
+            )
         return enhancement_layers

@@ -156,7 +156,11 @@ class MapAnalyzer:
                 ollama_url, ollama_model, llava_mode, llm_temp, llm_ctx_size
             )
             context.enhancement_layers = self.llava_enhancer.enhance(
-                context.enhancement_layers, img, grid_info.size
+                context.enhancement_layers,
+                img,
+                grid_info.size,
+                region_context["id"],
+                save_intermediate_path,
             )
 
         feature_cleaned_img = corrected_floor.copy()
