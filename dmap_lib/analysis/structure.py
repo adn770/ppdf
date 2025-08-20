@@ -19,98 +19,6 @@ log_grid = logging.getLogger("dmap.grid")
 class StructureAnalyzer:
     """Identifies the core grid-based structure of the map."""
 
-    def _is_stair_tile_fft(
-        self, tile_image: np.ndarray, coords: Optional[Tuple[int, int]] = None
-    ) -> bool:
-        """
-        Detects stairs in a tile by looking for the signature of parallel lines
-        in the 2D Fourier Transform of the image.
-        """
-        if tile_image.size == 0:
-            return False
-
-        h, w = tile_image.shape[:2]
-        inset = int(w * 0.05)
-        cropped_tile = tile_image[inset : h - inset, inset : w - inset]
-
-        if cropped_tile.size < 24 * 24:
-            return False
-
-        # 1. Normalize the tile image
-        normalized_tile = cv2.resize(cropped_tile, (24, 24))
-        if len(normalized_tile.shape) > 2:
-            normalized_tile = cv2.cvtColor(normalized_tile, cv2.COLOR_BGR2GRAY)
-
-        # 2. Compute the 2D FFT and shift the zero-frequency component to the center
-        f = np.fft.fft2(normalized_tile)
-        fshift = np.fft.fftshift(f)
-        magnitude_spectrum = np.log(np.abs(fshift) + 1)
-
-        # 3. Zero out the center DC component and low frequencies to find high peaks
-        cy, cx = magnitude_spectrum.shape[0] // 2, magnitude_spectrum.shape[1] // 2
-        magnitude_spectrum[cy - 2 : cy + 3, cx - 2 : cx + 3] = 0
-
-        # 4. Find all significant peaks in the spectrum
-        peaks_y, _ = find_peaks(np.sum(magnitude_spectrum, axis=1), prominence=1.5)
-        peaks_x, _ = find_peaks(np.sum(magnitude_spectrum, axis=0), prominence=1.5)
-
-        # 5. A true stair pattern requires both multiple peaks AND a strong signal.
-        max_val = np.max(magnitude_spectrum)
-        mean_val = np.mean(magnitude_spectrum)
-        is_stairs = (len(peaks_y) >= 3 or len(peaks_x) >= 3) and max_val > (mean_val * 3.0)
-
-        if is_stairs:
-            coord_str = f"at {coords} " if coords else ""
-            log.debug(
-                "Stair tile detected via FFT %s(Peaks Y: %d, Peaks X: %d)",
-                coord_str,
-                len(peaks_y),
-                len(peaks_x),
-            )
-        return is_stairs
-
-    def _classify_door_type(self, tile_slice: np.ndarray) -> Optional[str]:
-        """
-        Analyzes a normalized 24x24 tile to classify the type of door it contains.
-        """
-        if tile_slice.size == 0:
-            return None
-
-        # Convert incoming BGR slice to grayscale before processing
-        gray_slice = cv2.cvtColor(tile_slice, cv2.COLOR_BGR2GRAY)
-
-        # Create a normalized binary mask for signature analysis
-        sample = cv2.resize(gray_slice, (24, 24))
-        _, binary_mask = cv2.threshold(sample, 128, 255, cv2.THRESH_BINARY)
-
-        for i in range(2):  # Run once, then again on a 90-degree rotated version
-            if i == 1:
-                binary_mask = cv2.rotate(binary_mask, cv2.ROTATE_90_CLOCKWISE)
-
-            h_proj = np.sum(binary_mask, axis=0) // 255  # Horizontal Projection
-            peaks, _ = find_peaks(h_proj, prominence=2, distance=2)
-
-            # Signature: Three distinct peaks for iron bars
-            if len(peaks) == 3:
-                return "iron_bar_door"
-
-            if len(peaks) == 2:
-                # Signature: Two peaks with a gap in the middle for double door
-                center_mass = np.sum(h_proj[11:13])
-                if center_mass < 3:
-                    return "double_door"
-                # Signature: Two peaks for a standard door frame
-                else:
-                    return "door"
-
-            # Signature: Single, weak peak for a secret door
-            if len(peaks) == 1:
-                total_mass = np.sum(h_proj)
-                if total_mass < 70:  # Scaled up for 24x24 grid
-                    return "secret_door"
-
-        return None
-
     def _detect_passageway_doors(
         self,
         tile_grid: Dict[Tuple[int, int], _TileData],
@@ -163,8 +71,10 @@ class StructureAnalyzer:
             h = grid_info.size - (2 * inset)
             tile_slice = structural_img[px_y : px_y + h, px_x : px_x + w]
 
-            door_type = self._classify_door_type(tile_slice)
-            if not door_type:
+            # If the passageway tile is not empty, it's a door.
+            if cv2.countNonZero(cv2.cvtColor(tile_slice, cv2.COLOR_BGR2GRAY)) > 10:
+                door_type = "door"
+            else:
                 continue
 
             if tile.west_wall == "stone" and tile.east_wall == "stone":
@@ -283,7 +193,7 @@ class StructureAnalyzer:
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         tile_classifications: Dict[Tuple[int, int], str],
-        context: "dmap_lib.analysis.context._RegionAnalysisContext",
+        context: 'dmap_lib.analysis.context._RegionAnalysisContext',
         debug_canvas: Optional[np.ndarray] = None,
     ) -> Dict[Tuple[int, int], _TileData]:
         """Perform score-based wall detection and core structure classification."""
@@ -302,16 +212,6 @@ class StructureAnalyzer:
             for x in range(min_gx, max_gx + 1):
                 feature_type = tile_classifications.get((x, y), "empty")
                 tile_grid[(x, y)] = _TileData(feature_type=feature_type)
-
-        for (gx, gy), tile in tile_grid.items():
-            if tile.feature_type == "floor":
-                px_x = gx * grid_info.size
-                px_y = gy * grid_info.size
-                cell_slice = structural_img[
-                    px_y : px_y + grid_info.size, px_x : px_x + grid_info.size
-                ]
-                if self._is_stair_tile_fft(cell_slice, coords=(gx, gy)):
-                    tile.feature_type = "stairs"
 
         grid_size, offset_x, offset_y = (
             grid_info.size,

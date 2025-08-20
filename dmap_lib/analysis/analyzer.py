@@ -43,17 +43,13 @@ class MapAnalyzer:
 
         for layer in enhancements.get("layers", []):
             px_verts = (
-                np.array(
-                    [(v["x"] * grid_size, v["y"] * grid_size) for v in layer["gridVertices"]]
-                )
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in layer["gridVertices"]])
             ).astype(np.int32)
             cv2.drawContours(debug_img, [px_verts], -1, layer_color, 2)
 
         for feature in enhancements.get("features", []):
             px_verts = (
-                np.array(
-                    [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
-                )
+                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
             ).astype(np.int32)
             cv2.drawContours(debug_img, [px_verts], -1, feature_color, 1)
 
@@ -84,7 +80,9 @@ class MapAnalyzer:
         log.info("Executing Stage 4: Structural Image Preparation...")
         structural_img = self._create_structural_image(img, color_profile, kmeans_model)
         floor_only_img = self._create_floor_only_image(img, color_profile, kmeans_model)
-        stroke_only_img = self._create_stroke_only_image(img, color_profile, kmeans_model)
+        stroke_only_img = self._create_stroke_only_image(
+            img, color_profile, kmeans_model
+        )
 
         context.room_bounds = self._find_room_bounds(stroke_only_img)
         grid_info = self.structure_analyzer.discover_grid(
@@ -130,12 +128,7 @@ class MapAnalyzer:
             )
             for layer in temp_layers["layers"]:
                 px_verts = (
-                    np.array(
-                        [
-                            (v["x"] * grid_info.size, v["y"] * grid_info.size)
-                            for v in layer["gridVertices"]
-                        ]
-                    )
+                    np.array([(v["x"] * grid_info.size, v["y"] * grid_info.size) for v in layer["gridVertices"]])
                 ).astype(np.int32)
                 cv2.fillPoly(corrected_floor, [px_verts], 255)
 
@@ -170,28 +163,13 @@ class MapAnalyzer:
                 save_intermediate_path,
             )
 
-        feature_cleaned_img = corrected_floor.copy()
-        for feature in context.enhancement_layers.get("features", []):
-            px_verts = (
-                np.array(
-                    [
-                        (v["x"] * grid_info.size, v["y"] * grid_info.size)
-                        for v in feature["gridVertices"]
-                    ]
-                )
-            ).astype(np.int32)
-            cv2.fillPoly(feature_cleaned_img, [px_verts], 0)  # Erase feature
-        if save_intermediate_path:
-            fname = f"{region_context['id']}_pass3_feature_cleaned.png"
-            cv2.imwrite(os.path.join(save_intermediate_path, fname), feature_cleaned_img)
-
         tile_classifications = self.structure_analyzer.classify_tile_content(
-            feature_cleaned_img, grid_info
+            corrected_floor, grid_info
         )
 
         context.tile_grid = self.structure_analyzer.classify_features(
             structural_img,
-            feature_cleaned_img,
+            corrected_floor,
             grid_info,
             color_profile,
             tile_classifications,
@@ -228,9 +206,12 @@ class MapAnalyzer:
     ) -> np.ndarray:
         """Creates a stroke-only image (black on white) for contour detection."""
         log.debug("Creating stroke-only image for boundary analysis.")
-        stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
+        stroke_roles = {
+            r for r in color_profile["roles"].values() if r.endswith("stroke")
+        }
         rgb_to_label = {
-            tuple(c.astype("uint8")[::-1]): i for i, c in enumerate(kmeans.cluster_centers_)
+            tuple(c.astype("uint8")[::-1]): i
+            for i, c in enumerate(kmeans.cluster_centers_)
         }
         stroke_labels = {
             rgb_to_label[rgb]
@@ -250,9 +231,12 @@ class MapAnalyzer:
     ) -> np.ndarray:
         """Creates a clean two-color image (stroke on floor) for analysis."""
         log.debug("Creating two-color structural image (stroke on floor).")
-        stroke_roles = {r for r in color_profile["roles"].values() if r.endswith("stroke")}
+        stroke_roles = {
+            r for r in color_profile["roles"].values() if r.endswith("stroke")
+        }
         rgb_to_label = {
-            tuple(c.astype("uint8")[::-1]): i for i, c in enumerate(kmeans.cluster_centers_)
+            tuple(c.astype("uint8")[::-1]): i
+            for i, c in enumerate(kmeans.cluster_centers_)
         }
         stroke_labels = {
             rgb_to_label[rgb]
@@ -281,7 +265,8 @@ class MapAnalyzer:
         log.debug("Creating binary floor-only image mask.")
         floor_roles = {r for r in color_profile["roles"].values() if "floor" in r}
         rgb_to_label = {
-            tuple(c.astype("uint8")[::-1]): i for i, c in enumerate(kmeans.cluster_centers_)
+            tuple(c.astype("uint8")[::-1]): i
+            for i, c in enumerate(kmeans.cluster_centers_)
         }
         floor_labels = {
             rgb_to_label[rgb]
@@ -305,7 +290,9 @@ class MapAnalyzer:
         gray = cv2.cvtColor(stroke_only_image, cv2.COLOR_BGR2GRAY)
         _, binary_mask = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
 
-        contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         bounds = []
         min_area = 1000
         for contour in contours:
@@ -354,7 +341,9 @@ def analyze_image(
         meta = schema.Meta(title=source_filename, sourceImage=source_filename)
         return schema.MapData(dmapVersion="2.0.0", meta=meta, regions=[])
 
-    log.info("Orchestrator found %d dungeon regions. Processing all.", len(dungeon_regions))
+    log.info(
+        "Orchestrator found %d dungeon regions. Processing all.", len(dungeon_regions)
+    )
     final_regions = []
     analyzer = MapAnalyzer()
     for i, region_context in enumerate(dungeon_regions):
