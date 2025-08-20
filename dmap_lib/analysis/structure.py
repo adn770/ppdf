@@ -1,3 +1,4 @@
+# --- dmap_lib/analysis/structure.py ---
 import logging
 import math
 import os
@@ -282,6 +283,7 @@ class StructureAnalyzer:
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         tile_classifications: Dict[Tuple[int, int], str],
+        context: "dmap_lib.analysis.context._RegionAnalysisContext",
         debug_canvas: Optional[np.ndarray] = None,
     ) -> Dict[Tuple[int, int], _TileData]:
         """Perform score-based wall detection and core structure classification."""
@@ -447,6 +449,10 @@ class StructureAnalyzer:
             (k[1] for k, v in tile_grid.items() if v.feature_type != "empty"),
             default=0,
         )
+        # Store the calculated shift in the context object for the transformer
+        context.grid_shift_x = c_min_gx
+        context.grid_shift_y = c_min_gy
+
         for (gx, gy), tile_data in tile_grid.items():
             shifted_grid[(gx - c_min_gx, gy - c_min_gy)] = tile_data
 

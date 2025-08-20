@@ -48,9 +48,7 @@ class MapTransformer:
 
         return chamber_tiles, passageway_tiles
 
-    def transform(
-        self, context: _RegionAnalysisContext, grid_size: int
-    ) -> List[Any]:
+    def transform(self, context: _RegionAnalysisContext, grid_size: int) -> List[Any]:
         """Transforms the context object into final MapObject entities."""
         log.info("Executing Stage 8: Transformation to MapData...")
         tile_grid = context.tile_grid
@@ -58,20 +56,32 @@ class MapTransformer:
             return []
 
         chamber_tiles, passageway_tiles = self._classify_floor_tiles(tile_grid)
-        log_xfm.debug("Classified floor tiles: %d chamber, %d passageway.",
-                      len(chamber_tiles), len(passageway_tiles))
+        log_xfm.debug(
+            "Classified floor tiles: %d chamber, %d passageway.",
+            len(chamber_tiles),
+            len(passageway_tiles),
+        )
 
         rooms = []
 
         # Create 1x1 rooms for each passageway tile
         for gx, gy in passageway_tiles:
-            verts = [schema.GridPoint(x=float(gx), y=float(gy)),
-                     schema.GridPoint(x=float(gx + 1), y=float(gy)),
-                     schema.GridPoint(x=float(gx + 1), y=float(gy + 1)),
-                     schema.GridPoint(x=float(gx), y=float(gy + 1))]
+            verts = [
+                schema.GridPoint(x=float(gx), y=float(gy)),
+                schema.GridPoint(x=float(gx + 1), y=float(gy)),
+                schema.GridPoint(x=float(gx + 1), y=float(gy + 1)),
+                schema.GridPoint(x=float(gx), y=float(gy + 1)),
+            ]
             room_id = f"room_{uuid.uuid4().hex[:8]}"
-            rooms.append(schema.Room(id=room_id, shape="polygon", gridVertices=verts,
-                                      roomType="corridor", contents=[]))
+            rooms.append(
+                schema.Room(
+                    id=room_id,
+                    shape="polygon",
+                    gridVertices=verts,
+                    roomType="corridor",
+                    contents=[],
+                )
+            )
 
         # Merge all chamber tiles into larger room polygons
         if chamber_tiles:
@@ -87,11 +97,19 @@ class MapTransformer:
             for geom in geometries:
                 if geom.area < 0.5:
                     continue
-                verts = [schema.GridPoint(x=float(x), y=float(y))
-                         for x, y in geom.exterior.coords]
+                verts = [
+                    schema.GridPoint(x=float(x), y=float(y)) for x, y in geom.exterior.coords
+                ]
                 room_id = f"room_{uuid.uuid4().hex[:8]}"
-                rooms.append(schema.Room(id=room_id, shape="polygon", gridVertices=verts,
-                                          roomType="chamber", contents=[]))
+                rooms.append(
+                    schema.Room(
+                        id=room_id,
+                        shape="polygon",
+                        gridVertices=verts,
+                        roomType="chamber",
+                        contents=[],
+                    )
+                )
 
         log_xfm.debug("Created %d valid Room objects.", len(rooms))
 
@@ -103,8 +121,7 @@ class MapTransformer:
             for gy in range(min_y, max_y):
                 for gx in range(min_x, max_x):
                     if poly.contains(Point(gx + 0.5, gy + 0.5)):
-                         coord_to_room_id[(gx, gy)] = room.id
-
+                        coord_to_room_id[(gx, gy)] = room.id
 
         doors = self._extract_doors_from_grid(tile_grid, coord_to_room_id)
         log_xfm.debug("Extracted %d Door objects.", len(doors))
@@ -113,21 +130,30 @@ class MapTransformer:
         room_map = {r.id: r for r in rooms}
         room_polygons = {r.id: Polygon([(v.x, v.y) for v in room.gridVertices]) for r in rooms}
 
-
         for item in context.enhancement_layers.get("features", []):
-            verts = [schema.GridPoint(**v) for v in item["gridVertices"]]
+            # Apply the grid shift to the feature's vertices
+            verts = [
+                schema.GridPoint(
+                    x=v["x"] - context.grid_shift_x, y=v["y"] - context.grid_shift_y
+                )
+                for v in item["gridVertices"]
+            ]
             min_x = round(min(v.x for v in verts), 1)
             min_y = round(min(v.y for v in verts), 1)
             max_x = round(max(v.x for v in verts), 1)
             max_y = round(max(v.y for v in verts), 1)
-            bounds = schema.BoundingBox(x=min_x, y=min_y,
-                                        width=round(max_x - min_x, 1),
-                                        height=round(max_y - min_y, 1))
+            bounds = schema.BoundingBox(
+                x=min_x, y=min_y, width=round(max_x - min_x, 1), height=round(max_y - min_y, 1)
+            )
 
-            feature = schema.Feature(id=f"feature_{uuid.uuid4().hex[:8]}",
-                                     featureType=item["featureType"], shape="polygon",
-                                     gridVertices=verts, properties=item["properties"],
-                                     bounds=bounds)
+            feature = schema.Feature(
+                id=f"feature_{uuid.uuid4().hex[:8]}",
+                featureType=item["featureType"],
+                shape="polygon",
+                gridVertices=verts,
+                properties=item["properties"],
+                bounds=bounds,
+            )
             features.append(feature)
             center = Polygon([(v.x, v.y) for v in verts]).centroid
             for room_id, poly in room_polygons.items():
@@ -137,20 +163,28 @@ class MapTransformer:
                     break
 
         for item in context.enhancement_layers.get("layers", []):
-            verts = [schema.GridPoint(**v) for v in item["gridVertices"]]
+            # Apply the grid shift to the layer's vertices
+            verts = [
+                schema.GridPoint(
+                    x=v["x"] - context.grid_shift_x, y=v["y"] - context.grid_shift_y
+                )
+                for v in item["gridVertices"]
+            ]
             min_x = round(min(v.x for v in verts), 1)
             min_y = round(min(v.y for v in verts), 1)
             max_x = round(max(v.x for v in verts), 1)
             max_y = round(max(v.y for v in verts), 1)
-            bounds = schema.BoundingBox(x=min_x, y=min_y,
-                                        width=round(max_x - min_x, 1),
-                                        height=round(max_y - min_y, 1))
+            bounds = schema.BoundingBox(
+                x=min_x, y=min_y, width=round(max_x - min_x, 1), height=round(max_y - min_y, 1)
+            )
 
-            layer = schema.EnvironmentalLayer(id=f"layer_{uuid.uuid4().hex[:8]}",
-                                              layerType=item["layerType"],
-                                              gridVertices=verts,
-                                              properties=item["properties"],
-                                              bounds=bounds)
+            layer = schema.EnvironmentalLayer(
+                id=f"layer_{uuid.uuid4().hex[:8]}",
+                layerType=item["layerType"],
+                gridVertices=verts,
+                properties=item["properties"],
+                bounds=bounds,
+            )
             layers.append(layer)
             center = Polygon([(v.x, v.y) for v in verts]).centroid
             for room_id, poly in room_polygons.items():
@@ -159,15 +193,17 @@ class MapTransformer:
                         room_map[room_id].contents.append(layer.id)
                     break
         log_xfm.debug(
-            "Created %d features and %d layers from enhancements.",
-            len(features), len(layers)
+            "Created %d features and %d layers from enhancements.", len(features), len(layers)
         )
 
         all_objects: List[Any] = rooms + doors + features + layers
         num_r, num_d, num_f, num_l = len(rooms), len(doors), len(features), len(layers)
         log.info(
             "Transformation complete. Created: %d Rooms, %d Doors, %d Features, %d Layers.",
-            num_r, num_d, num_f, num_l
+            num_r,
+            num_d,
+            num_f,
+            num_l,
         )
         return all_objects
 
@@ -190,15 +226,23 @@ class MapTransformer:
                     r2 = coord_to_room_id.get((gx, gy + 1))
                     if r1 and r2 and r1 != r2:
                         props = {}
-                        if wall_type == "secret_door": props["secret"] = True
-                        elif wall_type == "iron_bar_door": props["type"] = "iron_bar"
-                        elif wall_type == "double_door": props["type"] = "double"
+                        if wall_type == "secret_door":
+                            props["secret"] = True
+                        elif wall_type == "iron_bar_door":
+                            props["type"] = "iron_bar"
+                        elif wall_type == "double_door":
+                            props["type"] = "double"
 
                         pos = schema.GridPoint(x=float(gx), y=float(gy + 1))
-                        doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}",
-                                                 gridPos=pos, orientation="h",
-                                                 connects=[r1, r2],
-                                                 properties=props if props else None))
+                        doors.append(
+                            schema.Door(
+                                id=f"door_{uuid.uuid4().hex[:8]}",
+                                gridPos=pos,
+                                orientation="h",
+                                connects=[r1, r2],
+                                properties=props if props else None,
+                            )
+                        )
                         processed_edges.add(edge)
 
             # East Wall Check
@@ -210,14 +254,22 @@ class MapTransformer:
                     r2 = coord_to_room_id.get((gx + 1, gy))
                     if r1 and r2 and r1 != r2:
                         props = {}
-                        if wall_type == "secret_door": props["secret"] = True
-                        elif wall_type == "iron_bar_door": props["type"] = "iron_bar"
-                        elif wall_type == "double_door": props["type"] = "double"
+                        if wall_type == "secret_door":
+                            props["secret"] = True
+                        elif wall_type == "iron_bar_door":
+                            props["type"] = "iron_bar"
+                        elif wall_type == "double_door":
+                            props["type"] = "double"
 
                         pos = schema.GridPoint(x=float(gx + 1), y=float(gy))
-                        doors.append(schema.Door(id=f"door_{uuid.uuid4().hex[:8]}",
-                                                 gridPos=pos, orientation="v",
-                                                 connects=[r1, r2],
-                                                 properties=props if props else None))
+                        doors.append(
+                            schema.Door(
+                                id=f"door_{uuid.uuid4().hex[:8]}",
+                                gridPos=pos,
+                                orientation="v",
+                                connects=[r1, r2],
+                                properties=props if props else None,
+                            )
+                        )
                         processed_edges.add(edge)
         return doors
