@@ -106,7 +106,7 @@ score-based wall detection that combines stroke thickness, shadow, and glow cues
 
 The pipeline cleanly separates the detection of the core, grid-aligned structure
 from the detection of non-grid-aligned **enhancement layers**. These enhancement
-features are captured using a high-precision (1/8th grid unit) coordinate system
+features are captured using a high-precision (1/10th grid unit) coordinate system
 and assigned a `z-order` to ensure correct rendering. This layered, semantic
 approach allows `dmap` to produce a deeply structured and accurate representation of
 complex dungeon maps.
@@ -176,7 +176,7 @@ API for analysis and rendering.
     -   Renders objects in a sequence that respects their type and `z-order`
         property to ensure correct layering (e.g., water is drawn below columns).
     -   Procedurally draws all `mapObjects`, including stylized `Feature`s and
-        `EnvironmentalLayer`s like water with a curvy ripple effect.
+        `EnvironmentalLayer`s.
 
 #### 3.3.1. Render Style Specification
 This section defines the target visual style for the SVG output.
@@ -191,11 +191,25 @@ This section defines the target visual style for the SVG output.
 -   **Layering and Effects**: The final look is achieved through multiple distinct layers
     rendered from bottom to top: Shadow, Glow/Underlayer, Room Fill, and Main Walls.
 
--   **Border Hatching**:
-    -   An **optional** feature, controlled by the `--hatching`
-        CLI flag, which accepts `sketch` or `stipple` styles.
-    -   When enabled, a series of procedurally generated, slightly randomized lines
-        or dots are drawn around the exterior perimeter of all rendered polygons.
+-   **Procedural Hatching**:
+    -   An **optional** feature, controlled by the `--hatching` CLI flag.
+    -   When enabled, it generates a highly organic, sketchy look using a tile-based
+        approach combined with Perlin noise to displace line cluster anchors. This
+        avoids mechanical repetition and results in a hand-drawn aesthetic.
+
+-   **Procedural Water Layers**:
+    -   Water shorelines are rendered using a Catmull-Rom spline algorithm
+        (`_create_curvy_path`) to generate smooth, wavy, and natural-looking paths
+        from the underlying geometric polygons, complete with multi-layered ripple
+        effects.
+
+#### 3.3.2. Pre-Rendering Merge Step
+-   Before rendering, the engine performs a merge pass on all `Room` objects.
+-   It uses a **Disjoint Set Union (DSU)** algorithm to identify all rooms that are
+    geometrically adjacent and are not separated by a `Door` object.
+-   These adjacent, open rooms are merged into a single, complex `_RenderableShape`
+    object. This ensures that open archways are correctly rendered and that exterior
+    effects like hatching are applied to a single, unified dungeon perimeter.
 
 ---
 
@@ -259,12 +273,17 @@ For each detected 'dungeon' region, the following pipeline is executed:
 -   **Input**: *Original* Dungeon Region Image, `color_profile`, `room_contours`
 -   **Output**: `enhancement_layers` (a dictionary of high-res feature lists)
 -   **Process**: This stage operates on the original region image to find features
-    that do not align with the main grid. It uses simple geometric heuristics to
-    perform a pre-classification. For example, small circular or square shapes are
-    pre-classified as `"column"`, while long, rectangular shapes are pre-classified as
-    `"stairs"`. Environmental layers like water are also detected. All found items
-    are converted into high-resolution polygons using a **1/8th grid unit**
-    coordinate system and stored with a `z-order` attribute, ready for LLM refinement.
+    that do not align with the main grid.
+    1.  **Heuristic Pre-classification**: It uses simple geometric heuristics to
+        perform a pre-classification. For example, small circular or square shapes are
+        pre-classified as `"column"`, while long, rectangular shapes are pre-classified as
+        `"stairs"`. Environmental layers like water are also detected.
+    2.  **Feature Consolidation**: A `_consolidate_features` pass is performed to
+        intelligently merge raw feature polygons that are overlapping or very close,
+        cleaning up noisy detections into single, unified features.
+    3.  **Coordinate Storage**: All found items are converted into high-resolution polygons
+        using a **1/10th grid unit** coordinate system and stored with a `z-order`
+        attribute, ready for LLM refinement.
 
 ### Stage 6: Core Structure and Passage Detection
 -   **Component**: `StructureAnalyzer`
@@ -275,24 +294,35 @@ For each detected 'dungeon' region, the following pipeline is executed:
         features digitally removed).
     2.  Each tile is first classified as `floor` or `empty`.
     3.  **Score-Based Wall Detection**: The pipeline analyzes the boundaries between
-        `floor` and `empty` grid cells, classifying a boundary as a `wall` if its
-        confidence score exceeds a threshold.
-    4.  **Passageway Pre-classification**: A simplified heuristic checks for non-empty
-        floor tiles in narrow passageways. These tiles are pre-classified with a
-        generic `"door"` type, to be refined later by the LLM.
-    5.  The `tile_grid` is populated with the core structure: `wall`, `door`, and
-        `floor` information.
+        `floor` and `empty` grid cells. It uses a **dual area-based sampling**
+        method (`_calculate_boundary_scores`), checking both the centered and exterior
+        sides of a potential wall line to improve accuracy and reduce false positives
+        from grid lines. A boundary is classified as a `wall` if its confidence score
+        exceeds a threshold.
+    4.  **Passageway Door Detection**: A dedicated pass (`_detect_passageway_doors`)
+        analyzes narrow (1-tile wide) passageways. Tiles in these corridors containing
+        any non-floor pixels are identified as potential doors. These are
+        pre-classified with a generic `"door"` type and added to the
+        `enhancement_layers` for later refinement by the LLM.
+    5.  The `tile_grid` is populated with the core structure: `wall` and `floor`
+        information.
 
 ### Stage 7: Transformation & Entity Generation
 -   **Component**: `MapTransformer`
 -   **Input**: `_RegionAnalysisContext` (containing `tile_grid`, `enhancement_layers`)
 -   **Output**: The final list of `MapObject` entities for the region.
 -   **Process**: This final stage transforms the intermediate `tile_grid` into the final
-    schema-compliant objects. It classifies floor tiles into chambers or corridors,
-    merges chamber tiles into complex polygons, and traces wall perimeters to create
-    `Room` polygons. It now creates `Feature` objects for the pre-classified doors
-    from Stage 6 and integrates them with the high-resolution features from the
-    `enhancement_layers` for a unified feature list.
+    schema-compliant objects.
+    1.  **Floor Tile Classification**: It first classifies all `floor` tiles into either
+        `chamber` or `passageway` categories based on their neighbors.
+    2.  **Corridor Generation**: It creates 1x1 `Room` objects with a `corridor` roomType
+        for each passageway tile.
+    3.  **Chamber Merging**: It uses `shapely.unary_union` to merge all adjacent
+        `chamber` tiles into complex, unified polygons, creating `Room` objects for them.
+    4.  **Grid Shifting**: A `grid_shift` is applied to normalize the final coordinates.
+    5.  **Feature Integration**: It extracts door information from the tile grid and
+        integrates them with the high-resolution features from the `enhancement_layers`
+        for a unified feature list.
 
 ---
 
@@ -301,7 +331,7 @@ For each detected 'dungeon' region, the following pipeline is executed:
 The intermediate JSON format is designed to be extensible and resolution-independent.
 
 -   **Version**: 2.0.0
--   **Example** (Illustrating a z-ordered feature):
+-   **Example** (Illustrating a z-ordered feature with 1/10th precision):
     ```json
     {
       "dmapVersion": "2.0.0",
@@ -330,7 +360,7 @@ The intermediate JSON format is designed to be extensible and resolution-indepen
               "type": "feature",
               "featureType": "column",
               "shape": "polygon",
-              "gridVertices": [{"x": 15, "y": 15}, ...],
+              "gridVertices": [{"x": 15.5, "y": 15.2}, ...],
               "properties": {
                 "z-order": 1
               }
@@ -360,8 +390,8 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   `--hatching`: Enables and selects the style of procedural exterior border
         hatching (`sketch` or `stipple`).
     -   `--no-features`: Disables the rendering of all `Feature` objects.
-    -   `--save-intermediate`: Save intermediate analysis images to a directory for
-        debugging.
+    -   `--save-intermediate`: Save intermediate analysis images (e.g.,
+        `pass1_layers`, `pass2_features`, `wall_detection`) to a directory for debugging.
     -   `--ascii-debug`: Render an ASCII map of the final structure for debugging.
     -   `--debug`: Enable detailed DEBUG logging for specific topics (e.g., `analysis`,
         `grid`, `render`).
@@ -370,6 +400,8 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   `-M, --llm-model`: The LLaVA model to use (default: `llava:latest`).
     -   `-U, --llm-url`: The base URL of the Ollama server (default:
         `http://localhost:11434`).
+    -   `--llm-temp`: Set the temperature for the LLaVA model (default: 0.3).
+    -   `--llm-ctx-size`: Set the context window size for the LLaVA model (default: 8192).
 
 ---
 
@@ -1042,7 +1074,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         1.  Create a new `_stage5_detect_enhancement_features` function.
         2.  Using the *original* image, find contours inside room areas that match
             the `stroke` color and have simple geometry (e.g., small circles/squares).
-        3.  Convert these contours to polygons, scale their vertices to the 1/8th
+        3.  Convert these contours to polygons, scale their vertices to the 1/10th
             grid unit system, and assign a `z-order` of 1.
         4.  Store the resulting feature data in the `enhancement_layers` dictionary
             within the `RegionAnalysisContext`.
@@ -1059,7 +1091,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         1.  Extend the `_stage5_detect_enhancement_features` function.
         2.  Add logic to scan the *original* image for contiguous areas of the
             `water_pattern` color defined in the `color_profile`.
-        3.  Convert these areas to polygons, scale them to the 1/8th grid unit
+        3.  Convert these areas to polygons, scale them to the 1/10th grid unit
             system, assign a `z-order` of 0, and store them in the
             `enhancement_layers` dictionary.
     * **Outcome**: The pipeline can now detect and represent environmental layers like
