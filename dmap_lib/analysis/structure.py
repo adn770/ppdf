@@ -30,7 +30,7 @@ class StructureAnalyzer:
     ):
         """
         Scans for passageways and places perpendicular doors where door patterns
-        are found within tiles.
+        are found within tiles. Operates on an ABSOLUTE grid.
         """
         log.info("Executing new pass: Passageway Door Classification...")
         processed_tiles = set()
@@ -41,14 +41,15 @@ class StructureAnalyzer:
             if (x, y) in processed_tiles or tile.feature_type != "floor":
                 continue
 
-            is_passageway = False
-            # Check for vertical (W-E walls) or horizontal (N-S walls) passageways
-            if (tile.west_wall == "stone" and tile.east_wall == "stone") or (
+            is_vertical_passageway = tile.west_wall == "stone" and tile.east_wall == "stone"
+            is_horizontal_passageway = (
                 tile.north_wall == "stone" and tile.south_wall == "stone"
-            ):
-                is_passageway = True
+            )
 
-            if is_passageway and debug_canvas is not None:
+            if not (is_vertical_passageway or is_horizontal_passageway):
+                continue
+
+            if debug_canvas is not None:
                 px_x1 = x * grid_info.size + grid_info.offset_x + inset
                 py_y1 = y * grid_info.size + grid_info.offset_y + inset
                 px_x2 = px_x1 + grid_info.size - (2 * inset)
@@ -72,13 +73,12 @@ class StructureAnalyzer:
             h = grid_info.size - (2 * inset)
             tile_slice = structural_img[px_y : px_y + h, px_x : px_x + w]
 
-            # If the passageway tile is not empty, it's a door.
-            if cv2.countNonZero(cv2.cvtColor(tile_slice, cv2.COLOR_BGR2GRAY)) > 10:
+            if cv2.countNonZero(cv2.cvtColor(tile_slice, cv2.COLOR_BGR2GRAY)) > 40:
                 door_type = "door"
             else:
                 continue
 
-            if tile.west_wall == "stone" and tile.east_wall == "stone":
+            if is_vertical_passageway:
                 neighbor_south = tile_grid.get((x, y + 1))
                 if neighbor_south and neighbor_south.feature_type == "floor":
                     log.debug("%s created in vertical passageway at (%d, %d)", door_type, x, y)
@@ -88,21 +88,20 @@ class StructureAnalyzer:
                     processed_tiles.add((x, y + 1))
 
                     verts = [
-                        {"x": round(float(x), 1), "y": round(float(y + 1), 1)},
-                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
-                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
-                        {"x": round(float(x), 1), "y": round(float(y + 1), 1)},
+                        {"x": round(float(x + 0.1), 1), "y": round(float(y + 0.8), 1)},
+                        {"x": round(float(x + 0.9), 1), "y": round(float(y + 0.8), 1)},
+                        {"x": round(float(x + 0.9), 1), "y": round(float(y + 1.2), 1)},
+                        {"x": round(float(x + 0.1), 1), "y": round(float(y + 1.2), 1)},
                     ]
                     door_feature = {
                         "featureType": "door",
                         "gridVertices": verts,
-                        "properties": {"z-order": 1},
+                        "properties": {"z-order": 1, "detection_tile": (x, y)},
                     }
                     context.enhancement_layers.setdefault("features", []).append(door_feature)
                     log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
 
-
-            elif tile.north_wall == "stone" and tile.south_wall == "stone":
+            elif is_horizontal_passageway:
                 neighbor_east = tile_grid.get((x + 1, y))
                 if neighbor_east and neighbor_east.feature_type == "floor":
                     log.debug(
@@ -114,15 +113,15 @@ class StructureAnalyzer:
                     processed_tiles.add((x + 1, y))
 
                     verts = [
-                        {"x": round(float(x + 1), 1), "y": round(float(y), 1)},
-                        {"x": round(float(x + 1), 1), "y": round(float(y), 1)},
-                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
-                        {"x": round(float(x + 1), 1), "y": round(float(y + 1), 1)},
+                        {"x": round(float(x + 0.8), 1), "y": round(float(y + 0.1), 1)},
+                        {"x": round(float(x + 1.2), 1), "y": round(float(y + 0.1), 1)},
+                        {"x": round(float(x + 1.2), 1), "y": round(float(y + 0.9), 1)},
+                        {"x": round(float(x + 0.8), 1), "y": round(float(y + 0.9), 1)},
                     ]
                     door_feature = {
                         "featureType": "door",
                         "gridVertices": verts,
-                        "properties": {"z-order": 1},
+                        "properties": {"z-order": 1, "detection_tile": (x, y)},
                     }
                     context.enhancement_layers.setdefault("features", []).append(door_feature)
                     log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
@@ -223,7 +222,7 @@ class StructureAnalyzer:
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         tile_classifications: Dict[Tuple[int, int], str],
-        context: 'dmap_lib.analysis.context._RegionAnalysisContext',
+        context: "dmap_lib.analysis.context._RegionAnalysisContext",
         debug_canvas: Optional[np.ndarray] = None,
     ) -> Dict[Tuple[int, int], _TileData]:
         """Perform score-based wall detection and core structure classification."""
@@ -366,27 +365,12 @@ class StructureAnalyzer:
                     WALL_CONFIDENCE_THRESHOLD,
                 )
 
+        # Passageway door detection now operates on the absolute grid
         self._detect_passageway_doors(
             tile_grid, structural_img, grid_info, stroke_bgr, context, debug_canvas
         )
 
-        shifted_grid = {}
-        c_min_gx = min(
-            (k[0] for k, v in tile_grid.items() if v.feature_type != "empty"),
-            default=0,
-        )
-        c_min_gy = min(
-            (k[1] for k, v in tile_grid.items() if v.feature_type != "empty"),
-            default=0,
-        )
-        # Store the calculated shift in the context object for the transformer
-        context.grid_shift_x = c_min_gx
-        context.grid_shift_y = c_min_gy
-
-        for (gx, gy), tile_data in tile_grid.items():
-            shifted_grid[(gx - c_min_gx, gy - c_min_gy)] = tile_data
-
-        return shifted_grid
+        return tile_grid
 
     def _process_boundary(
         self,

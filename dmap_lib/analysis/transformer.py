@@ -131,13 +131,8 @@ class MapTransformer:
         room_polygons = {r.id: Polygon([(v.x, v.y) for v in room.gridVertices]) for r in rooms}
 
         for item in context.enhancement_layers.get("features", []):
-            # Apply the grid shift to the feature's vertices
-            verts = [
-                schema.GridPoint(
-                    x=v["x"] - context.grid_shift_x, y=v["y"] - context.grid_shift_y
-                )
-                for v in item["gridVertices"]
-            ]
+            # Coordinates are now absolute, no grid shift needed
+            verts = [schema.GridPoint(x=v["x"], y=v["y"]) for v in item["gridVertices"]]
             min_x = round(min(v.x for v in verts), 1)
             min_y = round(min(v.y for v in verts), 1)
             max_x = round(max(v.x for v in verts), 1)
@@ -163,13 +158,8 @@ class MapTransformer:
                     break
 
         for item in context.enhancement_layers.get("layers", []):
-            # Apply the grid shift to the layer's vertices
-            verts = [
-                schema.GridPoint(
-                    x=v["x"] - context.grid_shift_x, y=v["y"] - context.grid_shift_y
-                )
-                for v in item["gridVertices"]
-            ]
+            # Coordinates are now absolute, no grid shift needed
+            verts = [schema.GridPoint(x=v["x"], y=v["y"]) for v in item["gridVertices"]]
             min_x = round(min(v.x for v in verts), 1)
             min_y = round(min(v.y for v in verts), 1)
             max_x = round(max(v.x for v in verts), 1)

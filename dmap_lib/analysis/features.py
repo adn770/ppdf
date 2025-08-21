@@ -20,9 +20,7 @@ log_llm = logging.getLogger("dmap.llm")
 class FeatureExtractor:
     """Handles detection of non-grid-aligned features."""
 
-    def _consolidate_features(
-        self, features: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _consolidate_features(self, features: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Merges overlapping or very close feature polygons."""
         if not features:
             return []
@@ -67,8 +65,8 @@ class FeatureExtractor:
             # Find the largest original feature to determine the type
             largest_feature = max(group, key=lambda g: g["poly"].area)["original_feature"]
 
-            if hasattr(merged_poly, 'geoms'): # It's a MultiPolygon
-                 # For now, we only take the largest polygon from the multipolygon
+            if hasattr(merged_poly, "geoms"):  # It's a MultiPolygon
+                # For now, we only take the largest polygon from the multipolygon
                 main_geom = max(merged_poly.geoms, key=lambda p: p.area)
             else:
                 main_geom = merged_poly
@@ -77,17 +75,22 @@ class FeatureExtractor:
                 continue
 
             new_verts = [
-                {"x": round(v[0], 1), "y": round(v[1], 1)}
-                for v in main_geom.exterior.coords
+                {"x": round(v[0], 1), "y": round(v[1], 1)} for v in main_geom.exterior.coords
             ]
 
-            consolidated.append({
-                "featureType": largest_feature["featureType"],
-                "gridVertices": new_verts,
-                "properties": largest_feature["properties"],
-            })
+            consolidated.append(
+                {
+                    "featureType": largest_feature["featureType"],
+                    "gridVertices": new_verts,
+                    "properties": largest_feature["properties"],
+                }
+            )
 
-        log.info("Consolidated %d raw features into %d final features.", len(features), len(consolidated))
+        log.info(
+            "Consolidated %d raw features into %d final features.",
+            len(features),
+            len(consolidated),
+        )
         return consolidated
 
     def extract(
@@ -97,10 +100,13 @@ class FeatureExtractor:
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         kmeans: KMeans,
+        enhancement_layers: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Extracts high-resolution features like columns and water."""
+        """
+        Extracts high-resolution features, appending them to the provided
+        enhancement_layers dictionary.
+        """
         log.debug("Extracting high-resolution features and layers...")
-        enhancements: Dict[str, List] = {"features": [], "layers": []}
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
         labels = kmeans.predict(original_region_img.reshape(-1, 3))
         grid_size = grid_info.size
@@ -113,24 +119,28 @@ class FeatureExtractor:
             w_lab = kmeans.predict([w_cen])[0]
             w_mask = (labels == w_lab).reshape(original_region_img.shape[:2])
             w_mask_u8 = w_mask.astype("uint8") * 255
-            cnts, _ = cv2.findContours(
-                w_mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+            cnts, _ = cv2.findContours(w_mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             for c in cnts:
                 if cv2.contourArea(c) > grid_size * grid_size:
                     verts = [
-                        {"x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
-                         "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1)}
+                        {
+                            "x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
+                            "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1),
+                        }
                         for v in c
                     ]
-                    enhancements["layers"].append({"layerType": "water",
-                                                   "gridVertices": verts,
-                                                   "properties": {"z-order": 0}})
+                    enhancement_layers.setdefault("layers", []).append(
+                        {
+                            "layerType": "water",
+                            "gridVertices": verts,
+                            "properties": {"z-order": 0},
+                        }
+                    )
 
         # --- 2. Detect Column and Stair Features ---
         raw_features = []
         if room_contours:
-            s_rgb = roles_inv.get("stroke", (0,0,0))
+            s_rgb = roles_inv.get("stroke", (0, 0, 0))
             s_bgr = np.array(s_rgb[::-1], dtype="uint8")
             s_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - s_bgr))
             s_lab = kmeans.predict([s_cen])[0]
@@ -152,17 +162,18 @@ class FeatureExtractor:
                     continue
                 cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
 
-                if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0
-                       for rc in room_contours):
+                if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0 for rc in room_contours):
                     verts = [
-                        {"x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
-                         "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1)}
+                        {
+                            "x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
+                            "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1),
+                        }
                         for v in c
                     ]
 
                     # Heuristic for stairs: high aspect ratio
                     _, (w, h), _ = cv2.minAreaRect(c)
-                    aspect_ratio = max(w, h) / min(w, h) if min(w,h) > 0 else 0
+                    aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
 
                     if aspect_ratio > 2.5:
                         if area > max_area_elongated:
@@ -173,19 +184,23 @@ class FeatureExtractor:
                             continue
                         feature_type = "column"
 
+                    raw_features.append(
+                        {
+                            "featureType": feature_type,
+                            "gridVertices": verts,
+                            "properties": {"z-order": 1},
+                        }
+                    )
 
-                    raw_features.append({"featureType": feature_type,
-                                         "gridVertices": verts,
-                                         "properties": {"z-order": 1}})
-
-        enhancements["features"] = self._consolidate_features(raw_features)
+        consolidated = self._consolidate_features(raw_features)
+        enhancement_layers.setdefault("features", []).extend(consolidated)
 
         log.info(
             "Detected %d features and %d layers.",
-            len(enhancements["features"]),
-            len(enhancements["layers"]),
+            len(enhancement_layers.get("features", [])),
+            len(enhancement_layers.get("layers", [])),
         )
-        return enhancements
+        return enhancement_layers
 
 
 class LLaVAFeatureEnhancer:
@@ -204,7 +219,7 @@ class LLaVAFeatureEnhancer:
         self.llava_mode = llava_mode
         self.temperature = temperature
         self.context_size = context_size
-        log_llm.info("LLaVA Feature Enhancer initialized in '%s' mode.", llava_mode)
+        log_llm.info("LLaVA Feature Enhancer initialized in '%s' mode.", self.llava_mode)
 
     def _save_pre_llava_debug_image(
         self,
@@ -216,12 +231,18 @@ class LLaVAFeatureEnhancer:
     ):
         """Saves a debug image visualizing all feature bounding boxes before LLaVA."""
         debug_img = img.copy()
-        feature_color = (0, 165, 255)  # Orange
+        overlay = debug_img.copy()
+        feature_color = (0, 165, 255)  # Orange for bounding box
+        crop_area_color = (255, 0, 255)  # Magenta for LLaVA crop area
 
         for feature in enhancements.get("features", []):
             px_verts = (
-                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
+                np.array(
+                    [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+                )
             ).astype(np.int32)
+
+            # Draw the feature's primary bounding box
             x, y, w, h = cv2.boundingRect(px_verts)
             cv2.rectangle(debug_img, (x, y), (x + w, y + h), feature_color, 2)
             cv2.putText(
@@ -234,10 +255,28 @@ class LLaVAFeatureEnhancer:
                 2,
             )
 
+            # Calculate and draw the 3x3 grid area for LLaVA classifier
+            M = cv2.moments(px_verts)
+            if M["m00"] > 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                gx, gy = cx // grid_size, cy // grid_size
+
+                x1 = max(0, (gx - 1) * grid_size)
+                y1 = max(0, (gy - 1) * grid_size)
+                x2 = min(img.shape[1], (gx + 2) * grid_size)
+                y2 = min(img.shape[0], (gy + 2) * grid_size)
+
+                # Draw a semi-transparent rectangle for the crop area
+                cv2.rectangle(overlay, (x1, y1), (x2, y2), crop_area_color, -1)
+
+        # Apply the transparent overlay
+        alpha = 0.3
+        cv2.addWeighted(overlay, alpha, debug_img, 1 - alpha, 0, debug_img)
+
         filename = os.path.join(save_path, f"{region_id}_pre_llava_features.png")
         cv2.imwrite(filename, debug_img)
         log.info("Saved pre-LLaVA feature bounding box debug image to %s", filename)
-
 
     def enhance(
         self,
@@ -277,7 +316,9 @@ class LLaVAFeatureEnhancer:
 
         for feature in geom_features:
             px_verts = (
-                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
+                np.array(
+                    [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+                )
             ).astype(np.int32)
             x, y, w, h = cv2.boundingRect(px_verts)
             cv2.rectangle(debug_img, (x, y), (x + w, y + h), geom_color, 2)
@@ -286,7 +327,12 @@ class LLaVAFeatureEnhancer:
             bbox = feature.get("bounding_box")
             if not bbox:
                 continue
-            x, y, w, h = bbox.get("x", 0), bbox.get("y", 0), bbox.get("width", 0), bbox.get("height", 0)
+            x, y, w, h = (
+                bbox.get("x", 0),
+                bbox.get("y", 0),
+                bbox.get("width", 0),
+                bbox.get("height", 0),
+            )
             cv2.rectangle(debug_img, (x, y), (x + w, y + h), llm_color, 2)
             cv2.putText(
                 debug_img,
@@ -315,7 +361,9 @@ class LLaVAFeatureEnhancer:
 
         for feature in classified_features:
             px_verts = (
-                np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]])
+                np.array(
+                    [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+                )
             ).astype(np.int32)
             x, y, w, h = cv2.boundingRect(px_verts)
             cv2.rectangle(debug_img, (x, y), (x + w, y + h), feature_color, 2)
@@ -347,7 +395,9 @@ class LLaVAFeatureEnhancer:
             return enhancement_layers
 
         for feature in features:
-            verts = np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]).astype(np.int32)
+            verts = np.array(
+                [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+            ).astype(np.int32)
             M = cv2.moments(verts)
             if M["m00"] == 0:
                 continue
@@ -371,7 +421,6 @@ class LLaVAFeatureEnhancer:
             # 3. Format the prompt with the pre-classification hint
             pre_classified_type = feature.get("featureType", "unknown")
             prompt = LLAVA_PROMPT_CLASSIFIER.replace("[HINT]", pre_classified_type)
-
 
             response = query_llava(
                 self.ollama_url,
@@ -442,7 +491,9 @@ class LLaVAFeatureEnhancer:
         # Pre-calculate centroids of geometrically detected features
         geom_centroids = []
         for feature in geom_features:
-            verts = (np.array([(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]))
+            verts = np.array(
+                [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+            )
             M = cv2.moments(verts.astype(np.int32))
             if M["m00"] != 0:
                 cx = M["m10"] / M["m00"]
@@ -476,13 +527,20 @@ class LLaVAFeatureEnhancer:
                     geom_features[closest_geom_idx]["featureType"] = new_type
                     log_llm.info(
                         "Reconciled feature: '%s' -> '%s' (dist: %.2f px)",
-                        old_type, new_type, min_dist
+                        old_type,
+                        new_type,
+                        min_dist,
                     )
                     reconciliation_count += 1
 
         log_llm.info("Reconciliation complete. Updated %d features.", reconciliation_count)
         if save_path:
             self._save_oracle_debug_image(
-                original_region_img, geom_features, llm_features, grid_size, region_id, save_path
+                original_region_img,
+                geom_features,
+                llm_features,
+                grid_size,
+                region_id,
+                save_path,
             )
         return enhancement_layers

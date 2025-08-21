@@ -29,5 +29,3 @@ class _RegionAnalysisContext:
     tile_grid: Dict[Tuple[int, int], _TileData] = field(default_factory=dict)
     enhancement_layers: Dict[str, Any] = field(default_factory=dict)
     room_bounds: List[Tuple[int, int, int, int]] = field(default_factory=list)
-    grid_shift_x: int = 0
-    grid_shift_y: int = 0
