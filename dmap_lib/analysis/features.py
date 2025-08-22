@@ -25,10 +25,10 @@ class FeatureExtractor:
         if not features:
             return []
 
-        log.debug("Consolidating %d raw features...", len(features))
+        log.debug("Consolidating %d raw feature candidates...", len(features))
         polygons = []
         for i, f in enumerate(features):
-            verts = [(v["x"], v["y"]) for v in f["gridVertices"]]
+            verts = [(v["x"], v.get("y", v["y"])) for v in f["gridVertices"]]
             if len(verts) < 3:
                 continue
             polygons.append(
@@ -65,11 +65,11 @@ class FeatureExtractor:
             # Find the largest original feature to determine the type
             largest_feature = max(group, key=lambda g: g["poly"].area)["original_feature"]
 
-            if hasattr(merged_poly, "geoms"):  # It's a MultiPolygon
-                # For now, we only take the largest polygon from the multipolygon
-                main_geom = max(merged_poly.geoms, key=lambda p: p.area)
-            else:
-                main_geom = merged_poly
+            main_geom = (
+                max(merged_poly.geoms, key=lambda p: p.area)
+                if hasattr(merged_poly, "geoms")
+                else merged_poly
+            )
 
             if main_geom.is_empty or not isinstance(main_geom, Polygon):
                 continue
@@ -80,35 +80,76 @@ class FeatureExtractor:
 
             consolidated.append(
                 {
-                    "featureType": largest_feature["featureType"],
                     "gridVertices": new_verts,
                     "properties": largest_feature["properties"],
                 }
             )
 
         log.info(
-            "Consolidated %d raw features into %d final features.",
+            "Consolidated %d candidates into %d final features.",
             len(features),
             len(consolidated),
         )
         return consolidated
 
-    def extract(
+    def _classify_consolidated_features(
+        self, features: List[Dict[str, Any]], grid_size: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Performs geometric classification on the final, consolidated feature shapes.
+        """
+        log.debug(
+            "Performing geometric classification on %d consolidated features...", len(features)
+        )
+        max_area_compact = (grid_size * grid_size) * 1.5
+        max_area_elongated = (grid_size * grid_size) * 4.0
+
+        for feature in features:
+            px_verts = np.array(
+                [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+            ).astype(np.int32)
+            area = cv2.contourArea(px_verts)
+
+            _, (w, h), _ = cv2.minAreaRect(px_verts)
+            aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
+
+            if aspect_ratio > 2.5:
+                if area > max_area_elongated:
+                    continue
+                feature_type = "stairs"
+            else:
+                if area > max_area_compact:
+                    continue
+                feature_type = "column"
+
+            feature["featureType"] = feature_type
+
+            M = cv2.moments(px_verts)
+            if M["m00"] > 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                gx, gy = cx // grid_size, cy // grid_size
+                log.debug(
+                    "Pre-classified feature at tile (%d, %d) as '%s' (area: %.2f, aspect: %.2f)",
+                    gx,
+                    gy,
+                    feature_type,
+                    area,
+                    aspect_ratio,
+                )
+        return [f for f in features if "featureType" in f]
+
+    def extract_layers(
         self,
         original_region_img: np.ndarray,
-        room_contours: List[np.ndarray],
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         kmeans: KMeans,
-        enhancement_layers: Dict[str, Any],
+        labels: np.ndarray,
     ) -> Dict[str, Any]:
-        """
-        Extracts high-resolution features, appending them to the provided
-        enhancement_layers dictionary.
-        """
-        log.debug("Extracting high-resolution features and layers...")
+        """Detects environmental layers (e.g., water) in the image."""
+        enhancement_layers = {"layers": []}
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
-        labels = kmeans.predict(original_region_img.reshape(-1, 3))
         grid_size = grid_info.size
 
         # --- 1. Detect Water Layers ---
@@ -129,77 +170,69 @@ class FeatureExtractor:
                         }
                         for v in c
                     ]
-                    enhancement_layers.setdefault("layers", []).append(
+                    enhancement_layers["layers"].append(
                         {
                             "layerType": "water",
                             "gridVertices": verts,
                             "properties": {"z-order": 0},
                         }
                     )
+        log.info("Detected %d environmental layers.", len(enhancement_layers["layers"]))
+        return enhancement_layers
 
-        # --- 2. Detect Column and Stair Features ---
-        raw_features = []
-        if room_contours:
-            s_rgb = roles_inv.get("stroke", (0, 0, 0))
-            s_bgr = np.array(s_rgb[::-1], dtype="uint8")
-            s_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - s_bgr))
-            s_lab = kmeans.predict([s_cen])[0]
-            s_mask = (labels == s_lab).reshape(original_region_img.shape[:2])
-            s_mask_u8 = s_mask.astype("uint8") * 255
-            cnts, _ = cv2.findContours(s_mask_u8, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    def extract_features(
+        self,
+        original_region_img: np.ndarray,
+        room_contours: List[np.ndarray],
+        grid_info: _GridInfo,
+        color_profile: Dict[str, Any],
+        kmeans: KMeans,
+        enhancement_layers: Dict[str, Any],
+        labels: np.ndarray,
+    ) -> Dict[str, Any]:
+        """Extracts and classifies high-resolution features like columns and stairs."""
+        if not room_contours:
+            return enhancement_layers
 
-            min_area = (grid_size * grid_size) * 0.05
-            max_area_compact = (grid_size * grid_size) * 1.5
-            max_area_elongated = (grid_size * grid_size) * 4.0
+        roles_inv = {v: k for k, v in color_profile["roles"].items()}
+        grid_size = grid_info.size
 
-            for c in cnts:
-                area = cv2.contourArea(c)
-                if area < min_area:
-                    continue
+        feature_candidates = []
+        processed_parents = set()
+        s_rgb = roles_inv.get("stroke", (0, 0, 0))
+        s_bgr = np.array(s_rgb[::-1], dtype="uint8")
+        s_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - s_bgr))
+        s_lab = kmeans.predict([s_cen])[0]
+        s_mask = (labels == s_lab).reshape(original_region_img.shape[:2])
+        s_mask_u8 = s_mask.astype("uint8") * 255
+        cnts, hierarchy = cv2.findContours(s_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        min_area = (grid_size * grid_size) * 0.05
 
-                M = cv2.moments(c)
-                if M["m00"] == 0:
-                    continue
-                cx, cy = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
-
-                if any(cv2.pointPolygonTest(rc, (cx, cy), False) >= 0 for rc in room_contours):
+        if hierarchy is not None:
+            for i, c in enumerate(cnts):
+                parent_idx = hierarchy[0][i][3]
+                # A contour is a hole (and thus its parent is a feature) if it has a parent.
+                if parent_idx != -1 and parent_idx not in processed_parents:
+                    parent_contour = cnts[parent_idx]
+                    if cv2.contourArea(parent_contour) < min_area:
+                        continue
                     verts = [
                         {
                             "x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
                             "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1),
                         }
-                        for v in c
+                        for v in parent_contour
                     ]
-
-                    # Heuristic for stairs: high aspect ratio
-                    _, (w, h), _ = cv2.minAreaRect(c)
-                    aspect_ratio = max(w, h) / min(w, h) if min(w, h) > 0 else 0
-
-                    if aspect_ratio > 2.5:
-                        if area > max_area_elongated:
-                            continue
-                        feature_type = "stairs"
-                    else:
-                        if area > max_area_compact:
-                            continue
-                        feature_type = "column"
-
-                    raw_features.append(
-                        {
-                            "featureType": feature_type,
-                            "gridVertices": verts,
-                            "properties": {"z-order": 1},
-                        }
+                    feature_candidates.append(
+                        {"gridVertices": verts, "properties": {"z-order": 1}}
                     )
+                    processed_parents.add(parent_idx)
 
-        consolidated = self._consolidate_features(raw_features)
-        enhancement_layers.setdefault("features", []).extend(consolidated)
+        consolidated = self._consolidate_features(feature_candidates)
+        classified = self._classify_consolidated_features(consolidated, grid_size)
 
-        log.info(
-            "Detected %d features and %d layers.",
-            len(enhancement_layers.get("features", [])),
-            len(enhancement_layers.get("layers", [])),
-        )
+        enhancement_layers.setdefault("features", []).extend(classified)
+        log.info("Extracted %d final features.", len(classified))
         return enhancement_layers
 
 

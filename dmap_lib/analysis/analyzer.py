@@ -39,9 +39,13 @@ class MapAnalyzer:
     ):
         """Saves a debug image visualizing detected features and layers."""
         debug_img = img.copy()
+        overlay = debug_img.copy()  # Create an overlay for transparency
+        alpha = 0.4  # Transparency factor
+
         layer_color = (255, 0, 0)  # Blue
         feature_color = (0, 0, 255)  # Red
         door_color = (0, 255, 0)  # Green for doors
+        label_color = (255, 255, 255)  # White for text
 
         for layer in enhancements.get("layers", []):
             px_verts = (
@@ -58,13 +62,30 @@ class MapAnalyzer:
                 )
             ).astype(np.int32)
 
-            if "door" in feature.get("featureType"):
+            if "door" in feature.get("featureType", ""):
                 x, y, w, h = cv2.boundingRect(px_verts)
-                # Draw a filled rectangle for door bounding boxes
-                cv2.rectangle(debug_img, (x, y), (x + w, y + h), door_color, -1)
+                # Draw the filled rectangle on the overlay for transparency
+                cv2.rectangle(overlay, (x, y), (x + w, y + h), door_color, -1)
+
+                # Add the coordinate label
+                if feature.get("properties", {}).get("detection_tile"):
+                    tile_coords = feature["properties"]["detection_tile"]
+                    label = f"({tile_coords[0]},{tile_coords[1]})"
+                    cv2.putText(
+                        debug_img,
+                        label,
+                        (x + 5, y + h - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        label_color,
+                        1,
+                    )
             else:
-                # Draw contours for other features
+                # Draw contours for other features directly on the debug image
                 cv2.drawContours(debug_img, [px_verts], -1, feature_color, 1)
+
+        # Blend the overlay with the debug image
+        cv2.addWeighted(overlay, alpha, debug_img, 1 - alpha, 0, debug_img)
 
         filename = os.path.join(save_path, f"{region_id}_{suffix}.png")
         cv2.imwrite(filename, debug_img)
@@ -88,6 +109,7 @@ class MapAnalyzer:
             raise ValueError("Input image to analyze_region cannot be None")
 
         color_profile, kmeans_model = self.color_analyzer.analyze(img)
+        labels = kmeans_model.predict(img.reshape(-1, 3))
         context = _RegionAnalysisContext()
 
         log.info("Executing Stage 4: Structural Image Preparation...")
@@ -117,30 +139,29 @@ class MapAnalyzer:
                 py = y_coord + grid_info.offset_y
                 cv2.line(debug_canvas, (0, py), (w, py), grid_color, 1)
 
-        log.info("Executing Stage 6: High-Resolution Feature & Layer Detection...")
-        corrected_floor = floor_only_img.copy()
-
-        # This call is intentionally simple to get just the layers first
-        temp_layers = self.feature_extractor.extract(
-            img, [], grid_info, color_profile, kmeans_model, {}
+        log.info("⚙️  Executing Stage 6: Environmental Layer Detection...")
+        context.enhancement_layers = self.feature_extractor.extract_layers(
+            img, grid_info, color_profile, kmeans_model, labels
         )
 
         if save_intermediate_path:
             self._save_feature_detection_debug_image(
                 img,
-                temp_layers,
+                context.enhancement_layers,
                 grid_info.size,
                 region_context["id"],
                 save_intermediate_path,
                 "pass1_layers",
             )
 
-        if temp_layers.get("layers"):
+        log.info("Refining floor plan based on detected layers...")
+        corrected_floor = floor_only_img.copy()
+        if context.enhancement_layers.get("layers"):
             log.info(
                 "Refining floor plan using %d detected environmental layer(s).",
-                len(temp_layers["layers"]),
+                len(context.enhancement_layers["layers"]),
             )
-            for layer in temp_layers["layers"]:
+            for layer in context.enhancement_layers["layers"]:
                 px_verts = (
                     np.array(
                         [
@@ -167,24 +188,35 @@ class MapAnalyzer:
             grid_info,
             color_profile,
             tile_classifications,
-            context=context,
             debug_canvas=debug_canvas,
         )
 
-        # Now extract the other features, passing in the context with doors
-        context.enhancement_layers = self.feature_extractor.extract(
+        log.info("⚙️  Executing Stage 8: High-Resolution Feature Extraction...")
+        context.enhancement_layers = self.feature_extractor.extract_features(
             img,
             room_contours,
             grid_info,
             color_profile,
             kmeans_model,
             context.enhancement_layers,
+            labels,
+        )
+
+        # --- New Final Step: Passageway Door Detection ---
+        self.structure_analyzer.detect_passageway_doors(
+            context.tile_grid,
+            structural_img,
+            grid_info,
+            color_profile,
+            context,
+            debug_canvas,
         )
 
         if llava_mode and ollama_url and ollama_model:
             num_features = len(context.enhancement_layers.get("features", []))
             log.info(
-                "Executing Stage 8: LLaVA Feature Enhancement on %d features...", num_features
+                "⚙️  Executing Stage 9: LLaVA Feature Enhancement on %d features...",
+                num_features,
             )
             log.debug("Calling LLaVA feature enhancement in '%s' mode.", llava_mode)
             self.llava_enhancer = LLaVAFeatureEnhancer(
@@ -208,14 +240,12 @@ class MapAnalyzer:
                 save_intermediate_path,
                 "pass2_features",
             )
-
-        # Save the completed debug canvas if it was created
-        if debug_canvas is not None and save_intermediate_path:
-            filename = os.path.join(
-                save_intermediate_path, f"{region_context['id']}_wall_detection.png"
-            )
-            cv2.imwrite(filename, debug_canvas)
-            log.info("Saved wall detection debug image to %s", filename)
+            if debug_canvas is not None:
+                filename = os.path.join(
+                    save_intermediate_path, f"{region_context['id']}_wall_detection.png"
+                )
+                cv2.imwrite(filename, debug_canvas)
+                log.info("Saved wall detection debug image to %s", filename)
 
         if ascii_debug and context.tile_grid:
             log.info("--- ASCII Debug Output (Pre-Transformation) ---")
@@ -327,7 +357,7 @@ class MapAnalyzer:
     def _get_floor_plan_contours(
         self, floor_only_image: np.ndarray, grid_size: int
     ) -> List[np.ndarray]:
-        """Helper to get clean room contours from the floor-only binary image."""
+        """Helper to get clean room contours from the floor-only image."""
         log.debug("Extracting floor plan contours from floor-only image.")
         contours, _ = cv2.findContours(
             floor_only_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE

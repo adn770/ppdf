@@ -17,7 +17,7 @@ class ColorAnalyzer:
         """
         Analyzes image colors and returns a color profile.
         """
-        log.info("Executing Stage 3: Multi-Pass Color Analysis...")
+        log.info("⚙️  Executing Stage 3: Multi-Pass Color Analysis...")
         pixels = img.reshape(-1, 3)
         kmeans = KMeans(n_clusters=num_colors, random_state=42, n_init=10).fit(pixels)
         palette_bgr = kmeans.cluster_centers_.astype("uint8")

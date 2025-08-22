@@ -50,7 +50,7 @@ class MapTransformer:
 
     def transform(self, context: _RegionAnalysisContext, grid_size: int) -> List[Any]:
         """Transforms the context object into final MapObject entities."""
-        log.info("Executing Stage 8: Transformation to MapData...")
+        log.info("⚙️  Executing Stage 10: Transformation to MapData...")
         tile_grid = context.tile_grid
         if not tile_grid:
             return []

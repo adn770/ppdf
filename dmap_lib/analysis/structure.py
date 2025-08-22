@@ -19,12 +19,12 @@ log_grid = logging.getLogger("dmap.grid")
 class StructureAnalyzer:
     """Identifies the core grid-based structure of the map."""
 
-    def _detect_passageway_doors(
+    def detect_passageway_doors(
         self,
         tile_grid: Dict[Tuple[int, int], _TileData],
         structural_img: np.ndarray,
         grid_info: _GridInfo,
-        stroke_bgr: np.ndarray,
+        color_profile: Dict[str, Any],
         context: _RegionAnalysisContext,
         debug_canvas: Optional[np.ndarray] = None,
     ):
@@ -33,6 +33,9 @@ class StructureAnalyzer:
         are found within tiles. Operates on an ABSOLUTE grid.
         """
         log.info("Executing new pass: Passageway Door Classification...")
+        roles_inv = {v: k for k, v in color_profile["roles"].items()}
+        stroke_bgr = np.array(roles_inv.get("stroke", (0, 0, 0))[::-1], dtype="uint8")
+
         processed_tiles = set()
         inset = int(grid_info.size * 0.05)
         door_search_color = (0, 255, 0)  # Green for door search areas
@@ -73,10 +76,40 @@ class StructureAnalyzer:
             h = grid_info.size - (2 * inset)
             tile_slice = structural_img[px_y : px_y + h, px_x : px_x + w]
 
-            if cv2.countNonZero(cv2.cvtColor(tile_slice, cv2.COLOR_BGR2GRAY)) > 40:
+            # Create a mask for the specific stroke color and count those pixels.
+            stroke_mask = cv2.inRange(tile_slice, stroke_bgr, stroke_bgr)
+            if cv2.countNonZero(stroke_mask) > 10:
                 door_type = "door"
             else:
                 continue
+
+            # The vertices for the pre-classified feature now reflect the inset pixel area.
+            inset_factor = inset / grid_info.size
+            verts = [
+                {
+                    "x": round(float(x + inset_factor), 2),
+                    "y": round(float(y + inset_factor), 2),
+                },
+                {
+                    "x": round(float(x + 1 - inset_factor), 2),
+                    "y": round(float(y + inset_factor), 2),
+                },
+                {
+                    "x": round(float(x + 1 - inset_factor), 2),
+                    "y": round(float(y + 1 - inset_factor), 2),
+                },
+                {
+                    "x": round(float(x + inset_factor), 2),
+                    "y": round(float(y + 1 - inset_factor), 2),
+                },
+            ]
+            door_feature = {
+                "featureType": "door",
+                "gridVertices": verts,
+                "properties": {"z-order": 1, "detection_tile": (x, y)},
+            }
+            context.enhancement_layers.setdefault("features", []).append(door_feature)
+            log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
 
             if is_vertical_passageway:
                 neighbor_south = tile_grid.get((x, y + 1))
@@ -86,20 +119,6 @@ class StructureAnalyzer:
                     neighbor_south.north_wall = door_type
                     processed_tiles.add((x, y))
                     processed_tiles.add((x, y + 1))
-
-                    verts = [
-                        {"x": round(float(x + 0.1), 1), "y": round(float(y + 0.8), 1)},
-                        {"x": round(float(x + 0.9), 1), "y": round(float(y + 0.8), 1)},
-                        {"x": round(float(x + 0.9), 1), "y": round(float(y + 1.2), 1)},
-                        {"x": round(float(x + 0.1), 1), "y": round(float(y + 1.2), 1)},
-                    ]
-                    door_feature = {
-                        "featureType": "door",
-                        "gridVertices": verts,
-                        "properties": {"z-order": 1, "detection_tile": (x, y)},
-                    }
-                    context.enhancement_layers.setdefault("features", []).append(door_feature)
-                    log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
 
             elif is_horizontal_passageway:
                 neighbor_east = tile_grid.get((x + 1, y))
@@ -111,20 +130,6 @@ class StructureAnalyzer:
                     neighbor_east.west_wall = door_type
                     processed_tiles.add((x, y))
                     processed_tiles.add((x + 1, y))
-
-                    verts = [
-                        {"x": round(float(x + 0.8), 1), "y": round(float(y + 0.1), 1)},
-                        {"x": round(float(x + 1.2), 1), "y": round(float(y + 0.1), 1)},
-                        {"x": round(float(x + 1.2), 1), "y": round(float(y + 0.9), 1)},
-                        {"x": round(float(x + 0.8), 1), "y": round(float(y + 0.9), 1)},
-                    ]
-                    door_feature = {
-                        "featureType": "door",
-                        "gridVertices": verts,
-                        "properties": {"z-order": 1, "detection_tile": (x, y)},
-                    }
-                    context.enhancement_layers.setdefault("features", []).append(door_feature)
-                    log.debug("Created pre-classified door feature at tile (%d, %d)", x, y)
 
     def classify_tile_content(
         self, feature_cleaned_img: np.ndarray, grid_info: _GridInfo
@@ -165,7 +170,7 @@ class StructureAnalyzer:
         room_bounds: List[Tuple[int, int, int, int]],
     ) -> _GridInfo:
         """Discovers grid size via peak-finding and offset via room bounds."""
-        log_grid.info("Executing Stage 5: Grid Discovery...")
+        log_grid.info("⚙️  Executing Stage 5: Grid Discovery...")
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
         stroke_rgb = roles_inv.get("stroke", (0, 0, 0))
         stroke_bgr = np.array(stroke_rgb[::-1], dtype="uint8")
@@ -222,11 +227,10 @@ class StructureAnalyzer:
         grid_info: _GridInfo,
         color_profile: Dict[str, Any],
         tile_classifications: Dict[Tuple[int, int], str],
-        context: "dmap_lib.analysis.context._RegionAnalysisContext",
         debug_canvas: Optional[np.ndarray] = None,
     ) -> Dict[Tuple[int, int], _TileData]:
         """Perform score-based wall detection and core structure classification."""
-        log.info("Executing Stage 7: Core Structure Classification...")
+        log.info("⚙️  Executing Stage 7: Core Structure Classification...")
         tile_grid: Dict[Tuple[int, int], _TileData] = {}
         if not tile_classifications:
             return {}
@@ -364,12 +368,6 @@ class StructureAnalyzer:
                     stroke_bgr,
                     WALL_CONFIDENCE_THRESHOLD,
                 )
-
-        # Passageway door detection now operates on the absolute grid
-        self._detect_passageway_doors(
-            tile_grid, structural_img, grid_info, stroke_bgr, context, debug_canvas
-        )
-
         return tile_grid
 
     def _process_boundary(

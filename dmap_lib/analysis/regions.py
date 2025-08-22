@@ -17,7 +17,7 @@ log_ocr.info("EasyOCR reader initialized.")
 
 def detect_content_regions(img: np.ndarray) -> List[Dict[str, Any]]:
     """Stage 1: Detect distinct, separate content regions in the map image."""
-    log.info("Executing Stage 1: Region Detection...")
+    log.info("⚙️  Executing Stage 1: Region Detection...")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 230, 255, cv2.THRESH_BINARY_INV)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -43,7 +43,7 @@ def parse_text_metadata(
     region_contexts: List[Dict[str, Any]],
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """Stage 2: Classify regions and parse text for metadata."""
-    log.info("Executing Stage 2: Text & Metadata Parsing...")
+    log.info("⚙️  Executing Stage 2: Text & Metadata Parsing...")
     if not region_contexts:
         return {}, []
 
