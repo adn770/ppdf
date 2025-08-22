@@ -279,82 +279,43 @@ def _generate_hatching_stipple(
     return stipples
 
 
-def _create_curvy_path(
-    polygon: Polygon,
-    resolution: int,
-    jitter: float,
-    smoothing_strength: float,
-    scale: float,
-    seed: int,
-) -> str:
+def _chaikin_smoothing(points: List[Tuple[float, float]], iterations: int) -> List[Tuple[float, float]]:
+    """Smooths a polygon's vertices using Chaikin's corner-cutting algorithm."""
+    for _ in range(iterations):
+        new_points = []
+        if not points:
+            return []
+        # Ensure the polygon is closed for the algorithm
+        if points[0] != points[-1]:
+            points.append(points[0])
+
+        for i in range(len(points) - 1):
+            p1 = np.array(points[i])
+            p2 = np.array(points[i + 1])
+            q = p1 * 0.75 + p2 * 0.25
+            r = p1 * 0.25 + p2 * 0.75
+            new_points.extend([tuple(q), tuple(r)])
+        points = new_points
+    return points
+
+
+def _create_curvy_path(polygon: Polygon, iterations: int) -> str:
     """Generates a smooth, organic, curvy SVG path from a Shapely Polygon."""
     if polygon.is_empty:
         return ""
 
     points = list(polygon.exterior.coords)
+    smoothed_points = _chaikin_smoothing(points, iterations)
 
-    # 1. Subdivide edges to create more vertices
-    subdivided_points = []
-    for i in range(len(points) - 1):
-        p1 = np.array(points[i])
-        p2 = np.array(points[i + 1])
-        for j in range(resolution):
-            subdivided_points.append(p1 + (p2 - p1) * (j / resolution))
-
-    if not subdivided_points:
+    if not smoothed_points:
         return ""
 
-    # 2. Perturb vertices using Perlin noise for a natural look
-    perturbed_points = []
-    octaves = 2
-    freq = 10.0 / scale  # Noise frequency scales with the map
-
-    for i, p in enumerate(subdivided_points):
-        # Calculate normal vector
-        p1 = np.array(p)
-        p2 = np.array(subdivided_points[(i + 1) % len(subdivided_points)])
-        edge_vec = p2 - p1
-        if np.linalg.norm(edge_vec) == 0:
-            continue
-        normal_vec = np.array([-edge_vec[1], edge_vec[0]])
-        normal_vec /= np.linalg.norm(normal_vec)
-
-        # Get noise value (normalized from -1 to 1)
-        noise_val = noise.pnoise2(p[0] * freq, p[1] * freq, octaves=octaves, base=seed)
-
-        displacement = noise_val * jitter * scale
-        perturbed_points.append(p1 + normal_vec * displacement)
-
-    if not perturbed_points:
-        return ""
-
-    # 3. Apply a convolutional smoothing kernel (weighted moving average)
-    smoothed_points = perturbed_points[:]
-    num_points = len(perturbed_points)
-    strength = max(0.0, min(1.0, smoothing_strength))
-
-    for _ in range(3):  # Apply smoothing multiple times for a better effect
-        for i in range(num_points):
-            prev_pt = smoothed_points[(i - 1 + num_points) % num_points]
-            curr_pt = smoothed_points[i]
-            next_pt = smoothed_points[(i + 1) % num_points]
-
-            # Weighted average: 25% previous, 50% current, 25% next
-            new_pt = curr_pt * (1 - strength) + (prev_pt + next_pt) * (strength / 2)
-            smoothed_points[i] = new_pt
-
-    # 4. Create a smooth Catmull-Rom spline, converted to cubic Bézier for SVG
-    path_data = f"M {smoothed_points[0][0]:.2f} {smoothed_points[0][1]:.2f}"
-    pts = [smoothed_points[-1]] + smoothed_points + [smoothed_points[0], smoothed_points[1]]
-
-    for i in range(1, len(pts) - 2):
-        p0, p1, p2, p3 = pts[i - 1], pts[i], pts[i + 1], pts[i + 2]
-        c1 = p1 + (p2 - p0) / 6.0
-        c2 = p2 - (p3 - p1) / 6.0
-        path_data += (
-            f" C {c1[0]:.2f},{c1[1]:.2f} {c2[0]:.2f},{c2[1]:.2f} {p2[0]:.2f},{p2[1]:.2f}"
-        )
-
+    path_data = " ".join(
+        [
+            f"{'M' if i == 0 else 'L'} {x:.2f} {y:.2f}"
+            for i, (x, y) in enumerate(smoothed_points)
+        ]
+    )
     return path_data
 
 
@@ -364,12 +325,7 @@ def _render_water_layer(layer: schema.EnvironmentalLayer, styles: dict) -> str:
         return ""
 
     base_color = styles.get("water_base_color", "#AEC6CF")
-    ripple_color = styles.get("water_ripple_color", "#77AADD")
-    ripple_steps = styles.get("water_ripple_steps", 4)
-    ripple_spacing = styles.get("water_ripple_spacing", 0.1) * PIXELS_PER_GRID
-    resolution = styles.get("water_curve_resolution", 10)
-    jitter = styles.get("water_curve_jitter", 0.3)
-    smoothing = styles.get("water_curve_smoothing_strength", 0.5)
+    smoothing_iterations = styles.get("water_smoothing_iterations", 4)
 
     poly = Polygon(
         [(v.x * PIXELS_PER_GRID, v.y * PIXELS_PER_GRID) for v in layer.gridVertices]
@@ -378,39 +334,13 @@ def _render_water_layer(layer: schema.EnvironmentalLayer, styles: dict) -> str:
         return ""
 
     svg_parts = ['<g class="water-effect">']
-    # Use a consistent seed for each water body for stable output
-    seed = int(poly.centroid.x + poly.centroid.y)
 
-    base_path_data = _create_curvy_path(
-        poly, resolution, jitter, smoothing, PIXELS_PER_GRID, seed
-    )
+    # Use buffer(0) to fix any invalid geometry before smoothing
+    base_poly = poly.buffer(0)
+    base_path_data = _create_curvy_path(base_poly, smoothing_iterations)
     if not base_path_data:
         return ""
     svg_parts.append(f'<path d="{base_path_data} Z" fill="{base_color}" />')
-
-    for i in range(ripple_steps):
-        ripple_jitter = jitter * (1 - (i + 1) / (ripple_steps + 1))
-        inner_poly = poly.buffer(-(ripple_spacing * (i + 1)))
-        if inner_poly.is_empty:
-            break
-
-        geoms = inner_poly.geoms if hasattr(inner_poly, "geoms") else [inner_poly]
-        for geom in geoms:
-            if geom.is_empty or not isinstance(geom, Polygon):
-                continue
-            ripple_path_data = _create_curvy_path(
-                geom,
-                resolution // (i + 1),
-                ripple_jitter,
-                smoothing,
-                PIXELS_PER_GRID,
-                seed + i + 1,
-            )
-            if ripple_path_data:
-                svg_parts.append(
-                    f'<path d="{ripple_path_data} Z" fill="none" stroke="{ripple_color}" stroke-width="1.5"/>'
-                )
-
     svg_parts.append("</g>")
     return "".join(svg_parts)
 
@@ -551,12 +481,7 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
         "line_thickness": 7.0,
         "hatch_density": 1.0,
         "water_base_color": "#AEC6CF",
-        "water_ripple_color": "#77AADD",
-        "water_ripple_steps": 4,
-        "water_ripple_spacing": 0.1,
-        "water_curve_resolution": 10,
-        "water_curve_jitter": 0.3,
-        "water_curve_smoothing_strength": 0.5,
+        "water_smoothing_iterations": 4,
     }
     styles.update({k: v for k, v in style_options.items() if v is not None})
     log.debug("Using styles: %s", styles)
@@ -649,6 +574,8 @@ def render_svg(map_data: schema.MapData, style_options: dict) -> str:
                     f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />'
                 )
         elif isinstance(obj, schema.Feature):
+            if "door" in obj.featureType:
+                continue
             points = _get_polygon_points_str(obj.gridVertices, PIXELS_PER_GRID)
             layers["contents"].append(
                 f'<polygon points="{points}" fill="none" stroke="{styles["wall_color"]}" stroke-width="2.0"/>'
