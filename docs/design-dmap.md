@@ -193,9 +193,11 @@ API for analysis and rendering.
     sketchy exterior border hatching. It uses a tile-based approach combined with
     Perlin noise to displace line cluster anchors, avoiding mechanical repetition
     for a hand-drawn aesthetic.
--   **`WaterRenderer`**: Handles the rendering of water layers. It uses Chaikin's
-    corner-cutting algorithm (`_chaikin_smoothing`) to generate smooth, wavy, and
-    natural-looking shorelines from the underlying geometric polygons.
+-   **`WaterRenderer`**: Handles the rendering of water layers. It uses a two-stage
+    process to generate smooth, natural shorelines. First, the raw water polygon is
+    simplified using the Douglas-Peucker algorithm to remove high-frequency noise.
+    Then, a Catmull-Rom spline is used to interpolate the simplified points into a
+    final, organic curve.
 
 #### 3.3.2. Render Style Specification
 -   **Color Palette**:
@@ -1595,3 +1597,74 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
             `SVGRenderer` class instead of the old procedural function.
     * **Outcome**: A fully object-oriented rendering engine that is more robust,
         extensible, and aligns better with the design of the analysis pipeline.
+
+### Phase 24: Advanced Rendering and Bug Fixes
+* **Milestone 72: Implement Catmull-Rom Spline Algorithm**
+    * **Goal**: To create the core mathematical implementation for the spline generation.
+    * **Description**: This milestone replaces the Chaikin smoothing algorithm with a
+        Catmull-Rom spline interpolation to create more fluid and organic curves for
+        features like water shorelines.
+    * **Key Tasks**:
+        1.  In `dmap_lib/rendering/water.py`, create a new private helper function
+            `_catmull_rom_spline`.
+        2.  This function will take a list of points, a tension value, and the number
+            of points to generate between each control point.
+        3.  Implement the Catmull-Rom formula to calculate the interpolated points.
+        4.  Replace the existing `_chaikin_smoothing` function with this new
+            implementation in the `_create_curvy_path` helper.
+    * **Outcome**: The rendering engine can now produce higher-quality, smoother curves,
+        significantly improving the visual appeal of natural features.
+
+* **Milestone 73: Integrate Polygon Simplification**
+    * **Goal**: To add a preparatory simplification step to the water rendering
+        pipeline to prevent visual artifacts.
+    * **Description**: This milestone introduces a crucial pre-processing step for the
+        Catmull-Rom spline. By simplifying the source polygon before interpolation,
+        we can avoid self-intersections, loops, and other artifacts that can occur
+        when applying splines to complex, noisy geometries.
+    * **Key Tasks**:
+        1.  In `WaterRenderer.render`, before the polygon is passed to the spline
+            function, apply the `polygon.simplify()` method from the `shapely`
+            library.
+        2.  Add a new style option, `water_simplification_factor`, to the
+            `_initialize_styles` method in `svg_renderer.py` to make the
+            simplification tolerance configurable.
+        3.  Update the design document to reflect the new Shapely simplification +
+            Catmull-Rom spline process.
+    * **Outcome**: The water rendering pipeline is now more robust and produces
+        consistently high-quality results without rendering artifacts.
+
+* **Milestone 74: Implement Water Layer Clipping**
+    * **Goal**: To prevent the procedural water effect from rendering outside the
+        bounds of its containing room.
+    * **Description**: This milestone introduces a clipping step into the water
+        rendering process. The parent room's polygon is used to perform a geometric
+        intersection with the water layer's polygon, ensuring the final smoothed
+        path is perfectly contained.
+    * **Key Tasks**:
+        1.  Update the `WaterRenderer.render` method to accept an optional
+            `clip_polygon`.
+        2.  Implement the `intersection` logic within the `WaterRenderer`.
+        3.  Modify the `SVGRenderer` to identify the parent room of each water layer
+            and pass its polygon to the `WaterRenderer`.
+    * **Outcome**: The water effect is correctly clipped to the room's interior,
+        preventing any visual "spilling" and producing a cleaner, more accurate map.
+
+* **Milestone 75: Fix Content-to-Room Linking Logic**
+    * **Goal**: To correctly associate features and layers with their parent rooms
+        *after* rooms have been merged.
+    * **Description**: This milestone fixes a critical logical flaw where content was
+        linked to rooms before the pre-rendering merge pass. This caused content in
+        merged areas to be orphaned and not rendered correctly. The fix moves the
+        linking logic into the renderer, ensuring it runs on the final, merged room
+        shapes.
+    * **Key Tasks**:
+        1.  Remove the content-linking logic from `dmap_lib/analysis/transformer.py`.
+        2.  In `dmap_lib/rendering/svg_renderer.py`, implement a new step after room
+            merging that correctly associates each feature and layer with its final
+            parent `_RenderableShape`.
+        3.  Ensure the `contents` list of each `_RenderableShape` is populated
+            correctly before the main rendering loop.
+    * **Outcome**: All features and layers, including water, are now correctly
+        associated with their final parent rooms, enabling accurate clipping and
+        rendering.
