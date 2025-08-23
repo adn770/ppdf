@@ -35,7 +35,9 @@ class HatchingRenderer:
         grid_max_y = (height - ty) / grid_size
 
         hatch_distance_limit = 2.0 * grid_size
-        underlay_color = self.styles.get("glow_color", "#C0C0C0")
+        underlay_color = self.styles.get("hatching_underlay_color", "#C0C0C0")
+        min_stroke = self.styles.get("hatching_stroke_width_min", 1.5)
+        max_stroke = self.styles.get("hatching_stroke_width_max", 2.0)
 
         for gx in range(math.floor(grid_min_x), math.ceil(grid_max_x)):
             for gy in range(math.floor(grid_min_y), math.ceil(grid_max_y)):
@@ -200,7 +202,7 @@ class HatchingRenderer:
                                 + noise.pnoise2(p2[0] * 0.1, p2[1] * 0.1, base=13)
                                 * wobble_strength,
                             )
-                            stroke_w = f'stroke-width="{random.uniform(1.5, 2.0):.2f}"'
+                            stroke_w = f'stroke-width="{random.uniform(min_stroke, max_stroke):.2f}"'
                             hatch_lines.append(
                                 f'<line x1="{p1[0]:.2f}" y1="{p1[1]:.2f}" x2="{p2[0]:.2f}" y2="{p2[1]:.2f}" {stroke_w}/>'
                             )

@@ -40,9 +40,22 @@ class SVGRenderer:
             "wall_color": "#000000",
             "shadow_color": "#999999",
             "glow_color": "#C0C0C0",
+            "door_fill_color": "#FFFFFF",
+            "door_stroke_color": "#000000",
+            "feature_stroke_color": "#000000",
+            "grid_color": "#AEC6CF",
+            "grid_stroke_opacity": 0.5,
+            "grid_stroke_width": 1.0,
+            "hatching_underlay_color": "#C0C0C0",
             "line_thickness": 7.0,
+            "door_stroke_width": 5.0,
+            "feature_stroke_width": 2.0,
+            "hatching_stroke_width": 1.0,
+            "hatching_stroke_width_min": 1.5,
+            "hatching_stroke_width_max": 2.0,
             "hatch_density": 1.0,
             "water_base_color": "#AEC6CF",
+            "layer_default_color": "#808080",
             "water_tension": 0.5,
             "water_num_points": 10,
             "water_simplification_factor": 0.1,
@@ -140,7 +153,7 @@ class SVGRenderer:
                     f'<path d="{path_data}" fill="none" stroke="{self.styles["wall_color"]}" stroke-width="{lt}"/>'
                 )
             elif isinstance(obj, schema.Door):
-                lt = self.styles["line_thickness"]
+                lt = self.styles["line_thickness"] * 2
                 dw, dh = (
                     (lt, self.PIXELS_PER_GRID * 0.5)
                     if obj.orientation == "v"
@@ -157,7 +170,7 @@ class SVGRenderer:
                     else (obj.gridPos.y * self.PIXELS_PER_GRID) - dh / 2
                 )
                 layers["doors"].append(
-                    f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{self.styles["room_color"]}" stroke="{self.styles["wall_color"]}" stroke-width="5.0" />'
+                    f'<rect x="{dx}" y="{dy}" width="{dw}" height="{dh}" fill="{self.styles["door_fill_color"]}" stroke="{self.styles["door_stroke_color"]}" stroke-width="{self.styles["door_stroke_width"]}" />'
                 )
             elif isinstance(obj, (schema.EnvironmentalLayer, schema.Feature)):
                 z_ordered_objects.append(obj)
@@ -171,15 +184,13 @@ class SVGRenderer:
                 layer_poly_grid = Polygon([(v.x, v.y) for v in obj.gridVertices])
                 for shape in renderable_shapes:
                     if shape.polygon.intersects(layer_poly_grid):
-                        intersection_area = shape.polygon.intersection(layer_poly_grid).area
-                        if intersection_area > layer_poly_grid.area * 0.99:
-                            clip_poly_pixels = Polygon(
-                                [
-                                    (v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID)
-                                    for v in shape.polygon.exterior.coords
-                                ]
-                            )
-                            break
+                        clip_poly_pixels = Polygon(
+                            [
+                                (v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID)
+                                for v in shape.polygon.exterior.coords
+                            ]
+                        )
+                        break
 
                 if obj.layerType == "water":
                     layers["contents"].append(
@@ -187,7 +198,9 @@ class SVGRenderer:
                     )
                 else:
                     points = get_polygon_points_str(obj.gridVertices, self.PIXELS_PER_GRID)
-                    color = self.styles.get(f"{obj.layerType}_color", "#808080")
+                    color = self.styles.get(
+                        f"{obj.layerType}_color", self.styles["layer_default_color"]
+                    )
                     layers["contents"].append(
                         f'<polygon points="{points}" fill="{color}" fill-opacity="0.5" />'
                     )
@@ -196,27 +209,27 @@ class SVGRenderer:
                     continue
                 points = get_polygon_points_str(obj.gridVertices, self.PIXELS_PER_GRID)
                 layers["contents"].append(
-                    f'<polygon points="{points}" fill="none" stroke="{self.styles["wall_color"]}" stroke-width="2.0"/>'
+                    f'<polygon points="{points}" fill="none" stroke="{self.styles["feature_stroke_color"]}" stroke-width="{self.styles["feature_stroke_width"]}"/>'
                 )
 
         self._render_hatching(layers, objects_to_render, width, height, tx, ty)
 
         render_order = [
-            "shadows",
-            "glows",
             "hole_fills",
             "hatching_underlay",
             "hatching",
+            "shadows",
             "room_fills",
+            "glows",
             "contents",
-            "doors",
             "walls",
+            "doors",
         ]
         for name in render_order:
             if layers[name]:
                 if name == "hatching":
                     svg.append(
-                        f'<g id="hatching" stroke="{self.styles["wall_color"]}" stroke-width="1.0">{"".join(layers[name])}</g>'
+                        f'<g id="hatching" stroke="{self.styles["wall_color"]}" stroke-width="{self.styles["hatching_stroke_width"]}">{"".join(layers[name])}</g>'
                     )
                 else:
                     svg.append(f'<g id="{name}">{"".join(layers[name])}</g>')
@@ -288,7 +301,9 @@ class SVGRenderer:
 
     def _render_grid(self, svg: List[str], width: float, height: float, tx: float, ty: float):
         """Renders the debug grid lines."""
-        svg.append(f'<g id="grid" stroke="#AEC6CF" stroke-width="1" stroke-opacity="0.5">')
+        svg.append(
+            f'<g id="grid" stroke="{self.styles["grid_color"]}" stroke-width="{self.styles["grid_stroke_width"]}" stroke-opacity="{self.styles["grid_stroke_opacity"]}">'
+        )
         x = tx % self.PIXELS_PER_GRID
         while x < width:
             svg.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{height}" />')

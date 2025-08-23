@@ -1,4 +1,5 @@
 # --- dmap_lib/rendering/water.py ---
+import logging
 from typing import List, Tuple, Dict, Optional
 
 import numpy as np
@@ -6,6 +7,9 @@ from shapely.geometry import Polygon
 
 from dmap_lib import schema
 from dmap_lib.rendering.constants import PIXELS_PER_GRID
+from .geometry import polygon_to_svg_path
+
+log = logging.getLogger("dmap.render")
 
 
 def _catmull_rom_spline(
@@ -55,17 +59,17 @@ def _catmull_rom_spline(
     return out_points
 
 
-def _create_curvy_path(
+def _create_smooth_polygon(
     polygon: Polygon, tension: float, num_points: int, simplification_tolerance: float
-) -> str:
-    """Generates a smooth, organic, curvy SVG path from a Shapely Polygon."""
+) -> Polygon:
+    """Generates a smooth, organic, curvy Shapely Polygon from an input Polygon."""
     if polygon.is_empty:
-        return ""
+        return polygon
 
     # Preparatory Step: Simplify the polygon to prevent interpolation artifacts
     simplified_poly = polygon.simplify(simplification_tolerance, preserve_topology=True)
     if simplified_poly.is_empty or not hasattr(simplified_poly.exterior, "coords"):
-        return ""
+        return polygon
 
     points = list(simplified_poly.exterior.coords)
     # Ensure the polygon is closed for the algorithm
@@ -74,16 +78,10 @@ def _create_curvy_path(
 
     smoothed_points = _catmull_rom_spline(points, num_points, tension)
 
-    if not smoothed_points:
-        return ""
+    if not smoothed_points or len(smoothed_points) < 3:
+        return polygon  # Return original if smoothing fails
 
-    path_data = " ".join(
-        [
-            f"{'M' if i == 0 else 'L'} {x:.2f} {y:.2f}"
-            for i, (x, y) in enumerate(smoothed_points)
-        ]
-    )
-    return path_data
+    return Polygon(smoothed_points)
 
 
 class WaterRenderer:
@@ -116,17 +114,21 @@ class WaterRenderer:
 
         svg_parts = ['<g class="water-effect">']
 
-        base_poly = poly.buffer(0)
-
-        # New Step: Clip the water polygon to the parent room's geometry
-        if clip_polygon and not clip_polygon.is_empty:
-            base_poly = base_poly.intersection(clip_polygon)
-
-        base_path_data = _create_curvy_path(
-            base_poly, tension, num_points, simplification_tolerance
+        # 1. First, create the smoothed, curvy version of the polygon.
+        smoothed_poly = _create_smooth_polygon(
+            poly, tension, num_points, simplification_tolerance
         )
+
+        # 2. Then, clip the *smoothed* polygon against the room's geometry.
+        final_poly = smoothed_poly
+        if clip_polygon and not clip_polygon.is_empty:
+            final_poly = smoothed_poly.intersection(clip_polygon)
+
+        # 3. Convert the final, clipped geometry to an SVG path.
+        base_path_data = polygon_to_svg_path(final_poly, 1.0)  # Already in pixels
         if not base_path_data:
             return ""
-        svg_parts.append(f'<path d="{base_path_data} Z" fill="{base_color}" />')
+
+        svg_parts.append(f'<path d="{base_path_data}" fill="{base_color}" />')
         svg_parts.append("</g>")
         return "".join(svg_parts)
