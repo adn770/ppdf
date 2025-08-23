@@ -163,12 +163,17 @@ class FeatureExtractor:
             cnts, _ = cv2.findContours(w_mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             for c in cnts:
                 if cv2.contourArea(c) > grid_size * grid_size:
+                    # Create a Shapely Polygon and clean it to ensure validity
+                    poly = Polygon(c.squeeze()).buffer(0)
+                    if poly.is_empty or not isinstance(poly, Polygon):
+                        continue
+
                     verts = [
                         {
-                            "x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
-                            "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1),
+                            "x": round((v[0] - grid_info.offset_x) / grid_size, 1),
+                            "y": round((v[1] - grid_info.offset_y) / grid_size, 1),
                         }
-                        for v in c
+                        for v in poly.exterior.coords
                     ]
                     enhancement_layers["layers"].append(
                         {

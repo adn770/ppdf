@@ -1,5 +1,5 @@
 # --- dmap_lib/rendering/water.py ---
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 import numpy as np
 from shapely.geometry import Polygon
@@ -8,33 +8,71 @@ from dmap_lib import schema
 from dmap_lib.rendering.constants import PIXELS_PER_GRID
 
 
-def _chaikin_smoothing(points: List[Tuple[float, float]], iterations: int) -> List[Tuple[float, float]]:
-    """Smooths a polygon's vertices using Chaikin's corner-cutting algorithm."""
-    for _ in range(iterations):
-        new_points = []
-        if not points:
-            return []
-        # Ensure the polygon is closed for the algorithm
-        if points[0] != points[-1]:
-            points.append(points[0])
+def _catmull_rom_spline(
+    points: List[Tuple[float, float]], num_points: int, tension: float
+) -> List[Tuple[float, float]]:
+    """
+    Generates a smooth curve using a Catmull-Rom spline.
 
-        for i in range(len(points) - 1):
-            p1 = np.array(points[i])
-            p2 = np.array(points[i + 1])
-            q = p1 * 0.75 + p2 * 0.25
-            r = p1 * 0.25 + p2 * 0.75
-            new_points.extend([tuple(q), tuple(r)])
-        points = new_points
-    return points
+    Args:
+        points: A list of (x, y) control points.
+        num_points: The number of points to generate between each control point.
+        tension: The "tightness" of the curve (0=loose, 1=tight).
+
+    Returns:
+        A list of (x, y) points representing the smooth spline.
+    """
+    if not points or len(points) < 4:
+        return points  # Not enough points to form a spline
+
+    out_points = []
+    # Pad points for a closed loop by wrapping the list
+    points_padded = [points[-2]] + points + [points[1]]
+
+    for i in range(1, len(points_padded) - 2):
+        p0 = np.array(points_padded[i - 1])
+        p1 = np.array(points_padded[i])
+        p2 = np.array(points_padded[i + 1])
+        p3 = np.array(points_padded[i + 2])
+
+        # Catmull-Rom to Cardinal matrix conversion
+        t_matrix = np.array(
+            [
+                [0, 1, 0, 0],
+                [-tension, 0, tension, 0],
+                [2 * tension, tension - 3, 3 - 2 * tension, -tension],
+                [-tension, 2 - tension, tension - 2, tension],
+            ]
+        )
+        control_matrix = np.array([p0, p1, p2, p3])
+
+        # Generate points for the current segment
+        for t in np.linspace(0, 1, num_points):
+            t_vector = np.array([1, t, t**2, t**3])
+            new_point = t_vector @ t_matrix @ control_matrix
+            out_points.append(tuple(new_point))
+
+    return out_points
 
 
-def _create_curvy_path(polygon: Polygon, iterations: int) -> str:
+def _create_curvy_path(
+    polygon: Polygon, tension: float, num_points: int, simplification_tolerance: float
+) -> str:
     """Generates a smooth, organic, curvy SVG path from a Shapely Polygon."""
     if polygon.is_empty:
         return ""
 
-    points = list(polygon.exterior.coords)
-    smoothed_points = _chaikin_smoothing(points, iterations)
+    # Preparatory Step: Simplify the polygon to prevent interpolation artifacts
+    simplified_poly = polygon.simplify(simplification_tolerance, preserve_topology=True)
+    if simplified_poly.is_empty or not hasattr(simplified_poly.exterior, "coords"):
+        return ""
+
+    points = list(simplified_poly.exterior.coords)
+    # Ensure the polygon is closed for the algorithm
+    if len(points) > 1 and points[0] != points[-1]:
+        points.append(points[0])
+
+    smoothed_points = _catmull_rom_spline(points, num_points, tension)
 
     if not smoothed_points:
         return ""
@@ -54,13 +92,21 @@ class WaterRenderer:
     def __init__(self, styles: dict):
         self.styles = styles
 
-    def render(self, layer: schema.EnvironmentalLayer) -> str:
-        """Renders a water layer with a procedurally generated curvy effect."""
+    def render(
+        self, layer: schema.EnvironmentalLayer, clip_polygon: Optional[Polygon] = None
+    ) -> str:
+        """
+        Renders a water layer with a procedurally generated curvy effect, clipping
+        it to the provided polygon.
+        """
         if not layer.gridVertices:
             return ""
 
         base_color = self.styles.get("water_base_color", "#AEC6CF")
-        smoothing_iterations = self.styles.get("water_smoothing_iterations", 4)
+        tension = self.styles.get("water_tension", 0.5)
+        num_points = self.styles.get("water_num_points", 10)
+        simplification = self.styles.get("water_simplification_factor", 0.1)
+        simplification_tolerance = PIXELS_PER_GRID * simplification
 
         poly = Polygon(
             [(v.x * PIXELS_PER_GRID, v.y * PIXELS_PER_GRID) for v in layer.gridVertices]
@@ -70,9 +116,15 @@ class WaterRenderer:
 
         svg_parts = ['<g class="water-effect">']
 
-        # Use buffer(0) to fix any invalid geometry before smoothing
         base_poly = poly.buffer(0)
-        base_path_data = _create_curvy_path(base_poly, smoothing_iterations)
+
+        # New Step: Clip the water polygon to the parent room's geometry
+        if clip_polygon and not clip_polygon.is_empty:
+            base_poly = base_poly.intersection(clip_polygon)
+
+        base_path_data = _create_curvy_path(
+            base_poly, tension, num_points, simplification_tolerance
+        )
         if not base_path_data:
             return ""
         svg_parts.append(f'<path d="{base_path_data} Z" fill="{base_color}" />')

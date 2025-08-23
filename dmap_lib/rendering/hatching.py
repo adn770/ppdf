@@ -134,9 +134,7 @@ class HatchingRenderer:
                     p2_sec = section_points[(i + 1) % 3]
                     path_vertices = [cluster_anchor, p1_sec]
 
-                    idx1, idx2 = get_edge_index(p1_sec, gx, gy), get_edge_index(
-                        p2_sec, gx, gy
-                    )
+                    idx1, idx2 = get_edge_index(p1_sec, gx, gy), get_edge_index(p2_sec, gx, gy)
 
                     j = idx1
                     while j != idx2:
@@ -183,9 +181,7 @@ class HatchingRenderer:
                         )
 
                         clipped_line = section.intersection(long_line)
-                        if not clipped_line.is_empty and isinstance(
-                            clipped_line, LineString
-                        ):
+                        if not clipped_line.is_empty and isinstance(clipped_line, LineString):
                             p1, p2 = list(clipped_line.coords)
                             wobble_strength = grid_size * 0.03
                             p1 = (

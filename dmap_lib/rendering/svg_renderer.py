@@ -43,7 +43,9 @@ class SVGRenderer:
             "line_thickness": 7.0,
             "hatch_density": 1.0,
             "water_base_color": "#AEC6CF",
-            "water_smoothing_iterations": 4,
+            "water_tension": 0.5,
+            "water_num_points": 10,
+            "water_simplification_factor": 0.1,
         }
         styles.update({k: v for k, v in self.style_options.items() if v is not None})
         log.debug("Using styles: %s", styles)
@@ -63,7 +65,9 @@ class SVGRenderer:
             objects_to_render = [
                 o for o in objects_to_render if not isinstance(o, schema.Feature)
             ]
-            log.info("Feature rendering disabled. Rendering %d objects.", len(objects_to_render))
+            log.info(
+                "Feature rendering disabled. Rendering %d objects.", len(objects_to_render)
+            )
 
         if not objects_to_render:
             log.warning("No map objects to render.")
@@ -117,6 +121,7 @@ class SVGRenderer:
         """Organizes and renders all SVG layers."""
         layers: Dict[str, List[Any]] = defaultdict(list)
         z_ordered_objects = []
+        renderable_shapes = [o for o in objects_to_render if isinstance(o, _RenderableShape)]
 
         for obj in objects_to_render:
             if isinstance(obj, _RenderableShape):
@@ -162,8 +167,24 @@ class SVGRenderer:
         )
         for obj in z_ordered_objects:
             if isinstance(obj, schema.EnvironmentalLayer):
+                clip_poly_pixels = None
+                layer_poly_grid = Polygon([(v.x, v.y) for v in obj.gridVertices])
+                for shape in renderable_shapes:
+                    if shape.polygon.intersects(layer_poly_grid):
+                        intersection_area = shape.polygon.intersection(layer_poly_grid).area
+                        if intersection_area > layer_poly_grid.area * 0.99:
+                            clip_poly_pixels = Polygon(
+                                [
+                                    (v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID)
+                                    for v in shape.polygon.exterior.coords
+                                ]
+                            )
+                            break
+
                 if obj.layerType == "water":
-                    layers["contents"].append(self.water_renderer.render(obj))
+                    layers["contents"].append(
+                        self.water_renderer.render(obj, clip_poly_pixels)
+                    )
                 else:
                     points = get_polygon_points_str(obj.gridVertices, self.PIXELS_PER_GRID)
                     color = self.styles.get(f"{obj.layerType}_color", "#808080")
@@ -181,8 +202,15 @@ class SVGRenderer:
         self._render_hatching(layers, objects_to_render, width, height, tx, ty)
 
         render_order = [
-            "shadows", "glows", "hole_fills", "hatching_underlay", "hatching",
-            "room_fills", "contents", "doors", "walls",
+            "shadows",
+            "glows",
+            "hole_fills",
+            "hatching_underlay",
+            "hatching",
+            "room_fills",
+            "contents",
+            "doors",
+            "walls",
         ]
         for name in render_order:
             if layers[name]:
@@ -211,9 +239,15 @@ class SVGRenderer:
         all_polys = [s.polygon for s in renderable_shapes]
         pixel_polys = [
             Polygon(
-                [(v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID) for v in p.exterior.coords],
                 [
-                    [(v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID) for v in hole.coords]
+                    (v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID)
+                    for v in p.exterior.coords
+                ],
+                [
+                    [
+                        (v[0] * self.PIXELS_PER_GRID, v[1] * self.PIXELS_PER_GRID)
+                        for v in hole.coords
+                    ]
                     for hole in p.interiors
                 ],
             )
