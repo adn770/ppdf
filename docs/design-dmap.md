@@ -21,6 +21,9 @@ request into a formal plan that requires developer approval before execution.
     libraries are installed. All required `import` statements must be present.
 -   **File Content Presentation**: All generated source code for a specific file **must**
     begin with a single header line in the format: `# --- path/to/your/file.ext ---`.
+-   **File-Level Code Blocks**: All generated content for a specific file, whether source
+    code or a markdown document, **must** be enclosed within a single, top-level
+    markdown code block.
 -   **Asymmetric Guard Convention**: The developer may use multi-file guards (e.g.,
     `--- START FILE: ... ---`) for uploading source code context. These guards are
     for input only. The assistant's generated code **must not** contain these guards.
@@ -133,8 +136,15 @@ This structure promotes code reuse and clean separation of concerns.
 │   ├── `llm.py`: Ollama/LLaVA API communication and prompting.
 │   ├── `log_utils.py`: Utilities for configuring the logging system.
 │   ├── `prompts.py`: Constant definitions for LLM system prompts.
-│   ├── `schema.py`: Data structures (dataclasses) and JSON serialization.
-│   └── `rendering.py`: Procedural SVG generation logic.
+│   ├── `rendering/`: Procedural SVG generation logic.
+│   │   ├── `__init__.py`
+│   │   ├── `ascii_renderer.py`
+│   │   ├── `constants.py`
+│   │   ├── `geometry.py`
+│   │   ├── `hatching.py`
+│   │   ├── `svg_renderer.py`
+│   │   └── `water.py`
+│   └── `schema.py`: Data structures (dataclasses) and JSON serialization.
 │
 ├── **dmap.py**: The command-line executable script.
 │
@@ -172,15 +182,22 @@ API for analysis and rendering.
 ### 3.3. `rendering` Module
 -   **Purpose**: To handle the procedural generation of the SVG file.
 -   **Key Function**: `render_svg(map_data: MapData, style_options: dict) -> str`
-    -   Accepts a `MapData` object and style parameters.
-    -   Renders objects in a sequence that respects their type and `z-order`
-        property to ensure correct layering (e.g., water is drawn below columns).
-    -   Procedurally draws all `mapObjects`, including stylized `Feature`s and
-        `EnvironmentalLayer`s.
+-   **Architecture**: The rendering engine is an object-oriented system orchestrated
+    by the main `SVGRenderer` class. This class manages the overall rendering
+    process, including canvas setup, style management, and the sequential drawing of
+    SVG layers (shadows, glows, room fills, walls, doors, and other contents). It
+    delegates specialized, procedural rendering tasks to helper classes.
 
-#### 3.3.1. Render Style Specification
-This section defines the target visual style for the SVG output.
+#### 3.3.1. Specialized Renderers
+-   **`HatchingRenderer`**: Encapsulates the logic for generating the organic,
+    sketchy exterior border hatching. It uses a tile-based approach combined with
+    Perlin noise to displace line cluster anchors, avoiding mechanical repetition
+    for a hand-drawn aesthetic.
+-   **`WaterRenderer`**: Handles the rendering of water layers. It uses Chaikin's
+    corner-cutting algorithm (`_chaikin_smoothing`) to generate smooth, wavy, and
+    natural-looking shorelines from the underlying geometric polygons.
 
+#### 3.3.2. Render Style Specification
 -   **Color Palette**:
     -   **Background**: `#EDE0CE` (A light parchment color).
     -   **Room Fill**: `#FFFFFF` (White).
@@ -188,22 +205,7 @@ This section defines the target visual style for the SVG output.
     -   **Shadow/Offset**: `#999999` (A dark gray for the drop shadow effect).
     -   **Glow/Underlayer**: `#C0C0C0` (A light gray for a soft border effect).
 
--   **Layering and Effects**: The final look is achieved through multiple distinct layers
-    rendered from bottom to top: Shadow, Glow/Underlayer, Room Fill, and Main Walls.
-
--   **Procedural Hatching**:
-    -   An **optional** feature, controlled by the `--hatching` CLI flag.
-    -   When enabled, it generates a highly organic, sketchy look using a tile-based
-        approach combined with Perlin noise to displace line cluster anchors. This
-        avoids mechanical repetition and results in a hand-drawn aesthetic.
-
--   **Procedural Water Layers**:
-    -   Water shorelines are rendered using a Catmull-Rom spline algorithm
-        (`_create_curvy_path`) to generate smooth, wavy, and natural-looking paths
-        from the underlying geometric polygons, complete with multi-layered ripple
-        effects.
-
-#### 3.3.2. Pre-Rendering Merge Step
+#### 3.3.3. Pre-Rendering Merge Step
 -   Before rendering, the engine performs a merge pass on all `Room` objects.
 -   It uses a **Disjoint Set Union (DSU)** algorithm to identify all rooms that are
     geometrically adjacent and are not separated by a `Door` object.
@@ -1555,3 +1557,41 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Outcome**: The LLaVA model will be correctly prompted, enabling it to
         accurately refine the generic "door" and "stairs" pre-classifications into
         their final, specific types.
+
+### Phase 23: Rendering Engine Refactoring
+* **Milestone 70: Modularize Rendering Logic**
+    * **Goal**: To refactor the monolithic `rendering.py` module into a structured
+        package of single-responsibility modules.
+    * **Description**: This milestone improves maintainability by separating concerns.
+        The core rendering orchestration, geometric calculations, and specialized
+        procedural generation for features like water and hatching are moved into their
+        own dedicated files.
+    * **Key Tasks**:
+        1.  Create the `dmap_lib/rendering/` package directory.
+        2.  Create the `svg_renderer.py`, `geometry.py`, `hatching.py`, `water.py`, and
+            `constants.py` modules.
+        3.  Move the main `render_svg` orchestration logic into an `SVGRenderer` class
+            within `svg_renderer.py`.
+        4.  Relocate geometric helper functions and the `_RenderableShape` class to
+            `geometry.py`.
+        5.  Isolate all hatching and water generation logic into `HatchingRenderer` and
+            `WaterRenderer` classes in their respective modules.
+    * **Outcome**: A clean, organized rendering package where each module has a clear and
+        distinct purpose, making the system easier to extend and debug.
+
+* **Milestone 71: Implement Class-Based Rendering Orchestration**
+    * **Goal**: To convert the rendering pipeline from a procedural function to an
+        object-oriented process orchestrated by the `SVGRenderer` class.
+    * **Description**: This milestone finalizes the refactoring by implementing a
+        class-based approach. The `SVGRenderer` becomes the central point for
+        managing styles, orchestrating the drawing of layers, and delegating
+        specialized tasks to helper classes.
+    * **Key Tasks**:
+        1.  Implement the `SVGRenderer` class to manage the rendering lifecycle,
+            including style initialization, canvas setup, and layer ordering.
+        2.  Instantiate `HatchingRenderer` and `WaterRenderer` within the
+            `SVGRenderer` to handle their specific tasks.
+        3.  Update the main `dmap.py` script to instantiate and call the
+            `SVGRenderer` class instead of the old procedural function.
+    * **Outcome**: A fully object-oriented rendering engine that is more robust,
+        extensible, and aligns better with the design of the analysis pipeline.
