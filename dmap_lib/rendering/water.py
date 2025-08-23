@@ -101,6 +101,11 @@ class WaterRenderer:
             return ""
 
         base_color = self.styles.get("water_base_color", "#AEC6CF")
+        ripple_color = self.styles.get("water_ripple_color", "#FFFFFF")
+        ripple_count = self.styles.get("water_ripple_count", 3)
+        ripple_spacing = self.styles.get("water_ripple_spacing", 8)
+        ripple_increment = self.styles.get("water_ripple_spacing_increment", 2)
+        ripple_stroke_width = self.styles.get("water_ripple_stroke_width", 1.5)
         tension = self.styles.get("water_tension", 0.5)
         num_points = self.styles.get("water_num_points", 10)
         simplification = self.styles.get("water_simplification_factor", 0.1)
@@ -124,11 +129,25 @@ class WaterRenderer:
         if clip_polygon and not clip_polygon.is_empty:
             final_poly = smoothed_poly.intersection(clip_polygon)
 
-        # 3. Convert the final, clipped geometry to an SVG path.
+        # 3. Convert the final, clipped geometry to an SVG path for the base.
         base_path_data = polygon_to_svg_path(final_poly, 1.0)  # Already in pixels
         if not base_path_data:
             return ""
 
         svg_parts.append(f'<path d="{base_path_data}" fill="{base_color}" />')
+
+        # 4. Generate and render the ripple effect with incremental spacing.
+        total_inset = 0
+        for i in range(ripple_count):
+            current_spacing = ripple_spacing + (i * ripple_increment)
+            total_inset += current_spacing
+            ripple_poly = final_poly.buffer(-total_inset)
+            if ripple_poly.is_empty:
+                break
+            ripple_path_data = polygon_to_svg_path(ripple_poly, 1.0)
+            svg_parts.append(
+                f'<path d="{ripple_path_data}" fill="none" stroke="{ripple_color}" stroke-width="{ripple_stroke_width}" />'
+            )
+
         svg_parts.append("</g>")
         return "".join(svg_parts)

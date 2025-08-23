@@ -202,7 +202,9 @@ class HatchingRenderer:
                                 + noise.pnoise2(p2[0] * 0.1, p2[1] * 0.1, base=13)
                                 * wobble_strength,
                             )
-                            stroke_w = f'stroke-width="{random.uniform(min_stroke, max_stroke):.2f}"'
+                            stroke_w = (
+                                f'stroke-width="{random.uniform(min_stroke, max_stroke):.2f}"'
+                            )
                             hatch_lines.append(
                                 f'<line x1="{p1[0]:.2f}" y1="{p1[1]:.2f}" x2="{p2[0]:.2f}" y2="{p2[1]:.2f}" {stroke_w}/>'
                             )
