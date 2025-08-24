@@ -20,87 +20,13 @@ log_llm = logging.getLogger("dmap.llm")
 class FeatureExtractor:
     """Handles detection of non-grid-aligned features."""
 
-    def _consolidate_features(self, features: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Merges overlapping or very close feature polygons."""
-        if not features:
-            return []
-
-        log.debug("Consolidating %d raw feature candidates...", len(features))
-        polygons = []
-        for i, f in enumerate(features):
-            verts = [(v["x"], v.get("y", v["y"])) for v in f["gridVertices"]]
-            if len(verts) < 3:
-                continue
-            polygons.append(
-                {"poly": Polygon(verts), "original_feature": f, "id": i, "grouped": False}
-            )
-
-        groups = []
-        for i, p1_data in enumerate(polygons):
-            if p1_data["grouped"]:
-                continue
-
-            current_group = [p1_data]
-            p1_data["grouped"] = True
-
-            for j, p2_data in enumerate(polygons):
-                if i == j or p2_data["grouped"]:
-                    continue
-
-                # Merge if polygons are very close (e.g., within half a grid unit)
-                if p1_data["poly"].distance(p2_data["poly"]) < 0.5:
-                    current_group.append(p2_data)
-                    p2_data["grouped"] = True
-
-            groups.append(current_group)
-
-        consolidated = []
-        for group in groups:
-            if not group:
-                continue
-
-            # Merge all polygons in the group
-            merged_poly = unary_union([g["poly"] for g in group])
-
-            # Find the largest original feature to determine the type
-            largest_feature = max(group, key=lambda g: g["poly"].area)["original_feature"]
-
-            main_geom = (
-                max(merged_poly.geoms, key=lambda p: p.area)
-                if hasattr(merged_poly, "geoms")
-                else merged_poly
-            )
-
-            if main_geom.is_empty or not isinstance(main_geom, Polygon):
-                continue
-
-            new_verts = [
-                {"x": round(v[0], 1), "y": round(v[1], 1)} for v in main_geom.exterior.coords
-            ]
-
-            consolidated.append(
-                {
-                    "gridVertices": new_verts,
-                    "properties": largest_feature["properties"],
-                }
-            )
-
-        log.info(
-            "Consolidated %d candidates into %d final features.",
-            len(features),
-            len(consolidated),
-        )
-        return consolidated
-
-    def _classify_consolidated_features(
+    def _classify_features(
         self, features: List[Dict[str, Any]], grid_size: int
     ) -> List[Dict[str, Any]]:
         """
         Performs geometric classification on the final, consolidated feature shapes.
         """
-        log.debug(
-            "Performing geometric classification on %d consolidated features...", len(features)
-        )
+        log.debug("Performing geometric classification on %d features...", len(features))
         max_area_compact = (grid_size * grid_size) * 1.5
         max_area_elongated = (grid_size * grid_size) * 4.0
 
@@ -197,44 +123,68 @@ class FeatureExtractor:
     ) -> Dict[str, Any]:
         """Extracts and classifies high-resolution features like columns and stairs."""
         if not room_contours:
+            log.debug("No room contours provided, skipping feature extraction.")
             return enhancement_layers
 
         roles_inv = {v: k for k, v in color_profile["roles"].items()}
         grid_size = grid_info.size
+        h, w = original_region_img.shape[:2]
 
-        feature_candidates = []
-        processed_parents = set()
+        # 1. Create a mask of all stroke pixels
         s_rgb = roles_inv.get("stroke", (0, 0, 0))
         s_bgr = np.array(s_rgb[::-1], dtype="uint8")
         s_cen = min(kmeans.cluster_centers_, key=lambda c: np.linalg.norm(c - s_bgr))
         s_lab = kmeans.predict([s_cen])[0]
-        s_mask = (labels == s_lab).reshape(original_region_img.shape[:2])
-        s_mask_u8 = s_mask.astype("uint8") * 255
-        cnts, hierarchy = cv2.findContours(s_mask_u8, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        s_mask = (labels == s_lab).reshape(h, w).astype("uint8") * 255
+
+        # 2. Create a mask of the floor plan
+        floor_mask = np.zeros((h, w), dtype="uint8")
+        cv2.drawContours(floor_mask, room_contours, -1, 255, -1)
+
+        # 3. Create the final feature mask by finding strokes *inside* the floor plan
+        feature_mask = cv2.bitwise_and(s_mask, floor_mask)
+
+        # 4. Find contours of the features directly
+        contours, _ = cv2.findContours(
+            feature_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        feature_candidates = []
         min_area = (grid_size * grid_size) * 0.05
+        padding = grid_size * 0.1  # Add 10% of a grid cell as padding
 
-        if hierarchy is not None:
-            for i, c in enumerate(cnts):
-                parent_idx = hierarchy[0][i][3]
-                # A contour is a hole (and thus its parent is a feature) if it has a parent.
-                if parent_idx != -1 and parent_idx not in processed_parents:
-                    parent_contour = cnts[parent_idx]
-                    if cv2.contourArea(parent_contour) < min_area:
-                        continue
-                    verts = [
-                        {
-                            "x": round((v[0][0] - grid_info.offset_x) / grid_size, 1),
-                            "y": round((v[0][1] - grid_info.offset_y) / grid_size, 1),
-                        }
-                        for v in parent_contour
-                    ]
-                    feature_candidates.append(
-                        {"gridVertices": verts, "properties": {"z-order": 1}}
-                    )
-                    processed_parents.add(parent_idx)
+        for c in contours:
+            if cv2.contourArea(c) < min_area:
+                continue
 
-        consolidated = self._consolidate_features(feature_candidates)
-        classified = self._classify_consolidated_features(consolidated, grid_size)
+            # 5. Generate rectangular bounding box with padding
+            x, y, w, h = cv2.boundingRect(c)
+            x_pad, y_pad = max(0, x - padding), max(0, y - padding)
+            w_pad, h_pad = w + (2 * padding), h + (2 * padding)
+
+            verts = [
+                {
+                    "x": round((x_pad - grid_info.offset_x) / grid_size, 1),
+                    "y": round((y_pad - grid_info.offset_y) / grid_size, 1),
+                },
+                {
+                    "x": round((x_pad + w_pad - grid_info.offset_x) / grid_size, 1),
+                    "y": round((y_pad - grid_info.offset_y) / grid_size, 1),
+                },
+                {
+                    "x": round((x_pad + w_pad - grid_info.offset_x) / grid_size, 1),
+                    "y": round((y_pad + h_pad - grid_info.offset_y) / grid_size, 1),
+                },
+                {
+                    "x": round((x_pad - grid_info.offset_x) / grid_size, 1),
+                    "y": round((y_pad + h_pad - grid_info.offset_y) / grid_size, 1),
+                },
+            ]
+            feature_candidates.append(
+                {"gridVertices": verts, "properties": {"z-order": 1}}
+            )
+
+        classified = self._classify_features(feature_candidates, grid_size)
 
         enhancement_layers.setdefault("features", []).extend(classified)
         log.info("Extracted %d final features.", len(classified))
@@ -365,17 +315,17 @@ class LLMFeatureEnhancer:
             bbox = feature.get("bounding_box")
             if not bbox:
                 continue
-            x, y, w, h = (
-                bbox.get("x", 0),
-                bbox.get("y", 0),
-                bbox.get("width", 0),
-                bbox.get("height", 0),
-            )
-            cv2.rectangle(debug_img, (x, y), (x + w, y + h), llm_color, 2)
+            img_h, img_w = img.shape[:2]
+            x1 = int(bbox.get("x1", 0) * img_w)
+            y1 = int(bbox.get("y1", 0) * img_h)
+            x2 = int(bbox.get("x2", 0) * img_w)
+            y2 = int(bbox.get("y2", 0) * img_h)
+
+            cv2.rectangle(debug_img, (x1, y1), (x2, y2), llm_color, 2)
             cv2.putText(
                 debug_img,
                 feature.get("feature_type", "unknown"),
-                (x, y - 10),
+                (x1, y1 - 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.9,
                 llm_color,
@@ -456,7 +406,7 @@ class LLMFeatureEnhancer:
                 continue
 
             log_llm.debug(
-                "📤  Sending request to LLM for tile (%d, %d).", gx, gy
+                "  📤  Sending request to LLM for tile (%d, %d).", gx, gy
             )
             response_str = query_llm(
                 self.ollama_url,
@@ -472,44 +422,19 @@ class LLMFeatureEnhancer:
                 continue
 
             try:
-                parts = response_str.strip().split(",")
-                if len(parts) != 5:
-                    raise ValueError("Expected 5 parts in CSV response.")
-
-                new_type = parts[0].strip()
-                bbox_vals = [float(p.strip()) for p in parts[1:]]
-                bbox = {
-                    "x": bbox_vals[0],
-                    "y": bbox_vals[1],
-                    "width": bbox_vals[2],
-                    "height": bbox_vals[3],
-                }
-
-                img_h, img_w = cropped_img.shape[:2]
-                px_x = bbox["x"] * img_w
-                px_y = bbox["y"] * img_h
-                px_w = bbox["width"] * img_w
-                px_h = bbox["height"] * img_h
-
-                x = (px_x + crop_x1) / grid_size
-                y = (px_y + crop_y1) / grid_size
-                w = px_w / grid_size
-                h = px_h / grid_size
+                new_type = response_str.strip().split(",")[0]
+                if not new_type:
+                    raise ValueError("Empty response from LLM.")
 
                 log_llm.info(
-                    "📦  LLM classified feature at tile (%d, %d) as '%s' [grid_bbox: x=%.1f, y=%.1f, w=%.1f, h=%.1f].",
-                    gx, gy, new_type, x, y, w, h
+                    "    📦  LLM classified feature at tile (%d, %d) as '%s'.",
+                    gx, gy, new_type
                 )
                 feature["featureType"] = new_type
-                feature["gridVertices"] = [
-                    {"x": round(x, 1), "y": round(y, 1)},
-                    {"x": round(x + w, 1), "y": round(y, 1)},
-                    {"x": round(x + w, 1), "y": round(y + h, 1)},
-                    {"x": round(x, 1), "y": round(y + h, 1)},
-                ]
+
             except (ValueError, IndexError) as e:
                 log_llm.warning(
-                    "Failed to parse CSV response from LLM for tile (%d, %d): %s. Response: '%s'",
+                    "Failed to parse response from LLM for tile (%d, %d): %s. Response: '%s'",
                     gx, gy, e, response_str
                 )
 
@@ -554,10 +479,10 @@ class LLMFeatureEnhancer:
                     {
                         "feature_type": feature_type,
                         "bounding_box": {
-                            "x": bbox_vals[0],
-                            "y": bbox_vals[1],
-                            "width": bbox_vals[2],
-                            "height": bbox_vals[3],
+                            "x1": bbox_vals[0],
+                            "y1": bbox_vals[1],
+                            "x2": bbox_vals[2],
+                            "y2": bbox_vals[3],
                         },
                     }
                 )
@@ -591,12 +516,12 @@ class LLMFeatureEnhancer:
             if not bbox:
                 continue
 
-            px_x = bbox.get("x", 0) * img_w
-            px_y = bbox.get("y", 0) * img_h
-            px_w = bbox.get("width", 0) * img_w
-            px_h = bbox.get("height", 0) * img_h
-            llm_cx = px_x + px_w / 2
-            llm_cy = px_y + px_h / 2
+            px_x1 = bbox.get("x1", 0) * img_w
+            px_y1 = bbox.get("y1", 0) * img_h
+            px_x2 = bbox.get("x2", 0) * img_w
+            px_y2 = bbox.get("y2", 0) * img_h
+            llm_cx = (px_x1 + px_x2) / 2
+            llm_cy = (px_y1 + px_y2) / 2
 
             closest_geom_idx, min_dist = -1, float("inf")
             for i, centroid in enumerate(geom_centroids):
@@ -613,18 +538,6 @@ class LLMFeatureEnhancer:
                 if isinstance(new_type, str):
                     old_type = geom_features[closest_geom_idx]["featureType"]
                     geom_features[closest_geom_idx]["featureType"] = new_type
-
-                    x = px_x / grid_size
-                    y = px_y / grid_size
-                    w = px_w / grid_size
-                    h = px_h / grid_size
-                    geom_features[closest_geom_idx]["gridVertices"] = [
-                        {"x": round(x, 1), "y": round(y, 1)},
-                        {"x": round(x + w, 1), "y": round(y, 1)},
-                        {"x": round(x + w, 1), "y": round(y + h, 1)},
-                        {"x": round(x, 1), "y": round(y + h, 1)},
-                    ]
-
                     log_llm.info(
                         "Reconciled feature: '%s' -> '%s' (dist: %.2f px)",
                         old_type,
