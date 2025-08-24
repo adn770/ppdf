@@ -10,7 +10,7 @@ from sklearn.cluster import KMeans
 from dmap_lib import schema, rendering
 from .color import ColorAnalyzer
 from .structure import StructureAnalyzer
-from .features import FeatureExtractor, LLaVAFeatureEnhancer
+from .features import FeatureExtractor, LLMFeatureEnhancer
 from .transformer import MapTransformer
 from .context import _RegionAnalysisContext
 from .regions import detect_content_regions, parse_text_metadata
@@ -26,7 +26,7 @@ class MapAnalyzer:
         self.structure_analyzer = StructureAnalyzer()
         self.feature_extractor = FeatureExtractor()
         self.map_transformer = MapTransformer()
-        self.llava_enhancer = None
+        self.llm_enhancer = None
 
     def _save_feature_detection_debug_image(
         self,
@@ -39,13 +39,13 @@ class MapAnalyzer:
     ):
         """Saves a debug image visualizing detected features and layers."""
         debug_img = img.copy()
-        overlay = debug_img.copy()  # Create an overlay for transparency
-        alpha = 0.4  # Transparency factor
+        overlay = debug_img.copy()
+        alpha = 0.4
 
-        layer_color = (255, 0, 0)  # Blue
-        feature_color = (0, 0, 255)  # Red
-        door_color = (0, 255, 0)  # Green for doors
-        label_color = (255, 255, 255)  # White for text
+        layer_color = (255, 0, 0)
+        feature_color = (0, 0, 255)
+        door_color = (0, 255, 0)
+        label_color = (255, 255, 255)
 
         for layer in enhancements.get("layers", []):
             px_verts = (
@@ -97,7 +97,7 @@ class MapAnalyzer:
         region_context: Dict[str, Any],
         ascii_debug: bool = False,
         save_intermediate_path: Optional[str] = None,
-        llava_mode: Optional[str] = None,
+        llm_mode: Optional[str] = None,
         ollama_url: Optional[str] = None,
         ollama_model: Optional[str] = None,
         llm_temp: float = 0.3,
@@ -122,7 +122,6 @@ class MapAnalyzer:
             structural_img, color_profile, context.room_bounds
         )
 
-        # --- Refactored Debug Image Handling ---
         debug_canvas = None
         if save_intermediate_path:
             # Create the base canvas for debugging structure analysis
@@ -202,7 +201,6 @@ class MapAnalyzer:
             labels,
         )
 
-        # --- New Final Step: Passageway Door Detection ---
         self.structure_analyzer.detect_passageway_doors(
             context.tile_grid,
             structural_img,
@@ -212,17 +210,17 @@ class MapAnalyzer:
             debug_canvas,
         )
 
-        if llava_mode and ollama_url and ollama_model:
+        if llm_mode and ollama_url and ollama_model:
             num_features = len(context.enhancement_layers.get("features", []))
             log.info(
-                "⚙️  Executing Stage 9: LLaVA Feature Enhancement on %d features...",
+                "⚙️  Executing Stage 9: LLM Feature Enhancement on %d features...",
                 num_features,
             )
-            log.debug("Calling LLaVA feature enhancement in '%s' mode.", llava_mode)
-            self.llava_enhancer = LLaVAFeatureEnhancer(
-                ollama_url, ollama_model, llava_mode, llm_temp, llm_ctx_size
+            log.debug("Calling LLM feature enhancement in '%s' mode.", llm_mode)
+            self.llm_enhancer = LLMFeatureEnhancer(
+                ollama_url, ollama_model, llm_mode, llm_temp, llm_ctx_size
             )
-            context.enhancement_layers = self.llava_enhancer.enhance(
+            context.enhancement_layers = self.llm_enhancer.enhance(
                 context.enhancement_layers,
                 img,
                 grid_info.size,
@@ -369,7 +367,7 @@ def analyze_image(
     image_path: str,
     ascii_debug: bool = False,
     save_intermediate_path: Optional[str] = None,
-    llava_mode: Optional[str] = None,
+    llm_mode: Optional[str] = None,
     llm_url: Optional[str] = None,
     llm_model: Optional[str] = None,
     llm_temp: float = 0.3,
@@ -405,7 +403,7 @@ def analyze_image(
             region_context,
             ascii_debug=ascii_debug,
             save_intermediate_path=save_intermediate_path,
-            llava_mode=llava_mode,
+            llm_mode=llm_mode,
             ollama_url=llm_url,
             ollama_model=llm_model,
             llm_temp=llm_temp,

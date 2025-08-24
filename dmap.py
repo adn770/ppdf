@@ -69,19 +69,19 @@ def get_cli_args():
         metavar="TOPICS",
         help="Enable DEBUG logging (all,analysis,grid,ocr,geometry,render,llm).",
     )
-    # LLaVA arguments
+    # LLM arguments
     g_llm = p.add_argument_group("LLM Feature Enhancement")
     g_llm.add_argument(
-        "--llava",
+        "--llm",
         choices=["classifier", "oracle"],
-        dest="llava_mode",
-        help="Enable feature enhancement with LLaVA.",
+        dest="llm_mode",
+        help="Enable feature enhancement with an LLM.",
     )
     g_llm.add_argument(
         "-M",
         "--llm-model",
         default="llava:latest",
-        help="The LLaVA model to use (default: llava:latest).",
+        help="The LLM model to use (default: llava:latest).",
     )
     g_llm.add_argument(
         "-U",
@@ -93,13 +93,13 @@ def get_cli_args():
         "--llm-temp",
         type=float,
         default=0.3,
-        help="Set the temperature for the LLaVA model (default: 0.3).",
+        help="Set the temperature for the LLM model (default: 0.3).",
     )
     g_llm.add_argument(
         "--llm-ctx-size",
         type=int,
         default=8192,
-        help="Set the context window size for the LLaVA model (default: 8192).",
+        help="Set the context window size for the LLM model (default: 8192).",
     )
     return p.parse_args()
 
@@ -157,7 +157,7 @@ def main():
                     args.input,
                     ascii_debug=args.ascii_debug,
                     save_intermediate_path=args.save_intermediate,
-                    llava_mode=args.llava_mode,
+                    llm_mode=args.llm_mode,
                     llm_url=args.llm_url,
                     llm_model=args.llm_model,
                     llm_temp=args.llm_temp,

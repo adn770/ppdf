@@ -9,8 +9,8 @@ from shapely.geometry import Polygon
 from shapely.ops import unary_union
 from sklearn.cluster import KMeans
 
-from dmap_lib.llm import query_llava
-from dmap_lib.prompts import LLAVA_PROMPT_CLASSIFIER, LLAVA_PROMPT_ORACLE
+from dmap_lib.llm import query_llm
+from dmap_lib.prompts import LLM_PROMPT_CLASSIFIER, LLM_PROMPT_ORACLE
 from .context import _GridInfo
 
 log = logging.getLogger("dmap.analysis")
@@ -241,25 +241,25 @@ class FeatureExtractor:
         return enhancement_layers
 
 
-class LLaVAFeatureEnhancer:
-    """Enhances feature classification using a multimodal LLM (LLaVA)."""
+class LLMFeatureEnhancer:
+    """Enhances feature classification using a multimodal LLM."""
 
     def __init__(
         self,
         ollama_url: str,
         ollama_model: str,
-        llava_mode: str,
+        llm_mode: str,
         temperature: float,
         context_size: int,
     ):
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
-        self.llava_mode = llava_mode
+        self.llm_mode = llm_mode
         self.temperature = temperature
         self.context_size = context_size
-        log_llm.info("LLaVA Feature Enhancer initialized in '%s' mode.", self.llava_mode)
+        log_llm.info("LLM Feature Enhancer initialized in '%s' mode.", self.llm_mode)
 
-    def _save_pre_llava_debug_image(
+    def _save_pre_llm_debug_image(
         self,
         img: np.ndarray,
         enhancements: Dict[str, Any],
@@ -267,11 +267,11 @@ class LLaVAFeatureEnhancer:
         region_id: str,
         save_path: str,
     ):
-        """Saves a debug image visualizing all feature bounding boxes before LLaVA."""
+        """Saves a debug image visualizing all feature bounding boxes before LLM."""
         debug_img = img.copy()
         overlay = debug_img.copy()
-        feature_color = (0, 165, 255)  # Orange for bounding box
-        crop_area_color = (255, 0, 255)  # Magenta for LLaVA crop area
+        feature_color = (0, 165, 255)
+        crop_area_color = (255, 0, 255)
 
         for feature in enhancements.get("features", []):
             px_verts = (
@@ -293,7 +293,7 @@ class LLaVAFeatureEnhancer:
                 2,
             )
 
-            # Calculate and draw the 3x3 grid area for LLaVA classifier
+            # Calculate and draw the 3x3 grid area for classifier
             M = cv2.moments(px_verts)
             if M["m00"] > 0:
                 cx = int(M["m10"] / M["m00"])
@@ -312,9 +312,9 @@ class LLaVAFeatureEnhancer:
         alpha = 0.3
         cv2.addWeighted(overlay, alpha, debug_img, 1 - alpha, 0, debug_img)
 
-        filename = os.path.join(save_path, f"{region_id}_pre_llava_features.png")
+        filename = os.path.join(save_path, f"{region_id}_pre_llm_features.png")
         cv2.imwrite(filename, debug_img)
-        log.info("Saved pre-LLaVA feature bounding box debug image to %s", filename)
+        log.info("Saved pre-LLM feature bounding box debug image to %s", filename)
 
     def enhance(
         self,
@@ -324,17 +324,17 @@ class LLaVAFeatureEnhancer:
         region_id: str,
         save_path: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Crops features and sends them to LLaVA for analysis."""
+        """Crops features and sends them to LLM for analysis."""
         if save_path:
-            self._save_pre_llava_debug_image(
+            self._save_pre_llm_debug_image(
                 original_region_img, enhancement_layers, grid_size, region_id, save_path
             )
 
-        if self.llava_mode == "classifier":
+        if self.llm_mode == "classifier":
             return self._enhance_classifier(
                 enhancement_layers, original_region_img, grid_size, region_id, save_path
             )
-        elif self.llava_mode == "oracle":
+        elif self.llm_mode == "oracle":
             return self._enhance_oracle(
                 enhancement_layers, original_region_img, grid_size, region_id, save_path
             )
@@ -350,7 +350,7 @@ class LLaVAFeatureEnhancer:
         save_path: str,
     ):
         debug_img = img.copy()
-        geom_color, llm_color = (255, 0, 0), (0, 0, 255)  # Blue, Red
+        geom_color, llm_color = (255, 0, 0), (0, 0, 255)
 
         for feature in geom_features:
             px_verts = (
@@ -382,9 +382,9 @@ class LLaVAFeatureEnhancer:
                 2,
             )
 
-        filename = os.path.join(save_path, f"{region_id}_llava_oracle_reconciliation.png")
+        filename = os.path.join(save_path, f"{region_id}_llm_oracle_reconciliation.png")
         cv2.imwrite(filename, debug_img)
-        log.info("Saved LLaVA oracle debug image to %s", filename)
+        log.info("Saved LLM oracle debug image to %s", filename)
 
     def _save_classifier_debug_image(
         self,
@@ -395,7 +395,7 @@ class LLaVAFeatureEnhancer:
         save_path: str,
     ):
         debug_img = img.copy()
-        feature_color = (0, 255, 0)  # Green
+        feature_color = (0, 255, 0)
 
         for feature in classified_features:
             px_verts = (
@@ -415,9 +415,9 @@ class LLaVAFeatureEnhancer:
                 2,
             )
 
-        filename = os.path.join(save_path, f"{region_id}_llava_classifier_results.png")
+        filename = os.path.join(save_path, f"{region_id}_llm_classifier_results.png")
         cv2.imwrite(filename, debug_img)
-        log.info("Saved LLaVA classifier debug image to %s", filename)
+        log.info("Saved LLM classifier debug image to %s", filename)
 
     def _enhance_classifier(
         self,
@@ -446,43 +446,72 @@ class LLaVAFeatureEnhancer:
             gx, gy = cx // grid_size, cy // grid_size
 
             # 2. Calculate the 3x3 grid area for the crop
-            crop_size = 3 * grid_size
-            x1 = max(0, (gx - 1) * grid_size)
-            y1 = max(0, (gy - 1) * grid_size)
-            x2 = min(original_region_img.shape[1], (gx + 2) * grid_size)
-            y2 = min(original_region_img.shape[0], (gy + 2) * grid_size)
+            crop_x1 = max(0, (gx - 1) * grid_size)
+            crop_y1 = max(0, (gy - 1) * grid_size)
+            crop_x2 = min(original_region_img.shape[1], (gx + 2) * grid_size)
+            crop_y2 = min(original_region_img.shape[0], (gy + 2) * grid_size)
 
-            cropped_feature_img = original_region_img[y1:y2, x1:x2]
-            if cropped_feature_img.size == 0:
+            cropped_img = original_region_img[crop_y1:crop_y2, crop_x1:crop_x2]
+            if cropped_img.size == 0:
                 continue
 
-            # 3. Format the prompt with the pre-classification hint
-            pre_classified_type = feature.get("featureType", "unknown")
-            prompt = LLAVA_PROMPT_CLASSIFIER.replace("[HINT]", pre_classified_type)
-
-            response = query_llava(
+            log_llm.debug(
+                "📤  Sending request to LLM for tile (%d, %d).", gx, gy
+            )
+            response_str = query_llm(
                 self.ollama_url,
                 self.ollama_model,
-                cropped_feature_img,
-                prompt,
+                cropped_img,
+                LLM_PROMPT_CLASSIFIER,
                 temperature=self.temperature,
                 context_size=self.context_size,
             )
 
-            if response and "feature_type" in response:
-                new_type = response["feature_type"]
-                if isinstance(new_type, str):
-                    log_llm.info(
-                        "LLaVA classified feature at tile (%d, %d) as '%s'.",
-                        gx,
-                        gy,
-                        new_type,
-                    )
-                    feature["featureType"] = new_type
-                else:
-                    log_llm.warning("LLaVA returned invalid feature_type: %s", new_type)
-            else:
-                log_llm.warning("LLaVA analysis failed or returned invalid format.")
+            if not response_str:
+                log_llm.warning("LLM analysis failed for tile (%d, %d).", gx, gy)
+                continue
+
+            try:
+                parts = response_str.strip().split(",")
+                if len(parts) != 5:
+                    raise ValueError("Expected 5 parts in CSV response.")
+
+                new_type = parts[0].strip()
+                bbox_vals = [float(p.strip()) for p in parts[1:]]
+                bbox = {
+                    "x": bbox_vals[0],
+                    "y": bbox_vals[1],
+                    "width": bbox_vals[2],
+                    "height": bbox_vals[3],
+                }
+
+                img_h, img_w = cropped_img.shape[:2]
+                px_x = bbox["x"] * img_w
+                px_y = bbox["y"] * img_h
+                px_w = bbox["width"] * img_w
+                px_h = bbox["height"] * img_h
+
+                x = (px_x + crop_x1) / grid_size
+                y = (px_y + crop_y1) / grid_size
+                w = px_w / grid_size
+                h = px_h / grid_size
+
+                log_llm.info(
+                    "📦  LLM classified feature at tile (%d, %d) as '%s' [grid_bbox: x=%.1f, y=%.1f, w=%.1f, h=%.1f].",
+                    gx, gy, new_type, x, y, w, h
+                )
+                feature["featureType"] = new_type
+                feature["gridVertices"] = [
+                    {"x": round(x, 1), "y": round(y, 1)},
+                    {"x": round(x + w, 1), "y": round(y, 1)},
+                    {"x": round(x + w, 1), "y": round(y + h, 1)},
+                    {"x": round(x, 1), "y": round(y + h, 1)},
+                ]
+            except (ValueError, IndexError) as e:
+                log_llm.warning(
+                    "Failed to parse CSV response from LLM for tile (%d, %d): %s. Response: '%s'",
+                    gx, gy, e, response_str
+                )
 
         if save_path:
             self._save_classifier_debug_image(
@@ -499,24 +528,42 @@ class LLaVAFeatureEnhancer:
         save_path: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Runs the full-region oracle enhancement."""
-        log_llm.info("Querying LLaVA in oracle mode...")
-        response = query_llava(
+        log_llm.info("Querying LLM in oracle mode...")
+        response_str = query_llm(
             self.ollama_url,
             self.ollama_model,
             original_region_img,
-            LLAVA_PROMPT_ORACLE,
+            LLM_PROMPT_ORACLE,
             temperature=self.temperature,
             context_size=self.context_size,
         )
 
-        if not response or "features" not in response:
-            log_llm.warning("LLaVA oracle analysis failed or returned invalid format.")
+        if not response_str:
+            log_llm.warning("LLM oracle analysis failed or returned empty.")
             return enhancement_layers
 
-        llm_features = response["features"]
-        if not isinstance(llm_features, list):
-            log_llm.warning("LLaVA oracle returned non-list for 'features'.")
-            return enhancement_layers
+        llm_features = []
+        for line in response_str.strip().split("\n"):
+            try:
+                parts = line.strip().split(",")
+                if len(parts) != 5:
+                    continue
+                feature_type = parts[0].strip()
+                bbox_vals = [float(p.strip()) for p in parts[1:]]
+                llm_features.append(
+                    {
+                        "feature_type": feature_type,
+                        "bounding_box": {
+                            "x": bbox_vals[0],
+                            "y": bbox_vals[1],
+                            "width": bbox_vals[2],
+                            "height": bbox_vals[3],
+                        },
+                    }
+                )
+            except (ValueError, IndexError):
+                log_llm.warning("Skipping malformed CSV line from oracle: '%s'", line)
+                continue
 
         geom_features = enhancement_layers.get("features", [])
         if not geom_features:
@@ -533,20 +580,23 @@ class LLaVAFeatureEnhancer:
                 [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
             )
             M = cv2.moments(verts.astype(np.int32))
-            if M["m00"] != 0:
-                cx = M["m10"] / M["m00"]
-                cy = M["m01"] / M["m00"]
-                geom_centroids.append((cx, cy))
-            else:
-                geom_centroids.append(None)
+            geom_centroids.append(
+                (M["m10"] / M["m00"], M["m01"] / M["m00"]) if M["m00"] != 0 else None
+            )
 
         reconciliation_count = 0
+        img_h, img_w = original_region_img.shape[:2]
         for llm_feature in llm_features:
             bbox = llm_feature.get("bounding_box")
             if not bbox:
                 continue
-            llm_cx = bbox.get("x", 0) + bbox.get("width", 0) / 2
-            llm_cy = bbox.get("y", 0) + bbox.get("height", 0) / 2
+
+            px_x = bbox.get("x", 0) * img_w
+            px_y = bbox.get("y", 0) * img_h
+            px_w = bbox.get("width", 0) * img_w
+            px_h = bbox.get("height", 0) * img_h
+            llm_cx = px_x + px_w / 2
+            llm_cy = px_y + px_h / 2
 
             closest_geom_idx, min_dist = -1, float("inf")
             for i, centroid in enumerate(geom_centroids):
@@ -563,6 +613,18 @@ class LLaVAFeatureEnhancer:
                 if isinstance(new_type, str):
                     old_type = geom_features[closest_geom_idx]["featureType"]
                     geom_features[closest_geom_idx]["featureType"] = new_type
+
+                    x = px_x / grid_size
+                    y = px_y / grid_size
+                    w = px_w / grid_size
+                    h = px_h / grid_size
+                    geom_features[closest_geom_idx]["gridVertices"] = [
+                        {"x": round(x, 1), "y": round(y, 1)},
+                        {"x": round(x + w, 1), "y": round(y, 1)},
+                        {"x": round(x + w, 1), "y": round(y + h, 1)},
+                        {"x": round(x, 1), "y": round(y + h, 1)},
+                    ]
+
                     log_llm.info(
                         "Reconciled feature: '%s' -> '%s' (dist: %.2f px)",
                         old_type,

@@ -11,27 +11,27 @@ import requests
 log_llm = logging.getLogger("dmap.llm")
 
 
-def query_llava(
+def query_llm(
     ollama_url: str,
     model: str,
     image: np.ndarray,
     prompt: str,
     temperature: float = 0.3,
     context_size: int = 8192,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[str]:
     """
-    Queries a LLaVA model via the Ollama API with an image and a prompt.
+    Queries an LLM model via the Ollama API with an image and a prompt.
 
     Args:
         ollama_url: The base URL of the Ollama server.
-        model: The name of the LLaVA model to use.
+        model: The name of the LLM model to use.
         image: The image to analyze (as a NumPy array).
         prompt: The text prompt to send with the image.
         temperature: The temperature for the model's generation.
         context_size: The context window size for the model.
 
     Returns:
-        A dictionary containing the parsed JSON response from the model, or None if
+        A string containing the raw response from the model, or None if
         an error occurred.
     """
     _, buffer = cv2.imencode(".png", image)
@@ -44,31 +44,50 @@ def query_llava(
         "images": [img_base64],
         "options": {"temperature": temperature, "num_ctx": context_size},
     }
-    raw_json = ""  # Initialize raw_json to ensure it's available for logging
+    response = None
     try:
-        log_llm.debug("Sending request to LLaVA (prompt length: %d chars).", len(prompt))
+        log_llm.debug("Sending request to LLM (prompt length: %d chars).", len(prompt))
         response = requests.post(f"{ollama_url}/api/generate", json=payload, timeout=60)
         response.raise_for_status()
         response_data = response.json()
-        raw_json = response_data.get("response", "{}")
-        log_llm.debug("Raw LLaVA response:\n%s", raw_json)
+        raw_response = response_data.get("response", "")
+        log_llm.debug("Raw LLM response:\n%s", raw_response)
 
-        # Clean the response to handle markdown code blocks
-        cleaned_json = raw_json.strip()
-        if cleaned_json.startswith("```json"):
-            cleaned_json = cleaned_json[7:]
-        if cleaned_json.endswith("```"):
-            cleaned_json = cleaned_json[:-3]
-        cleaned_json = cleaned_json.strip()
+        cleaned_response = raw_response.strip()
+        if cleaned_response.startswith("```"):
+            # Handles cases where the model might still wrap output in markdown
+            lines = cleaned_response.split("\n")
+            if len(lines) > 1 and lines[0].strip() != "```":
+                cleaned_response = "\n".join(lines[1:])  # Assumes language hint like ```csv
+            else:
+                cleaned_response = "\n".join(lines[1:-1])  # Assumes ``` wrapping
+        if cleaned_response.endswith("```"):
+            cleaned_response = cleaned_response[:-3]
+        cleaned_response = cleaned_response.strip()
 
-        return json.loads(cleaned_json)
+        if not cleaned_response:
+            log_llm.warning("LLM returned an empty response after cleaning.")
+            if response:
+                log_llm.warning("HTTP Status Code: %d", response.status_code)
+            return None
+
+        return cleaned_response
     except requests.exceptions.RequestException as e:
         log_llm.error("Failed to connect to Ollama API at %s: %s", ollama_url, e)
+        if response is not None:
+            log_llm.error("HTTP Status Code: %s", response.status_code)
+            log_llm.error("Raw Response Body: %s", response.text)
         return None
     except json.JSONDecodeError as e:
-        log_llm.error("Failed to parse JSON response from LLaVA: %s", e)
-        log_llm.error("Raw LLaVA response was: %s", raw_json)
+        # This is less likely now but kept for robustness
+        log_llm.error("Failed to parse JSON from API endpoint: %s", e)
+        if response is not None:
+            log_llm.error("Raw LLM response was: %s", response.text)
+            log_llm.error("HTTP Status Code: %s", response.status_code)
         return None
     except Exception as e:
-        log_llm.error("An unexpected error occurred during LLaVA query: %s", e)
+        log_llm.error("An unexpected error occurred during LLM query: %s", e, exc_info=True)
+        if response is not None:
+            log_llm.error("HTTP Status Code: %s", response.status_code)
+            log_llm.error("Raw Response Body: %s", response.text)
         return None
