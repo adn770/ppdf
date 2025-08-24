@@ -106,14 +106,14 @@ It first isolates the primary dungeon area from the surrounding canvas and any t
 blocks. Only then does it perform a **multi-pass semantic color analysis** on the
 isolated region to identify the functional role of each color (e.g., `floor`,
 `stroke`, `shadow`, `glow`). This allows for intelligent pre-processing and robust,
-score-based wall detection that combines stroke thickness, shadow, and glow cues.
+score-based wall detection.
 
-The pipeline cleanly separates the detection of the core, grid-aligned structure
-from the detection of non-grid-aligned **enhancement layers**. These enhancement
-features are captured using a high-precision (1/10th grid unit) coordinate system
-and assigned a `z-order` to ensure correct rendering. This layered, semantic
-approach allows `dmap` to produce a deeply structured and accurate representation of
-complex dungeon maps.
+A key feature of the pipeline is its hybrid approach to feature detection. It first
+uses computer vision techniques to detect the precise geometry of features. It then
+uses a multimodal LLM to perform **semantic enhancement**, reconciling the LLM's
+high-level classification with the geometrically precise polygons detected by the CV
+stage. This layered approach allows `dmap` to produce a deeply structured and
+accurate representation of complex dungeon maps.
 
 ---
 
@@ -134,7 +134,7 @@ This structure promotes code reuse and clean separation of concerns.
 │   │   ├── `regions.py`: Logic for Stage 1 region and text detection.
 │   │   ├── `structure.py`: `StructureAnalyzer` for grid and wall detection.
 │   │   └── `transformer.py`: `MapTransformer` for final entity generation.
-│   ├── `llm.py`: Ollama/LLaVA API communication and prompting.
+│   ├── `llm.py`: Ollama/LLM API communication and prompting.
 │   ├── `log_utils.py`: Utilities for configuring the logging system.
 │   ├── `prompts.py`: Constant definitions for LLM system prompts.
 │   ├── `rendering/`: Procedural SVG generation logic.
@@ -191,9 +191,9 @@ API for analysis and rendering.
 
 #### 3.3.1. Specialized Renderers
 -   **`HatchingRenderer`**: Encapsulates the logic for generating the organic,
-    sketchy exterior border hatching. It uses a tile-based approach combined with
-    Perlin noise to displace line cluster anchors, avoiding mechanical repetition
-    for a hand-drawn aesthetic.
+        sketchy exterior border hatching. It uses a tile-based approach combined with
+        Perlin noise to displace line cluster anchors, avoiding mechanical repetition
+        for a hand-drawn aesthetic.
 -   **`WaterRenderer`**: Handles the rendering of water layers. It uses a two-stage
     process to generate smooth, natural shorelines. First, the raw water polygon is
     simplified using the Douglas-Peucker algorithm to remove high-frequency noise.
@@ -273,22 +273,18 @@ For each detected 'dungeon' region, the following pipeline is executed:
     in pixels via peak-finding on pixel projections. The grid offset is calculated
     from the bounding boxes of the main room shapes.
 
-### Stage 5: High-Resolution Feature & Layer Pre-Classification
+### Stage 5: High-Resolution Feature & Layer Detection
 -   **Component**: `FeatureExtractor`
 -   **Input**: *Original* Dungeon Region Image, `color_profile`, `room_contours`
 -   **Output**: `enhancement_layers` (a dictionary of high-res feature lists)
 -   **Process**: This stage operates on the original region image to find features
     that do not align with the main grid.
-    1.  **Heuristic Pre-classification**: It uses simple geometric heuristics to
-        perform a pre-classification. For example, small circular or square shapes are
-        pre-classified as `"column"`, while long, rectangular shapes are pre-classified as
-        `"stairs"`. Environmental layers like water are also detected.
-    2.  **Feature Consolidation**: A `_consolidate_features` pass is performed to
-        intelligently merge raw feature polygons that are overlapping or very close,
-        cleaning up noisy detections into single, unified features.
-    3.  **Coordinate Storage**: All found items are converted into high-resolution polygons
-        using a **1/10th grid unit** coordinate system and stored with a `z-order`
-        attribute, ready for LLM refinement.
+    1.  **Geometric Pre-classification**: It uses simple geometric heuristics to
+        perform a pre-classification. Small circular or square shapes are
+        pre-classified as `"column"`, while long, rectangular shapes are pre-classified
+        as `"stairs"`. Environmental layers like water are also detected.
+    2.  **Coordinate Storage**: All found items are converted into high-resolution polygons
+        and stored with a `z-order` attribute, ready for LLM refinement.
 
 ### Stage 6: Core Structure and Passage Detection
 -   **Component**: `StructureAnalyzer`
@@ -299,11 +295,8 @@ For each detected 'dungeon' region, the following pipeline is executed:
         features digitally removed).
     2.  Each tile is first classified as `floor` or `empty`.
     3.  **Score-Based Wall Detection**: The pipeline analyzes the boundaries between
-        `floor` and `empty` grid cells. It uses a **dual area-based sampling**
-        method (`_calculate_boundary_scores`), checking both the centered and exterior
-        sides of a potential wall line to improve accuracy and reduce false positives
-        from grid lines. A boundary is classified as a `wall` if its confidence score
-        exceeds a threshold.
+        `floor` and `empty` grid cells. A boundary is classified as a `wall` if its
+        confidence score exceeds a threshold.
     4.  **Passageway Door Detection**: A dedicated pass (`_detect_passageway_doors`)
         analyzes narrow (1-tile wide) passageways. Tiles in these corridors containing
         any non-floor pixels are identified as potential doors. These are
@@ -312,7 +305,20 @@ For each detected 'dungeon' region, the following pipeline is executed:
     5.  The `tile_grid` is populated with the core structure: `wall` and `floor`
         information.
 
-### Stage 7: Transformation & Entity Generation
+### Stage 7: LLM-Based Semantic Enhancement
+-   **Component**: `LLMFeatureEnhancer`
+-   **Input**: `enhancement_layers`, `original_region_img`
+-   **Output**: `enhancement_layers` (with updated `featureType` values)
+-   **Process**: This optional stage uses a multimodal LLM to refine the classifications
+    of features identified in Stage 5.
+    -   **Classifier Mode**: For each detected feature, a small surrounding image area is
+        cropped and sent to the LLM, which returns a single-word classification.
+    -   **Oracle Mode**: The entire region image is sent to the LLM, which returns a list
+        of all features it identifies. This list is then reconciled with the CV-detected
+        features, updating the `featureType` of geometric features with the LLM's more
+        accurate semantic classification.
+
+### Stage 8: Transformation & Entity Generation
 -   **Component**: `MapTransformer`
 -   **Input**: `_RegionAnalysisContext` (containing `tile_grid`, `enhancement_layers`)
 -   **Output**: The final list of `MapObject` entities for the region.
@@ -324,8 +330,7 @@ For each detected 'dungeon' region, the following pipeline is executed:
         for each passageway tile.
     3.  **Chamber Merging**: It uses `shapely.unary_union` to merge all adjacent
         `chamber` tiles into complex, unified polygons, creating `Room` objects for them.
-    4.  **Grid Shifting**: A `grid_shift` is applied to normalize the final coordinates.
-    5.  **Feature Integration**: It extracts door information from the tile grid and
+    4.  **Feature Integration**: It extracts door information from the tile grid and
         integrates them with the high-resolution features from the `enhancement_layers`
         for a unified feature list.
 
@@ -401,12 +406,12 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   `--debug`: Enable detailed DEBUG logging for specific topics (e.g., `analysis`,
         `grid`, `render`).
 -   **LLM Feature Enhancement**:
-    -   `--llava`: Enable feature enhancement with LLaVA (`classifier` or `oracle`).
-    -   `-M, --llm-model`: The LLaVA model to use (default: `llava:latest`).
+    -   `--llm`: Enable feature enhancement with an LLM (`classifier` or `oracle`).
+    -   `-M, --llm-model`: The LLM model to use (default: `llava:latest`).
     -   `-U, --llm-url`: The base URL of the Ollama server (default:
         `http://localhost:11434`).
-    -   `--llm-temp`: Set the temperature for the LLaVA model (default: 0.3).
-    -   `--llm-ctx-size`: Set the context window size for the LLaVA model (default: 8192).
+    -   `--llm-temp`: Set the temperature for the LLM model (default: 0.3).
+    -   `--llm-ctx-size`: Set the context window size for the LLM model (default: 8192).
 
 ---
 
@@ -642,7 +647,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
 ### Phase 7: Observability and Refinement
 
 * **Milestone 16: Implement Advanced Logging System**
-    * **Goal**: Integrate a sophisticated, topic-based logging system to improve the
+    * **Goal**: To integrate a sophisticated, topic-based logging system to improve the
         tool's observability and ease of debugging.
     * **Description**: This comprehensive milestone introduces a new logging utility
         inspired by the `ppdf` project. It will replace all `print()` statements with
@@ -669,7 +674,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
 ### Phase 8: Final Polish and Heuristics
 
 * **Milestone 17: High-Fidelity Shape Extraction**
-    * **Goal**: Restore the sharp, angular geometry of the rooms by replacing the
+    * **Goal**: To restore the sharp, angular geometry of the rooms by replacing the
         distorting morphological operations.
     * **Description**: This milestone replaces the "blobby" shape generation with a
         more precise "hole-filling" algorithm. It will digitally remove grid dots
@@ -687,7 +692,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         and straight lines of the source map, eliminating the distorted appearance.
 
 * **Milestone 18: Wall Mask Generation and OCR**
-    * **Goal**: Correctly extract room numbers by scanning the wall areas of the map.
+    * **Goal**: To correctly extract room numbers by scanning the wall areas of the map.
     * **Description**: This milestone implements a new strategy to perform OCR on the
         walls of the dungeon instead of the empty floor space. It will generate a
         "wall mask" image containing only the wall pixels and scan it for numbers.
@@ -1354,7 +1359,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         refactored class-based implementation. The codebase is significantly
         cleaner, more organized, and easier to maintain.
 
-### Phase 20: LLaVA Integration for Feature Enhancement
+### Phase 20: LLM Integration for Feature Enhancement
 
 -   **Milestone 58: API and CLI Scaffolding**
     -   **Goal**: To create the API communication layer and integrate the new CLI
@@ -1363,47 +1368,47 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         communicating with an Ollama server and exposes the necessary controls to the
         user through the command-line interface.
     -   **Key Tasks**:
-        1.  In `dmap.py`, add the `--llava`, `-M/--llm-model`, and `-U/--llm-url`
+        1.  In `dmap.py`, add the `--llm`, `-M/--llm-model`, and `-U/--llm-url`
             arguments using `argparse`.
         2.  Create the new `dmap_lib/llm.py` file.
-        3.  Implement the `query_llava` function, including image encoding, request
+        3.  Implement the `query_llm` function, including image encoding, request
             logic, and robust error handling.
         4.  In `dmap_lib/log_utils.py`, add a new logging topic for `llm` to
             `PROJECT_TOPICS`.
     -   **Outcome**: A runnable CLI that accepts the new arguments and a functional API
         module capable of sending an image and prompt to an Ollama server.
 
--   **Milestone 59: Create LLaVA Enhancer Class Skeleton**
-    -   **Goal**: To introduce the new `LLaVAFeatureEnhancer` class and its prompt into
+-   **Milestone 59: Create LLM Enhancer Class Skeleton**
+    -   **Goal**: To introduce the new `LLMFeatureEnhancer` class and its prompt into
         the codebase without functional logic.
-    -   **Description**: This milestone creates the structural placeholder for the LLaVA
+    -   **Description**: This milestone creates the structural placeholder for the LLM
         logic and defines the prompt that will be used for classification, ensuring the
         core components are in place before adding complex behavior.
     -   **Key Tasks**:
-        1.  In `dmap_lib/analysis/features.py`, create the new `LLaVAFeatureEnhancer`
+        1.  In `dmap_lib/analysis/features.py`, create the new `LLMFeatureEnhancer`
             class.
         2.  Add an empty `enhance` method to the class.
         3.  Create a new `dmap_lib/prompts.py` module to define the
-            `LLAVA_PROMPT_CLASSIFIER` constant containing the text prompt for the LLM.
-    -   **Outcome**: The new `LLaVAFeatureEnhancer` class and its associated prompt are
+            `LLM_PROMPT_CLASSIFIER` constant containing the text prompt for the LLM.
+    -   **Outcome**: The new `LLMFeatureEnhancer` class and its associated prompt are
         defined and importable, ready for integration into the pipeline.
 
 -   **Milestone 60: Integrate Enhancer into Analysis Pipeline**
     -   **Goal**: To modify the main analysis pipeline to conditionally call the new
         enhancer.
     -   **Description**: This step wires the new enhancer into the `MapAnalyzer`. The call
-        will be guarded by the new `--llava` CLI flag, but for now, the call will not
+        will be guarded by the new `--llm` CLI flag, but for now, the call will not
         perform any action. This verifies the data flow and control logic.
     -   **Key Tasks**:
-        1.  In `dmap.py`, pass the `llava_mode`, `llm_url`, and `llm_model` arguments
+        1.  In `dmap.py`, pass the `llm_mode`, `llm_url`, and `llm_model` arguments
             into the `analyze_image` function.
         2.  In `dmap_lib/analysis/analyzer.py`, update `analyze_image` and
             `MapAnalyzer.analyze_region` to accept the new LLM parameters.
         3.  In `analyze_region`, after the `FeatureExtractor` runs, add a conditional
-            block that checks if `llava_mode` is 'classifier'.
-        4.  Inside the block, instantiate `LLaVAFeatureEnhancer` and call its empty
+            block that checks if `llm_mode` is 'classifier'.
+        4.  Inside the block, instantiate `LLMFeatureEnhancer` and call its empty
             `enhance` method, logging a debug message indicating it was called.
-    -   **Outcome**: The `dmap` tool, when run with `--llava classifier`, will correctly
+    -   **Outcome**: The `dmap` tool, when run with `--llm classifier`, will correctly
         enter the enhancement step and log that the process was initiated, though no
         features will be modified.
 
@@ -1414,9 +1419,9 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         the precise pixel data for each feature detected by the `FeatureExtractor`. This
         is a critical prerequisite for sending targeted images to the LLM.
     -   **Key Tasks**:
-        1.  In the `LLaVAFeatureEnhancer.enhance` method, iterate through the features
+        1.  In the `LLMFeatureEnhancer.enhance` method, iterate through the features
             passed in the `enhancement_layers`.
-        2.  For each feature, calculate its bounding box from its `high_res_vertices`.
+        2.  For each feature, calculate its bounding box from its `gridVertices`.
         3.  Use the bounding box to crop the feature's image from the
             `original_region_img`.
         4.  For debugging, add a `log.debug` statement to report the dimensions of each
@@ -1424,45 +1429,45 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Outcome**: The enhancer can now isolate the image data for every detected
         feature.
 
--   **Milestone 62: Implement and Verify Single LLaVA API Call**
-    -   **Goal**: To send one cropped feature image to the LLaVA API and log the raw
+-   **Milestone 62: Implement and Verify Single LLM API Call**
+    -   **Goal**: To send one cropped feature image to the LLM API and log the raw
         response.
     -   **Description**: This milestone connects the pipeline to the Ollama API for the
         first time in a controlled manner. It will process only the *first* feature it
         finds, send it for classification, and log the output without attempting to
         parse or merge it. This isolates the API call for easy debugging.
     -   **Key Tasks**:
-        1.  In `LLaVAFeatureEnhancer.enhance`, modify the feature loop to process only
+        1.  In `LLMFeatureEnhancer.enhance`, modify the feature loop to process only
             the first feature and then break.
-        2.  Call the `llm.query_llava` function with the cropped image and the
+        2.  Call the `llm.query_llm` function with the cropped image and the
             classifier prompt.
-        3.  Add a `log_llm.debug` statement to print the raw JSON or error message
+        3.  Add a `log_llm.debug` statement to print the raw response
             returned from the API call.
-    -   **Outcome**: The tool, when run, will send a single feature to the LLaVA model
+    -   **Outcome**: The tool, when run, will send a single feature to the LLM model
         and print the model's raw classification response to the debug log, verifying
         the end-to-end API connection.
 
 -   **Milestone 63: Implement Full Feature Enhancement and Merging**
-    -   **Goal**: To process all features through LLaVA, parse the results, and merge
+    -   **Goal**: To process all features through the LLM, parse the results, and merge
         them back into the final map data.
     -   **Description**: This final milestone fully enables the feature enhancement
-        pipeline. It removes the single-feature limitation, adds JSON parsing for the
+        pipeline. It removes the single-feature limitation, adds parsing for the
         LLM's response, and updates the feature objects with the new, more descriptive
         `featureType`.
     -   **Key Tasks**:
-        1.  In `LLaVAFeatureEnhancer.enhance`, remove the `break` to allow the loop to
+        1.  In `LLMFeatureEnhancer.enhance`, remove the `break` to allow the loop to
             process all features.
-        2.  Add logic to parse the JSON response from `query_llava`.
+        2.  Add logic to parse the response from `query_llm`.
         3.  If a valid `featureType` is returned by the LLM, update the corresponding
             feature dictionary in the `enhancement_layers` with the new type.
         4.  Ensure the method returns the modified `enhancement_layers` object.
         5.  In `MapAnalyzer`, correctly receive and use the returned, modified context
             for the final transformation stage.
-    -   **Outcome**: When `--llava classifier` is used, the final JSON and SVG output
+    -   **Outcome**: When `--llm classifier` is used, the final JSON and SVG output
         will contain features with semantically rich types (e.g., "stairs", "altar") as
-        classified by the LLaVA model.
+        classified by the LLM.
 
-### Phase 21: LLaVA Oracle Mode Enhancement
+### Phase 21: LLM Oracle Mode Enhancement
 
 -   **Milestone 64: Add Oracle Mode to CLI and Prompts**
     -   **Goal**: To prepare the project for the oracle mode implementation by adding
@@ -1471,27 +1476,27 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         the sophisticated prompt required to instruct the LLM to perform a full-region
         analysis.
     -   **Key Tasks**:
-        1.  In `dmap.py`, update the `--llava` argument's choices to include `oracle`.
-        2.  In `dmap_lib/prompts.py`, create the new `LLAVA_PROMPT_ORACLE` constant.
-            This prompt will ask the LLM to return a JSON object with a list of all
+        1.  In `dmap.py`, update the `--llm` argument's choices to include `oracle`.
+        2.  In `dmap_lib/prompts.py`, create the new `LLM_PROMPT_ORACLE` constant.
+            This prompt will ask the LLM to return CSV data with a list of all
             features it identifies, including their `featureType` and bounding box.
-    -   **Outcome**: The CLI accepts `--llava oracle`, and the new prompt is available
+    -   **Outcome**: The CLI accepts `--llm oracle`, and the new prompt is available
         for use by the enhancer.
 
 -   **Milestone 65: Implement Oracle Mode API Call**
     -   **Goal**: To implement the logic for sending the entire region image to the
-        LLaVA model.
-    -   **Description**: This step adds the 'oracle' branch to the `LLaVAFeatureEnhancer`.
+        LLM.
+    -   **Description**: This step adds the 'oracle' branch to the `LLMFeatureEnhancer`.
         It will send the full image of a dungeon region for analysis and log the raw
         response for debugging.
     -   **Key Tasks**:
-        1.  In `dmap_lib/analysis/features.py`, add logic to the `LLaVAFeatureEnhancer`
+        1.  In `dmap_lib/analysis/features.py`, add logic to the `LLMFeatureEnhancer`
             to handle the `oracle` mode.
-        2.  This logic will call `llm.query_llava` using the *entire*
-            `original_region_img` and the new `LLAVA_PROMPT_ORACLE`.
-        3.  Add a `log_llm.debug` statement to print the raw JSON response from the
+        2.  This logic will call `llm.query_llm` using the *entire*
+            `original_region_img` and the new `LLM_PROMPT_ORACLE`.
+        3.  Add a `log_llm.debug` statement to print the raw response from the
             model.
-    -   **Outcome**: When run with `--llava oracle`, the tool sends the full region
+    -   **Outcome**: When run with `--llm oracle`, the tool sends the full region
         image to the LLM and logs the complete, unprocessed response, verifying the API
         call.
 
@@ -1499,19 +1504,19 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Goal**: To parse the LLM's response and merge its findings with the
         geometrically detected features.
     -   **Description**: This is the core of the oracle mode. It implements the logic
-        to interpret the LLM's JSON output and reconciles it with the
+        to interpret the LLM's CSV output and reconciles it with the
         `FeatureExtractor`'s baseline results. This ensures the semantic richness of
         the LLM without losing the geometric precision of the original extractor.
     -   **Key Tasks**:
-        1.  In `LLaVAFeatureEnhancer.enhance`, add logic to parse the JSON list of
+        1.  In `LLMFeatureEnhancer.enhance`, add logic to parse the CSV list of
             features returned by the oracle prompt.
         2.  For each feature identified by the LLM, find the closest corresponding
             feature (by centroid distance) in the `enhancement_layers`.
         3.  If a close match is found, update the geometrically-sound feature's
             `featureType` with the semantically richer one from the LLM.
-    -   **Outcome**: The `--llava oracle` mode produces a final `MapData` object that
+    -   **Outcome**: The `--llm oracle` mode produces a final `MapData` object that
         combines the geometric accuracy of the `FeatureExtractor` with the advanced
-        semantic classification from the LLaVA oracle pass.
+        semantic classification from the LLM oracle pass.
 
 ### Phase 22: LLM-First Feature Classification Refactoring
 
@@ -1521,7 +1526,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Description**: This milestone streamlines the `StructureAnalyzer` by removing
         the brittle, pattern-matching logic that attempted to classify features
         based on their visual signature. This logic will be replaced by a simpler
-        geometric pre-classification followed by LLaVA-based refinement.
+        geometric pre-classification followed by LLM-based refinement.
     -   **Key Tasks**:
         1.  In `dmap_lib/analysis/structure.py`, delete the `_is_stair_tile_fft` and
             `_classify_door_type` methods.
@@ -1538,7 +1543,7 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         staircases.
     -   **Description**: This milestone adds a pre-classification step to the
         `FeatureExtractor`, allowing it to identify shapes that are likely to be
-        stairs based on their geometry, preparing them for LLaVA refinement.
+        stairs based on their geometry, preparing them for LLM refinement.
     -   **Key Tasks**:
         1.  In `dmap_lib/analysis/features.py`, update the `extract` method to find
             contours with a high aspect ratio that are roughly rectangular.
@@ -1546,18 +1551,18 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     -   **Outcome**: The pipeline can now geometrically identify and pre-classify both
         columns and potential staircases before they are sent to the LLM.
 
--   **Milestone 69: Expand LLaVA Prompts for Refinement**
-    -   **Goal**: To update the LLaVA prompts to include the full taxonomy of features
+-   **Milestone 69: Expand LLM Prompts for Refinement**
+    -   **Goal**: To update the LLM prompts to include the full taxonomy of features
         it is now responsible for classifying.
     -   **Description**: This final step ensures the LLM is aware of the new feature
         types it needs to distinguish between.
     -   **Key Tasks**:
-        1.  In `dmap_lib/prompts.py`, update both the `LLAVA_PROMPT_CLASSIFIER` and
-            `LLAVA_PROMPT_ORACLE` constants.
+        1.  In `dmap_lib/prompts.py`, update both the `LLM_PROMPT_CLASSIFIER` and
+            `LLM_PROMPT_ORACLE` constants.
         2.  Add `"stairs"`, `"door"`, `"secret_door"`, `"iron_bar_door"`, and
             `"double_door"` to the list of possible `feature_type` values in both
             prompts.
-    -   **Outcome**: The LLaVA model will be correctly prompted, enabling it to
+    -   **Outcome**: The LLM will be correctly prompted, enabling it to
         accurately refine the generic "door" and "stairs" pre-classifications into
         their final, specific types.
 
@@ -1670,41 +1675,68 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
         associated with their final parent rooms, enabling accurate clipping and
         rendering.
 
-### Phase 25: LLM-First Geometry and Finalization
-* **Milestone 76: Update Prompts for Bounding Box Requirement**
+### Phase 25: (DEPRECATED) LLM-First Geometry and Finalization
+*This phase was superseded by the Semantic Reconciliation approach implemented in Phase 26.*
+
+* **Milestone 76: (DEPRECATED) Update Prompts for Bounding Box Requirement**
     * **Goal**: To modify the LLaVA prompts to require a `bounding_box` for all
         identified features.
-    * **Description**: This milestone updates the contract with the LLM. Both the
-        `classifier` and `oracle` prompts will be changed to mandate that the JSON
-        response includes a pixel-based `bounding_box` for every feature it
-        classifies. This makes the bounding box a required, not optional, piece of
-        information from the LLM.
-    * **Key Tasks**:
-        1.  In `dmap_lib/prompts.py`, edit the `LLAVA_PROMPT_CLASSIFIER`. Add a
-            `bounding_box` key to the example response and update the instructions to
-            require it.
-        2.  Ensure the `LLAVA_PROMPT_ORACLE` is consistent with this requirement.
-    * **Outcome**: Both LLaVA prompts are updated to enforce the return of a
-        bounding box, preparing the system for an LLM-first geometry approach.
+    * **Outcome**: This approach was abandoned in favor of a simpler, classification-only
+        prompt for the `classifier` mode.
 
-* **Milestone 77: Implement LLM-Defined Feature Geometry**
+* **Milestone 77: (DEPRECATED) Implement LLM-Defined Feature Geometry**
     * **Goal**: To replace the CV-detected feature polygons with rectangular polygons
         derived from the LLM-provided bounding boxes.
-    * **Description**: This is the core of the simplified, LLM-first approach. The
-        `LLaVAFeatureEnhancer` will be refactored to discard the original, often
-        complex, feature polygon from the `FeatureExtractor`. It will be replaced
-        entirely by a simple rectangular polygon constructed from the `bounding_box`
-        provided by the LLM.
+    * **Outcome**: This approach was abandoned. The implemented `oracle` mode uses the
+        LLM for semantic classification but retains the geometrically-superior polygons
+        detected by the CV pipeline.
+
+### Phase 26: Post-Hoc Realignment: LLM Semantic Reconciliation
+*This phase documents the as-built implementation of the LLM integration, which deviates
+from the original "LLM-First Geometry" plan.*
+
+* **Milestone 78: Implement Semantic Reconciliation**
+    * **Goal**: To use the LLM to refine the *type* of a feature while preserving its
+        CV-detected geometry.
+    * **Description**: This milestone describes the logic implemented in the `oracle`
+        mode. The system uses the LLM's superior semantic understanding to correct the
+        `featureType` of a feature but trusts the CV stage for its precise shape and
+        location, combining the strengths of both approaches.
     * **Key Tasks**:
-        1.  In `dmap_lib/analysis/features.py`, modify the `LLaVAFeatureEnhancer`.
-        2.  In both the `_enhance_classifier` and `_enhance_oracle` methods, parse the
-            `bounding_box` from the LLM response.
-        3.  Translate the pixel-based bounding box coordinates into the high-resolution
-            grid coordinate system.
-        4.  Construct a new, rectangular `gridVertices` list from the four corners of
-            the translated bounding box.
-        5.  **Completely replace** the original `gridVertices` of the feature with
-            this new rectangular list.
-    * **Outcome**: All features processed by LLaVA will now have simple, rectangular
-        shapes defined by the LLM's visual analysis, streamlining the geometry and
-        making the LLM the definitive source for feature shape and position.
+        1.  In `LLMFeatureEnhancer._enhance_oracle`, calculate the centroid of each
+            LLM-detected feature and each CV-detected feature.
+        2.  For each LLM feature, find the nearest CV feature.
+        3.  If the distance is within a reasonable threshold (e.g., one grid unit),
+            update the `featureType` of the CV feature with the type from the LLM feature.
+    * **Outcome**: The final `MapData` object combines the geometric accuracy of the CV
+        pipeline with the semantic classification accuracy of the LLM.
+
+* **Milestone 79: Implement Simplified Classifier Prompt**
+    * **Goal**: To align the `classifier` mode with its implemented function as a
+        simple, single-word classifier.
+    * **Description**: This documents the actual prompt used for the `classifier` mode,
+        which does not request bounding box information. This simplifies the prompt and
+        aligns it with the enhancement-focused (not geometry-focused) role of the LLM.
+    * **Key Tasks**:
+        1.  In `dmap_lib/prompts.py`, ensure `LLM_PROMPT_CLASSIFIER` asks only for a
+            single-word response.
+        2.  In `LLMFeatureEnhancer._enhance_classifier`, parse the simple string response
+            from the LLM to update the feature's `featureType`.
+    * **Outcome**: The classifier mode is streamlined to perform a single, focused task:
+        updating a feature's type based on a cropped image.
+
+* **Milestone 80: Retain Geometric Pre-classification Heuristics**
+    * **Goal**: To formally document the retention of CV-based pre-classification
+        heuristics that work in tandem with the LLM.
+    * **Description**: The initial plan was to remove all CV heuristics and rely on the
+        LLM. The implemented solution proved more robust by using simple geometry
+        (aspect ratio) to pre-classify features as `column` or `stairs`, which the
+        LLM can then refine. This milestone documents that intentional design choice.
+    * **Key Tasks**:
+        1.  In `FeatureExtractor._classify_features`, retain the logic that uses aspect
+            ratio and area to assign an initial `featureType`.
+        2.  This pre-classified feature is then passed to the `LLMFeatureEnhancer` for
+            potential refinement.
+    * **Outcome**: The final implementation uses a hybrid approach where simple, reliable
+        geometric heuristics provide a baseline classification that is then enhanced by
+        the LLM, leading to a more robust and efficient pipeline.
