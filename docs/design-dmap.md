@@ -1,3 +1,4 @@
+# --- design-dmap.md ---
 # Project: dmap (Dungeon Map Processor)
 
 ---
@@ -1668,3 +1669,42 @@ The CLI provides a user-friendly way to interact with the `dmap_lib` library.
     * **Outcome**: All features and layers, including water, are now correctly
         associated with their final parent rooms, enabling accurate clipping and
         rendering.
+
+### Phase 25: LLM-First Geometry and Finalization
+* **Milestone 76: Update Prompts for Bounding Box Requirement**
+    * **Goal**: To modify the LLaVA prompts to require a `bounding_box` for all
+        identified features.
+    * **Description**: This milestone updates the contract with the LLM. Both the
+        `classifier` and `oracle` prompts will be changed to mandate that the JSON
+        response includes a pixel-based `bounding_box` for every feature it
+        classifies. This makes the bounding box a required, not optional, piece of
+        information from the LLM.
+    * **Key Tasks**:
+        1.  In `dmap_lib/prompts.py`, edit the `LLAVA_PROMPT_CLASSIFIER`. Add a
+            `bounding_box` key to the example response and update the instructions to
+            require it.
+        2.  Ensure the `LLAVA_PROMPT_ORACLE` is consistent with this requirement.
+    * **Outcome**: Both LLaVA prompts are updated to enforce the return of a
+        bounding box, preparing the system for an LLM-first geometry approach.
+
+* **Milestone 77: Implement LLM-Defined Feature Geometry**
+    * **Goal**: To replace the CV-detected feature polygons with rectangular polygons
+        derived from the LLM-provided bounding boxes.
+    * **Description**: This is the core of the simplified, LLM-first approach. The
+        `LLaVAFeatureEnhancer` will be refactored to discard the original, often
+        complex, feature polygon from the `FeatureExtractor`. It will be replaced
+        entirely by a simple rectangular polygon constructed from the `bounding_box`
+        provided by the LLM.
+    * **Key Tasks**:
+        1.  In `dmap_lib/analysis/features.py`, modify the `LLaVAFeatureEnhancer`.
+        2.  In both the `_enhance_classifier` and `_enhance_oracle` methods, parse the
+            `bounding_box` from the LLM response.
+        3.  Translate the pixel-based bounding box coordinates into the high-resolution
+            grid coordinate system.
+        4.  Construct a new, rectangular `gridVertices` list from the four corners of
+            the translated bounding box.
+        5.  **Completely replace** the original `gridVertices` of the feature with
+            this new rectangular list.
+    * **Outcome**: All features processed by LLaVA will now have simple, rectangular
+        shapes defined by the LLM's visual analysis, streamlining the geometry and
+        making the LLM the definitive source for feature shape and position.
