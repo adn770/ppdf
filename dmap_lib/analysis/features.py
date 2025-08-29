@@ -1,4 +1,3 @@
-# --- dmap_lib/analysis/features.py ---
 import logging
 import os
 from typing import List, Dict, Any, Optional
@@ -243,20 +242,20 @@ class LLMFeatureEnhancer:
                 2,
             )
 
-            # Calculate and draw the 3x3 grid area for classifier
+            # Calculate and draw the 7x7 grid area for classifier
             M = cv2.moments(px_verts)
             if M["m00"] > 0:
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
-                gx, gy = cx // grid_size, cy // grid_size
 
-                x1 = max(0, (gx - 1) * grid_size)
-                y1 = max(0, (gy - 1) * grid_size)
-                x2 = min(img.shape[1], (gx + 2) * grid_size)
-                y2 = min(img.shape[0], (gy + 2) * grid_size)
+                crop_size = grid_size * 7
+                crop_x1 = max(0, cx - crop_size // 2)
+                crop_y1 = max(0, cy - crop_size // 2)
+                crop_x2 = min(img.shape[1], cx + crop_size // 2)
+                crop_y2 = min(img.shape[0], cy + crop_size // 2)
 
                 # Draw a semi-transparent rectangle for the crop area
-                cv2.rectangle(overlay, (x1, y1), (x2, y2), crop_area_color, -1)
+                cv2.rectangle(overlay, (crop_x1, crop_y1), (crop_x2, crop_y2), crop_area_color, -1)
 
         # Apply the transparent overlay
         alpha = 0.3
@@ -382,31 +381,50 @@ class LLMFeatureEnhancer:
         if not features:
             return enhancement_layers
 
+        img_h, img_w = original_region_img.shape[:2]
+
         for feature in features:
-            verts = np.array(
-                [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+            px_verts = (
+                np.array(
+                    [(v["x"] * grid_size, v["y"] * grid_size) for v in feature["gridVertices"]]
+                )
             ).astype(np.int32)
-            M = cv2.moments(verts)
-            if M["m00"] == 0:
-                continue
 
-            # 1. Find the centroid and the grid tile it belongs to
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
-            gx, gy = cx // grid_size, cy // grid_size
+            # 1. Get the feature's precise bounding box and center
+            x, y, w, h = cv2.boundingRect(px_verts)
+            center_x, center_y = x + w // 2, y + h // 2
+            gx, gy = center_x // grid_size, center_y // grid_size
+            preclassified_type = feature.get("featureType", "unknown")
 
-            # 2. Calculate the 3x3 grid area for the crop
-            crop_x1 = max(0, (gx - 1) * grid_size)
-            crop_y1 = max(0, (gy - 1) * grid_size)
-            crop_x2 = min(original_region_img.shape[1], (gx + 2) * grid_size)
-            crop_y2 = min(original_region_img.shape[0], (gy + 2) * grid_size)
+            # 2. Define the crop window size (7x7 grid cells)
+            crop_size = grid_size * 7
+            half_crop = crop_size // 2
 
-            cropped_img = original_region_img[crop_y1:crop_y2, crop_x1:crop_x2]
-            if cropped_img.size == 0:
-                continue
+            # 3. Create a padded canvas to ensure the feature is always centered
+            # Using a neutral gray color for padding.
+            padded_canvas = np.full((crop_size, crop_size, 3), (128, 128, 128), dtype=np.uint8)
+
+            # 4. Calculate source (from original image) and destination (on canvas) rects
+            src_x1 = max(0, center_x - half_crop)
+            src_y1 = max(0, center_y - half_crop)
+            src_x2 = min(img_w, center_x + half_crop)
+            src_y2 = min(img_h, center_y + half_crop)
+
+            dest_x1 = half_crop - (center_x - src_x1)
+            dest_y1 = half_crop - (center_y - src_y1)
+            dest_x2 = dest_x1 + (src_x2 - src_x1)
+            dest_y2 = dest_y1 + (src_y2 - src_y1)
+
+            # 5. Extract the region from the original image and paste it centrally
+            source_crop = original_region_img[src_y1:src_y2, src_x1:src_x2]
+            if source_crop.size > 0:
+                padded_canvas[dest_y1:dest_y2, dest_x1:dest_x2] = source_crop
+
+            cropped_img = padded_canvas
 
             log_llm.debug(
-                "  📤  Sending request to LLM for tile (%d, %d).", gx, gy
+                "  📤  Sending request to LLM for pre-classified '%s' at tile (%d, %d).",
+                preclassified_type, gx, gy
             )
             response_str = query_llm(
                 self.ollama_url,
@@ -418,13 +436,13 @@ class LLMFeatureEnhancer:
             )
 
             if not response_str:
-                log_llm.warning("LLM analysis failed for tile (%d, %d).", gx, gy)
+                log_llm.warning("LLM analysis failed for feature at (%d, %d).", gx, gy)
                 continue
 
             try:
-                new_type = response_str.strip().split(",")[0]
-                if not new_type:
-                    raise ValueError("Empty response from LLM.")
+                new_type = response_str.strip().lower().split(",")[0]
+                if not new_type or new_type == "null":
+                    continue # Skip if the LLM thinks it's empty space
 
                 log_llm.info(
                     "    📦  LLM classified feature at tile (%d, %d) as '%s'.",
@@ -434,7 +452,7 @@ class LLMFeatureEnhancer:
 
             except (ValueError, IndexError) as e:
                 log_llm.warning(
-                    "Failed to parse response from LLM for tile (%d, %d): %s. Response: '%s'",
+                    "Failed to parse response from LLM for feature at tile (%d, %d): %s. Response: '%s'",
                     gx, gy, e, response_str
                 )
 
@@ -473,7 +491,7 @@ class LLMFeatureEnhancer:
                 parts = line.strip().split(",")
                 if len(parts) != 5:
                     continue
-                feature_type = parts[0].strip()
+                feature_type = parts[0].strip().lower()
                 bbox_vals = [float(p.strip()) for p in parts[1:]]
                 llm_features.append(
                     {
