@@ -1,3 +1,4 @@
+# --- dmme.py ---
 #!/usr/bin/env python3
 """dmme: Main entry point for the game driver."""
 
@@ -102,12 +103,20 @@ def main():
 
     # --- Run Server ---
     try:
-        log.info("Starting DMme Flask server at http://127.0.0.1:5000...")
-        log.info("Press CTRL+C to stop the server.")
+        host = "127.0.0.1"
+        port = 5000
+        url = f"http://{host}:{port}"
+
+        # Ensure the user sees this regardless of log level
+        print(f"\n🚀 DMme Engine is running! Access the app at: {url}")
+        print("Press CTRL+C to stop.\n")
+
+        log.info("Starting DMme Flask server at %s...", url)
+
         # Use waitress or another production-ready server in a real deployment
         from waitress import serve
 
-        serve(app, host="127.0.0.1", port=5000, channel_timeout=600)
+        serve(app, host=host, port=port, channel_timeout=600)
     except KeyboardInterrupt:
         log.info("\nServer stopped by user. Exiting.")
         sys.exit(0)
