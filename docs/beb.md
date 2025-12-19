@@ -76,7 +76,7 @@ El tipus i nombre de daus que es fan servir per calcular els punts de cop màxim
 
 Representa l'expertesa del personatge en les arts del combat i augmenta proporcionalment a cada nivell.
 
-#### Tirada d'atac 
+#### Tirada d'atac
 
 És la tirada que es fa per decidir si es pot colpir a un oponent en un atac, superant la seva defensa (CA).
 
@@ -90,7 +90,7 @@ Es fa per decidir el comportament (fugir o continuar lluitant) de les criatures 
 
 #### Factor de moviment (MV)
 
-La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. Es descriu per un factor de moviment base i un factor de moviment d'encontre assenyalat entre parèntesis. El factor per defecte és 120' (40'); un factor base de 120' i un factor d'encontre de 40'.
+La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. Es descriu per un factor de moviment base i un factor de moviment d'encontre assenyalat entre parèntesis. El factor per defecte és 120 peus (40 peus); un factor base de 120 peus i un factor d'encontre de 40 peus.
 
 # Personatges
 
@@ -110,7 +110,17 @@ Pots començar de nou quan els resultats són molt baixos; per exemple, un 8 o m
 
 #### 2\. Anota els modificadors per habilitat
 
-Anota els modificadors de les habilitats del personatge segons aquesta taula ⇨.
+Anota els modificadors de les habilitats del personatge segons aquesta taula.
+
+| Puntuació d'habilitat | Modificador |
+| :-----------: | :------: |
+|       3       |    -3    |
+|      4-5      |    -2    |
+|      6-8      |    -1    |
+|     9-12      |     0    |
+|     13-15     |    +1    |
+|     16-17     |    +2    |
+|      18       |    +3    |
 
 #### 3\. Tria una classe
 
@@ -150,7 +160,7 @@ Quan no es porta cap armadura la CA base és 10\.
 
 Decideix amb quina esfera còsmica està alineat el personatge i anota-ho a la fitxa.
 
-#### 10\. Tocs finals 
+#### 10\. Tocs finals
 
 Tria-li un nom i anota que és al primer nivell, amb zero punts d'experiència i ja pot començar l'aventura\!
 
@@ -158,9 +168,9 @@ Tria-li un nom i anota que és al primer nivell, amb zero punts d'experiència i
 
 ### Força
 
-Descriu el múscul i el poder físic; afecta el combat. 
+Descriu el múscul i el poder físic; afecta el combat.
 
-- **Lluita cos a cos:** el modificador s'aplica tant a les tirades d'atac com a les de dany (mínim un punt de dany) per les armes de lluita cos a cos. 
+- **Lluita cos a cos:** el modificador s'aplica tant a les tirades d'atac com a les de dany (mínim un punt de dany) per les armes de lluita cos a cos.
 
 - **Obrir portes:** s'afegeix el modificador a la probabilitat d'èxit per obrir una porta travada.
 
@@ -252,8 +262,32 @@ Depenen de la classe, el món de joc i tots parlen el comú, tanmateix, els que 
 
 En els mons de joc, moltes criatures intel·ligents tenen el seu idioma propi que alguns personatges poden aprendre. Per exemple:
 
-| centauric dialecte humà doppelgänger dragonès èlfic gargòlic  gegantés gnòlic gnòmic  granyotic goblinès hàrpic | hobgoblinès kobold llangardànic medúsic minotàuric mitgenc nanenc ogrès òrquic osgonès  silvà trolès |
+| # | idioma |
 | :---- | :---- |
+| 1 | centauric |
+| 2 | dialecte humà |
+| 3 | doppelgänger |
+| 4 | dragonès |
+| 5 | èlfic |
+| 6 | gargòlic |
+| 7 | gegantés |
+| 8 | gnòlic |
+| 9 | gnòmic |
+| 10 | granyotic |
+| 11 | goblinès |
+| 12 | hàrpic |
+| 13 | hobgoblinès |
+| 14 | kobold |
+| 15 | llangardànic |
+| 16 | medúsic |
+| 17 | minotàuric |
+| 18 | mitgenc |
+| 19 | nanenc |
+| 20 | ogrès |
+| 21 | òrquic |
+| 22 | osgonès |
+| 23 | silvà |
+| 24 | trolès |
 
 #### Llegir i escriure
 
@@ -332,13 +366,13 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 **Caixa d'esca:** es fa servir per fer foc i encendre torxes, amb 2-en-6 possibilitats d'èxit per assalt i cal dedicar-hi un torn.
 
-**Campana:** útil per parar paranys del tipus alarma. 
+**Campana:** útil per parar paranys del tipus alarma.
 
 **Corda:** aguanta el pes d'aproximadament tres éssers de mida humana; la de seda és més prima i lleugera.
 
 **Eines de lladre:** necessàries desactivar paranys i per obrir panys. Inclou: rossinyols, una serra de metall, un martellet, puntes d'acer, tenalles, tisores, etc.
 
-**Espelma:** capaç d'il·luminar en un radi de 5 peus i cremar durant 6 torns (1 hora). 
+**Espelma:** capaç d'il·luminar en un radi de 5 peus i cremar durant 6 torns (1 hora).
 
 **Estaques i maça de fusta:** tres estaques de 18 polzades de llarg són molt útils contra els vampirs.
 
@@ -391,22 +425,22 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 | Objecte | Dany | Preu (po) | Qualitats | Pes en monedes |
 | :---- | :---: | :---: | :---- | :---: |
 | Alabarda | 1d10 | 7 | Clavar, cos a cos, a dues mans | 150 |
-| Arc curt | 1d6 | 15 | Projectils (5'-50' / 51'-100' / 101'-150'), a dues mans | 30 |
-| Arc llarg | 1d6 | 40 | Projectil (5'-70' / 71'-140' / 141'-210'), a dues mans | 30 |
-| Ballesta | 1d6 | 30 | Projectils (5'-80' / 81'-160' / 161'-240'), recarrega, a dues mans | 60 |
+| Arc curt | 1d6 | 15 | Projectils (5 peus a 50 peus / 51 peus a 100 peus / 101 peus a 150 peus), a dues mans | 30 |
+| Arc llarg | 1d6 | 40 | Projectil (5 peus a 70 peus / 71 peus a 140 peus / 141 peus a 210 peus), a dues mans | 30 |
+| Ballesta | 1d6 | 30 | Projectils (5 peus a 80 peus / 81 peus a 160 peus / 161 peus a 240 peus), recarrega, a dues mans | 60 |
 | Bastó | 1d4 | 2 | Contundent, cos a cos, lent, a dues mans | 40 |
-| Daga | 1d4 | 3 | Cos a cos, projectil (5'-10' / 11'-20' / 21'-30') | 10 |
-| Daga de plata | 1d4 | 30 | Cos a cos, projectil (5'-10' / 11'-20' / 21'-30') | 10 |
+| Daga | 1d4 | 3 | Cos a cos, projectil (5 peus a 10 peus / 11 peus a 20 peus / 21 peus a 30 peus) | 10 |
+| Daga de plata | 1d4 | 30 | Cos a cos, projectil (5 peus a 10 peus / 11 peus a 20 peus / 21 peus a 30 peus) | 10 |
 | Destral de batalla | 1d8 | 7 | Cos a cos, a dues mans | 60 |
-| Destral de mà | 1d6 | 4 | Cos a cos, projectil (5'-10' / 11'-20' / 21'-30') | 30 |
+| Destral de mà | 1d6 | 4 | Cos a cos, projectil (5 peus a 10 peus / 11 peus a 20 peus / 21 peus a 30 peus) | 30 |
 | Espasa | 1d8 | 10 | Cos a cos | 60 |
 | Espasa a dues mans | 1d10 | 15 | Cos a cos, a dues mans | 150 |
 | Espasa bastarda | 1d6+1 / 1d8+1 | 15 | Cos a cos, a una o a dues mans | 80 |
 | Espasa curta | 1d6 | 7 | Cos a cos | 30 |
-| Fona | 1d4 | 2 | Contundent, projectil (5'-40' / 41'-80' / 81'-160') | 10 |
+| Fona | 1d4 | 2 | Contundent, projectil (5 peus a 40 peus / 41 peus a 80 peus / 81 peus a 160 peus) | 10 |
 | Garrot | 1d4 | 3 | Contundent, cos a cos | 60 |
-| Javelina | 1d4 | 1 | Projectil (5'-30' / 31'-60' / 61'-90') | 20 |
-| Llança | 1d6 | 4 | Clavar, cos a cos, projectil (5'-20' / 21'-40' / 41'-60') | 30 |
+| Javelina | 1d4 | 1 | Projectil (5 peus a 30 peus / 31 peus a 60 peus / 61 peus a 90 peus) | 20 |
+| Llança | 1d6 | 4 | Clavar, cos a cos, projectil (5 peus a 20 peus / 21 peus a 40 peus / 41 peus a 60 peus) | 30 |
 | Llança de cavalleria | 1d6 | 5 | Envestir, cos a cos | 120 |
 | Maça | 1d6 | 5 | Contundent, cos a cos | 30 |
 | Martell de guerra | 1d6 | 5 | Contundent, cos a cos | 30 |
@@ -415,8 +449,8 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 | Objecte | Dany | Qualitats |
 | :---- | :---: | :---- |
-| Aigua beneïda | 1d8 | Projectil (5'-10' / 11'-30' / 31'-50'), esquitxa |
-| Oli encès | 1d8 | Projectil (5'-10' / 11'-30' / 31'-50'), esquitxa |
+| Aigua beneïda | 1d8 | Projectil (5 peus a 10 peus / 11 peus a 30 peus / 31 peus a 50 peus), esquitxa |
+| Oli encès | 1d8 | Projectil (5 peus a 10 peus / 11 peus a 30 peus / 31 peus a 50 peus), esquitxa |
 | Torxa, palanca | 1d4 | Cos a cos |
 
 #### Munició
@@ -459,18 +493,92 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 ## Farcells d'aventurer
 
-| Farcell A (40 po) | Farcell B (30 po) | Farcell C (30 po) | Farcell D (50 po) |
-| :---: | :---: | :---: | :---: |
-| Motxilla3 sacs gransLlanterna2 flascons d'oli Caixa d'escaBotaRacions estàndard (7 dies)Sac de dormir i mantaMirall (petit, d'acer) | Motxilla3 sacs grans6 torxes3 flascons d'oliCaixa d'escaBotaRacions estàndard (7 dies)Sac de dormir i mantaPal de fusta de 10 peus o corda | Motxilla3 sacs petitsSímbol sagrat (de fusta)12 piquetes de ferroMartell petitBotaRacions estàndard (7 dies)Sac de dormir i una manta6 cabeces d'alls o 1 matallops | Motxilla5 sacs petitsEines de lladre o símbol sagrat(de plata)12 piquetes de ferroMartell petit i 3 estaquesBotaRacions estàndard (7 dies)Sac de dormir i una manta |
+### Farcell A (40 po)
+
+-  Motxilla
+
+-  3 sacs grans
+
+-  Llanterna
+
+-  2 flascons d'oli
+
+-  Caixa d'esca
+
+-  Bota
+
+-  Racions estàndard (7 dies)
+
+-  Sac de dormir i manta
+
+-  Mirall (petit, d'acer)
+
+### Farcell B (30 po)
+
+-  Motxilla
+
+-  3 sacs grans
+
+-  6 torxes
+
+-  3 flascons d'oli
+
+-  Caixa d'esca
+
+-  Bota
+
+-  Racions estàndard (7 dies)
+
+-  Sac de dormir i manta
+
+-  Pal de fusta de 10 peus o corda
+
+### Farcell C (30 po)
+
+-  Motxilla
+
+-  3 sacs petits
+
+-  Símbol sagrat (de fusta)
+
+-  12 piquetes de ferro
+
+-  Martell petit
+
+-  Bota
+
+-  Racions estàndard (7 dies)
+
+-  Sac de dormir i una manta
+
+-  6 cabeces d'alls o 1 matallops
+
+### Farcell D (50 po)
+
+-  Motxilla
+
+-  5 sacs petits
+
+-  Eines de lladre o símbol sagrat(de plata)
+
+-  12 piquetes de ferro
+
+-  Martell petit i 3 estaques
+
+-  Bota
+
+-  Racions estàndard (7 dies)
+
+-  Sac de dormir i una manta
 
 # Classes de personatge
 
 ## Clergue
 
-**Requisits:** mínim 9 a ***saviesa***  
-**Daus de cop:** 1d6  
-**Armadura:** qualsevol i els escuts  
-**Armes:** qualsevol arma contundent  
+**Requisits:** mínim 9 a ***saviesa***
+**Daus de cop:** 1d6
+**Armadura:** qualsevol i els escuts
+**Armes:** qualsevol arma contundent
 **Idiomes:** comú
 
 Aquests són aventurers que coneixen com canalitzar el poder màgic que els atorga la deïtat que representen.
@@ -531,15 +639,15 @@ Poden invocar el poder del seu deu per repel·lir a monstres no-morts. El jugado
 
 **Valor:** és un èxit quan s'iguala o supera aquest valor.
 
-**“-”:** l'intent d'expulsió falla.  
+**“-”:** l'intent d'expulsió falla.
 **“2\*”:** monstres de 2 DC amb una habilitat especial, és a dir, amb un asterisc al costat del nombre de DC a la descripció del monstre.
 
 ## Elf
 
-**Requisits:** mínim 9 a ***destresa*** i a ***intel·ligència***  
-**Daus de cop:** 1d6  
-**Armadura:** qualsevol i els escuts  
-**Armes:** qualsevol  
+**Requisits:** mínim 9 a ***destresa*** i a ***intel·ligència***
+**Daus de cop:** 1d6
+**Armadura:** qualsevol i els escuts
+**Armes:** qualsevol
 **Idiomes:** comú, èlfic, gnòlic, hobgoblinès, òrquic
 
 Els elfs són éssers encantadors, esvelts i d'orelles punxegudes. En general pesen al voltant de 120 lliures i fan entre 5 i 5,5 peus d'alçada. Poques vegades es troben elfs en els assentaments humans, prefereixen festejar i divertir-se al bosc. Si els tens en contra, són enemics perillosos, ja que són mestres tant amb l'espasa com amb els encanteris. Als elfs els fascinen els encanteris, els objectes màgics ben construïts i els encanta col·leccionar-los.
@@ -589,10 +697,10 @@ A més de necessitar ploma per escriure, la tinta i el pergamí, cal dedicació 
 
 ## Guerrer
 
-**Requisits:** mínim 9 a ***força***  
-**Daus de cop:** 1d8  
-**Armadura:** qualsevol i els escuts  
-**Armes:** qualsevol  
+**Requisits:** mínim 9 a ***força***
+**Daus de cop:** 1d8
+**Armadura:** qualsevol i els escuts
+**Armes:** qualsevol
 **Idiomes:** comú
 
 Els guerrers són aventurers dedicats al domini de les arts del combat i la guerra. En un grup d'aventurers, el paper dels guerrers acostuma a ser el de lluitar contra criatures i defensar els altres personatges.
@@ -614,10 +722,10 @@ Els guerrers poden fer servir tota mena d'armes i armadures.
 
 ## Lladre
 
-**Requisits:** mínim 9 a ***destresa***  
-**Daus de cop:** 1d6  
-**Armadura:** cuir i sense escut  
-**Armes:** qualsevol  
+**Requisits:** mínim 9 a ***destresa***
+**Daus de cop:** 1d6
+**Armadura:** cuir i sense escut
+**Armes:** qualsevol
 **Idiomes:** comú
 
 Són mestres en l'engany, el sigil i dominen d'altres habilitats úniques que els fa uns companys d'aventura molt útils, però també són astuts i mandrosos, i no sempre s'hi pot confiar.
@@ -653,7 +761,7 @@ Aquests personatges tenen un conjunt d'habilitats divers que els permet enfronta
 | 4 | 5+ | 9+ | 3-en-6 | 10+ | 9+ | 9+ | 9+ |
 | 5 | 5+ | 9+ | 3-en-6 | 9+ | 9+ | 9+ | 8+ |
 
-- **Escalar parets llises (EP):** cal tirar per cada 100' i si es falla el PJ cau a mig camí, patint dany per la caiguda.
+- **Escalar parets llises (EP):** cal tirar per cada 100 peus i si es falla el PJ cau a mig camí, patint dany per la caiguda.
 
 - **Detectar o desactivar paranys de tresor (DP):** cal una tirada per detectar el parany i després un altre per desactivar-lo. Tan sols es pot intentar un cop per parany.
 
@@ -681,10 +789,10 @@ A partir 4t nivell, pot llegir textos no màgics en qualsevol idioma, fins i tot
 
 ## Mag
 
-**Requisits:** mínim 9 a ***intel·ligència***  
-**Daus de cop:** 1d4  
-**Armadura:** cap  
-**Armes:** daga o bató de mag  
+**Requisits:** mínim 9 a ***intel·ligència***
+**Daus de cop:** 1d4
+**Armadura:** cap
+**Armes:** daga o bató de mag
 **Idiomes:** comú
 
 Els mags són aventurers dedicats a l'estudi dels secrets arcans i han après les arts per llançar encanteris. A mesura que assoleixen nivells més alts poden llançar més encanteris i més potents.
@@ -718,10 +826,10 @@ A més de necessitar ploma per escriure, la tinta i el pergamí, cal dedicació 
 
 ## Mitgerol
 
-**Requisits:** mínim 9 a ***constitució***  
-**Daus de cop:** 1d6  
-**Armadura:** qualsevol de la mida adequada i els escuts  
-**Armes:** qualsevol de la mida adequada  
+**Requisits:** mínim 9 a ***constitució***
+**Daus de cop:** 1d6
+**Armadura:** qualsevol de la mida adequada i els escuts
+**Armes:** qualsevol de la mida adequada
 **Idiomes:** comú, mitgenc
 
 Els mitgerols són petits semihumans rodanxons amb els peus peluts i els cabells arrissats que pesen al voltant de 60 lliures i s'alcen uns 3 peus. Són gent amable, amistosa i sobretot, els encanten les comoditats de la seva llar; no són pas coneguts per la seva valentia. Els mitgerols que tornen de les aventures amb un gran tresor, sovint utilitzen aquesta riquesa per donar-se una vida tranquil·la i confortable.
@@ -763,13 +871,13 @@ Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat.
 
 ## Nan
 
-**Requisits:** mínim 9 a ***constitució***  
-**Daus de cop:** 1d8  
-**Armadura:** qualsevol i els escuts  
-**Armes:** mida petita o normal  
+**Requisits:** mínim 9 a ***constitució***
+**Daus de cop:** 1d8
+**Armadura:** qualsevol i els escuts
+**Armes:** mida petita o normal
 **Idiomes:** comú, nanenc, gnòmic, goblinès, kobold
 
-Són uns semihumans robustos i barbuts, d'uns 4' d'alçada i un pes d'unes 150 lliures. Els nans acostumen a viure sota terra i els encanta l'artesania, l'or, el menjar abundant i la beguda forta. Tenen la pell, els cabells i els ulls dels colors de la terra. Els nans són coneguts per la seva tossuderia i pragmatisme. Són resilients i amb una gran resistència a la màgia, tal com es reflecteix en les seves tirades de salvació.
+Són uns semihumans robustos i barbuts, d'uns 4 peus d'alçada i un pes d'unes 150 lliures. Els nans acostumen a viure sota terra i els encanta l'artesania, l'or, el menjar abundant i la beguda forta. Tenen la pell, els cabells i els ulls dels colors de la terra. Els nans són coneguts per la seva tossuderia i pragmatisme. Són resilients i amb una gran resistència a la màgia, tal com es reflecteix en les seves tirades de salvació.
 
 |  |  |  |  | Salvació |  |  |  |  |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -802,12 +910,12 @@ Tenen infravisió amb un abast de fins a 60 peus.
 
 Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat.
 
-## Rodamons
+## Rodamon
 
-**Requisits:** mínim 9 a ***constitució*** i a ***destresa***, i 13 a ***intel·ligència***  
-**Daus de cop:** 1d6  
-**Armadura:** cuir i sense escut  
-**Armes:** garrots, dagues, bastons i fones  
+**Requisits:** mínim 9 a ***constitució*** i a ***destresa***, i 13 a ***intel·ligència***
+**Daus de cop:** 1d6
+**Armadura:** cuir i sense escut
+**Armes:** garrots, dagues, bastons i fones
 **Idiomes:** comú, mitgenc, èlfic, nanenc, gnòmic, goblinès, kobold
 
 Sovint anomenats vagabunds o nòmades, han triat un estil de vida que els porta d'una banda a una altra, aprenent a sobreviure pel camí, atresorant perles de coneixement i màgia. Són afables i estan a gust amb qualsevol companyia que coneguin en els seus viatges.
@@ -865,9 +973,9 @@ A partir 4t nivell, pot llegir textos no màgics en qualsevol idioma, fins i tot
 
 | 1d4 | Nom | Tipus | Durada | Abast |
 | :---: | :---- | :---: | :---: | :---: |
-| **1** | Encisar persona | Arcà | Dies | 120' |
-| **2** | Detectar el mal | Diví | 6 torns | 120' |
-| **3** | Detectar màgia | Diví | 2 torns | 60' |
+| **1** | Encisar persona | Arcà | Dies | 120 peus |
+| **2** | Detectar el mal | Diví | 6 torns | 120 peus |
+| **3** | Detectar màgia | Diví | 2 torns | 60 peus |
 | **4** | Protecció del mal | Diví | 6 torns | Llançador |
 
 # Aventures
@@ -890,7 +998,7 @@ El botí es pot dividir entre els personatges supervivents de la manera que aque
 
 ## Seguiment del temps
 
-S’anomena ***temps de joc***, al que transcorre en el món imaginari on els jugadors viuen les aventures. És crucial que el director de joc en faci un seguiment acurat per tal d'assegurar-se que els personatges descansen i mengen regularment, penalitzar-los si no ho fan. També cal recordar que quan es fan servir torxes o llanternes enceses, aquestes tenen una duració determinada i en algun moment s'apagaran. Finalment, cal recordar que alguns efectes màgics també especifiquen una durada. 
+S’anomena ***temps de joc***, al que transcorre en el món imaginari on els jugadors viuen les aventures. És crucial que el director de joc en faci un seguiment acurat per tal d'assegurar-se que els personatges descansen i mengen regularment, penalitzar-los si no ho fan. També cal recordar que quan es fan servir torxes o llanternes enceses, aquestes tenen una duració determinada i en algun moment s'apagaran. Finalment, cal recordar que alguns efectes màgics també especifiquen una durada.
 
 - Quan s'explora una masmorra, es fa el seguiment del nombre de torns transcorreguts
 
@@ -955,9 +1063,9 @@ Entre sessions, els jugadors cal que facin el recompte acurat de la càrrega i q
 
 | Armadura | Poca càrrega | Molta càrrega |
 | :---: | :---: | :---: |
-| Sense armadura | 120' (40') | 90' (30') |
-| Armadura lleugera | 90' (30') | 60' (20') |
-| Armadura pesada | 60' (20') | 30' (10') |
+| Sense armadura | 120 peus (40 peus) | 90 peus (30 peus) |
+| Armadura lleugera | 90 peus (30 peus) | 60 peus (20 peus) |
+| Armadura pesada | 60 peus (20 peus) | 30 peus (10 peus) |
 
 **Tresor:** els elements comuns es mostra a la taula següent, el director de joc ha de decidir el pes d'altres menes de tresor.
 
@@ -982,7 +1090,7 @@ Els éssers tenen un valor de punts de cop totals i un valor d'actuals. Els punt
 
 ### Inconsciència
 
-Un personatge reduït a zero punts de cop o menys cau inconscient i si no és atès, llavors es desperta al cap de 1d6+2 hores. Tan sols pot arrossegar-se amb un moviment de 10 peus o parlar. 
+Un personatge reduït a zero punts de cop o menys cau inconscient i si no és atès, llavors es desperta al cap de 1d6+2 hores. Tan sols pot arrossegar-se amb un moviment de 10 peus o parlar.
 
 ### Mort fulminant
 
@@ -1074,7 +1182,7 @@ Quan els personatges proven d'escalar en una situació difícil o tensa, el dire
 
 #### Parets llises
 
-Les parets molt polides o amb molt pocs llocs on agafar-se són normalment impossibles d'escalar sense un equip especialitzat, però alguns personatges tenen habilitats de classe que els permet intentar-ho i la resta de classes ho poden intentar amb una càrrega mínima (sense motxilla) amb una tirada 2d6+***bonificació de*** ***destresa*** per cada 100'. Si es treu menys de 10 es falla la tirada i el personatge cau des de la meitat del camí patint dany per la caiguda.
+Les parets molt polides o amb molt pocs llocs on agafar-se són normalment impossibles d'escalar sense un equip especialitzat, però alguns personatges tenen habilitats de classe que els permet intentar-ho i la resta de classes ho poden intentar amb una càrrega mínima (sense motxilla) amb una tirada 2d6+***bonificació de*** ***destresa*** per cada 100 peus. Si es treu menys de 10 es falla la tirada i el personatge cau des de la meitat del camí patint dany per la caiguda.
 
 ## Caure
 
@@ -1092,7 +1200,7 @@ En principi tots els personatges són capaços de nedar i s'entén que tots en t
 
 ### Ofegament
 
-Les circumstàncies en què l'ofegament és un risc, i també la possibilitat d'ofegar a algú altre, les decideix el director de joc. Per exemple, un personatge molt carregat i duent una armadura pesada pot tenir 19-en-20 possibilitats d'ofegar-se. Mentre que un personatge en les mateixes aigües, però duent una armadura lleugera i molt poca càrrega podria tenir tan sols 2-en-20 possibilitats. 
+Les circumstàncies en què l'ofegament és un risc, i també la possibilitat d'ofegar a algú altre, les decideix el director de joc. Per exemple, un personatge molt carregat i duent una armadura pesada pot tenir 19-en-20 possibilitats d'ofegar-se. Mentre que un personatge en les mateixes aigües, però duent una armadura lleugera i molt poca càrrega podria tenir tan sols 2-en-20 possibilitats.
 
 ## Metzines
 
@@ -1148,7 +1256,7 @@ A les masmorres i a les terres salvatges, sovint es pot trobar criatures en movi
 
 **Classe de monstre:** cada àrea ha de tenir la seva pròpia taula de monstres errants on el director de joc tria a l'atzar amb quin monstre es produeix l'encontre.
 
-**Soroll o llum:** quan el grup fa soroll o transporta fonts de llum brillants en un entorn fosc, el director de joc pot argumentar que hi ha més possibilitats de trobar-ne. 
+**Soroll o llum:** quan el grup fa soroll o transporta fonts de llum brillants en un entorn fosc, el director de joc pot argumentar que hi ha més possibilitats de trobar-ne.
 
 **Amagar-se:** quan es descansa, en silenci i en un lloc fora del camí, el director de joc pot disminuir la possibilitat de topar-se amb monstres errants i, per tant, es pot tractar com un lloc més o menys segur.
 
@@ -1206,10 +1314,10 @@ L'efecte d'algunes malalties pot requerir tirades de salvació addicionals a int
 
 # La masmorra
 
-Seqüència de joc per torn  
-**1\.** **Monstres errants:** el director de joc tira segons correspongui.  
-**2\.** **Accions:** el grup decideix quines accions fer; per exemple, moure's, cercar, escoltar, entrar a les habitacions i registrar-les...  
-**3\.** **Descripció:** el director de joc descriu què passa i si ensopeguen amb monstres, llavors cal seguir el procediment de l'apartat ***encontres***.  
+Seqüència de joc per torn
+**1\.** **Monstres errants:** el director de joc tira segons correspongui.
+**2\.** **Accions:** el grup decideix quines accions fer; per exemple, moure's, cercar, escoltar, entrar a les habitacions i registrar-les...
+**3\.** **Descripció:** el director de joc descriu què passa i si ensopeguen amb monstres, llavors cal seguir el procediment de l'apartat ***encontres***.
 **4\.** **Final:** es calcula el temps transcorregut i es té cura de la durada de les fonts de llum, dels encanteris i les necessitats de descans del grup.
 
 ### Portes
@@ -1306,11 +1414,11 @@ Cada parany s'activa mitjançant una acció específica; per exemple, obrir una 
 
 # Les terres salvatges
 
-Seqüència de joc per dia  
-**1\.** **Decidir la ruta:** els jugadors trien el recorregut del dia.  
-**2\.** **Desorientar-se:** el DJ determina si el grup es perd.  
-**3\.** **Monstres errants:** el DJ fa tirades segons correspongui.  
-**4\.** **Descripció:** el director de joc descriu el terreny i els llocs d'interès al grup, demanant als jugadors les seves accions quan calgui i si es troben amb monstres, llavors cal seguir el procediment descrit a ***encontres***.  
+Seqüència de joc per dia
+**1\.** **Decidir la ruta:** els jugadors trien el recorregut del dia.
+**2\.** **Desorientar-se:** el DJ determina si el grup es perd.
+**3\.** **Monstres errants:** el DJ fa tirades segons correspongui.
+**4\.** **Descripció:** el director de joc descriu el terreny i els llocs d'interès al grup, demanant als jugadors les seves accions quan calgui i si es troben amb monstres, llavors cal seguir el procediment descrit a ***encontres***.
 **5\.** **Final del dia:** s'anoten els recursos consumits, les racions, la durada dels encanteris i les necessitats de descans del grup.
 
 ### Distància i unitats de mesura
@@ -1339,7 +1447,7 @@ Al començament de cada dia, el director de joc ha de tirar per determinar si el
 
 - **Desert, jungla, pantà:** 3-en-6.
 
-Les condicions de visibilitat i del temps meteorològic poden influir en la probabilitat de perdre's, llavors cal ajustar-les com sigui convenient. 
+Les condicions de visibilitat i del temps meteorològic poden influir en la probabilitat de perdre's, llavors cal ajustar-les com sigui convenient.
 
 ### Visibilitat
 
@@ -1347,7 +1455,7 @@ Es pot albirar fins a tres milles a la rodona, en terreny obert, però aquest ab
 
 ### Viatges per terra
 
-**Milles per dia:** el nombre de milles que pot viatjar un personatge per dia es determina ***dividint el factor de moviment base per cinc***. Per exemple, un personatge que té un factor de moviment base de 120' podrà viatjar fins a 24 milles per dia.
+**Milles per dia:** el nombre de milles que pot viatjar un personatge per dia es determina ***dividint el factor de moviment base per cinc***. Per exemple, un personatge que té un factor de moviment base de 120 peus podrà viatjar fins a 24 milles per dia.
 
 #### Modificadors del terreny
 
@@ -1393,11 +1501,11 @@ Si els personatges necessiten viatjar més en un dia, poden realitzar una marxa 
 
 # Encontres
 
-Seqüència de joc de l'encontre  
-**1\.** **Sorpresa:** el director de joc tira per la sorpresa quan s'escau.  
-**2\.** **Distància:** el director de joc determina a quina distància està l'enemic.  
-**3\.** **Iniciativa:** totes les faccions que no són sorpreses tiren per la iniciativa i es decideix qui actua primer.  
-**4\.** **Accions:** cada bàndol no sorprès decideix com actua.  
+Seqüència de joc de l'encontre
+**1\.** **Sorpresa:** el director de joc tira per la sorpresa quan s'escau.
+**2\.** **Distància:** el director de joc determina a quina distància està l'enemic.
+**3\.** **Iniciativa:** totes les faccions que no són sorpreses tiren per la iniciativa i es decideix qui actua primer.
+**4\.** **Accions:** cada bàndol no sorprès decideix com actua.
 **5\.** **Conclusió:** ha passat un torn.
 
 ## Sorpresa
@@ -1468,7 +1576,7 @@ Les següents són les més comunes, però és possible realitzar qualsevol mena
 
 ## Moviment
 
-**Factor de moviment d'encontre:** durant els encontres, un personatge pot moure's fins a un terç del factor de moviment base per torn en peus en la masmorra o iardes en les terres salvatges. Per exemple, quan el personatge té un factor de moviment base de 120' es pot moure 40' per assalt durant un encontre en la masmorra.
+**Factor de moviment d'encontre:** durant els encontres, un personatge pot moure's fins a un terç del factor de moviment base per torn en peus en la masmorra o iardes en les terres salvatges. Per exemple, quan el personatge té un factor de moviment base de 120 peus es pot moure 40 peus per assalt durant un encontre en la masmorra.
 
 **Durada màxima**: els personatges poden moure's a aquest factor de moviment durant un màxim de 60 assalts (un torn).
 
@@ -1488,7 +1596,7 @@ Si un bàndol vol evitar l'encontre, pot intentar fugir. Aquesta acció s'anomen
 
 Un encontre se suposa que almenys dura tot un torn sencer i s'inclou el temps per descansar per recuperar forces, reagrupar-se, netejar les armes, embenar les ferides, etc.
 
-**Exemple:** un nan amb cota de malla (60'/20') està explorant una cova i es mou 60' per cada torn de 10 minuts. Quan descobreix un goblin a 20' de distància es canvia a assalts de 10 segons. Si cap dels dos és sorprès i el nan guanya la iniciativa, llavors en aquest assalt pot fugir allunyant-se 60' (moviment base) o avançar fins a 20' (moviment d'encontre) i atacar al goblin.
+**Exemple:** un nan amb cota de malla (60 peus/20 peus) està explorant una cova i es mou 60 peus per cada torn de 10 minuts. Quan descobreix un goblin a 20 peus de distància es canvia a assalts de 10 segons. Si cap dels dos és sorprès i el nan guanya la iniciativa, llavors en aquest assalt pot fugir allunyant-se 60 peus (moviment base) o avançar fins a 20 peus (moviment d'encontre) i atacar al goblin.
 
 # Evasió i persecució
 
@@ -1537,11 +1645,11 @@ La possibilitat d'evasió és una probabilitat de X-en-20 i quan es falla contin
 | Factor de moviment dels fugitius | Probabilitat |
 | :---: | ----- |
 | Més ràpida que el perseguidor | 16-en-20 |
-| 0' \- 30' per assalt més lent que el perseguidor | 10-en-20 |
-| 31' \- 60' per assalt més lent que el perseguidor | 8-en-20 |
-| 61' \- 90' per assalt més lent que el perseguidor | 7-en-20 |
-| 91' \- 120' per assalt més lent que el perseguidor | 5-en-20 |
-| 121'+ per assalt més lent que el perseguidor | 2-en-20 |
+| 0 peus \- 30 peus per assalt més lent que el perseguidor | 10-en-20 |
+| 31 peus \- 60 peus per assalt més lent que el perseguidor | 8-en-20 |
+| 61 peus \- 90 peus per assalt més lent que el perseguidor | 7-en-20 |
+| 91 peus \- 120 peus per assalt més lent que el perseguidor | 5-en-20 |
+| 121 peus+ per assalt més lent que el perseguidor | 2-en-20 |
 
 - **No hi ha sorpresa:** la possibilitat d'evasió depèn de la mida relativa dels dos grups; les possibilitats són a favor del grup més petit, ja que els grans no poden moure's tan ràpidament ni tan silenciosament.
 
@@ -1576,15 +1684,15 @@ Cada dia fins que finalitzi la persecució:
 
 # Combat
 
-Combat seqüència per assalt  
-**1\.** **Declarar encanteris i moviment cos a cos**  
-**2\.** **Iniciativa:** cada bàndol tira 1d6.  
-**3\.** **El bàndol guanyador actua:**  
-  **a.** **Moral de les criatures**  
-  **b.** **Moviment**  
-  **c.** **Atacs amb projectils**  
-  **d.** **Llançament d'encanteris**  
-  **e.** **Atacs cos a cos**  
+Combat seqüència per assalt
+**1\.** **Declarar encanteris i moviment cos a cos**
+**2\.** **Iniciativa:** cada bàndol tira 1d6.
+**3\.** **El bàndol guanyador actua:**
+  **a.** **Moral de les criatures**
+  **b.** **Moviment**
+  **c.** **Atacs amb projectils**
+  **d.** **Llançament d'encanteris**
+  **e.** **Atacs cos a cos**
 **5\.** **Els altres bàndols actuen:** en ordre d'iniciativa.
 
 ## Declarar accions
@@ -1607,7 +1715,7 @@ El DJ pot fer servir aquest sistema per decidir si les criatures (o els PNJ) es 
 
 El director de joc farà una tirada de moral per les criatures quan es dona alguna de les condicions següents:
 
-**La primera mort:** en un combat, pot fer repensar-se als oponents si continuar lluitant val la pena.  
+**La primera mort:** en un combat, pot fer repensar-se als oponents si continuar lluitant val la pena.
 **Bàndol reduït:** si la meitat del grup d'oponents ha mort o està incapacitat, llavors la reacció de la resta del grup es pot determinar amb la tirada de moral.
 
 ### Ajustar la situació
@@ -1632,14 +1740,14 @@ Pot moure’s a un terç del factor de moviment normal a cada assalt i a més at
 
 ### A la carrera
 
-- **Factor de moviment:** un personatge es pot moure fins al factor de moviment d'encontre a cada assalt.  
+- **Factor de moviment:** un personatge es pot moure fins al factor de moviment d'encontre a cada assalt.
 - **Durada màxima:** els personatges poden moure's a aquesta velocitat durant un màxim de 60 assalts.
 
 ### En la lluita cos a cos
 
 Quan es lluita cos a cos amb un enemic, només són possibles les següents formes de moviment:
 
-- **Abandonar:** el personatge es mou cap enrere a la meitat del factor de moviment d'encontre i cal un camí lliure per moure's.  
+- **Abandonar:** el personatge es mou cap enrere a la meitat del factor de moviment d'encontre i cal un camí lliure per moure's.
 - **Retirada:** el personatge es gira i fuig al factor de moviment d'encontre. Aquest assalt no pot atacar i l'adversari pot fer un atac d'oportunitat bonificat amb \+2 i s'ignora la bonificació a la CA de l'escut si s'escau.
 
 ## Atacar
@@ -1648,11 +1756,11 @@ En general, es pot fer un sol cop per assalt.
 
 ### Abast de la lluita
 
-La lluita és cos a cos quan els oponents estan 5' o menys els uns dels altres. Els atacs amb projectils tan sols són possibles quan els objectius estan a més de 5'.
+La lluita és cos a cos quan els oponents estan 5 peus o menys els uns dels altres. Els atacs amb projectils tan sols són possibles quan els objectius estan a més de 5 peus.
 
-Tirada d'atac  
-**1\.** **Tira 1d20**  
-**2\.** **Modificadors:** bonificació d'atac, ***força*** per a lluita cos a cos o ***destresa***, abast i cobertura pels atacs de projectils.  
+Tirada d'atac
+**1\.** **Tira 1d20**
+**2\.** **Modificadors:** bonificació d'atac, ***força*** per a lluita cos a cos o ***destresa***, abast i cobertura pels atacs de projectils.
 **3\.** **Resultat:** si és igual o superior a la CA de l'oponent, l'atac té èxit i llavors es tira pel dany.
 
 ### Pífies i crítics
@@ -1669,7 +1777,7 @@ Un 20 natural sempre colpeja i llavors l'atac provoca un efecte addicional com l
 
 **Dany mínim:** sempre es fa almenys un punt de dany.
 
-**Inconsciència:** quan es redueix a zero punts de cop o menys cau inconscient i si no és atès, llavors es desperta al cap de 1d6+2 hores. Tan sols pot arrossegar-se amb un moviment de 10 peus o parlar.  
+**Inconsciència:** quan es redueix a zero punts de cop o menys cau inconscient i si no és atès, llavors es desperta al cap de 1d6+2 hores. Tan sols pot arrossegar-se amb un moviment de 10 peus o parlar.
 **Mort fulminant:** quan els punts de cop es redueixen a menys quatre o per sota.
 
 ## Atacs no convencionals
@@ -1893,32 +2001,32 @@ Primer nivell
 | 1d8 | Nom | Inv. | Durada | Abast |
 | :---: | :---- | :---: | :---: | :---: |
 | **1** | Curar ferides lleus | Si | Instantani | Toc o llançador |
-| **2** | Detectar el mal | \- | 6 torns | 120' |
-| **3** | Detectar màgia | \- | 2 torns | 60' |
-| **4** | Llum | Si | 12 torns | 120' |
+| **2** | Detectar el mal | \- | 6 torns | 120 peus |
+| **3** | Detectar màgia | \- | 2 torns | 60 peus |
+| **4** | Llum | Si | 12 torns | 120 peus |
 | **5** | Protecció del mal | \- | 12 torns | Llançador |
-| **6** | Purificar menjar i aigua | \- | Permanent | 10' |
-| **7** | Resistir el fred | \- | 6 torns | 30' |
+| **6** | Purificar menjar i aigua | \- | Permanent | 10 peus |
+| **7** | Resistir el fred | \- | 6 torns | 30 peus |
 | **8** | Treure la por | \- | 2 torns | Toc o llançador |
 
 Segon nivell
 
 | 1d8 | Nom | Inv. | Durada | Abast |
 | :---: | :---- | :---: | :---: | :---: |
-| **1** | Beneir | Si | 6 torns | 60' |
-| **2** | Conèixer alineació | \- | un assalt | 10' |
-| **3** | Encís de serps | \- | 1d4+1 assaltso torns | 60' |
-| **4** | Parlar amb els animals | \- | 6 torns | 30' |
-| **5** | Resistir el foc | \- | 2 torns | 30' |
-| **6** | Retenir persona | \- | 9 torns | 180' |
-| **7** | Silenci (radi 15') | \- | 12 torns | 180' |
-| **8** | Trobar paranys | \- | 2 torns | 30' |
+| **1** | Beneir | Si | 6 torns | 60 peus |
+| **2** | Conèixer alineació | \- | un assalt | 10 peus |
+| **3** | Encís de serps | \- | 1d4+1 assaltso torns | 60 peus |
+| **4** | Parlar amb els animals | \- | 6 torns | 30 peus |
+| **5** | Resistir el foc | \- | 2 torns | 30 peus |
+| **6** | Retenir persona | \- | 9 torns | 180 peus |
+| **7** | Silenci (radi 15 peus) | \- | 12 torns | 180 peus |
+| **8** | Trobar paranys | \- | 2 torns | 30 peus |
 
 ## Primer nivell
 
 ### Curar ferides lleus
 
-**Durada:** instantani.  
+**Durada:** instantani.
 **Abast:** el llançador o una criatura tocada.
 
 Aquest encanteri té dos usos possibles:
@@ -1933,10 +2041,10 @@ Infligeix ​​1d6+1 punts de dany a la criatura tocada. En combat cal superar 
 
 ### Detectar el mal
 
-**Durada:** 6 torns.  
-**Abast:** 120'.
+**Durada:** 6 torns.
+**Abast:** 120 peus.
 
-Els objectes encantats amb finalitats malignes o els éssers vius amb intencions malvades queden envoltats per una lluentor màgica. 
+Els objectes encantats amb finalitats malignes o els éssers vius amb intencions malvades queden envoltats per una lluentor màgica.
 
 - **Tan sols la intenció:** aquest encanteri no atorga la capacitat de llegir ments, sinó que tan sols permet apreciar una sensació de les males intencions.
 
@@ -1944,19 +2052,19 @@ Els objectes encantats amb finalitats malignes o els éssers vius amb intencions
 
 ### Detectar màgia
 
-**Durada:** 2 torns.  
-**Abast:** 60'.
+**Durada:** 2 torns.
+**Abast:** 60 peus.
 
 Els objectes, les àrees o les criatures encantades brillen lleugerament a ulls del llançador i es revelen així tant els encantaments permanents com els temporals.
 
 ### Llum
 
-**Durada:** 12 torns.  
-**Abast:** 120'.
+**Durada:** 12 torns.
+**Abast:** 120 peus.
 
 Aquest encanteri té tres usos possibles:
 
-- **Conjurar llum:** en un radi de 15'. La llum màgica és suficient per llegir, encara que no és tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
+- **Conjurar llum:** en un radi de 15 peus. La llum màgica és suficient per llegir, encara que no és tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
 
 - **Cegar una criatura:** llançant l'encanteri als ulls d'una criatura. Quan l'objectiu falla una ***tirada de salvació contra encanteris***, aquesta resta encegada durant 12 torns. Una criatura encegada no pot atacar.
 
@@ -1964,11 +2072,11 @@ Aquest encanteri té tres usos possibles:
 
 #### Invertit: foscor
 
-Crea una àrea de 15' de radi de foscor màgica que impedeix la visió normal (però no la infravisió). Igual que ***llum***, també es pot utilitzar per encegar criatures o per dissipar un encanteri de llum.
+Crea una àrea de 15 peus de radi de foscor màgica que impedeix la visió normal (però no la infravisió). Igual que ***llum***, també es pot utilitzar per encegar criatures o per dissipar un encanteri de llum.
 
 ### Protecció del mal
 
-**Durada:** 12 torns.  
+**Durada:** 12 torns.
 **Abast:** el llançador.
 
 Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineació diferent de la seva.
@@ -1981,8 +2089,8 @@ Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineac
 
 ### Purificar menjar i aigua
 
-**Durada:** permanent.  
-**Abast:** 10'.
+**Durada:** permanent.
+**Abast:** 10 peus.
 
 Aquest fa que els aliments o l'aigua deteriorats, podrits, emmetzinats o contaminats d'alguna manera siguin adequats per menjar i beure. Afecta en una de les següents maneres:
 
@@ -1994,8 +2102,8 @@ Aquest fa que els aliments o l'aigua deteriorats, podrits, emmetzinats o contami
 
 ### Resistir el fred
 
-**Durada:** 6 torns.  
-**Abast:** 30'.
+**Durada:** 6 torns.
+**Abast:** 30 peus.
 
 Totes les criatures dins de l'abast indicat estan protegides del fred, de la següent manera:
 
@@ -2007,43 +2115,43 @@ Totes les criatures dins de l'abast indicat estan protegides del fred, de la seg
 
 ### Treure la por
 
-**Durada:** 2 torns.  
+**Durada:** 2 torns.
 **Abast:** el llançador o una criatura tocada.
 
 L'objectiu es calma i perd la por. Es pot dissipar la por induïda màgicament, però per això cal que l'objectiu superi una ***tirada de salvació contra encanteris*** amb una bonificació de \+1 per cada nivell del llançador.
 
 #### Invertit: espantar
 
-Farà fugir a un objectiu a menys de 120' durant 2 torns, tret que superi una ***tirada de salvació contra encanteris***.
+Farà fugir a un objectiu a menys de 120 peus durant 2 torns, tret que superi una ***tirada de salvació contra encanteris***.
 
 ## Segon nivell
 
 ### Beneir
 
-**Durada:** 6 torns.  
-**Abast:** 60'.
+**Durada:** 6 torns.
+**Abast:** 60 peus.
 
 Es pot utilitzar en una de les situacions següents:
 
-- **Combat:** els aliats en una àrea quadrada de 20' que encara no estiguin lluitant cos a cos obtenen una bonificació de \+1 a les tirades d'atac, dany i moral.
+- **Combat:** els aliats en una àrea quadrada de 20 peus que encara no estiguin lluitant cos a cos obtenen una bonificació de \+1 a les tirades d'atac, dany i moral.
 
 - **Ritual:** a criteri del DJ també pot formar part dels rituals de purificació o consagració.
 
 #### Invertit: malaurança
 
-Penalitza amb \-1 a les tirades d'atacs, dany i moral dels enemics en una àrea quadrada de 20'. Es pot permetre una ***tirada de salvació contra encanteris*** per evitar-ho.
+Penalitza amb \-1 a les tirades d'atacs, dany i moral dels enemics en una àrea quadrada de 20 peus. Es pot permetre una ***tirada de salvació contra encanteris*** per evitar-ho.
 
 ### Conèixer alineació
 
-**Durada:** un assalt.  
-**Abast:** 10'.
+**Durada:** un assalt.
+**Abast:** 10 peus.
 
 El llançador obté un coneixement immediat de l'alineació d'un personatge, monstre, objecte o ubicació dins de l'abast (la majoria dels objectes o ubicacions no tenen alineació, però els objectes màgics o els llocs sagrats la poden tenir).
 
 ### Encís de serps
 
-**Durada:** 1d4+1 assalts o torns.  
-**Abast:** 60'.
+**Durada:** 1d4+1 assalts o torns.
+**Abast:** 60 peus.
 
 Una o més serps deixen de ser hostils, s'alcen i mouen d'un costat a l'altre, però no ataquen.
 
@@ -2053,8 +2161,8 @@ Una o més serps deixen de ser hostils, s'alcen i mouen d'un costat a l'altre, p
 
 ### Parlar amb els animals
 
-**Durada:** 6 torns.  
-**Abast:** 30'.
+**Durada:** 6 torns.
+**Abast:** 30 peus.
 
 El llançador es pot comunicar dins de l'abast indicat amb un tipus d'animal.
 
@@ -2066,8 +2174,8 @@ El llançador es pot comunicar dins de l'abast indicat amb un tipus d'animal.
 
 ### Resistir el foc
 
-**Durada:** 2 torns.  
-**Abast:** 30'.
+**Durada:** 2 torns.
+**Abast:** 30 peus.
 
 A una única criatura se li atorga una resistència sobrenatural al foc, de la següent manera:
 
@@ -2079,8 +2187,8 @@ A una única criatura se li atorga una resistència sobrenatural al foc, de la s
 
 ### Retenir persona
 
-**Durada:** 9 torns.  
-**Abast:** 180'.
+**Durada:** 9 torns.
+**Abast:** 180 peus.
 
 Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres humanoides) quedi paralitzat quan es falla una ***tirada de salvació contra encanteris***. Es pot fer servir de dues maneres:
 
@@ -2090,10 +2198,10 @@ Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres huma
 
 - **Restriccions:** els humanoides de més de 4+1 daus de cop i els no-morts no es veuen afectats.
 
-### Silenci (radi 15')
+### Silenci (radi 15 peus)
 
-**Durada:** 12 torns.  
-**Abast:** 180'.
+**Durada:** 12 torns.
+**Abast:** 180 peus.
 
 Una àrea amb un radi de 15 peus queda totalment en silenci.
 
@@ -2105,8 +2213,8 @@ Una àrea amb un radi de 15 peus queda totalment en silenci.
 
 ### Trobar paranys
 
-**Durada:** 2 torns.  
-**Abast:** 30'.
+**Durada:** 2 torns.
+**Abast:** 30 peus.
 
 Quan el llançador s'acosta als paranys dins de l'abast indicat, aquests se li mostren amb una lluentor blava.
 
@@ -2120,68 +2228,68 @@ Primer nivell
 
 | 1d12 | Nom | Inv. | Durada | Abast |
 | :---: | :---- | :---: | :---: | :---: |
-| **1** | Detectar màgia | \- | 2 torns | 60' |
-| **2** | Disc flotant | \- | 6 torns | 6' |
-| **3** | Dormir | \- | 4d4 torns | 240' |
-| **4** | Encisar persona | \- | Dies | 120' |
+| **1** | Detectar màgia | \- | 2 torns | 60 peus |
+| **2** | Disc flotant | \- | 6 torns | 6 peus |
+| **3** | Dormir | \- | 4d4 torns | 240 peus |
+| **4** | Encisar persona | \- | Dies | 120 peus |
 | **5** | Escut | \- | 2 torns | Llançador |
 | **6** | Llegir idiomes | \- | 2 torns | Llançador |
 | **7** | Llegir màgia | \- | 1 torn | Llançador |
-| **8** | Llum | Si | nivell+6 torns | 120' |
-| **9** | Projectil màgic | \- | 1 torn | 150' |
+| **8** | Llum | Si | nivell+6 torns | 120 peus |
+| **9** | Projectil màgic | \- | 1 torn | 150 peus |
 | **10** | Protecció del mal | \- | 6 torns | Llançador |
-| **11** | Retenir portal | \- | 2d6 torns | 10' |
-| **12** | Ventrilòquia | \- | 2 torns | 60' |
+| **11** | Retenir portal | \- | 2d6 torns | 10 peus |
+| **12** | Ventrilòquia | \- | 2 torns | 60 peus |
 
 Segon nivell
 
 | 1d12 | Nom | Inv. | Durada | Abast |
 | :---: | :---- | :---: | :---: | :---: |
-| **1** | Detectar el mal | \- | 2 torns | 60' |
-| **2** | Detectar invisibilitat | \- | 6 torns | 10' per nivell |
-| **3** | Força fantasmal | \- | Concentració | 240' |
+| **1** | Detectar el mal | \- | 2 torns | 60 peus |
+| **2** | Detectar invisibilitat | \- | 6 torns | 10 peus per nivell |
+| **3** | Força fantasmal | \- | Concentració | 240 peus |
 | **4** | Imatge mirall | \- | 6 torns | Llançador |
-| **5** | Invisibilitat | \- | Fins interrupció | 240' |
+| **5** | Invisibilitat | \- | Fins interrupció | 240 peus |
 | **6** | Levitació | \- | nivell+6 torns | Llançador |
-| **7** | Llum continua | Si | Permanent | 120' |
-| **8** | Obertura | \- | 1 assalt | 60' |
-| **9** | Pany de mag | \- | Permanent | 10' |
-| **10** | PES | \- | 12 torns | 60' |
-| **11** | Teranyina | \- | 48 torns | 10' |
-| **12** | Trobar objectes | \- | 6 torns | 120' |
+| **7** | Llum continua | Si | Permanent | 120 peus |
+| **8** | Obertura | \- | 1 assalt | 60 peus |
+| **9** | Pany de mag | \- | Permanent | 10 peus |
+| **10** | PES | \- | 12 torns | 60 peus |
+| **11** | Teranyina | \- | 48 torns | 10 peus |
+| **12** | Trobar objectes | \- | 6 torns | 120 peus |
 
 Tercer nivell
 
 | 1d12 | Nom | Inv. | Durada | Abast |
 | :---: | :---- | :---: | :---: | :---: |
-| **1** | Apressar | \- | 3 torns | 240' |
-| **2** | Bola de foc | \- | Instantani | 240' |
-| **3** | Clarividència | \- | 12 torns | 60' |
-| **4** | Dissipar màgia | \- | Instantani | 120' |
+| **1** | Apressar | \- | 3 torns | 240 peus |
+| **2** | Bola de foc | \- | Instantani | 240 peus |
+| **3** | Clarividència | \- | 12 torns | 60 peus |
+| **4** | Dissipar màgia | \- | Instantani | 120 peus |
 | **5** | Infravisió | \- | un dia | Toc o llançador |
-| **6** | Invisibilitat (radi 10') | \- | Fins interrupció | 120' |
-| **7** | Llampec | \- | Instantani | 120' |
-| **8** | Protecció del mal (radi 10') | \- | 12 torns | 10' al voltant del llançador |
-| **9** | Protecció dels projectils normals | \- | 12 torns | 30' |
-| **10** | Retenir persona | \- | 1 torn/nivell | 120' |
-| **11** | Respirar dins l'aigua | \- | un dia | 30' |
+| **6** | Invisibilitat (radi 10 peus) | \- | Fins interrupció | 120 peus |
+| **7** | Llampec | \- | Instantani | 120 peus |
+| **8** | Protecció del mal (radi 10 peus) | \- | 12 torns | 10 peus al voltant del llançador |
+| **9** | Protecció dels projectils normals | \- | 12 torns | 30 peus |
+| **10** | Retenir persona | \- | 1 torn/nivell | 120 peus |
+| **11** | Respirar dins l'aigua | \- | un dia | 30 peus |
 | **12** | Volar | \- | 1d6+nivell torns | Toc o llançador |
 
 ## Primer nivell
 
 ### Detectar màgia
 
-**Durada:** 2 torns.  
-**Abast:** 60'.
+**Durada:** 2 torns.
+**Abast:** 60 peus.
 
 Els objectes, les àrees o les criatures encantades brillen lleugerament a ulls del llançador i es revelen així tant els encantaments permanents com els temporals.
 
 ### Disc flotant
 
-**Durada:** 6 torns.  
-**Abast:** 6'.
+**Durada:** 6 torns.
+**Abast:** 6 peus.
 
-S'evoca un disc flotant de força màgica lleugerament còncau que segueix al llançador cap allà a on va i pot transportar càrregues. 
+S'evoca un disc flotant de força màgica lleugerament còncau que segueix al llançador cap allà a on va i pot transportar càrregues.
 
 - **Mida:** el disc fa tres peus de diàmetre i una polzada de profunditat al centre.
 
@@ -2193,8 +2301,8 @@ S'evoca un disc flotant de força màgica lleugerament còncau que segueix al ll
 
 ### Dormir
 
-**Durada:** 4d4 torns.  
-**Abast:** 240'.
+**Durada:** 4d4 torns.
+**Abast:** 240 peus.
 
 Aquest encanteri provoca una somnolència màgica a un grup de criatures o un únic individu.
 
@@ -2218,8 +2326,8 @@ Quan es dirigeix a un grup de criatures de 4 daus de cop o menys, s'apliquen les
 
 ### Encisar persona
 
-**Durada:** un o més dies.  
-**Abast:** 120'.
+**Durada:** un o més dies.
+**Abast:** 120 peus.
 
 Una única criatura de tipus “persona” li cal superar una ***tirada de salvació contra encanteris*** o restar encisada de la següent manera:
 
@@ -2243,7 +2351,7 @@ Una única criatura de tipus “persona” li cal superar una ***tirada de salva
 
 ### Escut
 
-**Durada:** 2 torns.  
+**Durada:** 2 torns.
 **Abast:** llançador.
 
 Es crea un camp de força invisible que protegeix al llançador de la següent manera.
@@ -2254,14 +2362,14 @@ Es crea un camp de força invisible que protegeix al llançador de la següent m
 
 ### Llegir idiomes
 
-**Durada:** 2 torns.  
+**Durada:** 2 torns.
 **Abast:** el llançador.
 
 Durant els dos torns d'aquest encanteri, el llançador pot llegir qualsevol idioma, missatge codificat, mapa o tota mena d'instruccions escrites. Aquest encanteri no atorga cap habilitat per parlar en idiomes desconeguts.
 
 ### Llegir màgia
 
-**Durada:** 1 torn.  
+**Durada:** 1 torn.
 **Abast:** el llançador.
 
 Amb aquest encanteri, el llançador pot desxifrar inscripcions o runes màgiques de la següent manera:
@@ -2276,12 +2384,12 @@ Amb aquest encanteri, el llançador pot desxifrar inscripcions o runes màgiques
 
 ### Llum
 
-**Durada:** 12 torns.  
-**Abast:** 120'.
+**Durada:** 12 torns.
+**Abast:** 120 peus.
 
 El llançador escull un dels efectes següents.
 
-- **Conjurar llum:** en un radi de 15'. Aquesta llum màgica és suficient per llegir, encara que no sigui tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
+- **Conjurar llum:** en un radi de 15 peus. Aquesta llum màgica és suficient per llegir, encara que no sigui tan brillant com la llum de dia. L'encanteri es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
 
 - **Encegar a una criatura:** llançant-lo sobre els seus ulls. Si l'objectiu falla la ***tirada de salvació contra encanteris***, aquest quedarà encegat durant 12 torns. Una criatura encegada no pot atacar.
 
@@ -2289,12 +2397,12 @@ El llançador escull un dels efectes següents.
 
 #### Invertit: foscor
 
-Es crea una àrea de 15' de radi de foscor màgica que impedeix la visió normal (però no la infravisió). Igual que ***llum***, també es pot utilitzar per encegar a criatures o per dissipar un encanteri ***llum***.
+Es crea una àrea de 15 peus de radi de foscor màgica que impedeix la visió normal (però no la infravisió). Igual que ***llum***, també es pot utilitzar per encegar a criatures o per dissipar un encanteri ***llum***.
 
 ### Projectil màgic
 
-**Durada:** 1 torn.  
-**Abast:** 150'.
+**Durada:** 1 torn.
+**Abast:** 150 peus.
 
 Aquest conjura un o més dards d'energia brillant que el llançador pot disparar contra un objectiu visible que es troba a dins l'abast de l'encanteri.
 
@@ -2306,7 +2414,7 @@ Aquest conjura un o més dards d'energia brillant que el llançador pot disparar
 
 ### Protecció del mal
 
-**Durada:** 12 torns.  
+**Durada:** 12 torns.
 **Abast:** el llançador.
 
 Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineació diferent de la seva.
@@ -2319,8 +2427,8 @@ Aquest encanteri protegeix el llançador dels atacs de criatures amb una alineac
 
 ### Retenir portal
 
-**Durada:** 2d6 torns.  
-**Abast:** 10'.
+**Durada:** 2d6 torns.
+**Abast:** 10 peus.
 
 Aquest encanteri manté una porta, una finestra o qualsevol altre tipus de portal tancat màgicament.
 
@@ -2330,19 +2438,19 @@ Aquest encanteri manté una porta, una finestra o qualsevol altre tipus de porta
 
 ### Ventrilòquia
 
-**Durada:** 2 torns.  
-**Abast:** 60'.
+**Durada:** 2 torns.
+**Abast:** 60 peus.
 
-El llançador pot fer que la seva veu sembli provenir de qualsevol lloc a dins de l'abast,  
-per exemple d'una estàtua o  
+El llançador pot fer que la seva veu sembli provenir de qualsevol lloc a dins de l'abast,
+per exemple d'una estàtua o
 d'un animal.
 
 ## Segon nivell
 
 ### Detectar el mal
 
-**Durada:** 6 torns.  
-**Abast:** 120'.
+**Durada:** 6 torns.
+**Abast:** 120 peus.
 
 Els objectes encantats amb finalitats malignes o els éssers vius amb intencions malvades queden envoltats per una lluentor màgica.
 
@@ -2352,22 +2460,22 @@ Els objectes encantats amb finalitats malignes o els éssers vius amb intencions
 
 ### Detectar invisibilitat
 
-**Durada:** 6 torns.  
-**Abast:** 10' per nivell.
+**Durada:** 6 torns.
+**Abast:** 10 peus per nivell.
 
 El llançador pot veure clarament els objectes o les criatures invisibles que es troben a dins de l'abast de l'encanteri.
 
 ### Força fantasmal
 
-**Durada:** concentració.  
-**Abast:** 240'.
+**Durada:** concentració.
+**Abast:** 240 peus.
 
 Es manifesta en un cub de 20 peus de costat una il·lusió visual a elecció del llançador.
 
 Es pot triar entre els tres tipus d'il·lusions següents:
 
-1. **Un monstre il·lusori:** que se li pot ordenar atacar. El monstre té una classe d'armadura de 10 i desapareix quan és colpejat en combat.  
-2. **Un atac il·lusori:** per exemple, una allau, un sostre que cau, un projectil màgic, etc. No afecta els subjectes que superen una ***tirada de salvació contra encanteris***.  
+1. **Un monstre il·lusori:** que se li pot ordenar atacar. El monstre té una classe d'armadura de 10 i desapareix quan és colpejat en combat.
+2. **Un atac il·lusori:** per exemple, una allau, un sostre que cau, un projectil màgic, etc. No afecta els subjectes que superen una ***tirada de salvació contra encanteris***.
 3. **Una escena:** es canvia l'aparença de la zona afectada o es crea l'aparició d'alguna cosa, que desapareix quan es toca.
 
 ##### Condicions
@@ -2380,7 +2488,7 @@ Es pot triar entre els tres tipus d'il·lusions següents:
 
 ### Imatge mirall
 
-**Durada:** 6 torns.  
+**Durada:** 6 torns.
 **Abast:** el llançador.
 
 Apareixen 1d4 duplicats il·lusoris del llançador.
@@ -2391,8 +2499,8 @@ Apareixen 1d4 duplicats il·lusoris del llançador.
 
 ### Invisibilitat
 
-**Durada:** permanent, però es pot interrompre.  
-**Abast:** 240'.
+**Durada:** permanent, però es pot interrompre.
+**Abast:** 240 peus.
 
 El llançador, una criatura o un objecte que es trobi a dins de l'abast de l'encanteri es torna invisible.
 
@@ -2404,7 +2512,7 @@ El llançador, una criatura o un objecte que es trobi a dins de l'abast de l'enc
 
 ### Levitació
 
-**Durada:** 6 torns \+1 torn per nivell.  
+**Durada:** 6 torns \+1 torn per nivell.
 **Abast:** el llançador.
 
 Aquest encanteri permet al llançador desplaçar-se amunt i avall flotant per l'aire.
@@ -2417,23 +2525,23 @@ Aquest encanteri permet al llançador desplaçar-se amunt i avall flotant per l'
 
 ### Llum continua
 
-**Durada:** permanent.  
-**Abast:** 120'.
+**Durada:** permanent.
+**Abast:** 120 peus.
 
 El llançador ha de triar un dels efectes següents.
 
-1. **Llum màgica:** en un radi de 30' que és tan brillant com la llum del sol i afecta a totes les criatures amb sensibilitat a la llum dins l'àrea. També es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.  
-2. **Encegar a una criatura:** llançant-lo sobre els seus ulls. Si l'objectiu falla la ***tirada de salvació contra encanteris***, aquest quedarà encegat.  
+1. **Llum màgica:** en un radi de 30 peus que és tan brillant com la llum del sol i afecta a totes les criatures amb sensibilitat a la llum dins l'àrea. També es pot llançar sobre un objecte i llavors la llum es mou amb l'objecte.
+2. **Encegar a una criatura:** llançant-lo sobre els seus ulls. Si l'objectiu falla la ***tirada de salvació contra encanteris***, aquest quedarà encegat.
 3. **Cancel·lar foscor contínua:** aquest encanteri pot cancel·lar l'encanteri ***foscor contínua***.
 
 #### Invertit: foscor contínua
 
-Crea una àrea de negror màgica amb un radi de 30' que impedeix tant la visió normal com la infravisió. Les fonts de llum introduïdes a la zona de foscor no Tenen cap efecte. Igual que per ***llum contínua***, també es pot utilitzar per a encegar criatures o per cancel·lar l'encanteri ***llum contínua***.
+Crea una àrea de negror màgica amb un radi de 30 peus que impedeix tant la visió normal com la infravisió. Les fonts de llum introduïdes a la zona de foscor no Tenen cap efecte. Igual que per ***llum contínua***, també es pot utilitzar per a encegar criatures o per cancel·lar l'encanteri ***llum contínua***.
 
 ### Obertura
 
-**Durada:** 1 assalt.  
-**Abast:** 60'.
+**Durada:** 1 assalt.
+**Abast:** 60 peus.
 
 Aquest encanteri obre portes, portons, cofres, etc., que estan tancades amb un pany, barrades o travades d'alguna manera.
 
@@ -2443,10 +2551,10 @@ Aquest encanteri obre portes, portons, cofres, etc., que estan tancades amb un p
 
 ### Pany de mag
 
-**Durada:** permanent.  
-**Abast:** 10'.
+**Durada:** permanent.
+**Abast:** 10 peus.
 
-Aquest encanteri tanca una porta, un portó, un cofre o qualsevol altre objecte amb un pany màgic. 
+Aquest encanteri tanca una porta, un portó, un cofre o qualsevol altre objecte amb un pany màgic.
 
 **Superar el pany:** el pany màgic és permanent, però es pot superar de la manera següent:
 
@@ -2460,8 +2568,8 @@ Aquest encanteri tanca una porta, un portó, un cofre o qualsevol altre objecte 
 
 ### Percepció extrasensorial o PES
 
-**Durada:** 12 torns.  
-**Abast:** 60'.
+**Durada:** 12 torns.
+**Abast:** 60 peus.
 
 Aquest encanteri atorga al llançador la capacitat de percebre i comprendre els pensaments d'altres criatures vives.
 
@@ -2473,12 +2581,12 @@ Aquest encanteri atorga al llançador la capacitat de percebre i comprendre els 
 
 - **Significat:** el llançador entén el significat de tots els pensaments encara que no entengui l’idioma de la criatura.
 
-- **Obstruccions:** la capacitat de percebre els pensaments quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2' de gruix o més.
+- **Obstruccions:** la capacitat de percebre els pensaments quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2 peus de gruix o més.
 
 ### Teranyina
 
-**Durada:** 48 torns.  
-**Abast:** 10'.
+**Durada:** 48 torns.
+**Abast:** 10 peus.
 
 S'evoca una massa de diverses capes de fils forts i enganxosos, que bloqueja una àrea cúbica de 10 peus de costat.
 
@@ -2496,8 +2604,8 @@ Alliberar-se depèn de la força de la criatura de la manera següent:
 
 ### Trobar objectes
 
-**Durada:** 6 torns.  
-**Abast:** 120'.
+**Durada:** 6 torns.
+**Abast:** 120 peus.
 
 El llançador pot percebre la direcció (però no la distància) d'un objecte que vol localitzar en una de les formes següents:
 
@@ -2511,10 +2619,10 @@ El llançador pot percebre la direcció (però no la distància) d'un objecte qu
 
 ### Apressar
 
-**Durada:** 3 torns.  
-**Abast:** 240'.
+**Durada:** 3 torns.
+**Abast:** 240 peus.
 
-Fins a 24 criatures a l'àrea de 60' de diàmetre encantada poden moure's i actuar el doble de ràpid del normal:
+Fins a 24 criatures a l'àrea de 60 peus de diàmetre encantada poden moure's i actuar el doble de ràpid del normal:
 
 - **Moviment:** es duplica el factor de moviment màxim dels subjectes.
 
@@ -2526,17 +2634,17 @@ Fins a 24 criatures a l'àrea de 60' de diàmetre encantada poden moure's i actu
 
 ### Bola de foc
 
-**Durada:** instantani.  
-**Abast:** 240'.
+**Durada:** instantani.
+**Abast:** 240 peus.
 
-Una flama es dirigeix ​​cap a un punt dins de l'abast i explota en una esfera de 20' de radi.
+Una flama es dirigeix ​​cap a un punt dins de l'abast i explota en una esfera de 20 peus de radi.
 
 - **Dany:** les criatures atrapades en la bola de foc prenen 1d6 punts de dany per nivell del llançador, la meitat superant una **salvació contra encanteris**.
 
 ### Clarividència
 
-**Durada:** dotze assalts.  
-**Abast:** 60'.
+**Durada:** dotze assalts.
+**Abast:** 60 peus.
 
 El llançador obté la capacitat de veure a través dels ulls d'altres éssers vius.
 
@@ -2546,14 +2654,14 @@ El llançador obté la capacitat de veure a través dels ulls d'altres éssers v
 
 - **Canvi:** un cop establerta una connexió, el llançador pot triar mantenir-la o canviar-la cap a un altre subjecte.
 
-- **Obstruccions:** la capacitat de l'encanteri quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2' de gruix o més.
+- **Obstruccions:** la capacitat de l'encanteri quedarà obstruïda amb una capa fina de plom o per les parets de roca de 2 peus de gruix o més.
 
 ### Dissipar màgia
 
-**Durada:** instantani.  
-**Abast:** 120'.
+**Durada:** instantani.
+**Abast:** 120 peus.
 
-Aquest finalitza els encanteris amb una durada no instantània que estan actius dins en un volum cúbic de 20' de costat.
+Aquest finalitza els encanteris amb una durada no instantània que estan actius dins en un volum cúbic de 20 peus de costat.
 
 - **Nivell de llançador:** si el nivell del llançador de l'efecte màgic a finalitzar és superior al nivell del llançador de l'encanteri ***dissipar màgia***, hi ha una probabilitat d'1-en-20 per nivell de diferència que l'intent de dissipar fracassi. Per exemple si qui llença ***dissipar màgia*** és de 4t nivell i l'efecte màgic a dissipar el va llançar un mag de nivell 7, llavors la diferència és 3 i hi ha 3-en-20 possibilitats que l'intent fracassi.
 
@@ -2561,15 +2669,15 @@ Aquest finalitza els encanteris amb una durada no instantània que estan actius 
 
 ### Infravisió
 
-**Durada:** un dia.  
+**Durada:** un dia.
 **Abast:** el llançador o una criatura tocada.
 
-El subjecte pot veure fins a 60' en la foscor amb la infravisió.
+El subjecte pot veure fins a 60 peus en la foscor amb la infravisió.
 
-### Invisibilitat (radi 10')
+### Invisibilitat (radi 10 peus)
 
-**Durada:** permanent, però es pot interrompre.  
-**Abast:** 120'.
+**Durada:** permanent, però es pot interrompre.
+**Abast:** 120 peus.
 
 Una criatura seleccionada i totes les criatures que estan a 10 peus o menys d'ella es tornen invisibles.
 
@@ -2587,19 +2695,19 @@ Una criatura seleccionada i totes les criatures que estan a 10 peus o menys d'el
 
 ### Llampec
 
-**Durada:** instantani.  
-**Abast:** 180'.
+**Durada:** instantani.
+**Abast:** 180 peus.
 
-Conjura un fort cop d'energia elèctrica de 60' de llarg i 5' d'ample.
+Conjura un fort cop d'energia elèctrica de 60 peus de llarg i 5 peus d'ample.
 
 - **Dany:** les criatures atrapades prenen 1d6 punts de dany per nivell del llançador, amb una tirada de salvació contra encanteris per la meitat del dany.
 
 - **Rebot:** si el ***llampec*** impacta contra una barrera sòlida abans que no arribi a la seva longitud completa, rebota i recorre la distància restant de la seva longitud completa en la direcció del llançador.
 
-### Protecció del mal (radi 10')
+### Protecció del mal (radi 10 peus)
 
-**Durada:** 12 torns.  
-**Abast:** 10' al voltant del llançador.
+**Durada:** 12 torns.
+**Abast:** 10 peus al voltant del llançador.
 
 Aquest encanteri protegeix el llançador i tots els seus aliats en un radi de 10 peus, dels atacs de criatures amb una alineació diferent de la del llançador.
 
@@ -2611,15 +2719,15 @@ Aquest encanteri protegeix el llançador i tots els seus aliats en un radi de 10
 
 ### Protecció dels projectils normals
 
-**Durada:** 12 torns.  
-**Abast:** 30'.
+**Durada:** 12 torns.
+**Abast:** 30 peus.
 
 Un sol subjecte a l'abast obté immunitat completa contra míssils petits no màgics (per exemple, no es concedeix protecció contra còdols llançats o fletxes encantades).
 
 ### Retenir persona
 
-**Durada:** 9 torns.  
-**Abast:** 180'.
+**Durada:** 9 torns.
+**Abast:** 180 peus.
 
 Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres humanoides) quedi paralitzat quan es falla una ***tirada de salvació contra encanteris***. Es pot fer servir de dues maneres:
 
@@ -2631,8 +2739,8 @@ Aquest encanteri fa que l'objectiu (un o més humans, semihumans o monstres huma
 
 ### Respirar dins l'aigua
 
-**Durada:** un dia.  
-**Abast:** 30'.
+**Durada:** un dia.
+**Abast:** 30 peus.
 
 El subjecte pot respirar dins l'aigua mitjançant aquest encanteri.
 
@@ -2642,12 +2750,12 @@ El subjecte pot respirar dins l'aigua mitjançant aquest encanteri.
 
 ### Volar
 
-**Durada:** 1d6 torns \+1 torn per nivell.  
+**Durada:** 1d6 torns \+1 torn per nivell.
 **Abast:** el llançador o una criatura tocada.
 
 El subjecte obté la capacitat de volar per l'aire.
 
-- **Factor de moviment:** fins a 360' (120').
+- **Factor de moviment:** fins a 360 peus (120 peus).
 
 - **Moviment:** és possible volar en qualsevol direcció, fins i tot levitar o flotar a l'aire.
 
@@ -2663,7 +2771,7 @@ Els personatges amb ***destresa*** o ***força*** alts poden voler empunyar una 
 
 - Els atacs amb l'arma principal tenen una penalització de \-2 a la tirada d'atac.
 
-- Es pot fer un segon atac amb l'arma secundària amb una penalització de \-4 a la tirada d'atac. 
+- Es pot fer un segon atac amb l'arma secundària amb una penalització de \-4 a la tirada d'atac.
 
 ### Carregar cap a la lluita
 
@@ -2786,7 +2894,7 @@ Igual que els personatges, les criatures intel·ligents i els PNJ tenen els seus
 
 **Interpretar:** el director de joc hauria de considerar la reacció de la criatura a les negociacions amb els personatges, tenint en compte la seva alineació i personalitat, i les criatures no haurien de cooperar sempre com desitgin els jugadors, però tampoc reaccionar sempre de forma hostil.
 
-**Aliats:** les criatures i els PNJ sovint estan amb amics, sequaços o seguidors que els ajuden o vengen quan són derrotats. Interessos polítics o comercials, l'enveja i els amors no correspostos, el col·leccionisme de coneixements i objectes, o desfer-se d'una maledicció són exemples de motivacions que la simple recuperació de tresor. 
+**Aliats:** les criatures i els PNJ sovint estan amb amics, sequaços o seguidors que els ajuden o vengen quan són derrotats. Interessos polítics o comercials, l'enveja i els amors no correspostos, el col·leccionisme de coneixements i objectes, o desfer-se d'una maledicció són exemples de motivacions que la simple recuperació de tresor.
 
 ## Atorgar experiència
 
@@ -2808,7 +2916,7 @@ Totes les criatures superades pel grup, és a dir enganyades, capturades, espant
 
 **Bonificació PX:** el valor en punts d'experiència d'una criatura s'incrementa per cada habilitat especial que tingui. El nombre d'habilitats especials sovint s'indica amb asteriscs en el valor de daus de cop de la criatura.
 
-**Criatures amb DC alts:** per a cada dau de cop per sobre de 21 afegeix 250 PX als valors de base i de bonificació. 
+**Criatures amb DC alts:** per a cada dau de cop per sobre de 21 afegeix 250 PX als valors de base i de bonificació.
 
 **Bonificació extraordinària:** una criatura poderosa derrotada en circumstàncies especialment perilloses pot tractar-se com si tingués un dau de cop addicional quan s'ha d'atorgar els punts d'experiència.
 
@@ -2849,7 +2957,7 @@ El director de joc pot atorgar punts d'experiència addicionals als jugadors que
 
 ## Objectes de valor
 
-Per a cada objecte inusual col·locat, el director de joc n'ha de detallar el valor en peces d'or i si es fa servir la regla opcional de ***càrrega*** el seu pes en monedes.  
+Per a cada objecte inusual col·locat, el director de joc n'ha de detallar el valor en peces d'or i si es fa servir la regla opcional de ***càrrega*** el seu pes en monedes.
 **Tresor comú:** les taules de tresor descriuen mètodes per generar tresors de monedes, gemmes, joies, i objectes màgics.
 
 **Tresor inusual:** les aventures també es pot trobar objectes de valor, el valor del qual no sempre és obvi:
@@ -3041,7 +3149,7 @@ Els ceptres, bastons i varetes tenen un nombre d'usos limitat, anomenats “càr
 
 **Dimensions:** 2 polzades de gruix i 6 peus de llarg.
 
-**Càrregues:** normalment es descobreixen  
+**Càrregues:** normalment es descobreixen
 amb 3d10 càrregues.
 
 ## Pergamins màgics
@@ -3104,7 +3212,7 @@ En aquest joc anomenem tots els éssers com a “criatures”. Aquest és el ter
 
 Els jugadors no haurien d'assumir que totes les criatures són enemigues i que ataquen a l'acte; cal fer servir la taula de reacció de les criatures per decidir-ho. Tot plegat dependrà molt del context, però en general les criatures desconfiaran dels personatges jugador i probablement ni estaran interessades en ells ni els importarà el que facin els personatges sempre que no els afecti.
 
-Les criatures d’aquest bestiari es presenten agrupades per categories, per exemple tots els animals estan a l'apartat "Animals" perquè sigui més senzill trobar-les. Aquestes classes també són importants respecte a les mecàniques del joc, per exemple alguns encanteris només afecten alguna classe de criatura com ara ***encisar animal*** que afecta els animals, o habilitats com ***expulsar no-morts*** que només afecta aquesta categoria. 
+Les criatures d’aquest bestiari es presenten agrupades per categories, per exemple tots els animals estan a l'apartat "Animals" perquè sigui més senzill trobar-les. Aquestes classes també són importants respecte a les mecàniques del joc, per exemple alguns encanteris només afecten alguna classe de criatura com ara ***encisar animal*** que afecta els animals, o habilitats com ***expulsar no-morts*** que només afecta aquesta categoria.
 
 Per cada criatura, a més de les seves estadístiques, es proporciona una descripció física, sovint també algunes pautes respecte al seu comportament i altres detalls específics com si tenen o no infravisió, els idiomes que parlen, com s'organitzen socialment, etc.
 
@@ -3114,9 +3222,7 @@ Les criatures es descriuen amb estadístiques com les de l’exemple següent, q
 
 #### Cub gelatinós
 
-**CA** 11, **DC** 4\* (18 pc), **AT** 1×tocar (2d4+paràlisis), **BA** \+3,  
-**MV** 60' (20'), **TS** M12 V13 P14 A15 E16 (2), **ML** 12,  
-**AL** neutral, **PX** 125, **NA** 1 (0), **TT** V
+**CA** 11, **DC** 4\* (18 pc), **AT** 1×tocar (2d4+paràlisis), **BA** \+3, **MV** 60 peus (20 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 125, **NA** 1 (0), **TT** V
 
 Es representen els valors mitjans, però pot haver-hi individus amb més o menys daus de cop que els indicats.
 
@@ -3157,10 +3263,10 @@ Es pot fer servir la taula següent quan no s'indica en la descripció de la cri
 
 ###### Tirada de salvació (TS)
 
-- **M:** mort o metzina.  
-- **V:** varetes.  
-- **P:** paràlisi / petrificació.  
-- **A:** atacs d'arma d'alè.  
+- **M:** mort o metzina.
+- **V:** varetes.
+- **P:** paràlisi / petrificació.
+- **A:** atacs d'arma d'alè.
 - **E:** encanteris / bastons / ceptres.
 
 **Salva com:** s'indica entre parèntesis els daus de cop equivalents per a la tirada de salvació ('HN' vol dir que salva com a un home normal). No sempre és igual que els daus de cop de la criatura; les poc intel·ligents acostumen a salvar a la meitat dels seus DC mentre que les criatures màgiques poden tenir tirades de més altes.
@@ -3221,7 +3327,7 @@ El DJ pot fer servir aquest sistema per decidir si les criatures (o els PNJ) es 
 
 El director de joc farà una tirada de moral per les criatures quan es dona alguna de les condicions següents:
 
-**La primera mort:** en un combat, pot fer repensar-se als oponents si continuar lluitant val la pena.  
+**La primera mort:** en un combat, pot fer repensar-se als oponents si continuar lluitant val la pena.
 **Bàndol reduït:** si la meitat del grup d'oponents ha mort o està incapacitat, llavors la reacció de la resta del grup es pot determinar amb la tirada de moral.
 
 ### Ajustar la situació
@@ -3250,7 +3356,7 @@ Per les criatures que realment llencen encanteris s'indica clarament en la descr
 
 ### Metzines
 
-Algunes criatures tenen atacs que a més d'infligir dany poden emmetzinar l'objectiu i provocar-li la mort, que, en general, es decideix amb una ***tirada de salvació contra metzina***. 
+Algunes criatures tenen atacs que a més d'infligir dany poden emmetzinar l'objectiu i provocar-li la mort, que, en general, es decideix amb una ***tirada de salvació contra metzina***.
 
 Quan la metzina és mortal i es falla la tirada de salvació normalment la víctima cau inconscient i mor uns assalts més tard.
 
@@ -3296,25 +3402,25 @@ Alguns encanteris o efectes màgics només afecten criatures classificades com a
 
 #### Abella gegant
 
-**CA** 12, **DC** 1d4 pc, **AT** 1×fibló, **BA** \+1, **MV** 150' (50'), **TS** M12 V13 P14 A15 E16 (1), **ML** 9, **AL** neutral, **PX** 7, **NA** 1d6 (5d6), **TT** cap
+**CA** 12, **DC** 1d4 pc, **AT** 1×fibló, **BA** \+1, **MV** 150 peus (50 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 9, **AL** neutral, **PX** 7, **NA** 1d6 (5d6), **TT** cap
 
 Sovint fan un peu de llarg (o més) i generalment es comporten igual que les seves cosines més petites. No solen ser agressives, excepte quan defensen el seu rusc o si mateixes. Qui rep una fiblada (èxit en la tirada d'atac) ha de fer una ***tirada de salvació contra metzina*** o morir, l'abella gegant s'allunya deixant el fibló clavat en la criatura i després també mor en l'assalt següent. Mentre el fibló estigui clavat en una criatura, aquesta pateix 1 punt de dany addicional per assalt fins que no li sigui extret el fibló. La reina normalment està acompanyada per 10 espècimens i 3+1d6 són més grans (1 DC i 15 PX) que les altres. La reina és molt més gran encara (2 DC i 30 PX) i més mortífera perquè el seu fibló no es trenca quan el clava.
 
 #### Àliga gegant
 
-**CA** 14, **DC** 4 (18 pc), **AT** 1×bec (1d6), 2×talons (1d4), **BA** \+2, **MV** 60' (20') / 360' (120') volant, **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** legal, **PX** 75, **NA** 0 (1d6), **TT** cap
+**CA** 14, **DC** 4 (18 pc), **AT** 1×bec (1d6), 2×talons (1d4), **BA** \+2, **MV** 60 peus (20 peus) / 360 peus (120 peus) volant, **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** legal, **PX** 75, **NA** 0 (1d6), **TT** cap
 
 Una àliga gegant típica fa uns 10 peus d'alçada, té una envergadura de fins a 20 peus i pesa unes 500 lliures. Semblants als seus cosins més petits en gairebé tots els aspectes, però aquestes són criatures intel·ligents i parlen el comú.
 
 Acostumen a atacar des d'una gran altura, fent un picat cap a terra a gran velocitat. Quan no es pot deixar caure en picat, fa servir els seus talons i el bec esmolat per colpejar al cap i els ulls del seu objectiu.
 
-Una àliga geganta solitària normalment està caçant o patrullant a la vora del seu niu, i generalment ignorarà les criatures que no semblin amenaçadores. 
+Una àliga geganta solitària normalment està caçant o patrullant a la vora del seu niu, i generalment ignorarà les criatures que no semblin amenaçadores.
 
 - **Niu:** una parella atacarà coordinadament lluitant a mort (moral 12\) per defensar el seu niu o les seves cries.
 
 #### Aranya, taràntula
 
-**CA** 14, **DC** 4\* (18 pc), **AT** 1×mossegada (1d8+metzina), **BA** \+3, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** neutral, **PX** 125, **NA** 1d3 (1d3), **TT** U
+**CA** 14, **DC** 4\* (18 pc), **AT** 1×mossegada (1d8+metzina), **BA** \+3, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** neutral, **PX** 125, **NA** 1d3 (1d3), **TT** U
 
 Aquestes són aranyes peludes, de la mida d'un poni i naturalesa màgica que persegueixen les seves preses tal com ho fan els llops.
 
@@ -3322,19 +3428,19 @@ Aquestes són aranyes peludes, de la mida d'un poni i naturalesa màgica que per
 
 - **Espectadors:** cal que superin una ***tirada de salvació contra encanteris*** o començar a ballar fins que la víctima emmetzinada acabi.
 
-- **Ballant:** tots els afectats pateixen una penalització de \-4 a la CA i a les tirades d'atac. 
+- **Ballant:** tots els afectats pateixen una penalització de \-4 a la CA i a les tirades d'atac.
 
 L'encanteri ***neutralitzar metzina*** pot guarir a la víctima mossegada i ***dissipar màgia*** aturarà la dansa per a tothom en la zona d'efecte.
 
 #### Armadura animada
 
-**CA** 17, **DC** 4\* (16 pc), **AT** 1×arma (1d6), **BA** \+3, **MV** 90' (30'), **TS** M13 V14 P13 A16 E15 (M4), **ML** 12, **AL** neutral, **PX** 125, **NA** 1 (0), **TT** cap
+**CA** 17, **DC** 4\* (16 pc), **AT** 1×arma (1d6), **BA** \+3, **MV** 90 peus (30 peus), **TS** M13 V14 P13 A16 E15 (M4), **ML** 12, **AL** neutral, **PX** 125, **NA** 1 (0), **TT** cap
 
 Són simples armadures senceres que han estat animades per actuar com a guardes de portes o altres posicions. No tenen voluntat i tan sols es dedicaran a defensar la posició que els hagi estat encomanada per impedir-ne el pas.
 
 #### Assetjador invisible
 
-**CA** 16, **DC** 8\* (36 pc), **AT** 1×cop (4d4), **BA** \+7, **MV** 120' (40'), **TS** M8 V9 P10 A10 E12 (8), **ML** 12, **AL** neutral, **PX** 1.200, **NA** 1 (1), **TT** cap
+**CA** 16, **DC** 8\* (36 pc), **AT** 1×cop (4d4), **BA** \+7, **MV** 120 peus (40 peus), **TS** M8 V9 P10 A10 E12 (8), **ML** 12, **AL** neutral, **PX** 1.200, **NA** 1 (1), **TT** cap
 
 Aquests són criatures originàries del pla elemental de l'aire que de vegades serveixen als bruixots i nigromants, que els convoquen per fer tasques específiques.
 
@@ -3350,7 +3456,7 @@ Els assetjadors invisibles no tenen forma i un encanteri per ***detectar invisib
 
 #### Au funesta
 
-**CA** 14, **DC** 2+1\* (10 pc), **AT** 1×mossegada (1d3) o 2×urpes (1d3), **BA** \+2, **MV** 30' (10') / 60' (20') volant , **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** caòtic, **PX** 35, **NA** 1d4 (2d6), **TT** cap
+**CA** 14, **DC** 2+1\* (10 pc), **AT** 1×mossegada (1d3) o 2×urpes (1d3), **BA** \+2, **MV** 30 peus (10 peus) / 60 peus (20 peus) volant , **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** caòtic, **PX** 35, **NA** 1d4 (2d6), **TT** cap
 
 Són ocells, molt sovint corbs, que han estat alçats com a no morts molt intel·ligents gràcies a la màgia d'un nigromant; sovint fan de familiars.
 
@@ -3358,7 +3464,7 @@ Són ocells, molt sovint corbs, que han estat alçats com a no morts molt intel�
 
 #### Aparegut (wraith)
 
-**CA** 16, **DC** 4\*\* (18 pc), **AT** 1×toc (1d4+drenatge), **BA** \+3, **MV** 120' (40') / 240' (80') volant, **TS** M10 V11 P12 A13 E14 (4), **ML** 12, **AL** caòtic, **PX** 175, **NA** 1d4 (1d6), **TT** E
+**CA** 16, **DC** 4\*\* (18 pc), **AT** 1×toc (1d4+drenatge), **BA** \+3, **MV** 120 peus (40 peus) / 240 peus (80 peus) volant, **TS** M10 V11 P12 A13 E14 (4), **ML** 12, **AL** caòtic, **PX** 175, **NA** 1d4 (1d6), **TT** E
 
 Aquest són criatures no-mortes incorporals que apareixen com una boirosa i pàl·lida figura humana. En alguns casos, la silueta espectral pot aparèixer amb armadura o amb armes, però això no influeix en la CA o les seves habilitats de combat, sinó que són un simple reflex de la forma que tenia l'entitat en vida.
 
@@ -3368,7 +3474,7 @@ Quan toca a una criatura es perd de forma permanent un nivell d'experiència o d
 
 #### Bandoler
 
-**CA** 13/15/16, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** \+0, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (1), **ML** 6, **AL** caòtic, **PX** 10, **NA** 0 (1d4×10), **TT** A
+**CA** 13/15/16, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** \+0, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 6, **AL** caòtic, **PX** 10, **NA** 0 (1d4×10), **TT** A
 
 Mercenaris i criminals que viuen d'assaltar assentaments i viatgers.
 
@@ -3380,7 +3486,7 @@ Mercenaris i criminals que viuen d'assaltar assentaments i viatgers.
 
 #### Banshee
 
-**CA** 19, **DC** 7\* (31 pc), **AT** 1×toc (1d8) o 1×gemec (mort), **BA** \+6, **MV** 150' (50'), **TS** M8 V9 P10 A10 E12 (7), **ML** 12, **AL** caòtic, **PX** 850, **NA** 1 (1), **TT** D
+**CA** 19, **DC** 7\* (31 pc), **AT** 1×toc (1d8) o 1×gemec (mort), **BA** \+6, **MV** 150 peus (50 peus), **TS** M8 V9 P10 A10 E12 (7), **ML** 12, **AL** caòtic, **PX** 850, **NA** 1 (1), **TT** D
 
 Són esperits de dones que romanen en indrets desolats després de morir turmentades. Odien als vius i els assetgen per causar-los sofriment. Les llegendes diuen que són els esperits d'elfs malvats.
 
@@ -3390,7 +3496,7 @@ Igual que molts no-morts, poden ser expulsats pels clergues i paladins, són inv
 
 #### Basilisc
 
-**CA** 15, **DC** 6+1\*\* (28 pc), **AT** 1×mossegada (1d10+petrifica), 1×mirada (petrifica), **BA** \+6, **MV** 60' (20'), **TS** M10 V11 P12 A13 E14 (6), **ML** 9, **AL** neutral, **PX** 950, **NA** 1d6 (1d6), **TT** F
+**CA** 15, **DC** 6+1\*\* (28 pc), **AT** 1×mossegada (1d10+petrifica), 1×mirada (petrifica), **BA** \+6, **MV** 60 peus (20 peus), **TS** M10 V11 P12 A13 E14 (6), **ML** 9, **AL** neutral, **PX** 950, **NA** 1d6 (1d6), **TT** F
 
 Un basilisc és un monstre rèptil de vuit potes que petrifica les criatures vives amb una simple mirada. El basilisc sol tenir un cos d'un color marró apagat amb el ventre groguenc i alguns exemplars disposen d'una banya curta i corba al damunt del nas. Un cos d'un exemplar adult pot fer fins a 6 peus de llarg sense la cua, que pot arribar a fer de 5 a 7 peus, i la criatura pesa unes 300 lliures.
 
@@ -3400,7 +3506,7 @@ Quan un basilisc es veu a si mateix en un mirall, ha de superar una ***tirada de
 
 #### Bolet violeta
 
-**CA** 12, **DC** 3\* (13 pc), **AT** 2×tentacles (2d4+podrir), **BA** \+2, **MV** 10' (3'), **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 50, **NA** 1d4 (0), **TT** cap
+**CA** 12, **DC** 3\* (13 pc), **AT** 2×tentacles (2d4+podrir), **BA** \+2, **MV** 10 peus (3 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 50, **NA** 1d4 (0), **TT** cap
 
 Bolets carnívors gegants, de 5 peus d'alçada, que s'arrosseguen molt a poc a poc. Viuen sota terra entre xiscladors a qui s'assemblen força. S'alimenten de les restes dels cadàvers en descomposició que s'han acostat massa.
 
@@ -3408,7 +3514,7 @@ Bolets carnívors gegants, de 5 peus d'alçada, que s'arrosseguen molt a poc a p
 
 #### Centaure
 
-**CA** 14, **DC** 4 (18 pc), **AT** 2×peülles (1d6), arma (1d6 o per arma), **BA** \+3, **MV** 180' (60'), **TS** M10 V11 P12 A13 E14 (4), **ML** 8, **AL** neutral, **PX** 75, **NA** 0 (2d10), **TT** A
+**CA** 14, **DC** 4 (18 pc), **AT** 2×peülles (1d6), arma (1d6 o per arma), **BA** \+3, **MV** 180 peus (60 peus), **TS** M10 V11 P12 A13 E14 (4), **ML** 8, **AL** neutral, **PX** 75, **NA** 0 (2d10), **TT** A
 
 Els centaures semblen mig home i mig cavall, tenen el tors, els braços i el cap d'un home on hi hauria el cap d'un cavall. Són tan grans com un cavall de tir, però molt més alts i més pesats; els mascles fan uns 7 peus d'alçada i pesen unes 2.100 lliures de mitjana. Normalment, es mostren arrogants i distants, però són molt honorables i la majoria voldria morir abans de dur un genet a l'esquena. Poden carregar amb una pica o una llança com un home a cavall i acostumen a fer servir arcs, garrots i armadura de cuir.
 
@@ -3416,18 +3522,18 @@ Els centaures joves tenen 2 DC i fan dos atacs amb les peülles i amb l'arma de 
 
 #### Cocatriu
 
-**CA** 13, **DC** 5\*\* (22 pc), **AT** 1×bec (1d6+petrificació), **BA** \+4, **MV** 90' (30') / 180' (60') volant, **TS** M10 V11 P12 A13 E14 (5), **ML** 7, **AL** neutral, **PX** 425, **NA** 1d4 (1d8), **TT** D
+**CA** 13, **DC** 5\*\* (22 pc), **AT** 1×bec (1d6+petrificació), **BA** \+4, **MV** 90 peus (30 peus) / 180 peus (60 peus) volant, **TS** M10 V11 P12 A13 E14 (5), **ML** 7, **AL** neutral, **PX** 425, **NA** 1d4 (1d8), **TT** D
 
-Una cocatriu és una criatura estranya, que s'assembla a un pollastre (gallina o gall) amb un coll llarg i la cua d'una serp; el coll està rematat per un cap de pollastre més o menys normal que pesa unes 25 lliures i no és més intel·ligent que cap animal. Un mascle té carúncules i una cresta, com un gall i les femelles, molt  
+Una cocatriu és una criatura estranya, que s'assembla a un pollastre (gallina o gall) amb un coll llarg i la cua d'una serp; el coll està rematat per un cap de pollastre més o menys normal que pesa unes 25 lliures i no és més intel·ligent que cap animal. Un mascle té carúncules i una cresta, com un gall i les femelles, molt
 més rares, només es diferencien perquè no en tenen.
 
 Qualsevol criatura tocada per una cocatriu o que en toqui una (encara que dugui guants), ha de superar una ***tirada de salvació contra petrificació*** o tornar-se en pedra.
 
 #### Corb mecànic
 
-**CA** 16, **DC** 1+1\* (5 pc), **AT** 1×bec (2d4), 2×talons (2d4), **BA** \+2, **MV** 60' (20' ) / 360' (120') volant, **TS** M12 V13 P14 A15 E16 (3), **ML** 10, **AL** neutral, **PX** 19, **NA** 1 (0), **TT** 2×ulls de robí
+**CA** 16, **DC** 1+1\* (5 pc), **AT** 1×bec (2d4), 2×talons (2d4), **BA** \+2, **MV** 60 peus (20 peus ) / 360 peus (120 peus) volant, **TS** M12 V13 P14 A15 E16 (3), **ML** 10, **AL** neutral, **PX** 19, **NA** 1 (0), **TT** 2×ulls de robí
 
-Els corbs mecànics són creacions de mags que combinen parts d'un corb viu amb mecanismes d'acer i ulls de robí. 
+Els corbs mecànics són creacions de mags que combinen parts d'un corb viu amb mecanismes d'acer i ulls de robí.
 
 - **Infravisió:** amb un abast de 90 peus.
 
@@ -3439,7 +3545,7 @@ Els corbs mecànics són creacions de mags que combinen parts d'un corb viu amb 
 
 #### Centpeus gegant
 
-**CA** 10, **DC** ½\* (2 pc), **AT** 1×mossegada (verí), **BA** \+0, **MV** 60' (20'), **TS** M14 V15 P16 A17 E18 (HN), **ML** 7, **AL** neutral, **PX** 6, **NA** 2d4 (1d8), **TT** cap
+**CA** 10, **DC** ½\* (2 pc), **AT** 1×mossegada (verí), **BA** \+0, **MV** 60 peus (20 peus), **TS** M14 V15 P16 A17 E18 (HN), **ML** 7, **AL** neutral, **PX** 6, **NA** 2d4 (1d8), **TT** cap
 
 Aquests són versions més grans que fan entre 2 i 3 peus de llarg i són artròpodes depredadors, hostils, ràpids i verinosos. Prefereixen viure en àrees subterrànies, àrees boscoses ombrívoles i altres llocs fora de la llum del sol directa; no obstant això, n'hi ha varietats adaptades al desert que s'amaguen sota la sorra esperant alguna presa despistada.
 
@@ -3447,7 +3553,7 @@ Els centpeus gegants ataquen a qualsevol cosa que s'assembli al menjar, mossegan
 
 #### Cuc de femer
 
-**CA** 10, **DC** 1 pc, **AT** cap, **BA** \-1, **MV** 10' (3'), **TS** M14 V15 P16 A17 E18 (HN), **ML** 12, **AL** neutral, **PX** 6, **NA** 5d4 (5d4), **TT** cap
+**CA** 10, **DC** 1 pc, **AT** cap, **BA** \-1, **MV** 10 peus (3 peus), **TS** M14 V15 P16 A17 E18 (HN), **ML** 12, **AL** neutral, **PX** 6, **NA** 5d4 (5d4), **TT** cap
 
 Els cucs de femer són paràsits de color blanc o marró i fins a dues polzades de llarg que es troben entre la carronya, els fems i d'altres escombraries de matèria orgànica.
 
@@ -3457,7 +3563,7 @@ Els cucs de femer són paràsits de color blanc o marró i fins a dues polzades 
 
 #### Cuc tentaculat
 
-**CA** 12, **DC** 3+1\* (14 pc), **AT** 8×tentacles (paràlisis), **BA** \+3, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (2), **ML** 9, **AL** neutral, **PX** 75, **NA** 1d3 (1d3), **TT** B
+**CA** 12, **DC** 3+1\* (14 pc), **AT** 8×tentacles (paràlisis), **BA** \+3, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 9, **AL** neutral, **PX** 75, **NA** 1d3 (1d3), **TT** B
 
 Aquests tenen una llargada mitjana de 6 a 8 peus i una amplada de 2 a 3 peus que tenen el cap blanc o grisós, però sovint la resta del cos pot ser d'un rosa lívid o porpra fins a un verd intens. Són com grans erugues amb el cos segmentat i molts parells de potes que els permet enfilar-se i moure's per parets i sostres, alguns savis creuen que són la forma larvària d'un altre monstre, però això mai s'ha demostrat.
 
@@ -3467,7 +3573,7 @@ Quan tots els oponents d'un cuc tentaculat quedin paralitzats, llavors començar
 
 #### Desencisador
 
-**CA** 14, **DC** 5\* (22 pc), **AT** 1×toc de trompa (desencisar), **BA** \+4, **MV** 120' (40'), **TS** M10 V11 P12 A13 E14 (5), **ML** 7, **AL** neutral, **PX** 300, **NA** 1d2 (0), **TT** cap
+**CA** 14, **DC** 5\* (22 pc), **AT** 1×toc de trompa (desencisar), **BA** \+4, **MV** 120 peus (40 peus), **TS** M10 V11 P12 A13 E14 (5), **ML** 7, **AL** neutral, **PX** 300, **NA** 1d2 (0), **TT** cap
 
 Criatura semblant a un dromedari, d'un color blavós i semitransparent. Té unes trompes llargues i flexibles per on s'alimenta d'energia màgica.
 
@@ -3481,7 +3587,7 @@ Criatura semblant a un dromedari, d'un color blavós i semitransparent. Té unes
 
 #### Desori
 
-**CA** 15, **DC** 8\*\* (36 pc), **AT** 2×esclafit (2d4), **BA** \+7, **MV** 90' (30') volant, **TS** M6 V7 P8 A8 E10 (10), **ML** 10, **AL** caòtic, **PX** 1650, **NA** 1 (0), **TT** cap
+**CA** 15, **DC** 8\*\* (36 pc), **AT** 2×esclafit (2d4), **BA** \+7, **MV** 90 peus (30 peus) volant, **TS** M6 V7 P8 A8 E10 (10), **ML** 10, **AL** caòtic, **PX** 1650, **NA** 1 (0), **TT** cap
 
 És una criatura amorfa i vaporosa, en un caos de canvis de forma. No té mai una forma definida, a cada minut canvia entre una forma vagament humanoide amb cap i extremitats per convertir-se en una massa de matèria negra i viscosa com el petroli.
 
@@ -3493,7 +3599,7 @@ Criatura semblant a un dromedari, d'un color blavós i semitransparent. Té unes
 
 #### Drapat
 
-**CA** 17, **DC** 5\*\* (22 pc), **AT** 1×toc (1d4) o 1×arma (1d6 o per arma), **BA** \+3, **MV** 90' (30') / 180' (60') volant, **TS** M10 V11 P12 A13 E14 (4), **ML** 12, **AL** caòtic, **PX** 425, **NA** 1 (1), **TT** C
+**CA** 17, **DC** 5\*\* (22 pc), **AT** 1×toc (1d4) o 1×arma (1d6 o per arma), **BA** \+3, **MV** 90 peus (30 peus) / 180 peus (60 peus) volant, **TS** M10 V11 P12 A13 E14 (4), **ML** 12, **AL** caòtic, **PX** 425, **NA** 1 (1), **TT** C
 
 Aquesta criatura és un no-mort amb forma humanoide i una existència corporal que aconsegueix gràcies al fet que s'embolica de teles per obtenir-la i de vegades es confon amb una mòmia; és capaç d'empunyar armes.
 
@@ -3503,7 +3609,7 @@ Aquesta criatura és un no-mort amb forma humanoide i una existència corporal q
 
 #### Dríada
 
-**CA** 14, **DC** 2\* (9 pc), **AT** 1×màgia (encisar), **BA** \+1, **MV** 120' (40'), **TS** M10 V11 P12 A13 E14 (4), **ML** 6, **AL** neutral, **PX** 25, **NA** 0 (1d6), **TT** D
+**CA** 14, **DC** 2\* (9 pc), **AT** 1×màgia (encisar), **BA** \+1, **MV** 120 peus (40 peus), **TS** M10 V11 P12 A13 E14 (4), **ML** 6, **AL** neutral, **PX** 25, **NA** 0 (1d6), **TT** D
 
 Les dríades són esperits de la naturalesa que es manifesten amb formes femenines; cadascuna està lligada a un únic roure enorme, i no se'n poden allunyar a més de 300 iardes perquè llavors l'arbre emmalalteix i mor en 4d6 hores. La dríada viu tant com el seu arbre, i mor quan l'arbre mor; i de la mateixa manera quan la dríada mor, també ho fa el seu arbre.
 
@@ -3513,7 +3619,7 @@ Eviten el combat físic i poques vegades poden ser vistes a menys que ho desitgi
 
 #### Eixam d'insectes
 
-**CA** 12, **DC** 2 a 4 (9/13/18 pc), **AT** 1×eixam (2 o 4 pc), **BA** \+1/+2/+3, **MV** 30' (10') / 60' (20') volant, **TS** M14 V15 P16 A17 E18 (HN), **ML** 11, **AL** neutral, **PX** 20/35/75, **NA** 1 (1d3), **TT** cap
+**CA** 12, **DC** 2 a 4 (9/13/18 pc), **AT** 1×eixam (2 o 4 pc), **BA** \+1/+2/+3, **MV** 30 peus (10 peus) / 60 peus (20 peus) volant, **TS** M14 V15 P16 A17 E18 (HN), **ML** 11, **AL** neutral, **PX** 20/35/75, **NA** 1 (1d3), **TT** cap
 
 Aquest no és una sola criatura, sinó un gran grup d'insectes voladors o reptants que es mouen junts. En general, quan són voladors ocupen un volum de 30×10×10 peus que pot compactar-se per passar per una porta petita o per un passadís estret. Quan és format per insectes reptants, cobreix tres quadrats de 10 peus.
 
@@ -3523,20 +3629,20 @@ Quan la víctima aconsegueix sortir de l'eixam, el dany es redueix a un sol punt
 
 #### Entitat (wight)
 
-**CA** 14, **DC** 3\* (13 pc), **AT** 1×toc (drenatge), **BA** \+2, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (3), **ML** 12, **AL** caòtic, **PX** 50, **NA** 1d6 (1d8), **TT** B
+**CA** 14, **DC** 3\* (13 pc), **AT** 1×toc (drenatge), **BA** \+2, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (3), **ML** 12, **AL** caòtic, **PX** 50, **NA** 1d6 (1d8), **TT** B
 
 L'aspecte d'una entitat és un reflex estrany i retorçat de la forma que tenia en vida que ocupa el cos d'un humà o semihumà mort, però no conserva cap habilitat original.
 
 Igual que tots els no-morts, els clergues i els paladins poden expulsar les entitats, són invulnerables a ***dormir***, ***encisar*** i ***retenir*** màgics i tan sols poden ser danyades per les armes màgiques o de plata.
 
-El contacte d'aquesta criatura fa perdre un nivell d'experiència o dau de cop permanentment, i també es perden tots els beneficis associats (punts de cop, encanteris, tirades de salvació, bonificació a l'atac, etc.). Els punts d'experiència es redueixen a la quantitat mínima del nou nivell i una persona amb tots els nivells drenats es torna  
-una entitat en 1d4 dies  
-sota el control de l'entitat  
+El contacte d'aquesta criatura fa perdre un nivell d'experiència o dau de cop permanentment, i també es perden tots els beneficis associats (punts de cop, encanteris, tirades de salvació, bonificació a l'atac, etc.). Els punts d'experiència es redueixen a la quantitat mínima del nou nivell i una persona amb tots els nivells drenats es torna
+una entitat en 1d4 dies
+sota el control de l'entitat
 que l'ha matat.
 
 #### Escarabat de foc gegant
 
-**CA** 15, **DC** 1+2 (6 pc), **AT** 1×mossegada (2d4), **BA** \+1, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (1), **ML** 7, **AL** neutral, **PX** 15, **NA** 1d8 (2d6), **TT** cap
+**CA** 15, **DC** 1+2 (6 pc), **AT** 1×mossegada (2d4), **BA** \+1, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 7, **AL** neutral, **PX** 15, **NA** 1d8 (2d6), **TT** cap
 
 Aquests insectes nocturns lluminosos són valorats pels miners i aventurers. Tenen dues glàndules sobre cada ull, que produeixen una resplendor vermellosa. La lluminositat de les glàndules persisteix durant 1d6 dies després de retirar-les dels escarabats i poden il·luminar una àrea circular amb radi de 10 peus.
 
@@ -3544,7 +3650,7 @@ Els escarabats de foc gegants fan uns 2 peus de llargada. No són hostils, però
 
 #### Escorpí gegant
 
-**CA** 17, **DC** 4\* (18 pc), **AT** 2×urpes (1d10), 1×fibló (1d4+metzina), **BA** \+3, **MV** 150' (50'), **TS** M12 V13 P14 A15 E16 (2), **ML** 11, **AL** caòtic, **PX** 125, **NA** 1d6 (1d6), **TT** V
+**CA** 17, **DC** 4\* (18 pc), **AT** 2×urpes (1d10), 1×fibló (1d4+metzina), **BA** \+3, **MV** 150 peus (50 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 11, **AL** caòtic, **PX** 125, **NA** 1d6 (1d6), **TT** V
 
 Són depredadors agressius, sovint tan grans com un ase que es troben sovint en zones desèrtiques o cavernes i que normalment ataquen immediatament quan tenen una presa a l'abast.
 
@@ -3554,7 +3660,7 @@ Quan clava el fibló cal superar una ***tirada de salvació contra metzina*** o 
 
 #### Espectre
 
-**CA** 17, **DC** 6\*\* (27 pc), **AT** 1×toc (1d8+drenatge), **BA** \+5, **MV** 150' (50') / 300' (100') volant, **TS** M10 V11 P12 A13 E14 (6), **ML** 11, **AL** caòtic, **PX** 725, **NA** 1d4 (1d8), **TT** E
+**CA** 17, **DC** 6\*\* (27 pc), **AT** 1×toc (1d8+drenatge), **BA** \+5, **MV** 150 peus (50 peus) / 300 peus (100 peus) volant, **TS** M10 V11 P12 A13 E14 (6), **ML** 11, **AL** caòtic, **PX** 725, **NA** 1d4 (1d8), **TT** E
 
 Normalment, s'assembla molt a com era en vida, qui el va conèixer o n'han vist un retrat el pot reconèixer fàcilment i sovint mostra evidències d'una mort violenta.
 
@@ -3564,15 +3670,15 @@ Quan toca a una criatura aquesta permanentment perd dos nivells d'experiència o
 
 #### Esquelet
 
-**CA** 12, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** \+0, **MV** 60' (20'), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** caòtic, **PX** 10, **NA** 3d4 (3d10), **TT** cap
+**CA** 12, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** \+0, **MV** 60 peus (20 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** caòtic, **PX** 10, **NA** 3d4 (3d10), **TT** cap
 
 Aquests són no-morts creats per la màgia d'un mag o clergue, generalment per protegir una tomba, un tresor o per actuar com a guardià personal. Aquests, poden ser expulsats per un clergue, però són invulnerables als encanteris ***dormir***, ***encisar*** o ***retenir*** i a qualsevol forma de llegir els pensaments.
 
 #### Estirge
 
-**CA** 12, **DC** 1\* (4 pc), **AT** 1×bec (1d3+xuclar sang), **BA** \+0, **MV** 30' (10') / 180' (60') volant, **TS** M12 V13 P14 A15 E16 (2), **ML** 9, **AL** neutral, **PX** 13, **NA** 1d10 (3d12), **TT** L
+**CA** 12, **DC** 1\* (4 pc), **AT** 1×bec (1d3+xuclar sang), **BA** \+0, **MV** 30 peus (10 peus) / 180 peus (60 peus) volant, **TS** M12 V13 P14 A15 E16 (2), **ML** 9, **AL** neutral, **PX** 13, **NA** 1d10 (3d12), **TT** L
 
-Aquestes són criatures voladores semblants a ocells amb el cos emplomat, un bec llarg que protegeix una trompa capaç de xuclar la sang de les seves víctimes i dos parells d'ales membranoses com les dels ratpenats. El seu cos fa aproximadament un peu de llarg, les ales tenen una envergadura de 2 peus i pesen 1 lliura aproximadament. 
+Aquestes són criatures voladores semblants a ocells amb el cos emplomat, un bec llarg que protegeix una trompa capaç de xuclar la sang de les seves víctimes i dos parells d'ales membranoses com les dels ratpenats. El seu cos fa aproximadament un peu de llarg, les ales tenen una envergadura de 2 peus i pesen 1 lliura aproximadament.
 
 Quan colpeja a una criatura, es fixa a ella i li xucla la sang fent 1d3 punts de dany per assalt.
 
@@ -3580,9 +3686,9 @@ Tan sols et pots alliberar de la criatura matant-la; qualsevol atac a la criatur
 
 #### Flor carnívora
 
-**CA** 14, **DC** 6\* (27 pc), **AT** 1×mossegada (1d3+metzina), **BA** \+5, **MV** 30' (10'), **TS** M10 V11 P12 A13 E14 (4), **ML** 12, **AL** neutral, **PX** 500, **NA** 1d4 (1d8), **TT** cap
+**CA** 14, **DC** 6\* (27 pc), **AT** 1×mossegada (1d3+metzina), **BA** \+5, **MV** 30 peus (10 peus), **TS** M10 V11 P12 A13 E14 (4), **ML** 12, **AL** neutral, **PX** 500, **NA** 1d4 (1d8), **TT** cap
 
-Són plantes altes i esveltes amb grans bulbs de flors i arrels dures. Desprèn un pol·len olorós que atrau a totes les criatures en un radi de 50 peus a menys que se superi una ***tirada de salvació contra metzina***. 
+Són plantes altes i esveltes amb grans bulbs de flors i arrels dures. Desprèn un pol·len olorós que atrau a totes les criatures en un radi de 50 peus a menys que se superi una ***tirada de salvació contra metzina***.
 
 - **Atordir:** quan mossega deixa anar una sàvia en el torrent sanguini de la víctima, que la deixa sedada si no se supera una ***tirada de salvació contra metzina***.
 
@@ -3602,7 +3708,7 @@ Les espores s'alimenten de la fusta i el cuir amb què estigui en contacte, les 
 
 #### Gàrgola
 
-**CA** 14, **DC** 4 (18 pc), **AT** 2×urpes (1d3), 1×mossegada (1d6), 1×banya (1d4), **BA** \+3,  **MV** 90' (30') / 150' (50') volant, **TS** M8 V9 P10 A10 E12 (8), **ML** 11, **AL** caòtic, **PX** 75, **NA** 1d6 (2d4), **TT** C
+**CA** 14, **DC** 4 (18 pc), **AT** 2×urpes (1d3), 1×mossegada (1d6), 1×banya (1d4), **BA** \+3,  **MV** 90 peus (30 peus) / 150 peus (50 peus) volant, **TS** M8 V9 P10 A10 E12 (8), **ML** 11, **AL** caòtic, **PX** 75, **NA** 1d6 (2d4), **TT** C
 
 Les gàrgoles són monstres humanoides amb un aspecte demoníac que tenen la pell molt semblant a la pedra grisenca. Sovint es confonen amb estàtues pedra alades, ja que poden romandre quietes indefinidament i fan servir aquesta disfressa per emboscar sorprenent amb una probabilitat de 4-en-6 quan no aixequen sospites. Són uns monstres cruels, que causen dolor a les altres criatures amb l'únic propòsit de divertir-se.
 
@@ -3610,7 +3716,7 @@ Les gàrgoles no necessiten ni menjar, ni aigua, ni aire per respirar i tan sols
 
 #### Gelatina ocre
 
-**CA** 11, **DC** 5\* (22 pc), **AT** 1×tocar (2d6), **BA** \+4, **MV** 30' (10'), **TS** M12 V13 P14 A15 E16 (3), **ML** 12, **AL** neutral, **PX** 300, **NA** 1 (0), **TT** cap
+**CA** 11, **DC** 5\* (22 pc), **AT** 1×tocar (2d6), **BA** \+4, **MV** 30 peus (10 peus), **TS** M12 V13 P14 A15 E16 (3), **ML** 12, **AL** neutral, **PX** 300, **NA** 1 (0), **TT** cap
 
 És un monstre amorf de color ocre, semblant al llot gris que pot créixer fins a un diàmetre de 10 peus unes 6 polzades de gruix i pesar unes 700 lliures.
 
@@ -3624,7 +3730,7 @@ Els atacs d'electricitat o llampec divideixen la criatura en 1d4+1 gelatines mé
 
 #### Gentmalgama o malgamic
 
-**CA** 13, **DC** 1+1 (5 pc), **AT** 1×arma (1d8 o per arma), **BA** \+1, **MV** 90' (30'), **TS** M8 V9 P10 A13 E12 (1), **ML** 7, **AL** neutral, **PX** 15, **NA** 1d8 (5d20), **TT** C
+**CA** 13, **DC** 1+1 (5 pc), **AT** 1×arma (1d8 o per arma), **BA** \+1, **MV** 90 peus (30 peus), **TS** M8 V9 P10 A13 E12 (1), **ML** 7, **AL** neutral, **PX** 15, **NA** 1d8 (5d20), **TT** C
 
 Humanoides amb parts del cos barrejades de moltes i diferents criatures (per exemple rèptils, crustacis, ocells, mamífers, etc.). Cada individu té una parença única. Evitats per les altres espècies, viuen amagats en grans assentaments o habiten com a bandes entre ruïnes. Es rumoreja que van ser creats per un mag, possiblement per accident.
 
@@ -3638,7 +3744,7 @@ Humanoides amb parts del cos barrejades de moltes i diferents criatures (per exe
 
 #### Gnoll
 
-**CA** 14, **DC** 2 (9 pc), **AT** 1×arma (2d4 o per arma+1), **BA** \+1, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** caòtic, **PX** 20, **NA** 1d6 (3d6), **TT** D
+**CA** 14, **DC** 2 (9 pc), **AT** 1×arma (2d4 o per arma+1), **BA** \+1, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** caòtic, **PX** 20, **NA** 1d6 (3d6), **TT** D
 
 Aquest són humanoides amb cap de hiena, mandrosos i no massa intel·ligents que viuen en tribus disperses. La majoria tenen pelatges d'un groc brut o marró-rogenc. Un adult fa uns 7 peus d'alçada i pesa unes 300 lliures.
 
@@ -3648,12 +3754,12 @@ Són uns carnívors cruels que prefereixen menjar criatures intel·ligents perqu
 
 - **Líder:** els grups de 20 o més són dirigits per l'individu més fort (bonificació \+1 al dany), **DC** 3 (16 pc) i **PX** 35\.
 
-Mentre aquest estigui viu es bonifiquen les tirades  
+Mentre aquest estigui viu es bonifiquen les tirades
 de moral de la tribu amb \+1.
 
 #### Goblin
 
-**CA** 13, **DC** 1-1 (3 pc), **AT** 1×arma (1d6 o per arma), **BA** 0, **MV** 60' (20'), **TS** M14 V15 P16 A17 E18 (HN), **ML** 7, **AL** caòtic, **PX** 5, **NA** 2d4 (6d10), **TT** R (C)
+**CA** 13, **DC** 1-1 (3 pc), **AT** 1×arma (1d6 o per arma), **BA** 0, **MV** 60 peus (20 peus), **TS** M14 V15 P16 A17 E18 (HN), **ML** 7, **AL** caòtic, **PX** 5, **NA** 2d4 (6d10), **TT** R (C)
 
 Són petits humanoides malgirbats que sempre estan maquinant quina en poden fer, les emboscades, els trucs bruts i qualsevol altre estratagema que puguin inventar són les seves eines. Un adult fa de 3 a 3 peus i mig d'alçada, i pesa entre 40 i 45 lliures. Tenen ulls brillants i astuts que van del color vermell al groc, la pell d'un va des del groc fins a un vermell intens passant per qualsevol to de taronja (en general tots els membres d'una tribu tenen el mateix color). Vesteixen de cuir fosc, amb colors terrossos i mates.
 
@@ -3673,16 +3779,16 @@ En un cau hi viuen:
 
 #### Granota i gripau gegant
 
-**CA** 12, **DC** 2 (9 pc), **AT** 1×atrapar (1d4+retenir), **BA** \+0, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** neutral, **PX** 25, **NA** 1d4 (1d4), **TT** cap 
+**CA** 12, **DC** 2 (9 pc), **AT** 1×atrapar (1d4+retenir), **BA** \+0, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** neutral, **PX** 25, **NA** 1d4 (1d4), **TT** cap
 
 Aquestes són versions engrandides de les granotes comunes; la majoria s'assemblen a les granotes toro en aparença, però una granota geganta adulta farà 3 peus de llarg i pesa unes 250 lliures. Són depredadors, però tan sols acostumen a atacar criatures més petites que elles mateixes. Els gripaus gegants són estadísticament igual que les granotes gegants; tanmateix, sovint es troben en zones "més seques", ja que no han de mantenir la seva pell humida.
 
-Aquestes criatures poden estirar la llengua fins a 15 peus i arrossegar preses petites (fins a la mida dels nans) cap a la seva boca, llavors en cada assalt posterior la víctima pren 1d4 punts de dany automàticament.  
+Aquestes criatures poden estirar la llengua fins a 15 peus i arrossegar preses petites (fins a la mida dels nans) cap a la seva boca, llavors en cada assalt posterior la víctima pren 1d4 punts de dany automàticament.
 - **Engolir:** amb un 20 natural a la tirada d'atac s'empassarà la víctima sencera i aquesta pren 1d6 punts de dany per assalt en els assalts següents. Tan sols pot empassar-se una criatura d'aquesta manera.
 
 #### Granyotic (home granota)
 
-**CA** 14, **DC** 1\* (4 pc), **AT** 1×arma (1d6+1 o per arma+1) o 2×urpes (1d2) i 1×mossegada (1d4+1), **BA** \+0, **MV** 30' (10') / 150' (50') nedant, **TS** M12 V13 P14 A15 E16 (1), **ML** 7, **AL** caòtic, **PX** 13, **NA** 2d6 (1d8×10), **TT** D
+**CA** 14, **DC** 1\* (4 pc), **AT** 1×arma (1d6+1 o per arma+1) o 2×urpes (1d2) i 1×mossegada (1d4+1), **BA** \+0, **MV** 30 peus (10 peus) / 150 peus (50 peus) nedant, **TS** M12 V13 P14 A15 E16 (1), **ML** 7, **AL** caòtic, **PX** 13, **NA** 2d6 (1d8×10), **TT** D
 
 Humanoides bàrbars i tribals amb aparença de granota. Habiten els llocs foscos i pantanosos.
 
@@ -3690,13 +3796,13 @@ Humanoides bàrbars i tribals amb aparença de granota. Habiten els llocs foscos
 
 - **Atac aeri:** salta fins a 30 peus endavant i obté una bonificació \+1 a la tirada d'atac. Si empunya una arma per empalar (p. ex., una llança) llavors conta com carregar i infligeix doble dany quan colpeja.
 
-- **Líder:** els grups són dirigits per l'individu més fort amb **DC** 2 (8 pc), **PX** 13 i bonificació \+1 al dany. 
+- **Líder:** els grups són dirigits per l'individu més fort amb **DC** 2 (8 pc), **PX** 13 i bonificació \+1 al dany.
 
 - **Cap:** amb **DC** 3 (15 pc), **PX** 125 i bonificació \+2 al dany, que governa la tribu.
 
 #### Gul (necròfag)
 
-**CA** 13, **DC** 2\* (9 pc), **AT** 2×urpes (1d3+paràlisis), 1×mossegada (1d3+paràlisis), **BA** \+1, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (2), **ML** 9, **AL** caòtic, **PX** 25, **NA** 1d6 (2d8), **TT** B
+**CA** 13, **DC** 2\* (9 pc), **AT** 2×urpes (1d3+paràlisis), 1×mossegada (1d3+paràlisis), **BA** \+1, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 9, **AL** caòtic, **PX** 25, **NA** 1d6 (2d8), **TT** B
 
 Els guls són monstres no-morts que mengen la carn d'humanoides per sobreviure, són carronyaires vils i desagradables, que estan més que disposats a matar per menjar. Els morts generalment els guarden fins que comencen a podrir-se abans que se'ls mengin.
 
@@ -3708,17 +3814,17 @@ Els humanoides mossegats tenen una probabilitat d'1-en-20 de quedar infectats pe
 
 #### Harpia
 
-**CA** 12, **DC** 3\* (13 pc), **AT** 2×urpes (1d4) o 1×arma (1d6 o per arma) o 1×cançó (encís), **BA** \+2, **MV** 60' (20') / 150' (50') volant, **TS** M12 V13 P14 A15 E16 (3), **ML** 7, **AL** caòtic, **PX** 50, **NA** 1d6 (2d4), **TT** C
+**CA** 12, **DC** 3\* (13 pc), **AT** 2×urpes (1d4) o 1×arma (1d6 o per arma) o 1×cançó (encís), **BA** \+2, **MV** 60 peus (20 peus) / 150 peus (50 peus) volant, **TS** M12 V13 P14 A15 E16 (3), **ML** 7, **AL** caòtic, **PX** 50, **NA** 1d6 (2d4), **TT** C
 
 Són esperits embruixats de vent que s'assemblen a un voltor gegant amb el tors i la cara d'una fèmina humana. Pot atacar amb les seves urpes i també empunyar armes, però la seva arma més pèrfida és la seva cançó. Quan canten, totes les criatures (excepte les harpies) dins d'un radi de 300 peus han de superar una ***tirada de salvació contra encanteris*** o quedar encisades, si se supera s'obté invulnerabilitat pel cant d'aquesta harpia durant 24 hores. Llavors la víctima encisada camina cap a l'harpia pel camí més directa possible i si el camí travessa una àrea perillosa (per un penya-segat, entre flames o similar) es fa una segona tirada de salvació per resistir l'encís. Les criatures encisades no poden fer altres accions que defensar-se d'altres criatures i si està a l'abast de l'harpia, no ofereix cap resistència als seus atacs. L'efecte es manté mentre canta i un assalt addicional.
 
 #### Hobgoblin
 
-**CA** 13, **DC** 1+1 (5 pc), **AT** 1×arma (1d8 o per arma), **BA** \+1, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** caòtic, **PX** 15, **NA** 1d6 (4d6), **TT** D
+**CA** 13, **DC** 1+1 (5 pc), **AT** 1×arma (1d8 o per arma), **BA** \+1, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** caòtic, **PX** 15, **NA** 1d6 (4d6), **TT** D
 
 Aquests són els cosins grans dels goblins, fan gairebé la mateixa mida que un humà, els seus cabells oscil·la entre el marró vermellós i gris fosc, tenen pell ataronjat fosc i els ulls i de color groguenc a joc amb les dents. Sovint vesteixen amb colors llampants, predominant el cuir amb tons rojos i negre. Porten cuirs endurits i escuts de fusta com armadura i mantenen les seves armes esmolades i en bon estat.
 
-Els hobgoblins són guerrers cruels i calculadors, tenen una gran comprensió de l'estratègia i la tàctica, i poden posar en pràctica sofisticats plans de batalla. Sota el lideratge d'un estrateg o especialista tàctic competent, la seva disciplina pot ser un factor determinant. 
+Els hobgoblins són guerrers cruels i calculadors, tenen una gran comprensió de l'estratègia i la tàctica, i poden posar en pràctica sofisticats plans de batalla. Sota el lideratge d'un estrateg o especialista tàctic competent, la seva disciplina pot ser un factor determinant.
 
 - **Infravisió:** amb un abast de 60 peus.
 
@@ -3730,7 +3836,7 @@ Els hobgoblins són guerrers cruels i calculadors, tenen una gran comprensió de
 
 #### Kobold
 
-**CA** 12, **DC** ½ (2 pc), **AT** 1×arma (1d4 o per arma-1), **BA** 0, **MV** 60' (20'), **TS** M14 V15 P16 A17 E18 (HN), **ML** 6, **AL** caòtic, **PX** 5, **NA** 4d4 (6d10), **TT** P (J)
+**CA** 12, **DC** ½ (2 pc), **AT** 1×arma (1d4 o per arma-1), **BA** 0, **MV** 60 peus (20 peus), **TS** M14 V15 P16 A17 E18 (HN), **ML** 6, **AL** caòtic, **PX** 5, **NA** 4d4 (6d10), **TT** P (J)
 
 Els kobolds són petits humanoides reptilians amb cara de gos. Un individu adult fa de 2 a 2½ peus d'alçada i pesa de 35 a 45 lliures. Prefereixen el combat a distància, acostant-se només quan poden veure que els seus enemics s'han debilitat, sempre que poden preparen emboscades a prop de zones amb trampes i intentaran conduir els enemics cap a elles, on altres kobolds esperaran per vessar oli encès, disparar-los o llançar-los bestioles verinoses. Normalment, els kobolds usen armadura de cuir en la batalla.
 
@@ -3764,7 +3870,7 @@ La licantropia es propaga com una malaltia i qualsevol ésser humà que perd la 
 
 #### Licantrop, home llop
 
-**CA** 14 (10 en forma humana), **DC** 4\* (18 pc), **AT** 1×mossegada (2d4), **BA** \+3, **MV** 180' (60'), **TS** M10 V11 P12 A13 E14 (4), **ML** 8, **AL** caòtic, **PX** 125, **NA** 1d6 (2d6), **TT** C
+**CA** 14 (10 en forma humana), **DC** 4\* (18 pc), **AT** 1×mossegada (2d4), **BA** \+3, **MV** 180 peus (60 peus), **TS** M10 V11 P12 A13 E14 (4), **ML** 8, **AL** caòtic, **PX** 125, **NA** 1d6 (2d6), **TT** C
 
 En la forma humana no tenen cap tret distintiu i poden trobar-se entre humans en qualsevol lloc, però són depredadors ferotges, disposats a menjar tant carn humana com d'animal.
 
@@ -3772,7 +3878,7 @@ En la forma humana no tenen cap tret distintiu i poden trobar-se entre humans en
 
 #### Licantrop, home os
 
-**CA** 17 (11 en forma humana), **DC** 6\* (27 pc), **AT** 2×urpes (2d4) o 1×mossegada (2d8), **BA** \+5, **MV** 120' (40'), **TS** M10 V11 P12 A13 E14 (6), **ML** 10, **AL** neutral, **PX** 500, **NA** 1d4 (1d4), **TT** C
+**CA** 17 (11 en forma humana), **DC** 6\* (27 pc), **AT** 2×urpes (2d4) o 1×mossegada (2d8), **BA** \+5, **MV** 120 peus (40 peus), **TS** M10 V11 P12 A13 E14 (6), **ML** 10, **AL** neutral, **PX** 500, **NA** 1d4 (1d4), **TT** C
 
 Els homes os són humans que poden transformar-se en grans ossos. Aparèixer com humans musculosos, imponents, amb cabells gruixuts i abundants que habiten en les profunditats del bosc, allunyats de la civilització. Són molt intel·ligents (fins i tot en la forma d'os) i desconfiats, però es poden mostrar amistosos amb qui s'acostin pacíficament i defensarà els seus amics amb ferocitat.
 
@@ -3780,7 +3886,7 @@ Els homes os són humans que poden transformar-se en grans ossos. Aparèixer com
 
 #### Licantrop, home rata
 
-**CA** 12 (10 en forma humana), **DC** 3\* (13 pc), **AT** 1×mossegada (1d4) o 1×arma (1d6 o per arma), **BA** \+2, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (3), **ML** 8, **AL** caòtic, **PX** 50, **NA** 1d8 (2d8), **TT** C
+**CA** 12 (10 en forma humana), **DC** 3\* (13 pc), **AT** 1×mossegada (1d4) o 1×arma (1d6 o per arma), **BA** \+2, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (3), **ML** 8, **AL** caòtic, **PX** 50, **NA** 1d8 (2d8), **TT** C
 
 Aparèixer com individus prims de poca alçada, força nerviosos i amb la mirada contínuament escrutant l'entorn. Sovint arrufen el nas i la boca quan estan excitats i els mascles acostumen a dur bigotis prims i irregulars. A diferència de la majoria dels licantrops, prefereixen habitar les zones civilitzades, en especial les ciutats i sovint es troben a les clavegueres, en altres zones subterrànies o sortint de nit per robar (i matar) a gent de la ciutat.
 
@@ -3792,7 +3898,7 @@ Aparèixer com individus prims de poca alçada, força nerviosos i amb la mirada
 
 #### Llagosta de cova gegant
 
-**CA** 15, **DC** 2 (9 pc), **AT** 1×mossegada (1d2) o 1×salt (1d4) o 1×escopinada (pudor), **BA** \+1, **MV** 60' (20') / 180' (60') volant, **TS** M12 V13 P14 A15 E16 (2), **ML** 5, **AL** neutral, **PX** 20, **NA** 2d10 (1d10), **TT** cap
+**CA** 15, **DC** 2 (9 pc), **AT** 1×mossegada (1d2) o 1×salt (1d4) o 1×escopinada (pudor), **BA** \+1, **MV** 60 peus (20 peus) / 180 peus (60 peus) volant, **TS** M12 V13 P14 A15 E16 (2), **ML** 5, **AL** neutral, **PX** 20, **NA** 2d10 (1d10), **TT** cap
 
 Les llagostes de cova gegants són criatures pàl·lides semblants als grills que viuen sota terra. De mitjana fan entre 2 i 4 peus de llargada, no tenen ulls i depenen de les seves antenes sensibles al so, els peus sensibles a la vibració i una varietat de "pèls" sensibles al tacte a les potes per percebre l'entorn que els envolta.
 
@@ -3808,19 +3914,19 @@ Finalment, una llagosta gegant pot llançar una gota verd-marró (els seus sucs 
 
 #### Llangardaix gegant
 
-De llangardaixos gegants n'hi ha de moltes menes, però aquí només se'n detallen uns pocs. Sovint es confonen aquestes criatures amb els dracs, però són simples depredadors. Molts tenen el seu cau en coves i s'aventuren sovint a l'exterior per atrapar criatures petites que semblin fàcil de caçar. Com que són animals de sang freda (excepte el llangardaix dragó), acostumen a viure en llocs amb un clima temperat i que amb un hivern no gaire fred. 
+De llangardaixos gegants n'hi ha de moltes menes, però aquí només se'n detallen uns pocs. Sovint es confonen aquestes criatures amb els dracs, però són simples depredadors. Molts tenen el seu cau en coves i s'aventuren sovint a l'exterior per atrapar criatures petites que semblin fàcil de caçar. Com que són animals de sang freda (excepte el llangardaix dragó), acostumen a viure en llocs amb un clima temperat i que amb un hivern no gaire fred.
 
 - **Mossegada:** amb un 20 natural fa doble dany.
 
 #### Llangardaix dragó
 
-**CA** 14, **DC** 4+2 (20 pc), **AT** 1×mossegada (1d10), **BA** \+4, **MV** 120' (40')/210' (70') planar, **TS** M12 V13 P14 A15 E16 (3), **ML** 7, **AL** neutral, **PX** 125, **NA** 1d4 (1d8), **TT** U
+**CA** 14, **DC** 4+2 (20 pc), **AT** 1×mossegada (1d10), **BA** \+4, **MV** 120 peus (40 peus)/210 peus (70 peus) planar, **TS** M12 V13 P14 A15 E16 (3), **ML** 7, **AL** neutral, **PX** 125, **NA** 1d4 (1d8), **TT** U
 
-Un llangardaix dragó gegant mitjà fa 8 peus de llarg, incloent-hi la seva cua llarga de gairebé 3 peus i és un depredador ferotge. Pot allargar les costelles i la pell per formar una espècie d'ala que li permet planar distàncies curtes (no més de tres assalts). 
+Un llangardaix dragó gegant mitjà fa 8 peus de llarg, incloent-hi la seva cua llarga de gairebé 3 peus i és un depredador ferotge. Pot allargar les costelles i la pell per formar una espècie d'ala que li permet planar distàncies curtes (no més de tres assalts).
 
 #### Llangardaix gecònid
 
-**CA** 14, **DC** 3+1 (14 pc), **AT** 1×mossegada (1d8), **BA** \+3, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** neutral, **PX** 50, **NA** 1d6 (1d10), **TT** U
+**CA** 14, **DC** 3+1 (14 pc), **AT** 1×mossegada (1d8), **BA** \+3, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** neutral, **PX** 50, **NA** 1d6 (1d10), **TT** U
 
 Els gecònids gegants fan entre 4 i 6 polzades de llarg, i generalment són de color verd, però també se’n pot trobar exemplars en gris anomenats “talla-robes”, o de blancs a sota terra. Poden escalar parets i córrer pels sostres amb tot el moviment gràcies a l'adherència dels seus dits encoixinats. Són carnívors i normalment ataquen a preses més febles que ells saltant des de sobre.
 
@@ -3828,7 +3934,7 @@ Els gecònids gegants fan entre 4 i 6 polzades de llarg, i generalment són de c
 
 #### Llangardanic (home llangardaix)
 
-**CA** 14, **DC** 2+1 (10 pc), **AT** 1×arma (1d6+1 o per arma+1), **BA** \+2, **MV** 60' (20') / 120' (40') nedant, **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 25, **NA** 2d4 (6d6), **TT** D
+**CA** 14, **DC** 2+1 (10 pc), **AT** 1×arma (1d6+1 o per arma+1), **BA** \+2, **MV** 60 peus (20 peus) / 120 peus (40 peus) nedant, **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 25, **NA** 2d4 (6d6), **TT** D
 
 Estan coberts per escates verdes, grises o marrons i solen fer entre 6 i 7 peus d'alçada amb una cua de 3 a 4 peus de llarg que fan servir per mantenir l'equilibri i pesen entre 200 a 250 lliures. A causa de la seva força obtenen una bonificació \+1 al dany amb armes cos a cos, preferint els garrots i les llances, i en combat porten armadura de cuir i escuts.
 
@@ -3838,7 +3944,7 @@ Es mostren indiferents a les altres races, interessant-se principalment només e
 
 #### Llim verd
 
-**CA** \-, **DC** 2\* (9 pc), **AT** 1×tocar (consumeix carn), **BA** \+1, **MV** 3' (1'), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** neutral, **PX** 25, **NA** 1 (0), **TT** cap
+**CA** \-, **DC** 2\* (9 pc), **AT** 1×tocar (consumeix carn), **BA** \+1, **MV** 3 peus (1 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** neutral, **PX** 25, **NA** 1 (0), **TT** cap
 
 Aquest devora la carn i els materials orgànics que toca, i amb prou temps pot ser capaç de dissoldre el metall. És d'un color verd brillant, humit i té una textura llefiscosa. S'adhereix a qualsevol superfície en pegats que creixen i es reprodueixen a mesura que consumeix matèria orgànica.
 
@@ -3852,15 +3958,15 @@ Una víctima en contacte amb el llim durant sis assalts es transforma en llim ve
 
 #### Llop normal
 
-**CA** 12, **DC** 2+2 (11 pc), **AT** 1×mossegada (1d6), **BA** \+2, **MV** 180' (60'), **TS** M12 V13 P14 A15 E16 (1), **ML** 6 (8), **AL** neutral, **PX** 25, **NA** 2d6 (3d6), **TT** cap
+**CA** 12, **DC** 2+2 (11 pc), **AT** 1×mossegada (1d6), **BA** \+2, **MV** 180 peus (60 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 6 (8), **AL** neutral, **PX** 25, **NA** 2d6 (3d6), **TT** cap
 
-Parent carnívor dels gossos que sovint caça en grup. Principalment, es poden trobar rondant per les terres salvatges, encara que de vegades també en coves on fan el cau. 
+Parent carnívor dels gossos que sovint caça en grup. Principalment, es poden trobar rondant per les terres salvatges, encara que de vegades també en coves on fan el cau.
 
 - **Moral:** els grups de 4 o més llops tenen 8 de moral, però si són reduïts a la meitat, tan sols serà de 6\.
 
 #### Llop hivernal
 
-**CA** 14, **DC** 6\* (27 pc), **AT** 1×mossegada (2d4) o 1×alè (6d4), **BA** \+5, **MV** 180' (60'), **TS** M10 V11 P12 A13 E14 (6), **ML** 9, **AL** caòtic, **PX** 500, **NA** 0 (2d4), **TT** I \+ pells (5.000 po)
+**CA** 14, **DC** 6\* (27 pc), **AT** 1×mossegada (2d4) o 1×alè (6d4), **BA** \+5, **MV** 180 peus (60 peus), **TS** M10 V11 P12 A13 E14 (6), **ML** 9, **AL** caòtic, **PX** 500, **NA** 0 (2d4), **TT** I \+ pells (5.000 po)
 
 Llop de 8 peus de llarg de pells platejades i ulls d'un blau pàl·lid com el glaç. És malèvol i força intel·ligent. Habita en climes freds.
 
@@ -3872,7 +3978,7 @@ Llop de 8 peus de llarg de pells platejades i ulls d'un blau pàl·lid com el gl
 
 #### Llop terrible
 
-**CA** 13, **DC** 4+1 (19 pc), **AT** 1×mossegada (2d4), **BA** \+4, **MV** 150' (50'), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** neutral, **PX** 125, **NA** 1d4 (2d4), **TT** cap
+**CA** 13, **DC** 4+1 (19 pc), **AT** 1×mossegada (2d4), **BA** \+4, **MV** 150 peus (50 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** neutral, **PX** 125, **NA** 1d4 (2d4), **TT** cap
 
 Els llops terribles generalment tenen el pèl amb clapes grises o negres, fan uns 9 peus de llarg i pesen al voltant de les 800 lliures. Són animals intel·ligents i astuts que habiten en coves, a les muntanyes i als boscos.
 
@@ -3880,7 +3986,7 @@ Els llops terribles generalment tenen el pèl amb clapes grises o negres, fan un
 
 #### Llot gris
 
-**CA** 11, **DC** 3\* (13 pc), **AT** 1×tocar (2d8), **BA** \+2, **MV** 10' (3'), **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 50, **NA** 1 (1), **TT** cap
+**CA** 11, **DC** 3\* (13 pc), **AT** 1×tocar (2d8), **BA** \+2, **MV** 10 peus (3 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 50, **NA** 1 (1), **TT** cap
 
 Els llots grisos són criatures amorfes que viuen en àrees subterrànies, recorrent cavernes, ruïnes i masmorres a la recerca de matèria orgànica, viva o morta. Un llot gris pot créixer fins a un diàmetre de 10 peus i un gruix d'unes 6 polzades i un espècimen típic pesa unes 700 lliures. Són difícils de veure perquè es camuflen amb les roques, a banda d'una pedra molla poc més es pot veure.
 
@@ -3890,13 +3996,13 @@ Un llot gris segrega un àcid digestiu que ràpidament dissol la matèria orgàn
 
 #### Mercader
 
-**CA** 14, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** \+0, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (1), **ML** varia, **AL** neutral, **PX** 10, **NA** 0 (1d20), **TT** A
+**CA** 14, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** \+0, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** varia, **AL** neutral, **PX** 10, **NA** 0 (1d20), **TT** A
 
 Traginers organitzats que viatgen entre assentaments en caravanes ben armades per comprar i vendre productes comercials, per exemple or, joies, seda, espècies, vi, etc.
 
 - **Armes:** espasa i daga.
 
-- **Muntures:** cavalls, camells o mules segons el terreny. 
+- **Muntures:** cavalls, camells o mules segons el terreny.
 
 - **Carros:** dos per mercader estirats per cavall, mules o camells.
 
@@ -3912,7 +4018,7 @@ Traginers organitzats que viatgen entre assentaments en caravanes ben armades pe
 
 #### Micèlic
 
-**CA** 10, **DC** 1 (4 pc), **AT** 1×mans garrot (1d4), **BA** \+0, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** legal, **PX** 10, **NA** 1d12 (2d10×10), **TT** N×2
+**CA** 10, **DC** 1 (4 pc), **AT** 1×mans garrot (1d4), **BA** \+0, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** legal, **PX** 10, **NA** 1d12 (2d10×10), **TT** N×2
 
 Aquests són petits humanoides d'uns 4 peus d'alçada emparentats amb els fongs i els bolets, amb un cos llarg i prim coronat per un cap amb una forma molt semblant a la del capell d'un bolet. Quan es deixen veure en destaca els estranys ulls brillants. No tenen boca, però es comuniquen telepàticament (fins a 120 peus). Habiten en cavernes sense llum en les profunditats de l'inframon.
 
@@ -3920,22 +4026,22 @@ Aquests són petits humanoides d'uns 4 peus d'alçada emparentats amb els fongs 
 
 - **Líder:** els grups de 10 o més són dirigits per un individu més alt (6 peus) amb **DC** 3 (13 pc), **PX** 50 que pot llançar un esprai d'espores, tres cops per dia, a objectius fins a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o restar totalment passius, incapaces de moure's durant tres assalts.
 
-- **Rei:** en un cau hi ha un governant, és un individu alt (10 peus) amb **DC** 6 (27 pc) i **PX** 725\. Sis cops per dia, pot llançar un esprai d'espores contra objectius a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o bé restar totalment passius durant sis assalts o patir al·lucinacions durant 6 torns;  
+- **Rei:** en un cau hi ha un governant, és un individu alt (10 peus) amb **DC** 6 (27 pc) i **PX** 725\. Sis cops per dia, pot llançar un esprai d'espores contra objectius a 20 peus. Les víctimes han de superar una ***tirada de salvació contra metzina*** o bé restar totalment passius durant sis assalts o patir al·lucinacions durant 6 torns;
  tira 1d6:
 
 **1-2:** la víctima fuig aterrida.
 
 **3-4:** s'encongeix i balbuceja
 
-**5-6:** intenta matar a la criatura més propera. 
+**5-6:** intenta matar a la criatura més propera.
 
 - **Zombis fúngics:** el cau està guardat per 1d6 zombis animats pel rei. Es comporten com els zombis encara que el seu aspecte pugui ser diferent, però no són no-morts i no poden ser expulsats pels clergues o els paladins.
 
 #### Mímic
 
-**CA** 13, **DC** 9\* (40 pc), **AT** 1×pseudopodi (3d4), **BA** \+7, **MV** 30' (10'), **TS** M10 V11 P12 A13 E14 (5), **ML** 9, **AL** neutral, **PX** 1.600, **NA** 1 (0), **TT** cap
+**CA** 13, **DC** 9\* (40 pc), **AT** 1×pseudopodi (3d4), **BA** \+7, **MV** 30 peus (10 peus), **TS** M10 V11 P12 A13 E14 (5), **ML** 9, **AL** neutral, **PX** 1.600, **NA** 1 (0), **TT** cap
 
-Monstres semi intel·ligents que poden canviar de forma i prendre l'aspecte d'objectes inanimats. Per exemple, portes, cofres, miralls, estàtues, etc. 
+Monstres semi intel·ligents que poden canviar de forma i prendre l'aspecte d'objectes inanimats. Per exemple, portes, cofres, miralls, estàtues, etc.
 
 - **Atac:** resta quiet i tan sols ataca quan és tocat, llavors fueteja i atrapa amb el seu pseudopodi a la víctima.
 
@@ -3945,11 +4051,11 @@ Monstres semi intel·ligents que poden canviar de forma i prendre l'aspecte d'ob
 
 #### Mòmia
 
-**CA** 16, **DC** 5+1\* (23 pc), **AT** 1×toc (1d12+malaltia), **BA** \+5, **MV** 60' (20'), **TS** M10 V11 P12 A13 E14 (5), **ML** 12, **AL** caòtic, **PX** 400, **NA** 1d4 (1d12), **TT** D
+**CA** 16, **DC** 5+1\* (23 pc), **AT** 1×toc (1d12+malaltia), **BA** \+5, **MV** 60 peus (20 peus), **TS** M10 V11 P12 A13 E14 (5), **ML** 12, **AL** caòtic, **PX** 400, **NA** 1d4 (1d12), **TT** D
 
 Les mòmies són monstres no-morts, cadàvers preservats embolicats amb teles de lli, animats per mitjà dels designis foscos de déus del desert oblidats, d'antics cultes o el castic a criminals de pobles perduts.
 
-La majoria fan de 5 a 6 peus d'alçada, pesen unes 120 lliures i s'acostumen a trobar en ruïnes, complexos subterranis i en tombes.  
+La majoria fan de 5 a 6 peus d'alçada, pesen unes 120 lliures i s'acostumen a trobar en ruïnes, complexos subterranis i en tombes.
 Com la majoria dels no-morts no fan soroll en moure's, són invulnerables als encanteris ***dormir***, ***encisar*** i ***retenir*** i als efectes que només afecten les criatures vives (per exemple, les metzines). Tan sols prenen dany dels encanteris, el foc (que fa el doble de dany) o les armes màgiques (que només fan la meitat de dany). Els ferits pels atacs d'una mòmia contrauran la putrefacció de la mòmia, una malaltia que evita la curació normal o màgica; un encanteri de curar malaltia s'ha d'aplicar a la víctima abans que ell o ella torni a poder recuperar punts de cop.
 
 - **Terror:** qualsevol que vegi la mòmia ha de superar una ***tirada de salvació contra paràlisis*** o restar paralitzat incapaç de fer cap acció fins que la mòmia ataqui o quedi fora de la seva vista.
@@ -3958,38 +4064,38 @@ Com la majoria dels no-morts no fan soroll en moure's, són invulnerables als en
 
 #### Ofídic (home serp)
 
-**CA** 15, **DC** 6\* (27 pc), **AT** 1×mossegada (1d10+metzina) o 1×arma (1d6 o per arma), **BA** \+5, **MV** 90' (30'), **TS** M10 V11 P12 A13 E14 (6), **ML** 8, **AL** caòtic, **PX** 500, **NA** 1d4 (2d10), **TT** C
+**CA** 15, **DC** 6\* (27 pc), **AT** 1×mossegada (1d10+metzina) o 1×arma (1d6 o per arma), **BA** \+5, **MV** 90 peus (30 peus), **TS** M10 V11 P12 A13 E14 (6), **ML** 8, **AL** caòtic, **PX** 500, **NA** 1d4 (2d10), **TT** C
 
-Monstres depravats amb cos sinuós, cua i el cap d'una serp gegant amb el cos i els braços coberts  
-d'escates. Capturen a altres criatures per menjar-se  
-les o sacrificar-les en rituals en favor dels seus  
+Monstres depravats amb cos sinuós, cua i el cap d'una serp gegant amb el cos i els braços coberts
+d'escates. Capturen a altres criatures per menjar-se
+les o sacrificar-les en rituals en favor dels seus
 mestres demoníacs. Habiten en jungles.
 
-- **Mossegada:** cal superar una tirada  
+- **Mossegada:** cal superar una tirada
 de ***salvació contra metzina*** o morir en 1d6 torns.
 
-- **Resistència màgica:** bonificació \+4 a totes  
+- **Resistència màgica:** bonificació \+4 a totes
 les tirades de salvació contra màgia.
 
-- **Xaman:** per cada 10, n'hi ha un que té  
+- **Xaman:** per cada 10, n'hi ha un que té
 l'habilitat de llançar encanteris com un clergue de 5è nivell.
 
 - **Cultes:** de vegades es troben entre cultes humans que adoren a les serps.
 
 #### Ogre
 
-**CA** 14, **DC** 4+1 (19 pc), **AT** 1×garrot (1d10), **BA** \+4, **MV** 90' (30'), **TS** M10 V11 P12 A13 E14 (4), **ML** 10, **AL** caòtic, **PX** 125, **NA** 1d6 (2d6), **TT** C+1.000 po
+**CA** 14, **DC** 4+1 (19 pc), **AT** 1×garrot (1d10), **BA** \+4, **MV** 90 peus (30 peus), **TS** M10 V11 P12 A13 E14 (4), **ML** 10, **AL** caòtic, **PX** 125, **NA** 1d6 (2d6), **TT** C+1.000 po
 
-Apareixen com a humans grans i molt lletjos, els adults fan de 9 a 10 peus d'alçada, pesen entre 600 i 650 lliures i tenen la pell d'un color entre groc i marró apagat. La seva indumentària consisteix en pells pudents i mal adobades que van afegint en capes accentuant-la ja per si repel·lent pròpia olor natural. Són brutals i agressius, però també molt mandrosos, generalment utilitzant grans garrots, destrals o llances atacant directament. 
+Apareixen com a humans grans i molt lletjos, els adults fan de 9 a 10 peus d'alçada, pesen entre 600 i 650 lliures i tenen la pell d'un color entre groc i marró apagat. La seva indumentària consisteix en pells pudents i mal adobades que van afegint en capes accentuant-la ja per si repel·lent pròpia olor natural. Són brutals i agressius, però també molt mandrosos, generalment utilitzant grans garrots, destrals o llances atacant directament.
 
-- **Sac:** fora del cau porta un sac  
+- **Sac:** fora del cau porta un sac
 amb 1d6 × 100 po.
 
 - **Odi als neandertals:** els atacaran sense pensar-s'ho gens.
 
 #### Orc
 
-**CA** 13, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** 0, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (1), **ML** 6, **AL** caòtic, **PX** 10, **NA** 2d4 (1d6×10), **TT** D
+**CA** 13, **DC** 1 (4 pc), **AT** 1×arma (1d6 o per arma), **BA** 0, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 6, **AL** caòtic, **PX** 10, **NA** 2d4 (1d6×10), **TT** D
 
 Aquests són humanoides grotescs amb orelles de llop, ulls vermellosos, el nas truncat i arromangat, cabell negre (però molt poc pel corporal) força inclinats al combat, el pillatge, el saqueig i la dominació. Un adult fa una mica més de 6 peus d'alçada, pesa unes 210 lliures. Acostumen a vestir amb colors vius que molts considerarien desagradables, com el vermell-sang, el groc-mostassa o el malva, i utilitzen tota mena d'armes i armadures escamotejades dels camps de batalla.
 
@@ -4001,7 +4107,7 @@ Les diferents tribus sovint lluitaran entre elles a menys que els seus líders h
 
 - **Armes:** prefereixen destrals, garrots, llances o espases, i tan sols els líders poden fer servir ballestes o catapultes.
 
-- **Líder:** els grups els dirigeix un individu amb **DC** 2 (8 pc), **PX** 20 i \+1 al dany que ha derrotat a tots els altres i els empeny a lluitar, bonificador \+2 a la moral del grup. 
+- **Líder:** els grups els dirigeix un individu amb **DC** 2 (8 pc), **PX** 20 i \+1 al dany que ha derrotat a tots els altres i els empeny a lluitar, bonificador \+2 a la moral del grup.
 
 - **Cap dels orcs:** amb **DC** 4 (15 pc), **PX** 75 i bonificació \+2 al dany.
 
@@ -4009,7 +4115,7 @@ Les diferents tribus sovint lluitaran entre elles a menys que els seus líders h
 
 #### Osgo
 
-**CA** 14, **DC** 3+1 (14 pc), **AT** 1×arma (2d4 o arma+1), **BA** \+3, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (3), **ML** 9, **AL** caòtic, **PX** 50, **NA** 2d4 (5d4), **TT** B
+**CA** 14, **DC** 3+1 (14 pc), **AT** 1×arma (2d4 o arma+1), **BA** \+3, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (3), **ML** 9, **AL** caòtic, **PX** 50, **NA** 2d4 (5d4), **TT** B
 
 Semblen uns enormes goblins peluts de fins a 6 peus d'alçada. Els seus ulls acostumen a ser d'un color marró fosc i es mouen molt silenciosament (sorprenen amb una probabilitat de 3-en-6). Són salvatges i sovint assetgen d'altres humanoides més petits.
 
@@ -4027,19 +4133,19 @@ Els ossos ataquen amb les seves urpes, abraçant i mossegant. Una tirada d’ata
 
 #### Os bru
 
-**CA** 13, **DC** 5 (22 pc), **AT** 2×urpes (1d4), 1×mossegada (1d8), **BA** \+4, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** neutral, **PX** 175, **NA** 1 (1d4), **TT** U
+**CA** 13, **DC** 5 (22 pc), **AT** 2×urpes (1d4), 1×mossegada (1d8), **BA** \+4, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 8, **AL** neutral, **PX** 175, **NA** 1 (1d4), **TT** U
 
 Aquest carnívor enorme pesa més de 1.800 lliures i fa gairebé 9 peus d'altura quan s'alça sobre les seves potes posteriors. És molt temperamental i territorial.
 
 #### Os negre
 
-**CA** 13, **DC** 4 (18 pc), **AT** 2×urpes (1d3), 1×mossegada (1d6), **BA** \+3, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** neutral, **PX** 75, **NA** 1d4 (1d4), **TT** U
+**CA** 13, **DC** 4 (18 pc), **AT** 2×urpes (1d3), 1×mossegada (1d6), **BA** \+3, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 7, **AL** neutral, **PX** 75, **NA** 1d4 (1d4), **TT** U
 
 L'os negre és un omnívor que viu en els boscos i normalment no és perillós; a menys que un intrús amenaci als seus cadells o estigui afamat. Pot ser de color totalment negre o barrejat amb ros o canyella i rarament mesura més de 5 peus.
 
 #### Os òliba o os mussol
 
-**CA** 14, **DC** 5 (22 pc), **AT** 2×urpes (1d8) o 1×mossegada (1d8), **BA** \+4, **MV** 120' (40'), **TS** M12 V13 P14 A15 E16 (3), **ML** 9, **AL** neutral, **PX** 175, **NA** 1d4 (1d4), **TT** C
+**CA** 14, **DC** 5 (22 pc), **AT** 2×urpes (1d8) o 1×mossegada (1d8), **BA** \+4, **MV** 120 peus (40 peus), **TS** M12 V13 P14 A15 E16 (3), **ML** 9, **AL** neutral, **PX** 175, **NA** 1d4 (1d4), **TT** C
 
 Aquests s'assemblen a ossos amb cara d'òliba, amb un bec gran i fort. La seva pell varia en color des d'un marró-negre a un marró groguenc i el bec és d'un color marfil apagat. Un adult pot alçar-se fins a 8 peus i pesar fins a 1.500 lliures. Es poden trobar en boscos frondosos i a sota terra, i els aventurers que han sobreviscut als encontres amb la criatura sovint parlen de la bogeria bestial que es destil·la dels seus ulls rojos, són molt agressius i brutals.
 
@@ -4047,9 +4153,9 @@ Lluiten d'una manera molt semblant a la dels ossos i quan colpegen amb les dues 
 
 #### Púding negre
 
-**CA** 13, **DC** 10\* (45 pc), **AT** 1×tocar (3d8), **BA** \+8, **MV** 60' (20'), **TS** M10 V11 P12 A13 E14 (5), **ML** 12, **AL** neutral, **PX** 1.600, **NA** 1 (0), **TT** cap
+**CA** 13, **DC** 10\* (45 pc), **AT** 1×tocar (3d8), **BA** \+8, **MV** 60 peus (20 peus), **TS** M10 V11 P12 A13 E14 (5), **ML** 12, **AL** neutral, **PX** 1.600, **NA** 1 (0), **TT** cap
 
-Els púdings negres són criatures amorfes que només viuen per menjar. Habiten les àrees subterrànies a tot el món, recorrent cavernes, ruïnes i masmorres en la recerca de matèria orgànica, viva o morta. Ataquen a qualsevol criatura que es trobin, atrapant-la amb pseudòpodes o simplement engolint-la amb el seu cos, que segreguen àcids per capturar i digerir la presa. Els àcids consumeixen els metalls i la fusta en un torn. També poden modificar la seva forma per travessar parets passant per forats petits o esquerdes, i es poden moure tant per terra com pels sostres. 
+Els púdings negres són criatures amorfes que només viuen per menjar. Habiten les àrees subterrànies a tot el món, recorrent cavernes, ruïnes i masmorres en la recerca de matèria orgànica, viva o morta. Ataquen a qualsevol criatura que es trobin, atrapant-la amb pseudòpodes o simplement engolint-la amb el seu cos, que segreguen àcids per capturar i digerir la presa. Els àcids consumeixen els metalls i la fusta en un torn. També poden modificar la seva forma per travessar parets passant per forats petits o esquerdes, i es poden moure tant per terra com pels sostres.
 
 Quan és atacat amb armes convencionals, tant normals com màgiques o amb encanteris o efectes basats en l'electricitat, llavors es dividirà en dos; el DJ ha de repartir els DC originals amb un mínim de 2 DC per tros, un púding negre amb 2 DC simplement no l'afecta aquests atacs i ja no es divideix més.
 
@@ -4059,7 +4165,7 @@ El púding negre típic mesura 10 peus d'alçada i 2 peus de gruix, i pesa unes 
 
 #### Rata
 
-**CA** 10, **DC** 1 pc, **AT** 1×mossegada per grup (1d6+malaltia), **BA** \+0, **MV** 60' (20') / 30' (10') nadant, **TS** M14 V15 P16 A17 E18 (HN), **ML** 5, **AL** neutral, **PX** 5, **NA** 5d10 (2d10), **TT** L
+**CA** 10, **DC** 1 pc, **AT** 1×mossegada per grup (1d6+malaltia), **BA** \+0, **MV** 60 peus (20 peus) / 30 peus (10 peus) nadant, **TS** M14 V15 P16 A17 E18 (HN), **ML** 5, **AL** neutral, **PX** 5, **NA** 5d10 (2d10), **TT** L
 
 Aquests rosegadors omnívors prosperen gairebé en qualsevol lloc, ataquen en grup i cada punt de dany en redueix la mida.
 
@@ -4075,7 +4181,7 @@ Aquests rosegadors omnívors prosperen gairebé en qualsevol lloc, ataquen en gr
 
 #### Rata gegant
 
-**CA** 12, **DC** ½ (2 pc), **AT** 1×mossegada (1d3+malaltia), **BA** \+0, **MV** 120' (40') / 60' (20') nedant, **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** neutral, **PX** 5, **NA** 3d6 (3d10), **TT** C
+**CA** 12, **DC** ½ (2 pc), **AT** 1×mossegada (1d3+malaltia), **BA** \+0, **MV** 120 peus (40 peus) / 60 peus (20 peus) nedant, **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** neutral, **PX** 5, **NA** 3d6 (3d10), **TT** C
 
 Les rates gegants són principalment carronyaires, però atacaran per defensar els seus nius i territoris. Pot arribar a fer fins a 4 peus de llarg i pesar més de 50 lliures. Una rata gegant sola o un grup petit (fins a quatre), generalment serà cautelosa, però els grups més grans ataquen sense por, mossegant i clavant els seus forts incisius.
 
@@ -4087,7 +4193,7 @@ Les rates gegants són principalment carronyaires, però atacaran per defensar e
 
 #### Ratpenat
 
-**CA** 13, **DC** 1 pc, **AT** 1×grup (confusió), **BA** \-1, **MV** 9' (3') / 120' (40') volant, **TS** M14 V15 P16 A17 E18 (HM), **ML** 6, **AL** neutral, **PX** 5, **NA** 1d100 (1d100), **TT** cap
+**CA** 13, **DC** 1 pc, **AT** 1×grup (confusió), **BA** \-1, **MV** 9 peus (3 peus) / 120 peus (40 peus) volant, **TS** M14 V15 P16 A17 E18 (HM), **ML** 6, **AL** neutral, **PX** 5, **NA** 1d100 (1d100), **TT** cap
 
 Les ratapinyades són mamífers voladors nocturns, petits i insectívors. Tenen un sonar natural que els permet viure en la foscor que a efectes del joc es tracta aquesta habilitat com la infravisió.
 
@@ -4095,13 +4201,13 @@ Un grup de ratpenats de mida normal no té cap atac efectiu (almenys en termes d
 
 #### Ratpenat gegant
 
-**CA** 13, **DC** 2 (9 pc), **AT** 1×mossegada (1d4), **BA** \+1, **MV** 30' (10') / 180' (60) volant, **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** neutral, **PX** 20, **NA** 1d10 (1d10), **TT** cap
+**CA** 13, **DC** 2 (9 pc), **AT** 1×mossegada (1d4), **BA** \+1, **MV** 30 peus (10 peus) / 180 peus (60) volant, **TS** M12 V13 P14 A15 E16 (1), **ML** 8, **AL** neutral, **PX** 20, **NA** 1d10 (1d10), **TT** cap
 
 Tenen les mateixes capacitats sensorials que els ratpenats de mida normal, però molt més grans (amb una envergadura de 15 peus i pesen unes 200 lliures) i són capaços d'atacar els aventurers, ja que són carnívors.
 
 #### Sangonera gegant
 
-**CA** 12, **DC** 6 (27 pc), **AT** 1×mossegada (1d6+drenatge), **BA** \+5, **MV** 90' (30'), **TS** M12 V13 P14 A15 E16 (3), **ML** 10, **AL** neutral, **PX** 275, **NA** 0 (1d4), **TT** cap
+**CA** 12, **DC** 6 (27 pc), **AT** 1×mossegada (1d6+drenatge), **BA** \+5, **MV** 90 peus (30 peus), **TS** M12 V13 P14 A15 E16 (3), **ML** 10, **AL** neutral, **PX** 275, **NA** 0 (1d4), **TT** cap
 
 Aquestes criatures, com cucs llefiscosos, xucla-sang que viuen en hàbitats aquàtics tan d'aigua dolça com salada, neta com estancada, es poden trobar varietats de sangoneres gegants en tots els ambients humits. Tanmateix, només un veritable expert en sangoneres pot distingir-ne els diferents tipus. Els exemplars mitjans acostumen a fer entre 4 i 6 peus de llargada.
 
@@ -4109,7 +4215,7 @@ Quan la bestiola fa un atac amb èxit s'adhereix a la víctima i li xucla la san
 
 #### Trol
 
-**CA** 15, **DC** 6+3\* (30 pc), **AT** 2×urpes (1d6), 1×mossegada (1d10), **BA** \+6, **MV** 120' (40'), **TS** M10 V11 P12 A13 E14 (6), **ML** 10 (8), **AL** caòtic, **PX** 650, **NA** 1d8 (1d8), **TT** D
+**CA** 15, **DC** 6+3\* (30 pc), **AT** 2×urpes (1d6), 1×mossegada (1d10), **BA** \+6, **MV** 120 peus (40 peus), **TS** M10 V11 P12 A13 E14 (6), **ML** 10 (8), **AL** caòtic, **PX** 650, **NA** 1d8 (1d8), **TT** D
 
 Un adult típic fa una alçada de 9 peus, pesa 500 lliures i la seva pell gomosa és de color verd molsa, clapejat de verd-gris, o gris pútrid. Els cabells solen ser de color verd negre o gris ferro, no tenen gènere i el seu mètode de reproducció és un misteri.
 
@@ -4127,7 +4233,7 @@ Són unes criatures odioses, que gaudeixen del combat i el vessament de sang. To
 
 #### Uarg
 
-**CA** 14, **DC** 5+3 (25 pc), **AT** 1×mossegada (3d6), **BA** \+5, **MV** 180' (60'), **TS** M10 V11 P12 A13 E14 (5), **ML** 10, **AL** neutral, **PX** 350, **NA** 1d4 (2d4), **TT** cap
+**CA** 14, **DC** 5+3 (25 pc), **AT** 1×mossegada (3d6), **BA** \+5, **MV** 180 peus (60 peus), **TS** M10 V11 P12 A13 E14 (5), **ML** 10, **AL** neutral, **PX** 350, **NA** 1d4 (2d4), **TT** cap
 
 Semblant a un llop, però més gran, més ferotge i més intel·ligent; entén un idioma rudimentari propi. Són eficaços contra la cavalleria, perquè els cavalls els temen i els genets de uarg queden bastant baixos com per a acoltellar els seus ventres, derrocant als genets que són atacats pel uarg.
 
@@ -4137,7 +4243,7 @@ El seu origen és incert, ja qui creu que són descendents d'homes llop que van 
 
 #### Víbria
 
-**CA** 16, **DC** 7\* (31 pc), **AT** 1×mossegada (2d8), 1×fibló (1d6+metzina), **BA** \+6, **MV** 90' (30') / 240' (80') volant, **TS** M10 V11 P12 A13 E14 (4), **ML** 9, **AL** caòtic, **PX** 850, **NA** 1d2 (1d6), **TT** E
+**CA** 16, **DC** 7\* (31 pc), **AT** 1×mossegada (2d8), 1×fibló (1d6+metzina), **BA** \+6, **MV** 90 peus (30 peus) / 240 peus (80 peus) volant, **TS** M10 V11 P12 A13 E14 (4), **ML** 9, **AL** caòtic, **PX** 850, **NA** 1d2 (1d6), **TT** E
 
 La víbria és un enorme llangardaix volador, un cosí llunyà dels dracs, amb un fibló verinós en la seva cua. El seu cos és d'un color marró fosc tirant cap gris, pesa aproximadament una tona, fa uns 15 peus de llarg (la meitat d'aquesta llargada és la cua) i la seva envergadura d'ales és d'uns 20 peus.
 
@@ -4151,17 +4257,17 @@ Qualsevol criatura colpejada pel fibló ha de superar una ***tirada de salvació
 
 #### Xisclador
 
-**CA** 12, **DC** 3 (13 pc), **AT** cap, **BA** \+0, **MV** 9' (3'), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** neutral, **PX** 35, **NA** 1d8 (0), **TT** cap
+**CA** 12, **DC** 3 (13 pc), **AT** cap, **BA** \+0, **MV** 9 peus (3 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** neutral, **PX** 35, **NA** 1d8 (0), **TT** cap
 
 Un xisclador és un gran bolet semimòbil, de 3 a 5 peus d'altura i aproximadament el mateix de diàmetre, que emet un soroll fort com a mecanisme de defensa.
 
-Viuen en llocs foscos i subterranis, en general són de diferents tons de color porpra i no té cap mena d'atac directe, però exploten els monstres errants al seu voltant atraient-los emetent el seu xiscle. 
+Viuen en llocs foscos i subterranis, en general són de diferents tons de color porpra i no té cap mena d'atac directe, però exploten els monstres errants al seu voltant atraient-los emetent el seu xiscle.
 
 El moviment en un radi de 30 peus o una font de llum en un radi de 60 peus activa el xiscle del fong, que és un so agut i estrident que dura 1d3 assalts i atreu les criatures properes que estiguin disposades a investigar-ho. Algunes criatures que viuen a prop dels xiscladors aprenen que el soroll del fong significa que hi ha menjar a la vora. En termes de joc, el DJ hauria de tirar per un monstre errant (que pot arribar en 2d6 assalts) a cada assalt que crida un xisclador.
 
 #### Zombi
 
-**CA** 11, **DC** 2 (9 pc), **AT** 1×arma (1d8 o per arma), **BA** \+1, **MV** 60' (20'), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** caòtic, **PX** 20, **NA** 2d4 (4d6), **TT** cap
+**CA** 11, **DC** 2 (9 pc), **AT** 1×arma (1d8 o per arma), **BA** \+1, **MV** 60 peus (20 peus), **TS** M12 V13 P14 A15 E16 (1), **ML** 12, **AL** caòtic, **PX** 20, **NA** 2d4 (4d6), **TT** cap
 
 Els zombis són cadàvers de criatures humanoides, en general molt lents, però que es mouen en silenci i són molt forts, cal trossejar-los literalment per "matar-los" i sempre lluiten fins a mort.
 
