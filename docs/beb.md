@@ -6,89 +6,89 @@ La notació **dX**, on “***X***” és el nombre de cares del dau, es fa servi
 
 Quan cal tirar diversos daus i sumar-ne els resultats, la quantitat s'indica abans de la “**d**”; per exemple, **3d6** vol dir tirar tres daus de sis cares (o el mateix dau tres cops) i sumar-ne els resultats. Si s'escriu, “**3d6+2**” llavors indica llançar tres daus de sis cares al final afegir-hi 2\.
 
-#### Tirades X-en-6 i X-en-20
+### Tirades X-en-6 i X-en-20
 
 Són per especificar una probabilitat d'èxit de **X-en-Y**. Per exemple, 2-en-6, 12-en-20, etc.; significa que s'ha de tirar un dau de ***“Y”*** cares i es té èxit quan el resultat és menor o igual a “***X***”. Per exemple, quan s'indica una probabilitat de 2-en-6 i es té èxit quan el resultat de la tirada del dau de sis cares és un “**1**” o un “**2**” i és un fracàs quan és per sobre.
 
 ## Termes
 
-#### Director de joc (DJ)
+### Director de joc (DJ)
 
 També anomenat ***àrbitre***, ***narrador***, ***dungeon master*** o simplement ***master***, és el jugador que explica i facilita la interacció amb el món de joc, és qui narra l'aventura, descriu l'entorn i en decideix la reacció de les criatures a les accions dels personatges. Igualment, és qui aplica les regles i en resol les possibles disputes.
 
-#### Jugadors
+### Jugadors
 
 Els altres participants, cada jugador sol conduir i interpretar un únic personatge.
 
-#### Personatge jugador (PJ)
+### Personatge jugador (PJ)
 
 El personatge conduït i interpretat per un jugador.
 
-#### Personatge no jugador (PNJ)
+### Personatge no jugador (PNJ)
 
 Qualsevol altre personatge que interactua amb els ***personatges*** dels jugadors durant el joc, que són interpretats i conduïts pel ***director de joc***.
 
-#### Grup
+### Grup
 
 El grup de ***personatges*** que van junts d'aventures.
 
-#### Aventura
+### Aventura
 
 Una sèrie d'una o més sessions de joc en les que el grup s'involucra en una trama o explora una ubicació.
 
-#### Campanya
+### Campanya
 
 Una corrua d'aventures encadenades, que solen implicar un grup de personatges estable i un únic món de joc.
 
-#### Punts d'habilitat
+### Punts d'habilitat
 
 Les habilitats: ***força*** (abreujat FOR), ***destresa*** (DES), ***constitució*** (CON), ***intel·ligència*** (INT), ***saviesa*** (SAV), i ***carisma*** (CAR) que descriuen les característiques tant físiques com mentals del personatge.
 
-#### Classe
+### Classe
 
 Descriu els trets físics, les competències, els talents, els idiomes que coneix, amb quines armes i armadures pot lluitar o quants encanteris pot llançar el personatge.
 
-#### Nivell
+### Nivell
 
 L'experiència es representa pel nivell, començant al primer i avançant superant les aventures. En assolir un nivell nou es pot obtenir noves capacitats i poders.
 
-#### Punts d'experiència (PX)
+### Punts d'experiència (PX)
 
 L'avanç del personatge s’obté dels punts d'experiència atorgats pel DJ després de cada sessió i es puja de nivell quan s'ha acumulat la quantitat de punts definida per la classe.
 
-#### Alineació (AL)
+### Alineació (AL)
 
 Els personatges es poden alinear amb un dels tres principis còsmics universals: legalitat, neutralitat o caos, i això en determina com la màgia influeix en ells. Aquest aspecte es pot fer servir com a pauta per interpretar el comportament del personatge.
 
-#### Punts de cop (pc)
+### Punts de cop (pc)
 
 És una mesura abstracta de la capacitat per entomar i evitar els cops, tots els éssers en tenen un ***nombre màxim*** que augmenta amb l'experiència i un ***nombre actual***, dels que se'n fa el seguiment per separat. Quan es pren dany els punts actuals minven, i es poden recuperar amb la curació màgica o el descans, però mai per sobre del valor màxim.
 
-#### Daus de cop (DC)
+### Daus de cop (DC)
 
 El tipus i nombre de daus que es fan servir per calcular els punts de cop màxims del personatge que venen determinats per la classe i el nivell.
 
-#### Classe d'armadura (CA)
+### Classe d'armadura (CA)
 
 És la capacitat del personatge per evitar el dany en combat que depèn de la mena d'armadura que porti i del modificador de ***destresa***; com més alta sigui la CA millor és la defensa.
 
-#### La bonificació a l'atac (BA)
+### La bonificació a l'atac (BA)
 
 Representa l'expertesa del personatge en les arts del combat i augmenta proporcionalment a cada nivell.
 
-#### Tirada d'atac
+### Tirada d'atac
 
 És la tirada que es fa per decidir si es pot colpir a un oponent en un atac, superant la seva defensa (CA).
 
-#### Tirada de salvació o simplement salvació
+### Tirada de salvació o simplement salvació
 
 La capacitat del personatge per evitar veure's afectat per certs tipus de perills o disminuir-ne el dany. Se'n defineixen cinc categories: mort ***“M”*** (o metzina), varetes ***“V”***, paràlisi ***“P”*** (o petrificació), atacs d'alè ***“A”***, encanteris ***“E”*** (ceptres o bastons màgics). Depèn de la classe i milloren amb les pujades de nivell.
 
-#### Tirada de moral (opcional)
+### Tirada de moral (opcional)
 
 Es fa per decidir el comportament (fugir o continuar lluitant) de les criatures durant un combat.
 
-#### Factor de moviment (MV)
+### Factor de moviment (MV)
 
 La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. Es descriu per un factor de moviment base i un factor de moviment d'encontre assenyalat entre parèntesis. El factor per defecte és 120 peus (40 peus); un factor base de 120 peus i un factor d'encontre de 40 peus.
 
@@ -96,19 +96,19 @@ La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. 
 
 ## Creació de personatges
 
-#### 1\. Tira les puntuacions d'habilitat
+### 1\. Tira les puntuacions d'habilitat
 
 Tira 3d6 en ordre per a cada habilitat: ***força***, ***destresa***, ***constitució***, ***intel·ligència***, ***saviesa*** i ***carisma***.
 
-##### Ajustar les puntuacions d'habilitat (opcional)
+#### Ajustar les puntuacions d'habilitat (opcional)
 
 Fins a dos cops, pots intercanviar els punts de dues habilitats i ajustar el personatge al teu gust. Per exemple, si vols jugar amb un ***lladre*** i tens un valor baix a ***destresa*** la pots intercanviar amb una altra habilitat on hi hagi un valor més alt.
 
-##### Personatges deficients (opcional)
+#### Personatges deficients (opcional)
 
 Pots començar de nou quan els resultats són molt baixos; per exemple, un 8 o menys en cada habilitat o una puntuació extremadament baixa en una d'elles.
 
-#### 2\. Anota els modificadors per habilitat
+### 2\. Anota els modificadors per habilitat
 
 Anota els modificadors de les habilitats del personatge segons aquesta taula.
 
@@ -122,45 +122,45 @@ Anota els modificadors de les habilitats del personatge segons aquesta taula.
 |     16-17     |    +2    |
 |      18       |    +3    |
 
-#### 3\. Tria una classe
+### 3\. Tria una classe
 
 Tria una de les classes tenint en compte els requisits mínims en els punts d'habilitat.
 
-#### 4\. Tirades de salvació, encanteris i talents de classe
+### 4\. Tirades de salvació, encanteris i talents de classe
 
 Anota qualsevol talent que tingui el personatge per la seva classe i les tirades de salvació. Si el personatge té un llibre d'encanteris, anota quins encanteris conté.
 
-#### 5\. Tira pels punts de cop
+### 5\. Tira pels punts de cop
 
 Determina quants punts de cop màxims té el personatge tirant el dau indicat per a la classe triada i suma el modificador per ***constitució***. Sempre es comença amb almenys 1 punt de cop.
 
-##### Màxim al primer nivell (regla opcional)
+#### Màxim al primer nivell (regla opcional)
 
 Per tal d'augmentar la supervivència dels personatges de primer nivell, en comptes de tirar el dau de cop, simplement anota el resultat màxim possible.
 
-#### 6\. Anota els idiomes coneguts
+### 6\. Anota els idiomes coneguts
 
 La classe del personatge i la ***intel·ligència*** determinen els idiomes coneguts a més del comú.
 
-#### 7\. Compra l'equipament
+### 7\. Compra l'equipament
 
 El personatge comença amb 3d6×10 peces d'or que pot fer servir per adquirir l'equipament inicial.
 
 **Recorda:** La classe que hagis triat pot restringir l'ús d'algun equipament; per exemple, armes i armadures.
 
-#### 8\. Anota la classe d'armadura
+### 8\. Anota la classe d'armadura
 
 La CA de l'armadura modificada amb la ***destresa***.
 
-##### Sense armadura
+#### Sense armadura
 
 Quan no es porta cap armadura la CA base és 10\.
 
-#### 9\. Tria l'alineació (opcional)
+### 9\. Tria l'alineació (opcional)
 
 Decideix amb quina esfera còsmica està alineat el personatge i anota-ho a la fitxa.
 
-#### 10\. Tocs finals
+### 10\. Tocs finals
 
 Tria-li un nom i anota que és al primer nivell, amb zero punts d'experiència i ja pot començar l'aventura\!
 
@@ -315,7 +315,7 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 # Equipament
 
-#### Equip d'aventura
+## Equip d'aventura
 
 | Objecte | Preu |
 | :---- | :---: |
@@ -420,7 +420,7 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 # Armes i armadures
 
-#### Armes
+## Armes
 
 | Objecte | Dany | Preu (po) | Qualitats | Pes en monedes |
 | :---- | :---: | :---: | :---- | :---: |
@@ -445,7 +445,7 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 | Maça | 1d6 | 5 | Contundent, cos a cos | 30 |
 | Martell de guerra | 1d6 | 5 | Contundent, cos a cos | 30 |
 
-#### Estadístiques d'armes improvisades i altres
+## Estadístiques d'armes improvisades i altres
 
 | Objecte | Dany | Qualitats |
 | :---- | :---: | :---- |
@@ -453,7 +453,7 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 | Oli encès | 1d8 | Projectil (5 peus a 10 peus / 11 peus a 30 peus / 31 peus a 50 peus), esquitxa |
 | Torxa, palanca | 1d4 | Cos a cos |
 
-#### Munició
+## Munició
 
 | Objecte | Preu (po) | Pes en monedes |
 | :---- | :---: | :---: |
@@ -462,7 +462,7 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 | Fletxa amb punta de plata (2) | 10 | 1 |
 | Pedres per la fona | Gratuïtes | 10 |
 
-#### Armadura
+## Armadura
 
 | Objecte | Preu (po) | CA | Pes en monedes |
 | :---- | :---: | :---: | :---: |
@@ -495,81 +495,81 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 
 ### Farcell A (40 po)
 
--  Motxilla
+- Motxilla
 
--  3 sacs grans
+- 3 sacs grans
 
--  Llanterna
+- Llanterna
 
--  2 flascons d'oli
+- 2 flascons d'oli
 
--  Caixa d'esca
+- Caixa d'esca
 
--  Bota
+- Bota
 
--  Racions estàndard (7 dies)
+- Racions estàndard (7 dies)
 
--  Sac de dormir i manta
+- Sac de dormir i manta
 
--  Mirall (petit, d'acer)
+- Mirall (petit, d'acer)
 
 ### Farcell B (30 po)
 
--  Motxilla
+- Motxilla
 
--  3 sacs grans
+- 3 sacs grans
 
--  6 torxes
+- 6 torxes
 
--  3 flascons d'oli
+- 3 flascons d'oli
 
--  Caixa d'esca
+- Caixa d'esca
 
--  Bota
+- Bota
 
--  Racions estàndard (7 dies)
+- Racions estàndard (7 dies)
 
--  Sac de dormir i manta
+- Sac de dormir i manta
 
--  Pal de fusta de 10 peus o corda
+- Pal de fusta de 10 peus o corda
 
 ### Farcell C (30 po)
 
--  Motxilla
+- Motxilla
 
--  3 sacs petits
+- 3 sacs petits
 
--  Símbol sagrat (de fusta)
+- Símbol sagrat (de fusta)
 
--  12 piquetes de ferro
+- 12 piquetes de ferro
 
--  Martell petit
+- Martell petit
 
--  Bota
+- Bota
 
--  Racions estàndard (7 dies)
+- Racions estàndard (7 dies)
 
--  Sac de dormir i una manta
+- Sac de dormir i una manta
 
--  6 cabeces d'alls o 1 matallops
+- 6 cabeces d'alls o 1 matallops
 
 ### Farcell D (50 po)
 
--  Motxilla
+- Motxilla
 
--  5 sacs petits
+- 5 sacs petits
 
--  Eines de lladre o símbol sagrat(de plata)
+- Eines de lladre o símbol sagrat(de plata)
 
--  12 piquetes de ferro
+- 12 piquetes de ferro
 
--  Martell petit i 3 estaques
+- Martell petit i 3 estaques
 
--  Bota
+- Bota
 
--  Racions estàndard (7 dies)
+- Racions estàndard (7 dies)
 
--  Sac de dormir i una manta
+- Sac de dormir i una manta
 
 # Classes de personatge
 
@@ -1038,7 +1038,7 @@ S’anomena ***temps de joc***, al que transcorre en el món imaginari on els ju
 
 A mesura que transcorre el temps en el món de joc, també cal que el director de joc decideixi què està passant a altres bandes del món o de la masmorra; pot ser que un exèrcit orc comenci a abandonar la fortalesa d'un senyor fosc, o que una patrulla de kobolds vagi cap a on són els personatges per tal de comprovar un parany de la masmorra, etc.
 
-#### Recursos
+### Recursos
 
 Per tal de generar un clima d'angoixa o neguit quan s’explora una masmorra, cal que els jugadors es preocupin dels recursos que gasten com el menjar, l'aigua, les torxes, el combustible de les llanternes, la durada dels efectes màgics, etc.
 
@@ -1048,13 +1048,13 @@ Quan s’explora, el DJ n'ha de fer el seguiment de la ubicació dels personatge
 
 Per determinar quant tarden els personatges a moure's d'una zona a una altra, el director de joc ha de referir-se al factor de moviment dels personatges.
 
-#### Velocitat del grup
+### Velocitat del grup
 
 Un grup d'aventurers normalment voldrà romandre junt i la seva velocitat serà determinada pel factor de moviment del personatge més lent.
 
 ## Unitats de mesura
 
-#### Temps: torns i assalts
+### Temps: torns i assalts
 
 A més dels increments de temps quotidians (minuts, dies, etc.) s'utilitzen les següents unitats especials.
 
@@ -1062,7 +1062,7 @@ A més dels increments de temps quotidians (minuts, dies, etc.) s'utilitzen les 
 
 **Assalts:** 10 segons de temps de joc; hi ha 60 assalts per torn. El temps es mesura en assalts durant els encontres i en especial durant els combats.
 
-#### Pes: monedes (opcional)
+### Pes: monedes (opcional)
 
 Aquest entra en joc tan sols per decidir el tresor que pot dur un personatge i com que les monedes són la forma més comuna, el pes es mesura en monedes.
 
@@ -1212,7 +1212,7 @@ Quan s'escau, el jugador o el director de joc ha de tirar 1d20 i comparar el res
 
 Quan els personatges proven d'escalar en una situació difícil o tensa, el director de joc pot demanar una tirada d'habilitat per ***destresa***; es tira 1d20 i si el resultat és més gran que els punts de destresa llavors es cau a la meitat de l'alçada i es pateix dany per la caiguda. La càrrega del personatge pot penalitzar aquesta prova d'habilitat i se suposa que la paret pot ser escalada, ja que almenys hi ha prou llocs on agafar-se.
 
-#### Parets llises
+### Parets llises
 
 Les parets molt polides o amb molt pocs llocs on agafar-se són normalment impossibles d'escalar sense un equip especialitzat, però alguns personatges tenen habilitats de classe que els permet intentar-ho i la resta de classes ho poden intentar amb una càrrega mínima (sense motxilla) amb una tirada 2d6+***bonificació de*** ***destresa*** per cada 100 peus. Si es treu menys de 10 es falla la tirada i el personatge cau des de la meitat del camí patint dany per la caiguda.
 
@@ -1352,55 +1352,55 @@ Seqüència de joc per torn
 **3\.** **Descripció:** el director de joc descriu què passa i si ensopeguen amb monstres, llavors cal seguir el procediment de l'apartat ***encontres***.
 **4\.** **Final:** es calcula el temps transcorregut i es té cura de la durada de les fonts de llum, dels encanteris i les necessitats de descans del grup.
 
-### Portes
+## Portes
 
 Les masmorres sovint tenen moltes portes i sovint estan tancades amb clau o simplement travades.
 
-#### Portes secretes
+### Portes secretes
 
 Es descobreixen quan el personatge anuncia que cerca activament en l'àrea on s'amaga la porta.
 
-#### Portes tancades
+### Portes tancades
 
 El pany es pot obrir amb la clau, amb una habilitat de classe i les eines adients, o amb l'ús de la màgia.
 
-#### Portes travades
+### Portes travades
 
 **Forçar:** llegir ***perills i reptes*** per més detalls.
 
 **Sorpresa:** quan es falla l'intent d'obrir la porta llavors no es pot sorprendre a cap criatura a l'altra banda.
 
-#### Portes que es tanquen
+### Portes que es tanquen
 
 Les portes obertes sovint es tanquen; per evitar-ho cal clavar-les al llindar, travar-les o falcar-les.
 
-#### Les criatures i les portes
+### Les criatures i les portes
 
 Les criatures que habiten la masmorra poden obrir les portes (també les travades), tret que estiguin tancades amb clau, màgicament o clavades al llindar.
 
-#### Escoltar a les portes
+### Escoltar a les portes
 
 **Probabilitat d'èxit:** es té una probabilitat d'1-en-6 de detectar sons subtils a l'altra banda d'una porta, però algunes classes poden tenir més possibilitats d'èxit.
 
 **Tirada del DJ:** aquest sempre tira pel personatge (un sol cop per personatge i porta) perquè mai sàpiga si ha fallat o si realment no hi ha res a rere de la porta.
 
-### Moviment
+## Moviment
 
 **Exploració:** en àrees desconegudes, poden moure's al seu ***factor de moviment*** en peus per torn que ja té en compte que van amb cautela, en silenci, observant on trepitgen, cartografiant i evitant els obstacles.
 
 **En àrees conegudes:** el director de joc pot permetre moure's a un factor de moviment més alt quan els personatges passen per àrees ja explorades; per exemple, a tres vegades la velocitat base per torn.
 
-### Descans
+## Descans
 
 **Freqüència:** els personatges han de descansar un torn per cada hora exploració a la masmorra.
 
 **Penalització per no descansar:** quan no es descansa es pateix una penalització \-1 a les tirades d'atac i dany fins que no parin a descansar un torn sencer.
 
-### Llum i visibilitat
+## Llum i visibilitat
 
 Quan els personatges porten una font de llum poden ser el blanc d'armes a distància sense cap penalització i quan els personatges intentin fer blanc fora del radi il·luminat tenen una penalització de \-4 a les tirades d'atac a més del modificador segons la distància.
 
-### Cercar
+## Cercar
 
 Sovint hi ha elements ocults com ara paranys i portes secretes que els personatges poden detectar cercant de forma acurada i atenta en una àrea determinada.
 
@@ -1414,13 +1414,13 @@ Sovint hi ha elements ocults com ara paranys i portes secretes que els personatg
 
 **Un sol cop:** per personatge i àrea.
 
-### Paranys
+## Paranys
 
 - **Paranys de tresor:** són petits i estan col·locats en un objecte per evitar que es manipuli o se saquegi; per exemple, una agulla emmetzinada en el pany d'un calaix o una petita ballesta dins d'un cofre.
 
 - **Parany d'habitació:** són grans i estan dissenyats per afectar qualsevol criatura que entri en una àrea concreta; per exemple, un pou on es cau quan es trepitja una trapa a terra.
 
-#### Activació dels paranys
+### Activació dels paranys
 
 Cada parany s'activa mitjançant una acció específica; per exemple, obrir una porta o passar per sobre d'una àrea determinada, trepitjar una rajola o un graó, etc.
 
@@ -1430,13 +1430,13 @@ Cada parany s'activa mitjançant una acció específica; per exemple, obrir una 
 
 **Criatures:** poden evitar els paranys sense cap risc si el director de joc creu que és probable, convenient o hi ha motius per pensar que tenen coneixements de la ubicació del parany.
 
-#### Cercar paranys
+### Cercar paranys
 
 **Parany d'habitació:** es pot cercar en una àrea de 10×10 peus i descobrir-ne els paranys quan es té èxit.
 
 **Paranys de tresor:** la majoria dels aventurers no tenen prou coneixements sobre enginys i mecanismes per poder descobrir paranys com ara agulles emmetzinades, amb l’excepció algunes classes amb aquesta habilitat.
 
-### Monstres errants
+## Monstres errants
 
 **Freqüència:** normalment es tira un cop cada dos torns a la masmorra.
 
@@ -1453,7 +1453,7 @@ Seqüència de joc per dia
 **4\.** **Descripció:** el director de joc descriu el terreny i els llocs d'interès al grup, demanant als jugadors les seves accions quan calgui i si es troben amb monstres, llavors cal seguir el procediment descrit a ***encontres***.
 **5\.** **Final del dia:** s'anoten els recursos consumits, les racions, la durada dels encanteris i les necessitats de descans del grup.
 
-### Distància i unitats de mesura
+## Distància i unitats de mesura
 
 El moviment a les terres salvatges és més lliure.
 
@@ -1461,15 +1461,15 @@ El moviment a les terres salvatges és més lliure.
 
 **Àrees:** els efectes dels encanteris, l'abast de les armes d'alè, etc., es continuen mesurant en peus.
 
-### Trobar menjar
+## Trobar menjar
 
 Recollir herbes, arrels, fruites, etc. Es pot fer mentre el grup viatja i es té 1-en-6 possibilitats cada dia de trobar prou menjar per a 1d6 éssers de mida humana.
 
-### Caçar
+## Caçar
 
 L'única activitat durant tot un dia; no es pot ni viatjar ni descansar. Hi ha una probabilitat d'1-en-6 de trobar animals adequats per menjar a més dels encontres aleatoris amb monstres errants.
 
-### Desorientar-se
+## Desorientar-se
 
 Al començament de cada dia, el director de joc ha de tirar per determinar si el grup es perdrà i la probabilitat depèn del terreny que es travessa:
 
@@ -1481,15 +1481,15 @@ Al començament de cada dia, el director de joc ha de tirar per determinar si el
 
 Les condicions de visibilitat i del temps meteorològic poden influir en la probabilitat de perdre's, llavors cal ajustar-les com sigui convenient.
 
-### Visibilitat
+## Visibilitat
 
 Es pot albirar fins a tres milles a la rodona, en terreny obert, però aquest abast sovint es pot veure reduït; per exemple, en terrenys coberts com un bosc. O també pot augmentar; per exemple, mirant des del cim d'una muntanya o des d'un arbre alt.
 
-### Viatges per terra
+## Viatges per terra
 
 **Milles per dia:** el nombre de milles que pot viatjar un personatge per dia es determina ***dividint el factor de moviment base per cinc***. Per exemple, un personatge que té un factor de moviment base de 120 peus podrà viatjar fins a 24 milles per dia.
 
-#### Modificadors del terreny
+### Modificadors del terreny
 
 Alguns terrenys poden dificultar o facilitar el viatge i cal ajustar-ne el factor de moviment en conseqüència.
 
@@ -1499,7 +1499,7 @@ Alguns terrenys poden dificultar o facilitar el viatge i cal ajustar-ne el facto
 
 - **Carreteres mantingudes:** un 50% més ràpid.
 
-#### Marxa forçada
+### Marxa forçada
 
 Si els personatges necessiten viatjar més en un dia, poden realitzar una marxa forçada.
 
@@ -1507,17 +1507,17 @@ Si els personatges necessiten viatjar més en un dia, poden realitzar una marxa 
 
 **Descans:** després d'una marxa forçada els personatges han de descansar tot un dia sencer.
 
-### Descansar
+## Descansar
 
 **Freqüència:** els personatges han de descansar un dia per cada sis de viatge.
 
 **Penalització per no descansar:** quan no es descansa es pateix una penalització \-1 a les tirades d'atac i dany fins que no parin a descansar un dia sencer.
 
-### Sorpresa
+## Sorpresa
 
 **Envoltar:** quan un grup és sorprès per tres o més criatures, és molt possible que hagin envoltat el grup.
 
-### Monstres errants
+## Monstres errants
 
 **Freqüència:** normalment es fa una tirada per dia, però el DJ pot voler fer-ne més, fins a tres o quatre al dia.
 
@@ -2510,7 +2510,7 @@ Es pot triar entre els tres tipus d'il·lusions següents:
 2. **Un atac il·lusori:** per exemple, una allau, un sostre que cau, un projectil màgic, etc. No afecta els subjectes que superen una ***tirada de salvació contra encanteris***.
 3. **Una escena:** es canvia l'aparença de la zona afectada o es crea l'aparició d'alguna cosa, que desapareix quan es toca.
 
-##### Condicions
+#### Condicions
 
 - **Concentració:** és necessària per mantenir la il·lusió. Quan el llançador es mou o es distreu, llavors acaba l'encanteri.
 
@@ -3252,17 +3252,17 @@ Per cada criatura, a més de les seves estadístiques, es proporciona una descri
 
 Les criatures es descriuen amb estadístiques com les de l’exemple següent, que descriuen les habilitats generals com el combat, a més d’una descripció física i del seu comportament.
 
-#### Cub gelatinós
+Cub gelatinós
 
 **CA** 11, **DC** 4\* (18 pc), **AT** 1×tocar (2d4+paràlisis), **BA** \+3, **MV** 60 peus (20 peus), **TS** M12 V13 P14 A15 E16 (2), **ML** 12, **AL** neutral, **PX** 125, **NA** 1 (0), **TT** V
 
 Es representen els valors mitjans, però pot haver-hi individus amb més o menys daus de cop que els indicats.
 
-###### Classe d'armadura (CA)
+### Classe d'armadura (CA)
 
 Indica la capacitat del monstre per evitar el dany en combat. En la majoria dels bestiaris de la vella escola la classe d'armadura està en la forma descendent, com més baix millor i sense armadura és CA 9\. En aquest reglament es fa servir la classe d'armadura ascendent on sense armadura és CA 10\. Per convertir de l'escala descendent a l'ascendent només cal restar de 19 la CA descendent; p. ex., si en CA descendent 5 és una cota de malla, en ascendent 19 \- 5 \= 14\. En alguns bestiaris sovint la CA ascendent està indicada entre claudàtors a continuació de la CA descendent.
 
-###### Daus de cop (DC)
+### Daus de cop (DC)
 
 És el nombre de daus de 8 cares (d8) que s'ha de tirar per determinar els punts de cop de la criatura.
 
@@ -3274,11 +3274,11 @@ Indica la capacitat del monstre per evitar el dany en combat. En la majoria dels
 
 **Punts** **de** **cop:** està indicat entre parèntesis i és el valor mitjà de la criatura descrita.
 
-###### Atacs realitzables per assalt (AT)
+### Atacs realitzables per assalt (AT)
 
 És el nombre d'atacs per assalt, i les diferents rutines d'atac. Recorda que les tirades d'atac i dany dels monstres no es modifiquen amb ***força*** o ***destresa***, excepte quan s'especifiqui. Per cada mena d'atac també s'indica entre parèntesis el dany de cada atac.
 
-###### Bonificació d'atac (BA)
+### Bonificació d'atac (BA)
 
 Es pot fer servir la taula següent quan no s'indica en la descripció de la criatura.
 
@@ -3293,7 +3293,7 @@ Es pot fer servir la taula següent quan no s'indica en la descripció de la cri
 | 5+ a 6 | \+5 | 19+ a 21 | \+13 |
 | 6+ a 7 | \+6 | 21+ | \+14 |
 
-###### Tirada de salvació (TS)
+### Tirada de salvació (TS)
 
 - **M:** mort o metzina.
 - **V:** varetes.
@@ -3303,13 +3303,13 @@ Es pot fer servir la taula següent quan no s'indica en la descripció de la cri
 
 **Salva com:** s'indica entre parèntesis els daus de cop equivalents per a la tirada de salvació ('HN' vol dir que salva com a un home normal). No sempre és igual que els daus de cop de la criatura; les poc intel·ligents acostumen a salvar a la meitat dels seus DC mentre que les criatures màgiques poden tenir tirades de més altes.
 
-###### Factor de moviment (MV)
+### Factor de moviment (MV)
 
 Cada monstre té ***un factor de moviment base*** i ***un factor de moviment d'encontre*** entre parèntesis.
 
 **Formes de moviment:** si el monstre té múltiples formes de moviment (per exemple, caminar, volar, escalar), apareixen separades per barres inclinades.
 
-###### Valor de moral (ML)
+### Valor de moral (ML)
 
 A totes les criatures se'ls assigna un nivell de moral.  Aquest és el nombre que s'ha de treure amb una tirada 2d6 per determinar si davant l’adversitat, la criatura continua lluitant o no. La tirada de moral cal fer-la quan la criatura ha perdut la meitat dels punts de cop o per altres factors, com quan es produeix la primera mort o el grup es veu reduït a la meitat dels que eren en començar el combat.
 
@@ -3317,15 +3317,15 @@ La tirada de moral s'ignora en alguns casos, com  per exemple quan les criatures
 
 La moral és més una pauta que una regla estricta i el valor també es pot fer servir per interpretar a les criatures, en general, aquelles amb un valor baix, es mostraran nervioses en presència de perill.
 
-###### Alineació (AL)
+### Alineació (AL)
 
 Afinitat del monstre amb la llei, la neutralitat o el caos. Quan s'indica "cap" el DJ ha de triar-la si cal.
 
-###### Experiència (PX)
+### Experiència (PX)
 
 Aquest és el valor en punts d'experiència amb què es premia els personatges per derrotar el monstre. És el valor per criatura i es reparteix equitativament entre tots els personatges que sobrevisquin a l'aventura encara que superar l’encontre amb una criatura no vol dir necessàriament posar-hi fi a la seva vida.
 
-###### Nombre en què apareixen (NA)
+### Nombre en què apareixen (NA)
 
 S'indica sovint amb dos valors, el segon entre parèntesis. Aquests valors només són orientatius i el DJ ha de decidir depenent de la situació en què es produeix l’encontre amb la criatura.
 
@@ -3339,7 +3339,7 @@ S'indica sovint amb dos valors, el segon entre parèntesis. Aquests valors nomé
 
 - **Hàbitat a les terres salvatges:** el segon valor multiplicat per 5 indica el nombre en una comunitat.
 
-###### Tipus de tresor (TT)
+### Tipus de tresor (TT)
 
 El codi de lletra utilitzat per determinar la quantitat i tipus de tresor posseït per la criatura. Les lletres signifiquen el següent:
 
@@ -3355,14 +3355,14 @@ El DJ pot fer servir aquest sistema per decidir si les criatures (o els PNJ) es 
 
 - **Moral de 12:** significa que la criatura lluitarà a mort.
 
-### Quan tirar per moral
+## Quan tirar per moral
 
 El director de joc farà una tirada de moral per les criatures quan es dona alguna de les condicions següents:
 
 **La primera mort:** en un combat, pot fer repensar-se als oponents si continuar lluitant val la pena.
 **Bàndol reduït:** si la meitat del grup d'oponents ha mort o està incapacitat, llavors la reacció de la resta del grup es pot determinar amb la tirada de moral.
 
-### Ajustar la situació
+## Ajustar la situació
 
 El director de joc pot aplicar bonificacions o penalitzacions a la tirada de moral (de \-2 fins a \+2), segons la situació. Per exemple, si el grup està perdent llavors una penalització \-1 o si està guanyant llavors una bonificació de \+1. Per les criatures amb un valor de moral de 2 o 12 mai s'aplica cap ajustament.
 
