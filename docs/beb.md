@@ -576,9 +576,13 @@ Els personatges no poden avançar més d'un nivell per sessió. Qualsevol excés
 ## Clergue
 
 **Requisits:** mínim 9 a ***saviesa***
+
 **Daus de cop:** 1d6
+
 **Armadura:** qualsevol i els escuts
+
 **Armes:** qualsevol arma contundent
+
 **Idiomes:** comú
 
 Aquests són aventurers que coneixen com canalitzar el poder màgic que els atorga la deïtat que representen.
@@ -645,9 +649,13 @@ Poden invocar el poder del seu deu per repel·lir a monstres no-morts. El jugado
 ## Elf
 
 **Requisits:** mínim 9 a ***destresa*** i a ***intel·ligència***
+
 **Daus de cop:** 1d6
+
 **Armadura:** qualsevol i els escuts
+
 **Armes:** qualsevol
+
 **Idiomes:** comú, èlfic, gnòlic, hobgoblinès, òrquic
 
 Els elfs són éssers encantadors, esvelts i d'orelles punxegudes. En general pesen al voltant de 120 lliures i fan entre 5 i 5,5 peus d'alçada. Poques vegades es troben elfs en els assentaments humans, prefereixen festejar i divertir-se al bosc. Si els tens en contra, són enemics perillosos, ja que són mestres tant amb l'espasa com amb els encanteris. Als elfs els fascinen els encanteris, els objectes màgics ben construïts i els encanta col·leccionar-los.
@@ -698,9 +706,13 @@ A més de necessitar ploma per escriure, la tinta i el pergamí, cal dedicació 
 ## Guerrer
 
 **Requisits:** mínim 9 a ***força***
+
 **Daus de cop:** 1d8
+
 **Armadura:** qualsevol i els escuts
+
 **Armes:** qualsevol
+
 **Idiomes:** comú
 
 Els guerrers són aventurers dedicats al domini de les arts del combat i la guerra. En un grup d'aventurers, el paper dels guerrers acostuma a ser el de lluitar contra criatures i defensar els altres personatges.
@@ -723,9 +735,13 @@ Els guerrers poden fer servir tota mena d'armes i armadures.
 ## Lladre
 
 **Requisits:** mínim 9 a ***destresa***
+
 **Daus de cop:** 1d6
+
 **Armadura:** cuir i sense escut
+
 **Armes:** qualsevol
+
 **Idiomes:** comú
 
 Són mestres en l'engany, el sigil i dominen d'altres habilitats úniques que els fa uns companys d'aventura molt útils, però també són astuts i mandrosos, i no sempre s'hi pot confiar.
@@ -790,9 +806,13 @@ A partir 4t nivell, pot llegir textos no màgics en qualsevol idioma, fins i tot
 ## Mag
 
 **Requisits:** mínim 9 a ***intel·ligència***
+
 **Daus de cop:** 1d4
+
 **Armadura:** cap
+
 **Armes:** daga o bató de mag
+
 **Idiomes:** comú
 
 Els mags són aventurers dedicats a l'estudi dels secrets arcans i han après les arts per llançar encanteris. A mesura que assoleixen nivells més alts poden llançar més encanteris i més potents.
@@ -827,9 +847,13 @@ A més de necessitar ploma per escriure, la tinta i el pergamí, cal dedicació 
 ## Mitgerol
 
 **Requisits:** mínim 9 a ***constitució***
+
 **Daus de cop:** 1d6
+
 **Armadura:** qualsevol de la mida adequada i els escuts
+
 **Armes:** qualsevol de la mida adequada
+
 **Idiomes:** comú, mitgenc
 
 Els mitgerols són petits semihumans rodanxons amb els peus peluts i els cabells arrissats que pesen al voltant de 60 lliures i s'alcen uns 3 peus. Són gent amable, amistosa i sobretot, els encanten les comoditats de la seva llar; no són pas coneguts per la seva valentia. Els mitgerols que tornen de les aventures amb un gran tresor, sovint utilitzen aquesta riquesa per donar-se una vida tranquil·la i confortable.
@@ -872,9 +896,13 @@ Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat.
 ## Nan
 
 **Requisits:** mínim 9 a ***constitució***
+
 **Daus de cop:** 1d8
+
 **Armadura:** qualsevol i els escuts
+
 **Armes:** mida petita o normal
+
 **Idiomes:** comú, nanenc, gnòmic, goblinès, kobold
 
 Són uns semihumans robustos i barbuts, d'uns 4 peus d'alçada i un pes d'unes 150 lliures. Els nans acostumen a viure sota terra i els encanta l'artesania, l'or, el menjar abundant i la beguda forta. Tenen la pell, els cabells i els ulls dels colors de la terra. Els nans són coneguts per la seva tossuderia i pragmatisme. Són resilients i amb una gran resistència a la màgia, tal com es reflecteix en les seves tirades de salvació.
@@ -913,9 +941,13 @@ Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat.
 ## Rodamon
 
 **Requisits:** mínim 9 a ***constitució*** i a ***destresa***, i 13 a ***intel·ligència***
+
 **Daus de cop:** 1d6
+
 **Armadura:** cuir i sense escut
+
 **Armes:** garrots, dagues, bastons i fones
+
 **Idiomes:** comú, mitgenc, èlfic, nanenc, gnòmic, goblinès, kobold
 
 Sovint anomenats vagabunds o nòmades, han triat un estil de vida que els porta d'una banda a una altra, aprenent a sobreviure pel camí, atresorant perles de coneixement i màgia. Són afables i estan a gust amb qualsevol companyia que coneguin en els seus viatges.
