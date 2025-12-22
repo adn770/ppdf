@@ -30,7 +30,7 @@
         {"terme": "Tirada d'atac", "definicio": "És la tirada que es fa per decidir si es pot colpir a un oponent en un atac, superant la seva defensa (CA)."},
         {"terme": "Tirada de salvació", "definicio": "La capacitat del personatge per evitar veure's afectat per certs tipus de perills o disminuir-ne el dany. Se'n defineixen cinc categories: mort 'M' (o metzina), varetes 'V', paràlisi 'P' (o petrificació), atacs d'alè 'A', encanteris 'E' (ceptres o bastons màgics). Depèn de la classe i milloren amb les pujades de nivell."},
         {"terme": "Tirada de moral (opcional)", "definicio": "Es fa per decidir el comportament (fugir o continuar lluitant) de les criatures durant un combat."},
-        {"terme": "Factor de moviment (MV)", "definicio": "La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. Es descriu per un factor de moviment base i un factor de moviment d'encontre assenyalat entre parèntesis. El factor per defecte és 120' (40'); un factor base de 120' i un factor d'encontre de 40'."}
+        {"terme": "Factor de moviment (MV)", "definicio": "La velocitat a la qual un personatge pot moure's quan explora, viatja o lluita. Es descriu per un factor de moviment base i un factor de moviment d'encontre assenyalat entre parèntesis. El factor per defecte és 120 peus (40 peus); un factor base de 120 peus i un factor d'encontre de 40 peus."}
       ]
     },
     "personatges": {
@@ -172,29 +172,29 @@
       "titol": "Armes i armadures",
       "armes": [
         {"objecte": "Alabarda", "dany": "1d10", "preu_po": 7, "qualitats": "Clavar, cos a cos, a dues mans", "pes_monedes": 150},
-        {"objecte": "Arc curt", "dany": "1d6", "preu_po": 15, "qualitats": "Projectils (5'-50' / 51'-100' / 101'-150'), a dues mans", "pes_monedes": 30},
-        {"objecte": "Arc llarg", "dany": "1d6", "preu_po": 40, "qualitats": "Projectil (5'-70' / 71'-140' / 141'-210'), a dues mans", "pes_monedes": 30},
-        {"objecte": "Ballesta", "dany": "1d6", "preu_po": 30, "qualitats": "Projectils (5'-80' / 81'-160' / 161'-240'), recarrega, a dues mans", "pes_monedes": 60},
+        {"objecte": "Arc curt", "dany": "1d6", "preu_po": 15, "qualitats": "Projectils (5 peus a 50 peus / 51 peus a 100 peus / 101 peus a 150 peus), a dues mans", "pes_monedes": 30},
+        {"objecte": "Arc llarg", "dany": "1d6", "preu_po": 40, "qualitats": "Projectil (5 peus a 70 peus / 71 peus a 140 peus / 141 peus a 210 peus), a dues mans", "pes_monedes": 30},
+        {"objecte": "Ballesta", "dany": "1d6", "preu_po": 30, "qualitats": "Projectils (5 peus a 80 peus / 81 peus a 160 peus / 161 peus a 240 peus), recarrega, a dues mans", "pes_monedes": 60},
         {"objecte": "Bastó", "dany": "1d4", "preu_po": 2, "qualitats": "Contundent, cos a cos, lent, a dues mans", "pes_monedes": 40},
-        {"objecte": "Daga", "dany": "1d4", "preu_po": 3, "qualitats": "Cos a cos, projectil (5'-10' / 11'-20' / 21'-30')", "pes_monedes": 10},
-        {"objecte": "Daga de plata", "dany": "1d4", "preu_po": 30, "qualitats": "Cos a cos, projectil (5'-10' / 11'-20' / 21'-30')", "pes_monedes": 10},
+        {"objecte": "Daga", "dany": "1d4", "preu_po": 3, "qualitats": "Cos a cos, projectil (5 peus a 10 peus / 11 peus a 20 peus / 21 peus a 30 peus)", "pes_monedes": 10},
+        {"objecte": "Daga de plata", "dany": "1d4", "preu_po": 30, "qualitats": "Cos a cos, projectil (5 peus a 10 peus / 11 peus a 20 peus / 21 peus a 30 peus)", "pes_monedes": 10},
         {"objecte": "Destral de batalla", "dany": "1d8", "preu_po": 7, "qualitats": "Cos a cos, a dues mans", "pes_monedes": 60},
-        {"objecte": "Destral de mà", "dany": "1d6", "preu_po": 4, "qualitats": "Cos a cos, projectil (5'-10' / 11'-20' / 21'-30')", "pes_monedes": 30},
+        {"objecte": "Destral de mà", "dany": "1d6", "preu_po": 4, "qualitats": "Cos a cos, projectil (5 peus a 10 peus / 11 peus a 20 peus / 21 peus a 30 peus)", "pes_monedes": 30},
         {"objecte": "Espasa", "dany": "1d8", "preu_po": 10, "qualitats": "Cos a cos", "pes_monedes": 60},
         {"objecte": "Espasa a dues mans", "dany": "1d10", "preu_po": 15, "qualitats": "Cos a cos, a dues mans", "pes_monedes": 150},
         {"objecte": "Espasa bastarda", "dany": "1d6+1 / 1d8+1", "preu_po": 15, "qualitats": "Cos a cos, a una o a dues mans", "pes_monedes": 80},
         {"objecte": "Espasa curta", "dany": "1d6", "preu_po": 7, "qualitats": "Cos a cos", "pes_monedes": 30},
-        {"objecte": "Fona", "dany": "1d4", "preu_po": 2, "qualitats": "Contundent, projectil (5'-40' / 41'-80' / 81'-160')", "pes_monedes": 10},
+        {"objecte": "Fona", "dany": "1d4", "preu_po": 2, "qualitats": "Contundent, projectil (5 peus a 40 peus / 41 peus a 80 peus / 81 peus a 160 peus)", "pes_monedes": 10},
         {"objecte": "Garrot", "dany": "1d4", "preu_po": 3, "qualitats": "Contundent, cos a cos", "pes_monedes": 60},
-        {"objecte": "Javelina", "dany": "1d4", "preu_po": 1, "qualitats": "Projectil (5'-30' / 31'-60' / 61'-90')", "pes_monedes": 20},
-        {"objecte": "Llança", "dany": "1d6", "preu_po": 4, "qualitats": "Clavar, cos a cos, projectil (5'-20' / 21'-40' / 41'-60')", "pes_monedes": 30},
+        {"objecte": "Javelina", "dany": "1d4", "preu_po": 1, "qualitats": "Projectil (5 peus a 30 peus / 31 peus a 60 peus / 61 peus a 90 peus)", "pes_monedes": 20},
+        {"objecte": "Llança", "dany": "1d6", "preu_po": 4, "qualitats": "Clavar, cos a cos, projectil (5 peus a 20 peus / 21 peus a 40 peus / 41 peus a 60 peus)", "pes_monedes": 30},
         {"objecte": "Llança de cavalleria", "dany": "1d6", "preu_po": 5, "qualitats": "Envestir, cos a cos", "pes_monedes": 120},
         {"objecte": "Maça", "dany": "1d6", "preu_po": 5, "qualitats": "Contundent, cos a cos", "pes_monedes": 30},
         {"objecte": "Martell de guerra", "dany": "1d6", "preu_po": 5, "qualitats": "Contundent, cos a cos", "pes_monedes": 30}
       ],
       "armes_improvisades": [
-        {"objecte": "Aigua beneïda", "dany": "1d8", "qualitats": "Projectil (5'-10' / 11'-30' / 31'-50'), esquitxa"},
-        {"objecte": "Oli encès", "dany": "1d8", "qualitats": "Projectil (5'-10' / 11'-30' / 31'-50'), esquitxa"},
+        {"objecte": "Aigua beneïda", "dany": "1d8", "qualitats": "Projectil (5 peus a 10 peus / 11 peus a 30 peus / 31 peus a 50 peus), esquitxa"},
+        {"objecte": "Oli encès", "dany": "1d8", "qualitats": "Projectil (5 peus a 10 peus / 11 peus a 30 peus / 31 peus a 50 peus), esquitxa"},
         {"objecte": "Torxa, palanca", "dany": "1d4", "qualitats": "Cos a cos"}
       ],
       "municio": [
@@ -350,7 +350,7 @@
               {"nivell": 5, "ep": "5+", "dp": "9+", "ss": "3-en-6", "ao": "9+", "ms": "9+", "op": "9+", "bb": "8+"}
             ],
             "detalls": [
-              {"nom": "Escalar parets llises (EP)", "descripcio": "Cal tirar per cada 100' i si es falla el PJ cau a mig camí, patint dany per la caiguda."},
+              {"nom": "Escalar parets llises (EP)", "descripcio": "Cal tirar per cada 100 peus i si es falla el PJ cau a mig camí, patint dany per la caiguda."},
               {"nom": "Detectar o desactivar paranys de tresor (DP)", "descripcio": "Cal una tirada per detectar el parany i després un altre per desactivar-lo. Tan sols es pot intentar un cop per parany."},
               {"nom": "Sentir sorolls (SS)", "descripcio": "Pot escoltar darrere d'una porta o sentir quelcom que s'acosta com un monstre errant."},
               {"nom": "Amagar-se en les ombres (AO)", "descripcio": "Cal que s'estigui immòbil i no pot atacar ni moure's mentre s'està amagant."},
@@ -425,7 +425,7 @@
         "armadura": "Qualsevol i els escuts",
         "armes": "Mida petita o normal",
         "idiomes": ["Comú", "nanenc", "gnòmic", "goblinès", "kobold"],
-        "descripcio": "Són uns semihumans robustos i barbuts, d'uns 4' d'alçada i un pes d'unes 150 lliures. Els nans acostumen a viure sota terra i els encanta l'artesania, l'or, el menjar abundant i la beguda forta. Tenen la pell, els cabells i els ulls dels colors de la terra. Els nans són coneguts per la seva tossuderia i pragmatisme. Són resilients i amb una gran resistència a la màgia, tal com es reflecteix en les seves tirades de salvació.",
+        "descripcio": "Són uns semihumans robustos i barbuts, d'uns 4 peus d'alçada i un pes d'unes 150 lliures. Els nans acostumen a viure sota terra i els encanta l'artesania, l'or, el menjar abundant i la beguda forta. Tenen la pell, els cabells i els ulls dels colors de la terra. Els nans són coneguts per la seva tossuderia i pragmatisme. Són resilients i amb una gran resistència a la màgia, tal com es reflecteix en les seves tirades de salvació.",
         "progressio": [
           {"nivell": 1, "px": 0, "dc": "1d8", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
           {"nivell": 2, "px": 2200, "dc": "2d8", "ba": 0, "salvacio": {"m": 8, "v": 9, "p": 10, "a": 13, "e": 12}},
@@ -441,8 +441,8 @@
           "escoltar_portes": "Tenen 2-en-6 possibilitats de sentir sorolls a l'altre costat."
         }
       },
-      "rodamons": {
-        "nom": "Rodamons",
+      "rodamon": {
+        "nom": "Rodamon",
         "requisits": "Mínim 9 a constitució i a destresa, i 13 a intel·ligència",
         "daus_de_cop": "1d6",
         "armadura": "Cuir i sense escut",
@@ -458,7 +458,7 @@
         ],
         "habilitats": {
           "combat": "No poden dur armadures més pesants que el cuir ni escuts, i només garrots, dagues, bastons i fones.",
-          "habilitats_rodamons": {
+          "habilitats_rodamon": {
             "descripcio": "Viatjant per les terres salvatges han après a passar desapercebuts.",
             "taula_habilitats": [
               {"nivell": 1, "ss": "2-en-6", "ao": "11+", "ms": "10+"},
@@ -479,9 +479,9 @@
           "magia": {
             "llancament_encanteris": "A partir del 4t nivell, obté un llibre en blanc des d'on pot llançar encanteris com un mag i també en pot llançar des d'un pergamí amb una probabilitat de 3-en-6. Quan es falla, l'encanteri no funciona com s'esperava i crea un efecte inesperat o perjudicial. La seva màgia és heterodoxa i sols té accés a un repertori reduït que inclou encanteris de màgia arcana com divina.",
             "encanteris_primer_nivell": [
-              {"d4": 1, "nom": "Encisar persona", "tipus": "Arcà", "durada": "Dies", "abast": "120'"},
-              {"d4": 2, "nom": "Detectar el mal", "tipus": "Diví", "durada": "6 torns", "abast": "120'"},
-              {"d4": 3, "nom": "Detectar màgia", "tipus": "Diví", "durada": "2 torns", "abast": "60'"},
+              {"d4": 1, "nom": "Encisar persona", "tipus": "Arcà", "durada": "Dies", "abast": "120 peus"},
+              {"d4": 2, "nom": "Detectar el mal", "tipus": "Diví", "durada": "6 torns", "abast": "120 peus"},
+              {"d4": 3, "nom": "Detectar màgia", "tipus": "Diví", "durada": "2 torns", "abast": "60 peus"},
               {"d4": 4, "nom": "Protecció del mal", "tipus": "Diví", "durada": "6 torns", "abast": "Llançador"}
             ]
           }
@@ -544,9 +544,9 @@
           {"armes": "Espases a dues mans o alabarda", "pes_monedes": 150}
         ],
         "factor_moviment_carrega": [
-          {"armadura": "Sense armadura", "poca_carrega": "120' (40')", "molta_carrega": "90' (30')"},
-          {"armadura": "Armadura lleugera", "poca_carrega": "90' (30')", "molta_carrega": "60' (20')"},
-          {"armadura": "Armadura pesada", "poca_carrega": "60' (20')", "molta_carrega": "30' (10')"}
+          {"armadura": "Sense armadura", "poca_carrega": "120 peus (40 peus)", "molta_carrega": "90 peus (30 peus)"},
+          {"armadura": "Armadura lleugera", "poca_carrega": "90 peus (30 peus)", "molta_carrega": "60 peus (20 peus)"},
+          {"armadura": "Armadura pesada", "poca_carrega": "60 peus (20 peus)", "molta_carrega": "30 peus (10 peus)"}
         ],
         "pes_tresor": [
           {"tresor": "1 moneda (qualsevol), gemma o pergamí", "pes_monedes": 1},
@@ -620,7 +620,7 @@
       "escalar": {
         "titol": "Escalar",
         "descripcio": "Quan els personatges proven d'escalar en una situació difícil o tensa, el director de joc pot demanar una tirada d'habilitat per destresa; es tira 1d20 i si el resultat és més gran que els punts de destresa llavors es cau a la meitat de l'alçada i es pateix dany per la caiguda. La càrrega del personatge pot penalitzar aquesta prova d'habilitat i se suposa que la paret pot ser escalada, ja que almenys hi ha prou llocs on agafar-se.",
-        "parets_llises": "Les parets molt polides o amb molt pocs llocs on agafar-se són normalment impossibles d'escalar sense un equip especialitzat, però alguns personatges tenen habilitats de classe que els permet intentar-ho i la resta de classes ho poden intentar amb una càrrega mínima (sense motxilla) amb una tirada 2d6+bonificació de destresa per cada 100'. Si es treu menys de 10 es falla la tirada i el personatge cau des de la meitat del camí patint dany per la caiguda."
+        "parets_llises": "Les parets molt polides o amb molt pocs llocs on agafar-se són normalment impossibles d'escalar sense un equip especialitzat, però alguns personatges tenen habilitats de classe que els permet intentar-ho i la resta de classes ho poden intentar amb una càrrega mínima (sense motxilla) amb una tirada 2d6+bonificació de destresa per cada 100 peus. Si es treu menys de 10 es falla la tirada i el personatge cau des de la meitat del camí patint dany per la caiguda."
       },
       "caure": {
         "titol": "Caure",
@@ -797,7 +797,7 @@
       },
       "viatges_per_terra": {
         "titol": "Viatges per terra",
-        "milles_per_dia": "El nombre de milles que pot viatjar un personatge per dia es determina dividint el factor de moviment base per cinc. Per exemple, un personatge que té un factor de moviment base de 120' podrà viatjar fins a 24 milles per dia.",
+        "milles_per_dia": "El nombre de milles que pot viatjar un personatge per dia es determina dividint el factor de moviment base per cinc. Per exemple, un personatge que té un factor de moviment base de 120 peus podrà viatjar fins a 24 milles per dia.",
         "modificadors_terreny": [
           {"terreny": "Terreny difícil (ermots, tarteres, cingles, serrats, deserts i boscos atapeïts)", "modificador": "⅔ de la velocitat normal."},
           {"terreny": "Selva, muntanyes, pantà", "modificador": "Meitat de la velocitat."},
@@ -924,11 +924,11 @@
           "descripcio": "La possibilitat d'evasió és una probabilitat de X-en-20 i quan es falla continua la persecució.",
           "taula_probabilitat_velocitat": [
             {"velocitat_fugitius": "Més ràpida que el perseguidor", "probabilitat": "16-en-20"},
-            {"velocitat_fugitius": "0' - 30' per assalt més lent que el perseguidor", "probabilitat": "10-en-20"},
-            {"velocitat_fugitius": "31' - 60' per assalt més lent que el perseguidor", "probabilitat": "8-en-20"},
-            {"velocitat_fugitius": "61' - 90' per assalt més lent que el perseguidor", "probabilitat": "7-en-20"},
-            {"velocitat_fugitius": "91' - 120' per assalt més lent que el perseguidor", "probabilitat": "5-en-20"},
-            {"velocitat_fugitius": "121'+ per assalt més lent que el perseguidor", "probabilitat": "2-en-20"}
+            {"velocitat_fugitius": "0 peus - 30 peus per assalt més lent que el perseguidor", "probabilitat": "10-en-20"},
+            {"velocitat_fugitius": "31 peus - 60 peus per assalt més lent que el perseguidor", "probabilitat": "8-en-20"},
+            {"velocitat_fugitius": "61 peus - 90 peus per assalt més lent que el perseguidor", "probabilitat": "7-en-20"},
+            {"velocitat_fugitius": "91 peus - 120 peus per assalt més lent que el perseguidor", "probabilitat": "5-en-20"},
+            {"velocitat_fugitius": "121 peus+ per assalt més lent que el perseguidor", "probabilitat": "2-en-20"}
           ],
           "taula_probabilitat_nombre": [
             {"fugitius": "1-4", "perseguidors_1": "1: 10-en-20", "perseguidors_2_3": "2-3: 14-en-20", "perseguidors_5_mes": "5+: 18-en-20"},
@@ -976,7 +976,7 @@
       "atacar": {
         "titol": "Atacar",
         "descripcio": "En general, es pot fer un sol cop per assalt.",
-        "abast": "La lluita és cos a cos quan els oponents estan 5' o menys els uns dels altres. Els atacs amb projectils tan sols són possibles quan els objectius estan a més de 5'.",
+        "abast": "La lluita és cos a cos quan els oponents estan 5 peus o menys els uns dels altres. Els atacs amb projectils tan sols són possibles quan els objectius estan a més de 5 peus.",
         "tirada_atac": "1. Tira 1d20. 2. Modificadors: bonificació d'atac, força per a lluita cos a cos o destresa, abast i cobertura pels atacs de projectils. 3. Resultat: si és igual o superior a la CA de l'oponent, l'atac té èxit i llavors es tira pel dany.",
         "pifies_i_critics": "Un 20 natural sempre colpeja i llavors l'atac provoca un efecte addicional com la pèrdua de l'escut o l'arma empunyada, infligir una ferida que incapacita o doble dany. Amb un 1 sempre s'erra el cop.",
         "tirar_pel_dany": {
@@ -1078,67 +1078,67 @@
       "titol": "Encanteris de màgia divina",
       "primer_nivell": [
         {"nom": "Curar ferides lleus", "invertit": true, "durada": "Instantani", "abast": "Toc o llançador", "descripcio": "Restaura 1d6+1 punts de cop o cura la paràlisi. Invertit: infligeix 1d6+1 punts de dany."},
-        {"nom": "Detectar el mal", "invertit": false, "durada": "6 torns", "abast": "120'", "descripcio": "Els objectes o éssers amb intencions malvades queden envoltats per una lluentor màgica."},
-        {"nom": "Detectar màgia", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "Els objectes, àrees o criatures encantades brillen lleugerament."},
-        {"nom": "Llum", "invertit": true, "durada": "12 torns", "abast": "120'", "descripcio": "Conjura llum en un radi de 15', pot encegar una criatura o cancel·lar foscor. Invertit: crea foscor."},
+        {"nom": "Detectar el mal", "invertit": false, "durada": "6 torns", "abast": "120 peus", "descripcio": "Els objectes o éssers amb intencions malvades queden envoltats per una lluentor màgica."},
+        {"nom": "Detectar màgia", "invertit": false, "durada": "2 torns", "abast": "60 peus", "descripcio": "Els objectes, àrees o criatures encantades brillen lleugerament."},
+        {"nom": "Llum", "invertit": true, "durada": "12 torns", "abast": "120 peus", "descripcio": "Conjura llum en un radi de 15 peus, pot encegar una criatura o cancel·lar foscor. Invertit: crea foscor."},
         {"nom": "Protecció del mal", "invertit": false, "durada": "12 torns", "abast": "Llançador", "descripcio": "Protegeix el llançador d'atacs de criatures d'alineació diferent (+1 a salvacions, -1 a l'atac enemic)."},
-        {"nom": "Purificar menjar i aigua", "invertit": false, "durada": "Permanent", "abast": "10'", "descripcio": "Fa que aliments o aigua deteriorats siguin adequats per menjar i beure."},
-        {"nom": "Resistir el fred", "invertit": false, "durada": "6 torns", "abast": "30'", "descripcio": "Protegeix del fred normal i atorga +2 a salvacions contra fred màgic, reduint el dany."},
+        {"nom": "Purificar menjar i aigua", "invertit": false, "durada": "Permanent", "abast": "10 peus", "descripcio": "Fa que aliments o aigua deteriorats siguin adequats per menjar i beure."},
+        {"nom": "Resistir el fred", "invertit": false, "durada": "6 torns", "abast": "30 peus", "descripcio": "Protegeix del fred normal i atorga +2 a salvacions contra fred màgic, reduint el dany."},
         {"nom": "Treure la por", "invertit": true, "durada": "2 torns", "abast": "Toc o llançador", "descripcio": "L'objectiu es calma i perd la por. Invertit: espanta un objectiu."}
       ],
       "segon_nivell": [
-        {"nom": "Beneir", "invertit": true, "durada": "6 torns", "abast": "60'", "descripcio": "Els aliats en una àrea de 20' obtenen +1 a atac, dany i moral. Invertit: malaurança (-1 als enemics)."},
-        {"nom": "Conèixer alineació", "invertit": false, "durada": "Un assalt", "abast": "10'", "descripcio": "El llançador obté un coneixement immediat de l'alineació d'un personatge, monstre o objecte."},
-        {"nom": "Encís de serps", "invertit": false, "durada": "1d4+1 assalts o torns", "abast": "60'", "descripcio": "Una o més serps deixen de ser hostils i no ataquen."},
-        {"nom": "Parlar amb els animals", "invertit": false, "durada": "6 torns", "abast": "30'", "descripcio": "El llançador es pot comunicar amb un tipus d'animal."},
-        {"nom": "Resistir el foc", "invertit": false, "durada": "2 torns", "abast": "30'", "descripcio": "Atorga resistència al foc a una criatura."},
-        {"nom": "Retenir persona", "invertit": false, "durada": "9 torns", "abast": "180'", "descripcio": "Paralitza 1d4 humanoides si fallen una salvació."},
-        {"nom": "Silenci (radi 15')", "invertit": false, "durada": "12 torns", "abast": "180'", "descripcio": "Una àrea de 15' de radi queda totalment en silenci."},
-        {"nom": "Trobar paranys", "invertit": false, "durada": "2 torns", "abast": "30'", "descripcio": "Els paranys dins de l'abast se li mostren al llançador amb una lluentor blava."}
+        {"nom": "Beneir", "invertit": true, "durada": "6 torns", "abast": "60 peus", "descripcio": "Els aliats en una àrea de 20 peus obtenen +1 a atac, dany i moral. Invertit: malaurança (-1 als enemics)."},
+        {"nom": "Conèixer alineació", "invertit": false, "durada": "Un assalt", "abast": "10 peus", "descripcio": "El llançador obté un coneixement immediat de l'alineació d'un personatge, monstre o objecte."},
+        {"nom": "Encís de serps", "invertit": false, "durada": "1d4+1 assalts o torns", "abast": "60 peus", "descripcio": "Una o més serps deixen de ser hostils i no ataquen."},
+        {"nom": "Parlar amb els animals", "invertit": false, "durada": "6 torns", "abast": "30 peus", "descripcio": "El llançador es pot comunicar amb un tipus d'animal."},
+        {"nom": "Resistir el foc", "invertit": false, "durada": "2 torns", "abast": "30 peus", "descripcio": "Atorga resistència al foc a una criatura."},
+        {"nom": "Retenir persona", "invertit": false, "durada": "9 torns", "abast": "180 peus", "descripcio": "Paralitza 1d4 humanoides si fallen una salvació."},
+        {"nom": "Silenci (radi 15 peus)", "invertit": false, "durada": "12 torns", "abast": "180 peus", "descripcio": "Una àrea de 15 peus de radi queda totalment en silenci."},
+        {"nom": "Trobar paranys", "invertit": false, "durada": "2 torns", "abast": "30 peus", "descripcio": "Els paranys dins de l'abast se li mostren al llançador amb una lluentor blava."}
       ]
     },
     "encanteris_magia_arcana": {
       "titol": "Encanteris de màgia arcana",
       "primer_nivell": [
-        {"nom": "Detectar màgia", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "Els objectes, àrees o criatures encantades brillen lleugerament."},
-        {"nom": "Disc flotant", "invertit": false, "durada": "6 torns", "abast": "6'", "descripcio": "Crea un disc de força que segueix al llançador i pot transportar càrregues de fins a 5.000 monedes."},
-        {"nom": "Dormir", "invertit": false, "durada": "4d4 torns", "abast": "240'", "descripcio": "Provoca somnolència màgica a un grup de criatures (2d8 daus de cop) o una sola criatura (fins a 4+1 DC)."},
-        {"nom": "Encisar persona", "invertit": false, "durada": "Dies", "abast": "120'", "descripcio": "Una criatura tipus 'persona' veu al llançador com un amic i aliat de confiança."},
+        {"nom": "Detectar màgia", "invertit": false, "durada": "2 torns", "abast": "60 peus", "descripcio": "Els objectes, àrees o criatures encantades brillen lleugerament."},
+        {"nom": "Disc flotant", "invertit": false, "durada": "6 torns", "abast": "6 peus", "descripcio": "Crea un disc de força que segueix al llançador i pot transportar càrregues de fins a 5.000 monedes."},
+        {"nom": "Dormir", "invertit": false, "durada": "4d4 torns", "abast": "240 peus", "descripcio": "Provoca somnolència màgica a un grup de criatures (2d8 daus de cop) o una sola criatura (fins a 4+1 DC)."},
+        {"nom": "Encisar persona", "invertit": false, "durada": "Dies", "abast": "120 peus", "descripcio": "Una criatura tipus 'persona' veu al llançador com un amic i aliat de confiança."},
         {"nom": "Escut", "invertit": false, "durada": "2 torns", "abast": "Llançador", "descripcio": "Crea un camp de força invisible que millora la CA del llançador a 17 contra projectils i 15 contra altres atacs."},
         {"nom": "Llegir idiomes", "invertit": false, "durada": "2 torns", "abast": "Llançador", "descripcio": "El llançador pot llegir qualsevol idioma, missatge codificat, mapa o instruccions escrites."},
         {"nom": "Llegir màgia", "invertit": false, "durada": "1 torn", "abast": "Llançador", "descripcio": "Permet desxifrar inscripcions màgiques, pergamins o llibres d'encanteris d'altres mags."},
-        {"nom": "Llum", "invertit": true, "durada": "nivell+6 torns", "abast": "120'", "descripcio": "Conjura llum en un radi de 15', pot encegar una criatura o cancel·lar foscor. Invertit: crea foscor."},
-        {"nom": "Projectil màgic", "invertit": false, "durada": "1 torn", "abast": "150'", "descripcio": "Conjura un o més dards d'energia que colpegen inevitablement, infligint 1d6+1 de dany cadascun."},
+        {"nom": "Llum", "invertit": true, "durada": "nivell+6 torns", "abast": "120 peus", "descripcio": "Conjura llum en un radi de 15 peus, pot encegar una criatura o cancel·lar foscor. Invertit: crea foscor."},
+        {"nom": "Projectil màgic", "invertit": false, "durada": "1 torn", "abast": "150 peus", "descripcio": "Conjura un o més dards d'energia que colpegen inevitablement, infligint 1d6+1 de dany cadascun."},
         {"nom": "Protecció del mal", "invertit": false, "durada": "6 torns", "abast": "Llançador", "descripcio": "Protegeix el llançador d'atacs de criatures d'alineació diferent (+1 a salvacions, -1 a l'atac enemic)."},
-        {"nom": "Retenir portal", "invertit": false, "durada": "2d6 torns", "abast": "10'", "descripcio": "Mante una porta, finestra o portal tancat màgicament."},
-        {"nom": "Ventrilòquia", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "El llançador pot fer que la seva veu sembli provenir de qualsevol lloc dins de l'abast."}
+        {"nom": "Retenir portal", "invertit": false, "durada": "2d6 torns", "abast": "10 peus", "descripcio": "Mante una porta, finestra o portal tancat màgicament."},
+        {"nom": "Ventrilòquia", "invertit": false, "durada": "2 torns", "abast": "60 peus", "descripcio": "El llançador pot fer que la seva veu sembli provenir de qualsevol lloc dins de l'abast."}
       ],
       "segon_nivell": [
-        {"nom": "Detectar el mal", "invertit": false, "durada": "2 torns", "abast": "60'", "descripcio": "Els objectes o éssers amb intencions malvades queden envoltats per una lluentor màgica."},
-        {"nom": "Detectar invisibilitat", "invertit": false, "durada": "6 torns", "abast": "10' per nivell", "descripcio": "El llançador pot veure clarament els objectes o les criatures invisibles."},
-        {"nom": "Força fantasmal", "invertit": false, "durada": "Concentració", "abast": "240'", "descripcio": "Manifesta una il·lusió visual (monstre, atac o escena) en un cub de 20 peus."},
+        {"nom": "Detectar el mal", "invertit": false, "durada": "2 torns", "abast": "60 peus", "descripcio": "Els objectes o éssers amb intencions malvades queden envoltats per una lluentor màgica."},
+        {"nom": "Detectar invisibilitat", "invertit": false, "durada": "6 torns", "abast": "10 peus per nivell", "descripcio": "El llançador pot veure clarament els objectes o les criatures invisibles."},
+        {"nom": "Força fantasmal", "invertit": false, "durada": "Concentració", "abast": "240 peus", "descripcio": "Manifesta una il·lusió visual (monstre, atac o escena) en un cub de 20 peus."},
         {"nom": "Imatge mirall", "invertit": false, "durada": "6 torns", "abast": "Llançador", "descripcio": "Apareixen 1d4 duplicats il·lusoris del llançador."},
-        {"nom": "Invisibilitat", "invertit": false, "durada": "Fins interrupció", "abast": "240'", "descripcio": "El llançador, una criatura o un objecte es torna invisible."},
+        {"nom": "Invisibilitat", "invertit": false, "durada": "Fins interrupció", "abast": "240 peus", "descripcio": "El llançador, una criatura o un objecte es torna invisible."},
         {"nom": "Levitació", "invertit": false, "durada": "nivell+6 torns", "abast": "Llançador", "descripcio": "Permet al llançador desplaçar-se amunt i avall flotant per l'aire."},
-        {"nom": "Llum continua", "invertit": true, "durada": "Permanent", "abast": "120'", "descripcio": "Crea llum màgica en un radi de 30', pot encegar o cancel·lar foscor contínua. Invertit: crea foscor contínua."},
-        {"nom": "Obertura", "invertit": false, "durada": "1 assalt", "abast": "60'", "descripcio": "Obre portes, portons, cofres, etc., que estan tancades o barrades."},
-        {"nom": "Pany de mag", "invertit": false, "durada": "Permanent", "abast": "10'", "descripcio": "Tanca un objecte amb un pany màgic."},
-        {"nom": "PES", "invertit": false, "durada": "12 torns", "abast": "60'", "descripcio": "Atorga al llançador la capacitat de percebre i comprendre els pensaments d'altres criatures vives."},
-        {"nom": "Teranyina", "invertit": false, "durada": "48 torns", "abast": "10'", "descripcio": "Evoca una massa de fils forts i enganxosos que bloqueja una àrea cúbica de 10 peus."},
-        {"nom": "Trobar objectes", "invertit": false, "durada": "6 torns", "abast": "120'", "descripcio": "El llançador pot percebre la direcció d'un objecte que vol localitzar."}
+        {"nom": "Llum continua", "invertit": true, "durada": "Permanent", "abast": "120 peus", "descripcio": "Crea llum màgica en un radi de 30 peus, pot encegar o cancel·lar foscor contínua. Invertit: crea foscor contínua."},
+        {"nom": "Obertura", "invertit": false, "durada": "1 assalt", "abast": "60 peus", "descripcio": "Obre portes, portons, cofres, etc., que estan tancades o barrades."},
+        {"nom": "Pany de mag", "invertit": false, "durada": "Permanent", "abast": "10 peus", "descripcio": "Tanca un objecte amb un pany màgic."},
+        {"nom": "PES", "invertit": false, "durada": "12 torns", "abast": "60 peus", "descripcio": "Atorga al llançador la capacitat de percebre i comprendre els pensaments d'altres criatures vives."},
+        {"nom": "Teranyina", "invertit": false, "durada": "48 torns", "abast": "10 peus", "descripcio": "Evoca una massa de fils forts i enganxosos que bloqueja una àrea cúbica de 10 peus."},
+        {"nom": "Trobar objectes", "invertit": false, "durada": "6 torns", "abast": "120 peus", "descripcio": "El llançador pot percebre la direcció d'un objecte que vol localitzar."}
       ],
       "tercer_nivell": [
-        {"nom": "Apressar", "invertit": false, "durada": "3 torns", "abast": "240'", "descripcio": "Fins a 24 criatures poden moure's i actuar el doble de ràpid del normal."},
-        {"nom": "Bola de foc", "invertit": false, "durada": "Instantani", "abast": "240'", "descripcio": "Una flama explota en una esfera de 20' de radi, infligint 1d6 de dany per nivell del llançador."},
-        {"nom": "Clarividència", "invertit": false, "durada": "12 torns", "abast": "60'", "descripcio": "El llançador obté la capacitat de veure a través dels ulls d'altres éssers vius."},
-        {"nom": "Dissipar màgia", "invertit": false, "durada": "Instantani", "abast": "120'", "descripcio": "Finalitza els encanteris amb una durada no instantània en un volum cúbic de 20'."},
-        {"nom": "Infravisió", "invertit": false, "durada": "Un dia", "abast": "Toc o llançador", "descripcio": "El subjecte pot veure fins a 60' en la foscor amb la infravisió."},
-        {"nom": "Invisibilitat (radi 10')", "invertit": false, "durada": "Fins interrupció", "abast": "120'", "descripcio": "Una criatura seleccionada i totes les criatures a 10 peus o menys d'ella es tornen invisibles."},
-        {"nom": "Llampec", "invertit": false, "durada": "Instantani", "abast": "180'", "descripcio": "Conjura un cop d'energia elèctrica de 60' de llarg i 5' d'ample, infligint 1d6 de dany per nivell."},
-        {"nom": "Protecció del mal (radi 10')", "invertit": false, "durada": "12 torns", "abast": "10' al voltant del llançador", "descripcio": "Protegeix el llançador i els seus aliats d'atacs de criatures d'alineació diferent."},
-        {"nom": "Protecció dels projectils normals", "invertit": false, "durada": "12 torns", "abast": "30'", "descripcio": "Un sol subjecte obté immunitat completa contra míssils petits no màgics."},
-        {"nom": "Retenir persona", "invertit": false, "durada": "1 torn/nivell", "abast": "120'", "descripcio": "Paralitza 1d4 humanoides si fallen una salvació."},
-        {"nom": "Respirar dins l'aigua", "invertit": false, "durada": "Un dia", "abast": "30'", "descripcio": "El subjecte pot respirar dins l'aigua."},
+        {"nom": "Apressar", "invertit": false, "durada": "3 torns", "abast": "240 peus", "descripcio": "Fins a 24 criatures poden moure's i actuar el doble de ràpid del normal."},
+        {"nom": "Bola de foc", "invertit": false, "durada": "Instantani", "abast": "240 peus", "descripcio": "Una flama explota en una esfera de 20 peus de radi, infligint 1d6 de dany per nivell del llançador."},
+        {"nom": "Clarividència", "invertit": false, "durada": "12 torns", "abast": "60 peus", "descripcio": "El llançador obté la capacitat de veure a través dels ulls d'altres éssers vius."},
+        {"nom": "Dissipar màgia", "invertit": false, "durada": "Instantani", "abast": "120 peus", "descripcio": "Finalitza els encanteris amb una durada no instantània en un volum cúbic de 20 peus."},
+        {"nom": "Infravisió", "invertit": false, "durada": "Un dia", "abast": "Toc o llançador", "descripcio": "El subjecte pot veure fins a 60 peus en la foscor amb la infravisió."},
+        {"nom": "Invisibilitat (radi 10 peus)", "invertit": false, "durada": "Fins interrupció", "abast": "120 peus", "descripcio": "Una criatura seleccionada i totes les criatures a 10 peus o menys d'ella es tornen invisibles."},
+        {"nom": "Llampec", "invertit": false, "durada": "Instantani", "abast": "180 peus", "descripcio": "Conjura un cop d'energia elèctrica de 60 peus de llarg i 5 peus d'ample, infligint 1d6 de dany per nivell."},
+        {"nom": "Protecció del mal (radi 10 peus)", "invertit": false, "durada": "12 torns", "abast": "10 peus al voltant del llançador", "descripcio": "Protegeix el llançador i els seus aliats d'atacs de criatures d'alineació diferent."},
+        {"nom": "Protecció dels projectils normals", "invertit": false, "durada": "12 torns", "abast": "30 peus", "descripcio": "Un sol subjecte obté immunitat completa contra míssils petits no màgics."},
+        {"nom": "Retenir persona", "invertit": false, "durada": "1 torn/nivell", "abast": "120 peus", "descripcio": "Paralitza 1d4 humanoides si fallen una salvació."},
+        {"nom": "Respirar dins l'aigua", "invertit": false, "durada": "Un dia", "abast": "30 peus", "descripcio": "El subjecte pot respirar dins l'aigua."},
         {"nom": "Volar", "invertit": false, "durada": "1d6+nivell torns", "abast": "Toc o llançador", "descripcio": "El subjecte obté la capacitat de volar per l'aire."}
       ]
     },
@@ -1349,147 +1349,147 @@
       "bestiari": [
         {
           "nom": "Abella gegant",
-          "estadistiques": {"ca": 12, "dc": "1d4 pc", "at": "1×fibló", "ba": "+1", "mv": "150' (50')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 9, "al": "Neutral", "px": 7, "na": "1d6 (5d6)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "1d4 pc", "at": "1×fibló", "ba": "+1", "mv": "150 peus (50 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 9, "al": "Neutral", "px": 7, "na": "1d6 (5d6)", "tt": "Cap"},
           "descripcio": "Fan un peu de llarg i no solen ser agressives, excepte quan defensen el seu rusc. Qui rep una fiblada ha de fer una tirada de salvació contra metzina o morir; l'abella mor a l'assalt següent. Mentre el fibló estigui clavat, la víctima pateix 1 punt de dany addicional per assalt. La reina (2 DC, 30 PX) no perd el seu fibló."
         },
         {
           "nom": "Àliga gegant",
-          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "1×bec (1d6), 2×talons (1d4)", "ba": "+2", "mv": "60' (20') / 360' (120') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Legal", "px": 75, "na": "0 (1d6)", "tt": "Cap"},
+          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "1×bec (1d6), 2×talons (1d4)", "ba": "+2", "mv": "60 peus (20 peus) / 360 peus (120 peus) volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Legal", "px": 75, "na": "0 (1d6)", "tt": "Cap"},
           "descripcio": "Criatures intel·ligents que parlen el comú, fan uns 10 peus d'alçada. Acostumen a atacar des de l'aire en picat. Una parella defensarà el seu niu a mort (moral 12)."
         },
         {
           "nom": "Aranya, taràntula",
-          "estadistiques": {"ca": 14, "dc": "4* (18 pc)", "at": "1×mossegada (1d8+metzina)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 125, "na": "1d3 (1d3)", "tt": "U"},
+          "estadistiques": {"ca": 14, "dc": "4* (18 pc)", "at": "1×mossegada (1d8+metzina)", "ba": "+3", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 125, "na": "1d3 (1d3)", "tt": "U"},
           "descripcio": "Aranyes peludes de la mida d'un poni. La seva mossegada requereix una tirada de salvació contra metzina o la víctima ballarà incontroladament durant 2d10 assalts (-4 a CA i atacs). Els espectadors han de superar una salvació contra encanteris o unir-se al ball."
         },
         {
           "nom": "Armadura animada",
-          "estadistiques": {"ca": 17, "dc": "4* (16 pc)", "at": "1×arma (1d6)", "ba": "+3", "mv": "90' (30')", "ts": "M13 V14 P13 A16 E15 (M4)", "ml": 12, "al": "Neutral", "px": 125, "na": "1 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 17, "dc": "4* (16 pc)", "at": "1×arma (1d6)", "ba": "+3", "mv": "90 peus (30 peus)", "ts": "M13 V14 P13 A16 E15 (M4)", "ml": 12, "al": "Neutral", "px": 125, "na": "1 (0)", "tt": "Cap"},
           "descripcio": "Armadures animades per actuar com a guardians. No tenen voluntat pròpia i defensen la posició encomanada."
         },
         {
           "nom": "Assetjador invisible",
-          "estadistiques": {"ca": 16, "dc": "8* (36 pc)", "at": "1×cop (4d4)", "ba": "+7", "mv": "120' (40')", "ts": "M8 V9 P10 A10 E12 (8)", "ml": 12, "al": "Neutral", "px": 1200, "na": "1 (1)", "tt": "Cap"},
+          "estadistiques": {"ca": 16, "dc": "8* (36 pc)", "at": "1×cop (4d4)", "ba": "+7", "mv": "120 peus (40 peus)", "ts": "M8 V9 P10 A10 E12 (8)", "ml": 12, "al": "Neutral", "px": 1200, "na": "1 (1)", "tt": "Cap"},
           "descripcio": "Criatures del pla elemental de l'aire, convocades per bruixots. Són invisibles i rastregen amb total encert. Sorprèn amb 5-en-6. S'ofèn amb missions llargues o complexes i pot pervertir les ordres."
         },
         {
           "nom": "Au funesta",
-          "estadistiques": {"ca": 14, "dc": "2+1* (10 pc)", "at": "1×mossegada (1d3) o 2×urpes (1d3)", "ba": "+2", "mv": "30' (10') / 60' (20') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Caòtic", "px": 35, "na": "1d4 (2d6)", "tt": "Cap"},
+          "estadistiques": {"ca": 14, "dc": "2+1* (10 pc)", "at": "1×mossegada (1d3) o 2×urpes (1d3)", "ba": "+2", "mv": "30 peus (10 peus) / 60 peus (20 peus) volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Caòtic", "px": 35, "na": "1d4 (2d6)", "tt": "Cap"},
           "descripcio": "Ocells no-morts intel·ligents. Les seves ferides causen la 'febre funesta' si no se supera una salvació contra metzina. Aquesta malaltia impedeix la curació i només es pot eliminar amb 'curar malalties'."
         },
         {
           "nom": "Aparegut (wraith)",
-          "estadistiques": {"ca": 16, "dc": "4** (18 pc)", "at": "1×toc (1d4+drenatge)", "ba": "+3", "mv": "120' (40') / 240' (80') volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Caòtic", "px": 175, "na": "1d4 (1d6)", "tt": "E"},
+          "estadistiques": {"ca": 16, "dc": "4** (18 pc)", "at": "1×toc (1d4+drenatge)", "ba": "+3", "mv": "120 peus (40 peus) / 240 peus (80 peus) volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Caòtic", "px": 175, "na": "1d4 (1d6)", "tt": "E"},
           "descripcio": "No-morts incorporals. Només poden ser danyats per armes màgiques (dany complet) o de plata (meitat de dany). El seu toc drena un nivell d'experiència permanentment. Una víctima amb tots els nivells drenats es converteix en un aparegut."
         },
         {
           "nom": "Bandoler",
-          "estadistiques": {"ca": "13/15/16", "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 6, "al": "Caòtic", "px": 10, "na": "0 (1d4×10)", "tt": "A"},
+          "estadistiques": {"ca": "13/15/16", "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 6, "al": "Caòtic", "px": 10, "na": "0 (1d4×10)", "tt": "A"},
           "descripcio": "Mercenaris i criminals. La meitat va a peu (armadura de cuir, escut, espasa, arc curt) i l'altra meitat a cavall (cota de malla, escut, espasa). Tenen líders i comandants de nivells superiors."
         },
         {
           "nom": "Banshee",
-          "estadistiques": {"ca": 19, "dc": "7* (31 pc)", "at": "1×toc (1d8) o 1×gemec (mort)", "ba": "+6", "mv": "150' (50')", "ts": "M8 V9 P10 A10 E12 (7)", "ml": 12, "al": "Caòtic", "px": 850, "na": "1 (1)", "tt": "D"},
+          "estadistiques": {"ca": 19, "dc": "7* (31 pc)", "at": "1×toc (1d8) o 1×gemec (mort)", "ba": "+6", "mv": "150 peus (50 peus)", "ts": "M8 V9 P10 A10 E12 (7)", "ml": 12, "al": "Caòtic", "px": 850, "na": "1 (1)", "tt": "D"},
           "descripcio": "Esperits turmentats de dones. Només poden ser danyades per armes màgiques o de plata. Un cop al dia, durant la foscor, el seu gemec pot causar la mort a totes les criatures en un radi de 30 peus que no superin una salvació contra mort."
         },
         {
           "nom": "Basilisc",
-          "estadistiques": {"ca": 15, "dc": "6+1** (28 pc)", "at": "1×mossegada (1d10+petrifica), 1×mirada (petrifica)", "ba": "+6", "mv": "60' (20')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "Neutral", "px": 950, "na": "1d6 (1d6)", "tt": "F"},
+          "estadistiques": {"ca": 15, "dc": "6+1** (28 pc)", "at": "1×mossegada (1d10+petrifica), 1×mirada (petrifica)", "ba": "+6", "mv": "60 peus (20 peus)", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "Neutral", "px": 950, "na": "1d6 (1d6)", "tt": "F"},
           "descripcio": "Monstre rèptil de vuit potes que petrifica amb la mirada. Les víctimes han de superar una salvació contra petrificació. Lluitar evitant la mirada comporta una penalització de -4 a l'atac. Si es veu a si mateix en un mirall, ha de fer una salvació o quedarà petrificat."
         },
         {
           "nom": "Bolet violeta",
-          "estadistiques": {"ca": 12, "dc": "3* (13 pc)", "at": "2×tentacles (2d4+podrir)", "ba": "+2", "mv": "10' (3')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 50, "na": "1d4 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "3* (13 pc)", "at": "2×tentacles (2d4+podrir)", "ba": "+2", "mv": "10 peus (3 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 50, "na": "1d4 (0)", "tt": "Cap"},
           "descripcio": "Bolets carnívors gegants. Els seus tentacles descomponen la carn; cal superar una salvació contra metzina o el dany infligit només es podrà curar amb màgia."
         },
         {
           "nom": "Centaure",
-          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "2×peülles (1d6), arma (1d6 o per arma)", "ba": "+3", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 8, "al": "Neutral", "px": 75, "na": "0 (2d10)", "tt": "A"},
+          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "2×peülles (1d6), arma (1d6 o per arma)", "ba": "+3", "mv": "180 peus (60 peus)", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 8, "al": "Neutral", "px": 75, "na": "0 (2d10)", "tt": "A"},
           "descripcio": "Criatures mig home, mig cavall. Són arrogants però honorables. Poden carregar amb piques o llances i solen usar arcs i garrots."
         },
         {
           "nom": "Cocatriu",
-          "estadistiques": {"ca": 13, "dc": "5** (22 pc)", "at": "1×bec (1d6+petrificació)", "ba": "+4", "mv": "90' (30') / 180' (60') volant", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 7, "al": "Neutral", "px": 425, "na": "1d4 (1d8)", "tt": "D"},
+          "estadistiques": {"ca": 13, "dc": "5** (22 pc)", "at": "1×bec (1d6+petrificació)", "ba": "+4", "mv": "90 peus (30 peus) / 180 peus (60 peus) volant", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 7, "al": "Neutral", "px": 425, "na": "1d4 (1d8)", "tt": "D"},
           "descripcio": "Criatura semblant a un pollastre amb cua de serp. Qualsevol criatura tocada per ella ha de superar una salvació contra petrificació o convertir-se en pedra."
         },
         {
           "nom": "Corb mecànic",
-          "estadistiques": {"ca": 16, "dc": "1+1* (5 pc)", "at": "1×bec (2d4), 2×talons (2d4)", "ba": "+2", "mv": "60' (20' ) / 360' (120') volant", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 10, "al": "Neutral", "px": 19, "na": "1 (0)", "tt": "2×ulls de robí"},
+          "estadistiques": {"ca": 16, "dc": "1+1* (5 pc)", "at": "1×bec (2d4), 2×talons (2d4)", "ba": "+2", "mv": "60 peus (20 peus ) / 360 peus (120 peus) volant", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 10, "al": "Neutral", "px": 19, "na": "1 (0)", "tt": "2×ulls de robí"},
           "descripcio": "Creacions màgiques que combinen parts de corb i mecanismes. Tenen infravisió (90 peus), entenen qualsevol idioma, tenen una oïda millorada i volen en silenci absolut."
         },
         {
           "nom": "Centpeus gegant",
-          "estadistiques": {"ca": 10, "dc": "½* (2 pc)", "at": "1×mossegada (verí)", "ba": "+0", "mv": "60' (20')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 7, "al": "Neutral", "px": 6, "na": "2d4 (1d8)", "tt": "Cap"},
+          "estadistiques": {"ca": 10, "dc": "½* (2 pc)", "at": "1×mossegada (verí)", "ba": "+0", "mv": "60 peus (20 peus)", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 7, "al": "Neutral", "px": 6, "na": "2d4 (1d8)", "tt": "Cap"},
           "descripcio": "Artròpodes depredadors de 2 a 3 peus de llarg. El seu verí incapacita i emmalalteix durant deu dies si no se supera una salvació contra metzina."
         },
         {
           "nom": "Cuc de femer",
-          "estadistiques": {"ca": 10, "dc": "1 pc", "at": "Cap", "ba": "-1", "mv": "10' (3')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 12, "al": "Neutral", "px": 6, "na": "5d4 (5d4)", "tt": "Cap"},
+          "estadistiques": {"ca": 10, "dc": "1 pc", "at": "Cap", "ba": "-1", "mv": "10 peus (3 peus)", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 12, "al": "Neutral", "px": 6, "na": "5d4 (5d4)", "tt": "Cap"},
           "descripcio": "Paràsits que excaven ràpidament la carn buscant el cor, matant en 1d3 torns. Es poden matar amb 'curar malalties' o foc (que fa 1d6 de dany a la víctima)."
         },
         {
           "nom": "Cuc tentaculat",
-          "estadistiques": {"ca": 12, "dc": "3+1* (14 pc)", "at": "8×tentacles (paràlisis)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Neutral", "px": 75, "na": "1d3 (1d3)", "tt": "B"},
+          "estadistiques": {"ca": 12, "dc": "3+1* (14 pc)", "at": "8×tentacles (paràlisis)", "ba": "+3", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Neutral", "px": 75, "na": "1d3 (1d3)", "tt": "B"},
           "descripcio": "Grans erugues amb tentacles que paralitzen. Les víctimes han de superar una salvació contra paràlisi o quedar immòbils durant 2d4 torns. Un cop paralitzats, el cuc comença a alimentar-se d'ells."
         },
         {
           "nom": "Desencisador",
-          "estadistiques": {"ca": 14, "dc": "5* (22 pc)", "at": "1×toc de trompa (desencisar)", "ba": "+4", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 7, "al": "Neutral", "px": 300, "na": "1d2 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 14, "dc": "5* (22 pc)", "at": "1×toc de trompa (desencisar)", "ba": "+4", "mv": "120 peus (40 peus)", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 7, "al": "Neutral", "px": 300, "na": "1d2 (0)", "tt": "Cap"},
           "descripcio": "Criatura semblant a un dromedari que s'alimenta d'energia màgica. Detecta objectes màgics a 60 peus i ataca al més poderós. El seu toc elimina tota la màgia d'un objecte. Només pot ser danyat per atacs màgics."
         },
         {
           "nom": "Desori",
-          "estadistiques": {"ca": 15, "dc": "8** (36 pc)", "at": "2×esclafit (2d4)", "ba": "+7", "mv": "90' (30') volant", "ts": "M6 V7 P8 A8 E10 (10)", "ml": 10, "al": "Caòtic", "px": 1650, "na": "1 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 15, "dc": "8** (36 pc)", "at": "2×esclafit (2d4)", "ba": "+7", "mv": "90 peus (30 peus) volant", "ts": "M6 V7 P8 A8 E10 (10)", "ml": 10, "al": "Caòtic", "px": 1650, "na": "1 (0)", "tt": "Cap"},
           "descripcio": "Criatura amorfa en canvi constant. Un cop per encontre pot alliberar una descàrrega d'energia (4d8 de dany en un radi de 10 peus). Desestabilitza la màgia, forçant als mags a superar una salvació contra encanteris per llançar-los."
         },
         {
           "nom": "Drapat",
-          "estadistiques": {"ca": 17, "dc": "5** (22 pc)", "at": "1×toc (1d4) o 1×arma (1d6 o per arma)", "ba": "+3", "mv": "90' (30') / 180' (60') volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Caòtic", "px": 425, "na": "1 (1)", "tt": "C"},
+          "estadistiques": {"ca": 17, "dc": "5** (22 pc)", "at": "1×toc (1d4) o 1×arma (1d6 o per arma)", "ba": "+3", "mv": "90 peus (30 peus) / 180 peus (60 peus) volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Caòtic", "px": 425, "na": "1 (1)", "tt": "C"},
           "descripcio": "No-mort embolicat en teles. El seu toc, a més del dany, fa perdre un punt de carisma permanentment si no se supera una salvació contra mort. Pot canviar la seva aparença amb una il·lusió tres cops al dia."
         },
         {
           "nom": "Dríada",
-          "estadistiques": {"ca": 14, "dc": "2* (9 pc)", "at": "1×màgia (encisar)", "ba": "+1", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 6, "al": "Neutral", "px": 25, "na": "0 (1d6)", "tt": "D"},
+          "estadistiques": {"ca": 14, "dc": "2* (9 pc)", "at": "1×màgia (encisar)", "ba": "+1", "mv": "120 peus (40 peus)", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 6, "al": "Neutral", "px": 25, "na": "0 (1d6)", "tt": "D"},
           "descripcio": "Esperits de la naturalesa lligats a un roure. No se'n poden allunyar més de 300 iardes. Eviten el combat físic i poden encisar als seus atacants per posar-los en contra dels seus companys."
         },
         {
           "nom": "Eixam d'insectes",
-          "estadistiques": {"ca": 12, "dc": "2 a 4 (9/13/18 pc)", "at": "1×eixam (2 o 4 pc)", "ba": "+1/+2/+3", "mv": "30' (10') / 60' (20') volant", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 11, "al": "Neutral", "px": "20/35/75", "na": "1 (1d3)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "2 a 4 (9/13/18 pc)", "at": "1×eixam (2 o 4 pc)", "ba": "+1/+2/+3", "mv": "30 peus (10 peus) / 60 peus (20 peus) volant", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 11, "al": "Neutral", "px": "20/35/75", "na": "1 (1d3)", "tt": "Cap"},
           "descripcio": "Un gran grup d'insectes que ataca com una sola entitat. Causa dany automàtic a les criatures dins de l'eixam. Les armes normals no el danyen, però el foc, el fum o submergir-se en aigua són eficaços."
         },
         {
           "nom": "Entitat (wight)",
-          "estadistiques": {"ca": 14, "dc": "3* (13 pc)", "at": "1×toc (drenatge)", "ba": "+2", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 12, "al": "Caòtic", "px": 50, "na": "1d6 (1d8)", "tt": "B"},
+          "estadistiques": {"ca": 14, "dc": "3* (13 pc)", "at": "1×toc (drenatge)", "ba": "+2", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 12, "al": "Caòtic", "px": 50, "na": "1d6 (1d8)", "tt": "B"},
           "descripcio": "No-morts que ocupen cossos morts. Només poden ser danyats per armes màgiques o de plata. El seu toc drena un nivell d'experiència permanentment. Una víctima amb tots els nivells drenats es converteix en una entitat."
         },
         {
           "nom": "Escarabat de foc gegant",
-          "estadistiques": {"ca": 15, "dc": "1+2 (6 pc)", "at": "1×mossegada (2d4)", "ba": "+1", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 7, "al": "Neutral", "px": 15, "na": "1d8 (2d6)", "tt": "Cap"},
+          "estadistiques": {"ca": 15, "dc": "1+2 (6 pc)", "at": "1×mossegada (2d4)", "ba": "+1", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 7, "al": "Neutral", "px": 15, "na": "1d8 (2d6)", "tt": "Cap"},
           "descripcio": "Insectes nocturns lluminosos. Les seves glàndules oculars emeten una resplendor que il·lumina un radi de 10 peus i persisteix 1d6 dies després de ser retirades."
         },
         {
           "nom": "Escorpí gegant",
-          "estadistiques": {"ca": 17, "dc": "4* (18 pc)", "at": "2×urpes (1d10), 1×fibló (1d4+metzina)", "ba": "+3", "mv": "150' (50')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 11, "al": "Caòtic", "px": 125, "na": "1d6 (1d6)", "tt": "V"},
+          "estadistiques": {"ca": 17, "dc": "4* (18 pc)", "at": "2×urpes (1d10), 1×fibló (1d4+metzina)", "ba": "+3", "mv": "150 peus (50 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 11, "al": "Caòtic", "px": 125, "na": "1d6 (1d6)", "tt": "V"},
           "descripcio": "Depredadors agressius de la mida d'un ase. Si colpeja amb una urpa, obté +2 a l'atac amb el fibló. La fiblada requereix una salvació contra metzina o la víctima mor."
         },
         {
           "nom": "Espectre",
-          "estadistiques": {"ca": 17, "dc": "6** (27 pc)", "at": "1×toc (1d8+drenatge)", "ba": "+5", "mv": "150' (50') / 300' (100') volant", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 11, "al": "Caòtic", "px": 725, "na": "1d4 (1d8)", "tt": "E"},
+          "estadistiques": {"ca": 17, "dc": "6** (27 pc)", "at": "1×toc (1d8+drenatge)", "ba": "+5", "mv": "150 peus (50 peus) / 300 peus (100 peus) volant", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 11, "al": "Caòtic", "px": 725, "na": "1d4 (1d8)", "tt": "E"},
           "descripcio": "No-morts que s'assemblen a com eren en vida. Només poden ser danyats per armes màgiques. El seu toc drena dos nivells d'experiència permanentment. Una víctima amb tots els nivells drenats es converteix en un espectre."
         },
         {
           "nom": "Esquelet",
-          "estadistiques": {"ca": 12, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "60' (20')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Caòtic", "px": 10, "na": "3d4 (3d10)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "60 peus (20 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Caòtic", "px": 10, "na": "3d4 (3d10)", "tt": "Cap"},
           "descripcio": "No-morts creats per màgia per actuar com a guardians. Són invulnerables a encanteris de 'dormir', 'encisar' o 'retenir'."
         },
         {
           "nom": "Estirge",
-          "estadistiques": {"ca": 12, "dc": "1* (4 pc)", "at": "1×bec (1d3+xuclar sang)", "ba": "+0", "mv": "30' (10') / 180' (60') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Neutral", "px": 13, "na": "1d10 (3d12)", "tt": "L"},
+          "estadistiques": {"ca": 12, "dc": "1* (4 pc)", "at": "1×bec (1d3+xuclar sang)", "ba": "+0", "mv": "30 peus (10 peus) / 180 peus (60 peus) volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Neutral", "px": 13, "na": "1d10 (3d12)", "tt": "L"},
           "descripcio": "Criatures voladores que xuclen sang. Quan colpegen, es fixen a la víctima i li xuclen 1d3 punts de sang per assalt. Només es poden alliberar matant l'estirge."
         },
         {
           "nom": "Flor carnívora",
-          "estadistiques": {"ca": 14, "dc": "6* (27 pc)", "at": "1×mossegada (1d3+metzina)", "ba": "+5", "mv": "30' (10')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Neutral", "px": 500, "na": "1d4 (1d8)", "tt": "Cap"},
+          "estadistiques": {"ca": 14, "dc": "6* (27 pc)", "at": "1×mossegada (1d3+metzina)", "ba": "+5", "mv": "30 peus (10 peus)", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 12, "al": "Neutral", "px": 500, "na": "1d4 (1d8)", "tt": "Cap"},
           "descripcio": "Plantes carnívores que atrauen les preses amb un pol·len olorós (salvació contra metzina per evitar-ho). La seva mossegada seda a la víctima (salvació contra metzina) i li drena 1d3 punts de vida per assalt."
         },
         {
@@ -1499,227 +1499,227 @@
         },
         {
           "nom": "Gàrgola",
-          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "2×urpes (1d3), 1×mossegada (1d6), 1×banya (1d4)", "ba": "+3", "mv": "90' (30') / 150' (50') volant", "ts": "M8 V9 P10 A10 E12 (8)", "ml": 11, "al": "Caòtic", "px": 75, "na": "1d6 (2d4)", "tt": "C"},
+          "estadistiques": {"ca": 14, "dc": "4 (18 pc)", "at": "2×urpes (1d3), 1×mossegada (1d6), 1×banya (1d4)", "ba": "+3", "mv": "90 peus (30 peus) / 150 peus (50 peus) volant", "ts": "M8 V9 P10 A10 E12 (8)", "ml": 11, "al": "Caòtic", "px": 75, "na": "1d6 (2d4)", "tt": "C"},
           "descripcio": "Monstres humanoides amb aspecte de pedra. Poden romandre immòbils per emboscar (sorpresa 4-en-6). Només poden ser danyades amb màgia o armes màgiques."
         },
         {
           "nom": "Gelatina ocre",
-          "estadistiques": {"ca": 11, "dc": "5* (22 pc)", "at": "1×tocar (2d6)", "ba": "+4", "mv": "30' (10')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 12, "al": "Neutral", "px": 300, "na": "1 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 11, "dc": "5* (22 pc)", "at": "1×tocar (2d6)", "ba": "+4", "mv": "30 peus (10 peus)", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 12, "al": "Neutral", "px": 300, "na": "1 (0)", "tt": "Cap"},
           "descripcio": "Monstre amorf de color ocre. Els atacs elèctrics la divideixen en 1d4+1 gelatines més petites. És invulnerable a tot excepte al foc i al fred. El seu àcid dissol la roba, el cuir o la fusta en un assalt."
         },
         {
           "nom": "Gentmalgama o malgamic",
-          "estadistiques": {"ca": 13, "dc": "1+1 (5 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "90' (30')", "ts": "M8 V9 P10 A13 E12 (1)", "ml": 7, "al": "Neutral", "px": 15, "na": "1d8 (5d20)", "tt": "C"},
+          "estadistiques": {"ca": 13, "dc": "1+1 (5 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "90 peus (30 peus)", "ts": "M8 V9 P10 A13 E12 (1)", "ml": 7, "al": "Neutral", "px": 15, "na": "1d8 (5d20)", "tt": "C"},
           "descripcio": "Humanoides amb parts del cos barrejades de diferents criatures. Són experts en amagar-se (sorpresa 3-en-6) i poden imitar sons d'animals o monstres."
         },
         {
           "nom": "Gnoll",
-          "estadistiques": {"ca": 14, "dc": "2 (9 pc)", "at": "1×arma (2d4 o per arma+1)", "ba": "+1", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Caòtic", "px": 20, "na": "1d6 (3d6)", "tt": "D"},
+          "estadistiques": {"ca": 14, "dc": "2 (9 pc)", "at": "1×arma (2d4 o per arma+1)", "ba": "+1", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Caòtic", "px": 20, "na": "1d6 (3d6)", "tt": "D"},
           "descripcio": "Humanoides amb cap de hiena, mandrosos i cruels. Tenen infravisió (60 peus). Els grups de 20 o més són dirigits per un individu més fort (3 DC)."
         },
         {
           "nom": "Goblin",
-          "estadistiques": {"ca": 13, "dc": "1-1 (3 pc)", "at": "1×arma (1d6 o per arma)", "ba": 0, "mv": "60' (20')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 7, "al": "Caòtic", "px": 5, "na": "2d4 (6d10)", "tt": "R (C)"},
+          "estadistiques": {"ca": 13, "dc": "1-1 (3 pc)", "at": "1×arma (1d6 o per arma)", "ba": 0, "mv": "60 peus (20 peus)", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 7, "al": "Caòtic", "px": 5, "na": "2d4 (6d10)", "tt": "R (C)"},
           "descripcio": "Petits humanoides malgirbats. Tenen infravisió (90 peus) i pateixen una penalització de -1 a l'atac sota el sol. Odien els nans i els atacaran sense dubtar. Alguns munten llops terribles."
         },
         {
           "nom": "Granota i gripau gegant",
-          "estadistiques": {"ca": 12, "dc": "2 (9 pc)", "at": "1×atrapar (1d4+retenir)", "ba": "+0", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 25, "na": "1d4 (1d4)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "2 (9 pc)", "at": "1×atrapar (1d4+retenir)", "ba": "+0", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 25, "na": "1d4 (1d4)", "tt": "Cap"},
           "descripcio": "Poden estirar la llengua fins a 15 peus per atrapar preses petites. Amb un 20 natural a l'atac, s'empassen la víctima sencera, que pateix 1d6 de dany per assalt."
         },
         {
           "nom": "Granyotic (home granota)",
-          "estadistiques": {"ca": 14, "dc": "1* (4 pc)", "at": "1×arma (1d6+1 o per arma+1) o 2×urpes (1d2) i 1×mossegada (1d4+1)", "ba": "+0", "mv": "30' (10') / 150' (50') nedant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 7, "al": "Caòtic", "px": 13, "na": "2d6 (1d8×10)", "tt": "D"},
+          "estadistiques": {"ca": 14, "dc": "1* (4 pc)", "at": "1×arma (1d6+1 o per arma+1) o 2×urpes (1d2) i 1×mossegada (1d4+1)", "ba": "+0", "mv": "30 peus (10 peus) / 150 peus (50 peus) nedant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 7, "al": "Caòtic", "px": 13, "na": "2d6 (1d8×10)", "tt": "D"},
           "descripcio": "Humanoides bàrbars amb aparença de granota. La seva pell camaleònica els permet sorprendre amb 3-en-6. Poden saltar fins a 30 peus i obtenir +1 a l'atac."
         },
         {
           "nom": "Gul (necròfag)",
-          "estadistiques": {"ca": 13, "dc": "2* (9 pc)", "at": "2×urpes (1d3+paràlisis), 1×mossegada (1d3+paràlisis)", "ba": "+1", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Caòtic", "px": 25, "na": "1d6 (2d8)", "tt": "B"},
+          "estadistiques": {"ca": 13, "dc": "2* (9 pc)", "at": "2×urpes (1d3+paràlisis), 1×mossegada (1d3+paràlisis)", "ba": "+1", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 9, "al": "Caòtic", "px": 25, "na": "1d6 (2d8)", "tt": "B"},
           "descripcio": "No-morts que mengen carn d'humanoides. Les seves urpes i mossegades causen paràlisi si no se supera una salvació (durada 2d8 torns). Són invulnerables a 'dormir', 'encisar' i 'retenir'."
         },
         {
           "nom": "Harpia",
-          "estadistiques": {"ca": 12, "dc": "3* (13 pc)", "at": "2×urpes (1d4) o 1×arma (1d6 o per arma) o 1×cançó (encís)", "ba": "+2", "mv": "60' (20') / 150' (50') volant", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 7, "al": "Caòtic", "px": 50, "na": "1d6 (2d4)", "tt": "C"},
+          "estadistiques": {"ca": 12, "dc": "3* (13 pc)", "at": "2×urpes (1d4) o 1×arma (1d6 o per arma) o 1×cançó (encís)", "ba": "+2", "mv": "60 peus (20 peus) / 150 peus (50 peus) volant", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 7, "al": "Caòtic", "px": 50, "na": "1d6 (2d4)", "tt": "C"},
           "descripcio": "Esperits amb cos de voltor i tors de dona. La seva cançó encisa a les criatures en un radi de 300 peus que no superin una salvació contra encanteris, fent que caminin cap a ella sense defensar-se."
         },
         {
           "nom": "Hobgoblin",
-          "estadistiques": {"ca": 13, "dc": "1+1 (5 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Caòtic", "px": 15, "na": "1d6 (4d6)", "tt": "D"},
+          "estadistiques": {"ca": 13, "dc": "1+1 (5 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Caòtic", "px": 15, "na": "1d6 (4d6)", "tt": "D"},
           "descripcio": "Cosins grans dels goblins, de la mida d'un humà. Són guerrers cruels i calculadors. Tenen infravisió (60 peus) i odien els elfs."
         },
         {
           "nom": "Kobold",
-          "estadistiques": {"ca": 12, "dc": "½ (2 pc)", "at": "1×arma (1d4 o per arma-1)", "ba": 0, "mv": "60' (20')", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 6, "al": "Caòtic", "px": 5, "na": "4d4 (6d10)", "tt": "P (J)"},
+          "estadistiques": {"ca": 12, "dc": "½ (2 pc)", "at": "1×arma (1d4 o per arma-1)", "ba": 0, "mv": "60 peus (20 peus)", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 6, "al": "Caòtic", "px": 5, "na": "4d4 (6d10)", "tt": "P (J)"},
           "descripcio": "Petits humanoides reptilians amb cara de gos. Són covards i prefereixen les emboscades i les trampes. Tenen infravisió (90 peus) i odien els gnoms."
         },
         {
           "nom": "Licantrop, home llop",
-          "estadistiques": {"ca": "14 (10 humana)", "dc": "4* (18 pc)", "at": "1×mossegada (2d4)", "ba": "+3", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 8, "al": "Caòtic", "px": 125, "na": "1d6 (2d6)", "tt": "C"},
+          "estadistiques": {"ca": "14 (10 humana)", "dc": "4* (18 pc)", "at": "1×mossegada (2d4)", "ba": "+3", "mv": "180 peus (60 peus)", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 8, "al": "Caòtic", "px": 125, "na": "1d6 (2d6)", "tt": "C"},
           "descripcio": "Humans que poden transformar-se en llops. Només poden ser danyats per armes de plata o màgiques. Poden convocar 1d2 llops. La seva mossegada pot transmetre la licantropia."
         },
         {
           "nom": "Licantrop, home os",
-          "estadistiques": {"ca": "17 (11 humana)", "dc": "6* (27 pc)", "at": "2×urpes (2d4) o 1×mossegada (2d8)", "ba": "+5", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 10, "al": "Neutral", "px": 500, "na": "1d4 (1d4)", "tt": "C"},
+          "estadistiques": {"ca": "17 (11 humana)", "dc": "6* (27 pc)", "at": "2×urpes (2d4) o 1×mossegada (2d8)", "ba": "+5", "mv": "120 peus (40 peus)", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 10, "al": "Neutral", "px": 500, "na": "1d4 (1d4)", "tt": "C"},
           "descripcio": "Humans que es transformen en grans ossos. Intel·ligents i desconfiats, però poden ser amistosos. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
         },
         {
           "nom": "Licantrop, home rata",
-          "estadistiques": {"ca": "12 (10 humana)", "dc": "3* (13 pc)", "at": "1×mossegada (1d4) o 1×arma (1d6 o per arma)", "ba": "+2", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 8, "al": "Caòtic", "px": 50, "na": "1d8 (2d8)", "tt": "C"},
+          "estadistiques": {"ca": "12 (10 humana)", "dc": "3* (13 pc)", "at": "1×mossegada (1d4) o 1×arma (1d6 o per arma)", "ba": "+2", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 8, "al": "Caòtic", "px": 50, "na": "1d8 (2d8)", "tt": "C"},
           "descripcio": "Humans prims i nerviosos que es transformen en rates. Prefereixen habitar en ciutats. Sorprenen amb 4-en-6 i poden usar armes en forma animal."
         },
         {
           "nom": "Llagosta de cova gegant",
-          "estadistiques": {"ca": 15, "dc": "2 (9 pc)", "at": "1×mossegada (1d2) o 1×salt (1d4) o 1×escopinada (pudor)", "ba": "+1", "mv": "60' (20') / 180' (60') volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 5, "al": "Neutral", "px": 20, "na": "2d10 (1d10)", "tt": "Cap"},
+          "estadistiques": {"ca": 15, "dc": "2 (9 pc)", "at": "1×mossegada (1d2) o 1×salt (1d4) o 1×escopinada (pudor)", "ba": "+1", "mv": "60 peus (20 peus) / 180 peus (60 peus) volant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 5, "al": "Neutral", "px": 20, "na": "2d10 (1d10)", "tt": "Cap"},
           "descripcio": "Criatures pàl·lides semblants a grills. El seu xeric atrau monstres errants. Poden saltar fins a 60 peus. La seva escopinada requereix una salvació contra metzina o la víctima queda incapacitada per la pudor durant 3d6 assalts."
         },
         {
           "nom": "Llangardaix dragó",
-          "estadistiques": {"ca": 14, "dc": "4+2 (20 pc)", "at": "1×mossegada (1d10)", "ba": "+4", "mv": "120' (40')/210' (70') planar", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 7, "al": "Neutral", "px": 125, "na": "1d4 (1d8)", "tt": "U"},
+          "estadistiques": {"ca": 14, "dc": "4+2 (20 pc)", "at": "1×mossegada (1d10)", "ba": "+4", "mv": "120 peus (40 peus)/210 peus (70 peus) planar", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 7, "al": "Neutral", "px": 125, "na": "1d4 (1d8)", "tt": "U"},
           "descripcio": "Llangardaix gegant que pot planar distàncies curtes. La seva mossegada fa doble dany amb un 20 natural."
         },
         {
           "nom": "Llangardaix gecònid",
-          "estadistiques": {"ca": 14, "dc": "3+1 (14 pc)", "at": "1×mossegada (1d8)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 50, "na": "1d6 (1d10)", "tt": "U"},
+          "estadistiques": {"ca": 14, "dc": "3+1 (14 pc)", "at": "1×mossegada (1d8)", "ba": "+3", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 50, "na": "1d6 (1d10)", "tt": "U"},
           "descripcio": "Llangardaixos que poden escalar parets i córrer pels sostres. Sorprenen amb 3-en-6 quan estan camuflats."
         },
         {
           "nom": "Llangardanic (home llangardaix)",
-          "estadistiques": {"ca": 14, "dc": "2+1 (10 pc)", "at": "1×arma (1d6+1 o per arma+1)", "ba": "+2", "mv": "60' (20') / 120' (40') nedant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 25, "na": "2d4 (6d6)", "tt": "D"},
+          "estadistiques": {"ca": 14, "dc": "2+1 (10 pc)", "at": "1×arma (1d6+1 o per arma+1)", "ba": "+2", "mv": "60 peus (20 peus) / 120 peus (40 peus) nedant", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 25, "na": "2d4 (6d6)", "tt": "D"},
           "descripcio": "Humanoides amb escates i cua. Són excel·lents nadadors. La seva força els dona +1 al dany amb armes cos a cos."
         },
         {
           "nom": "Llim verd",
-          "estadistiques": {"ca": "-", "dc": "2* (9 pc)", "at": "1×tocar (consumeix carn)", "ba": "+1", "mv": "3' (1')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Neutral", "px": 25, "na": "1 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": "-", "dc": "2* (9 pc)", "at": "1×tocar (consumeix carn)", "ba": "+1", "mv": "3 peus (1 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Neutral", "px": 25, "na": "1 (0)", "tt": "Cap"},
           "descripcio": "Devora carn i materials orgànics. Cau de parets i sostres. El foc o el fred li fan la meitat del dany, i l'altra meitat a la víctima. Una víctima en contacte durant sis assalts es transforma en llim verd."
         },
         {
           "nom": "Llop normal",
-          "estadistiques": {"ca": 12, "dc": "2+2 (11 pc)", "at": "1×mossegada (1d6)", "ba": "+2", "mv": "180' (60')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": "6 (8)", "al": "Neutral", "px": 25, "na": "2d6 (3d6)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "2+2 (11 pc)", "at": "1×mossegada (1d6)", "ba": "+2", "mv": "180 peus (60 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": "6 (8)", "al": "Neutral", "px": 25, "na": "2d6 (3d6)", "tt": "Cap"},
           "descripcio": "Carnívor que caça en grup. Els grups de 4 o més tenen moral 8."
         },
         {
           "nom": "Llop hivernal",
-          "estadistiques": {"ca": 14, "dc": "6* (27 pc)", "at": "1×mossegada (2d4) o 1×alè (6d4)", "ba": "+5", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "Caòtic", "px": 500, "na": "0 (2d4)", "tt": "I + pells (5.000 po)"},
+          "estadistiques": {"ca": 14, "dc": "6* (27 pc)", "at": "1×mossegada (2d4) o 1×alè (6d4)", "ba": "+5", "mv": "180 peus (60 peus)", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 9, "al": "Caòtic", "px": 500, "na": "0 (2d4)", "tt": "I + pells (5.000 po)"},
           "descripcio": "Llop intel·ligent de pells platejades. El seu alè gelat causa 6d4 de dany (salvació per la meitat). És invulnerable al fred però vulnerable al foc."
         },
         {
           "nom": "Llop terrible",
-          "estadistiques": {"ca": 13, "dc": "4+1 (19 pc)", "at": "1×mossegada (2d4)", "ba": "+4", "mv": "150' (50')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 125, "na": "1d4 (2d4)", "tt": "Cap"},
+          "estadistiques": {"ca": 13, "dc": "4+1 (19 pc)", "at": "1×mossegada (2d4)", "ba": "+4", "mv": "150 peus (50 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 125, "na": "1d4 (2d4)", "tt": "Cap"},
           "descripcio": "Llops grans i intel·ligents. De vegades, els goblins els entrenen com a muntura."
         },
         {
           "nom": "Llot gris",
-          "estadistiques": {"ca": 11, "dc": "3* (13 pc)", "at": "1×tocar (2d8)", "ba": "+2", "mv": "10' (3')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 50, "na": "1 (1)", "tt": "Cap"},
+          "estadistiques": {"ca": 11, "dc": "3* (13 pc)", "at": "1×tocar (2d8)", "ba": "+2", "mv": "10 peus (3 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 12, "al": "Neutral", "px": 50, "na": "1 (1)", "tt": "Cap"},
           "descripcio": "Criatures amorfes que es camuflen com a roques. El seu àcid dissol matèria orgànica i metall. Les armes no màgiques que el toquen es dissolen. És invulnerable al foc i al fred."
         },
         {
           "nom": "Mercader",
-          "estadistiques": {"ca": 14, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": "Varia", "al": "Neutral", "px": 10, "na": "0 (1d20)", "tt": "A"},
+          "estadistiques": {"ca": 14, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": "+0", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": "Varia", "al": "Neutral", "px": 10, "na": "0 (1d20)", "tt": "A"},
           "descripcio": "Viatgen en caravanes ben armades amb guardaespatlles, tinents i un capità."
         },
         {
           "nom": "Micèlic",
-          "estadistiques": {"ca": 10, "dc": "1 (4 pc)", "at": "1×mans garrot (1d4)", "ba": "+0", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Legal", "px": 10, "na": "1d12 (2d10×10)", "tt": "N×2"},
+          "estadistiques": {"ca": 10, "dc": "1 (4 pc)", "at": "1×mans garrot (1d4)", "ba": "+0", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Legal", "px": 10, "na": "1d12 (2d10×10)", "tt": "N×2"},
           "descripcio": "Humanoides fúngics que es comuniquen telepàticament. Són sensibles a la llum intensa (-2 a l'atac, -1 a la CA). Els líders i reis poden llançar espores que paralitzen o causen al·lucinacions."
         },
         {
           "nom": "Mímic",
-          "estadistiques": {"ca": 13, "dc": "9* (40 pc)", "at": "1×pseudopodi (3d4)", "ba": "+7", "mv": "30' (10')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 9, "al": "Neutral", "px": 1600, "na": "1 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 13, "dc": "9* (40 pc)", "at": "1×pseudopodi (3d4)", "ba": "+7", "mv": "30 peus (10 peus)", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 9, "al": "Neutral", "px": 1600, "na": "1 (0)", "tt": "Cap"},
           "descripcio": "Monstres que canvien de forma per semblar objectes inanimats. Ataca quan és tocat. La seva cola atrapa qualsevol cosa que el toqui. És sensible a la llum intensa."
         },
         {
           "nom": "Mòmia",
-          "estadistiques": {"ca": 16, "dc": "5+1* (23 pc)", "at": "1×toc (1d12+malaltia)", "ba": "+5", "mv": "60' (20')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 12, "al": "Caòtic", "px": 400, "na": "1d4 (1d12)", "tt": "D"},
+          "estadistiques": {"ca": 16, "dc": "5+1* (23 pc)", "at": "1×toc (1d12+malaltia)", "ba": "+5", "mv": "60 peus (20 peus)", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 12, "al": "Caòtic", "px": 400, "na": "1d4 (1d12)", "tt": "D"},
           "descripcio": "No-morts que causen terror (salvació contra paràlisi o quedar immòbil). El seu toc causa la 'putrefacció de la mòmia', una malaltia que impedeix la curació. Només prenen dany de màgia, foc (doble dany) o armes màgiques (meitat de dany)."
         },
         {
           "nom": "Ofídic (home serp)",
-          "estadistiques": {"ca": 15, "dc": "6* (27 pc)", "at": "1×mossegada (1d10+metzina) o 1×arma (1d6 o per arma)", "ba": "+5", "mv": "90' (30')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 8, "al": "Caòtic", "px": 500, "na": "1d4 (2d10)", "tt": "C"},
+          "estadistiques": {"ca": 15, "dc": "6* (27 pc)", "at": "1×mossegada (1d10+metzina) o 1×arma (1d6 o per arma)", "ba": "+5", "mv": "90 peus (30 peus)", "ts": "M10 V11 P12 A13 E14 (6)", "ml": 8, "al": "Caòtic", "px": 500, "na": "1d4 (2d10)", "tt": "C"},
           "descripcio": "Monstres amb cos de serp i tors humà. La seva mossegada és verinosa (salvació contra metzina o mort en 1d6 torns). Tenen +4 a les salvacions contra màgia. Alguns són xamans (clergues de 5è nivell)."
         },
         {
           "nom": "Ogre",
-          "estadistiques": {"ca": 14, "dc": "4+1 (19 pc)", "at": "1×garrot (1d10)", "ba": "+4", "mv": "90' (30')", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 10, "al": "Caòtic", "px": 125, "na": "1d6 (2d6)", "tt": "C+1.000 po"},
+          "estadistiques": {"ca": 14, "dc": "4+1 (19 pc)", "at": "1×garrot (1d10)", "ba": "+4", "mv": "90 peus (30 peus)", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 10, "al": "Caòtic", "px": 125, "na": "1d6 (2d6)", "tt": "C+1.000 po"},
           "descripcio": "Humans grans i lletjos. Són brutals i agressius. Odien els neandertals."
         },
         {
           "nom": "Orc",
-          "estadistiques": {"ca": 13, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": 0, "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 6, "al": "Caòtic", "px": 10, "na": "2d4 (1d6×10)", "tt": "D"},
+          "estadistiques": {"ca": 13, "dc": "1 (4 pc)", "at": "1×arma (1d6 o per arma)", "ba": 0, "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 6, "al": "Caòtic", "px": 10, "na": "2d4 (1d6×10)", "tt": "D"},
           "descripcio": "Humanoides grotescs amb orelles de llop. Tenen infravisió (60 peus) i pateixen -1 a l'atac sota el sol. Tenen líders i caps més forts. De vegades s'alien amb ogres o trols."
         },
         {
           "nom": "Osgo",
-          "estadistiques": {"ca": 14, "dc": "3+1 (14 pc)", "at": "1×arma (2d4 o arma+1)", "ba": "+3", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 9, "al": "Caòtic", "px": 50, "na": "2d4 (5d4)", "tt": "B"},
+          "estadistiques": {"ca": 14, "dc": "3+1 (14 pc)", "at": "1×arma (2d4 o arma+1)", "ba": "+3", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 9, "al": "Caòtic", "px": 50, "na": "2d4 (5d4)", "tt": "B"},
           "descripcio": "Enormes goblins peluts. Es mouen en silenci (sorpresa 3-en-6). Tenen infravisió (60 peus) i +1 al dany per la seva força."
         },
         {
           "nom": "Os bru",
-          "estadistiques": {"ca": 13, "dc": "5 (22 pc)", "at": "2×urpes (1d4), 1×mossegada (1d8)", "ba": "+4", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 175, "na": "1 (1d4)", "tt": "U"},
+          "estadistiques": {"ca": 13, "dc": "5 (22 pc)", "at": "2×urpes (1d4), 1×mossegada (1d8)", "ba": "+4", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 8, "al": "Neutral", "px": 175, "na": "1 (1d4)", "tt": "U"},
           "descripcio": "Carnívor enorme i territorial. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
         },
         {
           "nom": "Os negre",
-          "estadistiques": {"ca": 13, "dc": "4 (18 pc)", "at": "2×urpes (1d3), 1×mossegada (1d6)", "ba": "+3", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 75, "na": "1d4 (1d4)", "tt": "U"},
+          "estadistiques": {"ca": 13, "dc": "4 (18 pc)", "at": "2×urpes (1d3), 1×mossegada (1d6)", "ba": "+3", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (2)", "ml": 7, "al": "Neutral", "px": 75, "na": "1d4 (1d4)", "tt": "U"},
           "descripcio": "Omnívor que viu als boscos. Normalment no és perillós, tret que se senti amenaçat. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
         },
         {
           "nom": "Os òliba o os mussol",
-          "estadistiques": {"ca": 14, "dc": "5 (22 pc)", "at": "2×urpes (1d8) o 1×mossegada (1d8)", "ba": "+4", "mv": "120' (40')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 9, "al": "Neutral", "px": 175, "na": "1d4 (1d4)", "tt": "C"},
+          "estadistiques": {"ca": 14, "dc": "5 (22 pc)", "at": "2×urpes (1d8) o 1×mossegada (1d8)", "ba": "+4", "mv": "120 peus (40 peus)", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 9, "al": "Neutral", "px": 175, "na": "1d4 (1d4)", "tt": "C"},
           "descripcio": "Semblen ossos amb cara d'òliba. Són molt agressius. Si colpeja amb les dues urpes, fa un atac d'abraçada per 2d8 de dany addicional."
         },
         {
           "nom": "Púding negre",
-          "estadistiques": {"ca": 13, "dc": "10* (45 pc)", "at": "1×tocar (3d8)", "ba": "+8", "mv": "60' (20')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 12, "al": "Neutral", "px": 1600, "na": "1 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 13, "dc": "10* (45 pc)", "at": "1×tocar (3d8)", "ba": "+8", "mv": "60 peus (20 peus)", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 12, "al": "Neutral", "px": 1600, "na": "1 (0)", "tt": "Cap"},
           "descripcio": "Criatures amorfes que viuen per menjar. El seu àcid consumeix metalls i fusta en un torn. Els atacs amb armes o electricitat el divideixen en dos. El fred el paralitza temporalment."
         },
         {
           "nom": "Rata",
-          "estadistiques": {"ca": 10, "dc": "1 pc", "at": "1×mossegada per grup (1d6+malaltia)", "ba": "+0", "mv": "60' (20') / 30' (10') nadant", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 5, "al": "Neutral", "px": 5, "na": "5d10 (2d10)", "tt": "L"},
+          "estadistiques": {"ca": 10, "dc": "1 pc", "at": "1×mossegada per grup (1d6+malaltia)", "ba": "+0", "mv": "60 peus (20 peus) / 30 peus (10 peus) nadant", "ts": "M14 V15 P16 A17 E18 (HN)", "ml": 5, "al": "Neutral", "px": 5, "na": "5d10 (2d10)", "tt": "L"},
           "descripcio": "Ataca en grups de 5 a 10. La seva mossegada té 1-en-20 de probabilitat d'infectar (salvació contra metzina). Temen el foc."
         },
         {
           "nom": "Rata gegant",
-          "estadistiques": {"ca": 12, "dc": "½ (2 pc)", "at": "1×mossegada (1d3+malaltia)", "ba": "+0", "mv": "120' (40') / 60' (20') nedant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Neutral", "px": 5, "na": "3d6 (3d10)", "tt": "C"},
+          "estadistiques": {"ca": 12, "dc": "½ (2 pc)", "at": "1×mossegada (1d3+malaltia)", "ba": "+0", "mv": "120 peus (40 peus) / 60 peus (20 peus) nedant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Neutral", "px": 5, "na": "3d6 (3d10)", "tt": "C"},
           "descripcio": "Fins a 4 peus de llarg. La seva mossegada té 1-en-20 de probabilitat d'infectar (salvació contra metzina). Temen el foc."
         },
         {
           "nom": "Ratpenat",
-          "estadistiques": {"ca": 13, "dc": "1 pc", "at": "1×grup (confusió)", "ba": "-1", "mv": "9' (3') / 120' (40') volant", "ts": "M14 V15 P16 A17 E18 (HM)", "ml": 6, "al": "Neutral", "px": 5, "na": "1d100 (1d100)", "tt": "Cap"},
+          "estadistiques": {"ca": 13, "dc": "1 pc", "at": "1×grup (confusió)", "ba": "-1", "mv": "9 peus (3 peus) / 120 peus (40 peus) volant", "ts": "M14 V15 P16 A17 E18 (HM)", "ml": 6, "al": "Neutral", "px": 5, "na": "1d100 (1d100)", "tt": "Cap"},
           "descripcio": "Un grup de 10 o més pot confondre a una criatura, causant-li una penalització de -2 a les tirades d'atac i salvació."
         },
         {
           "nom": "Ratpenat gegant",
-          "estadistiques": {"ca": 13, "dc": "2 (9 pc)", "at": "1×mossegada (1d4)", "ba": "+1", "mv": "30' (10') / 180' (60) volant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Neutral", "px": 20, "na": "1d10 (1d10)", "tt": "Cap"},
+          "estadistiques": {"ca": 13, "dc": "2 (9 pc)", "at": "1×mossegada (1d4)", "ba": "+1", "mv": "30 peus (10 peus) / 180 peus (60) volant", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 8, "al": "Neutral", "px": 20, "na": "1d10 (1d10)", "tt": "Cap"},
           "descripcio": "Carnívors amb una envergadura de 15 peus."
         },
         {
           "nom": "Sangonera gegant",
-          "estadistiques": {"ca": 12, "dc": "6 (27 pc)", "at": "1×mossegada (1d6+drenatge)", "ba": "+5", "mv": "90' (30')", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 10, "al": "Neutral", "px": 275, "na": "0 (1d4)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "6 (27 pc)", "at": "1×mossegada (1d6+drenatge)", "ba": "+5", "mv": "90 peus (30 peus)", "ts": "M12 V13 P14 A15 E16 (3)", "ml": 10, "al": "Neutral", "px": 275, "na": "0 (1d4)", "tt": "Cap"},
           "descripcio": "Cucs xucla-sang de 4 a 6 peus de llarg. Quan colpeja, s'adhereix i xucla 1d6 de sang per assalt fins que ella o la víctima mori."
         },
         {
           "nom": "Trol",
-          "estadistiques": {"ca": 15, "dc": "6+3* (30 pc)", "at": "2×urpes (1d6), 1×mossegada (1d10)", "ba": "+6", "mv": "120' (40')", "ts": "M10 V11 P12 A13 E14 (6)", "ml": "10 (8)", "al": "Caòtic", "px": 650, "na": "1d8 (1d8)", "tt": "D"},
+          "estadistiques": {"ca": 15, "dc": "6+3* (30 pc)", "at": "2×urpes (1d6), 1×mossegada (1d10)", "ba": "+6", "mv": "120 peus (40 peus)", "ts": "M10 V11 P12 A13 E14 (6)", "ml": "10 (8)", "al": "Caòtic", "px": 650, "na": "1d8 (1d8)", "tt": "D"},
           "descripcio": "Criatures de 9 peus d'alçada amb una regeneració increïble. Tres assalts després de ser danyat, comença a recuperar 3 pc per assalt. Només el foc i l'àcid poden matar-lo permanentment. La seva moral baixa a 8 quan s'enfronta a atacants amb foc o àcid."
         },
         {
           "nom": "Uarg",
-          "estadistiques": {"ca": 14, "dc": "5+3 (25 pc)", "at": "1×mossegada (3d6)", "ba": "+5", "mv": "180' (60')", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 10, "al": "Neutral", "px": 350, "na": "1d4 (2d4)", "tt": "Cap"},
+          "estadistiques": {"ca": 14, "dc": "5+3 (25 pc)", "at": "1×mossegada (3d6)", "ba": "+5", "mv": "180 peus (60 peus)", "ts": "M10 V11 P12 A13 E14 (5)", "ml": 10, "al": "Neutral", "px": 350, "na": "1d4 (2d4)", "tt": "Cap"},
           "descripcio": "Semblant a un llop, però més gran, ferotge i intel·ligent. Són aliats dels orcs, que els munten en batalla."
         },
         {
           "nom": "Víbria",
-          "estadistiques": {"ca": 16, "dc": "7* (31 pc)", "at": "1×mossegada (2d8), 1×fibló (1d6+metzina)", "ba": "+6", "mv": "90' (30') / 240' (80') volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 9, "al": "Caòtic", "px": 850, "na": "1d2 (1d6)", "tt": "E"},
+          "estadistiques": {"ca": 16, "dc": "7* (31 pc)", "at": "1×mossegada (2d8), 1×fibló (1d6+metzina)", "ba": "+6", "mv": "90 peus (30 peus) / 240 peus (80 peus) volant", "ts": "M10 V11 P12 A13 E14 (4)", "ml": 9, "al": "Caòtic", "px": 850, "na": "1d2 (1d6)", "tt": "E"},
           "descripcio": "Enorme llangardaix volador amb un fibló verinós. Les víctimes del fibló han de superar una salvació contra metzina o morir."
         },
         {
           "nom": "Xisclador",
-          "estadistiques": {"ca": 12, "dc": "3 (13 pc)", "at": "Cap", "ba": "+0", "mv": "9' (3')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Neutral", "px": 35, "na": "1d8 (0)", "tt": "Cap"},
+          "estadistiques": {"ca": 12, "dc": "3 (13 pc)", "at": "Cap", "ba": "+0", "mv": "9 peus (3 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Neutral", "px": 35, "na": "1d8 (0)", "tt": "Cap"},
           "descripcio": "Bolet semimòbil que emet un xiscle estrident quan detecta moviment o llum a prop. Aquest so atrau monstres errants."
         },
         {
           "nom": "Zombi",
-          "estadistiques": {"ca": 11, "dc": "2 (9 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "60' (20')", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Caòtic", "px": 20, "na": "2d4 (4d6)", "tt": "Cap"},
+          "estadistiques": {"ca": 11, "dc": "2 (9 pc)", "at": "1×arma (1d8 o per arma)", "ba": "+1", "mv": "60 peus (20 peus)", "ts": "M12 V13 P14 A15 E16 (1)", "ml": 12, "al": "Caòtic", "px": 20, "na": "2d4 (4d6)", "tt": "Cap"},
           "descripcio": "Cadàvers humanoides lents però forts. Sempre actuen últims a l'assalt. Prenen la meitat de dany d'armes contundents i només un punt d'armes de projectil. Són invulnerables a 'dormir', 'encisar' i 'retenir'."
         }
       ]
