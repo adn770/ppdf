@@ -27,6 +27,58 @@ def setup_logging(verbose=False):
 
 # --- PROVIDER CLASSES (BACKENDS) ---
 
+class GeminiBackend:
+    """Handles communication with the Google Gemini API using the new GenAI SDK."""
+    def __init__(self, args):
+        try:
+            from google import genai
+            from google.genai import types
+            self.client = genai.Client(api_key=args.api_key)
+            self.model_id = args.model
+            self.types = types
+            log_task.info(f"Initialized Gemini Backend with model: {self.model_id}")
+            # Automatically list models on startup if desired
+            self.list_available_models()
+
+        except ImportError:
+            log_task.error("Error: 'google-genai' is not installed. Run: pip install google-genai")
+            sys.exit(1)
+
+    def generate(self, prompt, is_json_format=False):
+        config = {
+            "temperature": 0.2,
+            "max_output_tokens": 2048,
+        }
+
+        # Use Controlled Generation (JSON Mode) if requested
+        if is_json_format:
+            config["response_mime_type"] = "application/json"
+
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=prompt,
+                config=config
+            )
+            # Gemini response object includes usage metadata
+            tokens = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
+            return response.text, tokens
+        except Exception as e:
+            log_api.error(f"Gemini API Error: {e}")
+            return "", 0
+
+    def list_available_models(self):
+        """Lists and logs all models available to the current API key."""
+        log_task.info("Fetching available Gemini models...")
+        try:
+            # client.models.list() returns an iterator of available models
+            for m in self.client.models.list():
+                # Filter or log based on supported actions like 'generateContent'
+                actions = ", ".join(m.supported_actions)
+                log_api.info(f"Model: {m.name} | Actions: {actions}")
+        except Exception as e:
+            log_api.error(f"Could not list models: {e}")
+
 class OllamaBackend:
     """Handles communication with the Ollama API."""
     def __init__(self, args):
@@ -118,6 +170,8 @@ class Application:
         # Initialize the appropriate backend based on arguments
         if args.provider == "mlx":
             self.backend = MLXBackend(args)
+        elif args.provider == "gemini":
+            self.backend = GeminiBackend(args)
         else:
             self.backend = OllamaBackend(args)
 
@@ -193,15 +247,20 @@ class Application:
         # --- PROMPT CONSTRUCTION (CATALAN) ---
         if prompt_type == "summary":
             table_instr = "\nIMPORTANT: Si el text conté taules de Markdown, MANTÍN-LES ÍNTEGRES dins del resum." if has_table else ""
-            prompt = (f"Ets un expert en jocs de rol OSR. Fes un resum concís i professional "
-                      f"en CATALÀ d'aquesta secció: {anchor}{table_instr}\n\nTEXT:\n{content}\n\n"
-                      f"Respon només amb el resum (i les taules si n'hi ha).")
+            prompt = (f"Ets un expert en jocs de rol de la 'Vella Escola' (OSR). "
+                      f"Fes un resum tècnic i precís en CATALÀ de la secció: {anchor}. "
+                      f"{table_instr}\n\n"
+                      f"TEXT A RESUMIR:\n{content}\n\n"
+                      f"Respon només amb el resum, mantenint el to del manual original.")
         else:
             table_instr = (" AQUESTA SECCIÓ CONTÉ TAULES TÈCNIQUES. Genera preguntes que obliguin "
                            "a extreure dades numèriques de les files.") if has_table else ""
-            prompt = (f"Expert OSR.{table_instr} Genera entre {num_q} parells de Pregunta i Resposta "
-                      f"en CATALÀ. POSICIÓ: {anchor}\nTEXT: {content}\n"
-                      f"Respon exclusivament en format JSON: [{{'q':'...', 'a':'...'}}]")
+            prompt = (f"Ets un expert en jocs de rol de la 'Vella Escola' (OSR). {table_instr} "
+                      f"Genera entre {num_q} parells de Pregunta i Resposta en CATALÀ "
+                      f"basant-te en la secció: {anchor}.\n"
+                      f"TEXT:\n{content}\n"
+                      f"LES PREGUNTES han de ser directes. LES RESPOSTES han de ser informatives.\n"
+                      f"Respon exclusivament en format JSON: [{{\"q\": \"...\", \"a\": \"...\"}}]")
             is_json = True
         # -------------------------------------
 
@@ -305,9 +364,10 @@ def main():
     parser = argparse.ArgumentParser(description="Catalan CQA Dataset Generator.")
     parser.add_argument("input", help="Source Markdown file path")
     parser.add_argument("-o", "--output-dir", default=".", help="Output directory")
-    parser.add_argument("-m", "--model", default="gemma3:27b", help="Ollama model name or MLX HuggingFace path")
-    parser.add_argument("-p", "--provider", choices=["ollama", "mlx"], default="ollama", help="Inference provider to use")
+    parser.add_argument("-p", "--provider", choices=["ollama", "mlx", "gemini"], default="ollama", help="Inference provider to use")
+    parser.add_argument("-k", "--api-key", default=os.environ.get("GAIS_APIKEY"), help="Gemini API Key (Google AI Studio)")
     parser.add_argument("-u", "--url", default="http://localhost:11434", help="Ollama API URL (ignored if using MLX)")
+    parser.add_argument("-m", "--model", default="gemma3:27b", help="Ollama model name or MLX HuggingFace path")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logs with model outputs")
 
     args = parser.parse_args()
