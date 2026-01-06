@@ -33,12 +33,31 @@ class GeminiBackend:
         try:
             from google import genai
             from google.genai import types
+
             self.client = genai.Client(api_key=args.api_key)
-            self.model_id = args.model
             self.types = types
+
+            log_task.info("Fetching available Gemini models...")
+            available_models = self.list_available_models()
+
+            # The API often returns "models/gemini-2.0-flash", but users might input
+            # "gemini-2.0-flash". We check both the full name and the short name.
+            requested_model = args.model
+            valid_names = []
+            for m in available_models:
+                valid_names.append(m.name)
+                valid_names.append(m.name.split('/')[-1]) # Add "gemini-2.0-flash" short form
+
+            if requested_model not in valid_names:
+                log_task.error(f"Error: Model '{requested_model}' not found in your account.")
+                log_task.info("Available models for this API key:")
+                for name in sorted(set(valid_names)):
+                    if name.startswith("models/"): # Only print the full resource name for clarity
+                        log_task.info(f" - {name}")
+                sys.exit(1)
+
+            self.model_id = requested_model
             log_task.info(f"Initialized Gemini Backend with model: {self.model_id}")
-            # Automatically list models on startup if desired
-            self.list_available_models()
 
         except ImportError:
             log_task.error("Error: 'google-genai' is not installed. Run: pip install google-genai")
@@ -68,16 +87,17 @@ class GeminiBackend:
             return "", 0
 
     def list_available_models(self):
-        """Lists and logs all models available to the current API key."""
-        log_task.info("Fetching available Gemini models...")
+        """Fetches and returns all models available to the current API key."""
         try:
-            # client.models.list() returns an iterator of available models
-            for m in self.client.models.list():
-                # Filter or log based on supported actions like 'generateContent'
+            # Returns an iterator of models
+            models = list(self.client.models.list())
+            for m in models:
                 actions = ", ".join(m.supported_actions)
-                log_api.info(f"Model: {m.name} | Actions: {actions}")
+                log_api.debug(f"Model Found: {m.name} | Actions: {actions}")
+            return models
         except Exception as e:
             log_api.error(f"Could not list models: {e}")
+            return []
 
 class OllamaBackend:
     """Handles communication with the Ollama API."""
